@@ -1,7 +1,29 @@
 # Per-label rules indicating that a FlowNode of this label is expected to have
 # at least one outgoing edge (i.e. should not be a leaf).
-# Phase A (Task 18) expands this list.
+#
+# Expanded in Phase A (schema discovery, Task 18) from two real WIZ sample files.
+# All entries marked "# TODO: verify with WIZ.AI" are based on observed patterns
+# but require confirmation from WIZ.AI documentation.
+#
+# NOTE: In the real WIZ export format, child nodes are embedded as a nested
+# "children" array inside the parent node (not via parentId references).
+# Labels that consistently have non-empty children arrays are listed here.
 
 labels_requiring_children:
+  # Observed with children in Test+Kinan sample (file1):
   - "Greetings and Introduction"   # TODO: verify with WIZ.AI
   - "Pitch"                        # TODO: verify with WIZ.AI
+  - "Greeting"                     # TODO: verify with WIZ.AI
+  - "Gender - Salutation"          # TODO: verify with WIZ.AI
+  - "Repayment Time"               # TODO: verify with WIZ.AI
+  - "Convincer 2"                  # TODO: verify with WIZ.AI
+  - "ASR Corpus"                   # TODO: verify with WIZ.AI
+  - "ASR Corpus Collection"        # TODO: verify with WIZ.AI
+
+  # Observed with children in Tiktok+Paylater+DPD0 sample (file2):
+  - "Already Paid"                 # TODO: verify with WIZ.AI
+  - "Wrong Number"                 # TODO: verify with WIZ.AI
+
+  # Labels present in both files without children — excluded from this list.
+  # (Dead-end closings like "Negative Closing", "Positive Closing", etc. are
+  #  expected leaf nodes.)

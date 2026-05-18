@@ -1,6 +1,7 @@
 # wiz-checker schema rules
-# This file ships with conservative defaults inferred from sample data.
-# Phase A (schema discovery, see plan Task 18) expands this with more rules.
+# Expanded in Phase A (schema discovery, Task 18) from two real WIZ sample files:
+#   talkbot/Test+Kinan/speech13139256226648334285.json
+#   talkbot/Tiktok+Paylater+DPD0/speech4892384019254584542.json
 # Entries marked "# TODO: verify with WIZ.AI" are inferred-but-unverified.
 
 required_top_level_keys:
@@ -10,6 +11,28 @@ required_top_level_keys:
   - SentenceCutSpeech
   - SpeechAudio
 
-known_component_categories: [1]   # TODO: verify with WIZ.AI
-known_branches: [dev, prod]       # TODO: verify with WIZ.AI
-known_intent_languages: [IDN, ENG, ZHO]   # TODO: verify with WIZ.AI
+# Both 1 and 2 observed across the two sample files.
+# Category semantics unknown — TODO: verify with WIZ.AI.
+known_component_categories: [1, 2]   # TODO: verify with WIZ.AI
+
+# Only "dev" branch observed; "prod" is assumed to exist but unobserved.
+known_branches: [dev, prod]          # TODO: verify with WIZ.AI (prod unobserved)
+
+# Only "IDN" observed across both sample files; ENG/ZHO retained as plausible
+# values documented in earlier design but not yet seen in real exports.
+known_intent_languages: [IDN, ENG, ZHO]   # TODO: verify with WIZ.AI (ENG/ZHO unobserved)
+
+# SpeechVariable.textType values observed in both files.
+# Empty string ("") also valid — means no special type.
+known_variable_text_types:
+  - ""
+  - DEFAULT
+  - DATE
+  - EMAIL
+  - PHONE
+
+# VoiceRecord and SentenceCutSpeech type values.
+known_record_types: [record, tts]   # TODO: verify with WIZ.AI
+
+# VoiceRecord category values observed across both files.
+known_voice_record_categories: [1, 2, 3, 4]   # TODO: verify with WIZ.AI

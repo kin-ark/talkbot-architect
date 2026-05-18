@@ -1,11 +1,40 @@
 # Intent coverage rules.
-# v1 ships with file-level required intents only; Phase A (Task 18) adds
-# per-category required-intent sets once we understand node-intent linkage.
+# Expanded in Phase A (schema discovery, Task 18) from two real WIZ sample files:
+#   talkbot/Test+Kinan/speech13139256226648334285.json     (26 intents)
+#   talkbot/Tiktok+Paylater+DPD0/speech4892384019254584542.json  (78 intents)
+#
+# Intent names present in BOTH files are documented below.
+# Only intents with very high confidence of being universally required are
+# placed in required_intent_names (checked by WIZ301).
 
+# Intents that every valid WIZ speech must declare.
+# Keep this list conservative: only add an intent here if you are confident
+# it is truly universally required, not just project-specific.
 required_intent_names:
-  - Negative
+  - Negative   # present in both files, universally required
 
-fallback_intent_names:        # at least one of these must be present
-  - Unspecified               # TODO: verify with WIZ.AI which is canonical
-  - DNC
-  - "Answering Machine"
+# Fallback / catch-all intents: at least one of these must be present (WIZ302).
+fallback_intent_names:
+  - Unspecified          # canonical fallback name in legacy/test fixtures
+  - Unclassified         # observed in both real sample files  # TODO: verify with WIZ.AI
+  - DNC                  # observed in both files (Do-Not-Call)  # TODO: verify with WIZ.AI
+  - "Answering Machine"  # observed in Tiktok+Paylater+DPD0 file  # TODO: verify with WIZ.AI
+
+# Intents observed in BOTH sample files (informational — not enforced by checks).
+# Kept here for Phase B spot-check with WIZ.AI to determine which are truly
+# universally required vs project-specific.
+# TODO: verify with WIZ.AI which of these should move to required_intent_names.
+common_intent_names_observed_in_both_samples:
+  - Positive
+  - Reject
+  - Interrupt
+  - "User hesitate"
+  - Unclassified
+  - Busy
+  - "No answer"
+  - "AI wait"
+  - "AI can not hear clearly"
+  - "Can not hear clearly"
+  - "Echo Monitoring"
+  - "Chasing statement"
+  - "Transferring to Human Agent"
