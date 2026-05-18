@@ -1,0 +1,7 @@
+# Per-label rules indicating that a FlowNode of this label is expected to have
+# at least one outgoing edge (i.e. should not be a leaf).
+# Phase A (Task 18) expands this list.
+
+labels_requiring_children:
+  - "Greetings and Introduction"   # TODO: verify with WIZ.AI
+  - "Pitch"                        # TODO: verify with WIZ.AI
