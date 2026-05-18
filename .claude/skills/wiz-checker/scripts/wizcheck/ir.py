@@ -10,6 +10,8 @@ from dataclasses import dataclass, field
 from typing import Any
 from uuid import UUID
 
+import networkx as nx
+
 
 @dataclass(frozen=True)
 class Variable:
@@ -99,3 +101,51 @@ class WizFile:
     audios: dict[int, Audio]
     flow: Any  # FlowGraph; typed in Task 3. Kept as Any to avoid forward-ref noise.
     raw: dict[str, Any] = field(repr=False)
+
+
+class FlowGraph:
+    """Directed graph over FlowNodes across all Components.
+
+    Nodes are FlowNode UUIDs. Edges are parent->child relationships.
+    Nodes added explicitly via add_node() carry attribute present=True; nodes
+    that appear only as edge endpoints (i.e. orphan references) have
+    present=False and surface via orphan_refs().
+    """
+
+    def __init__(self) -> None:
+        self._g: nx.DiGraph = nx.DiGraph()
+
+    def add_node(self, uuid: UUID) -> None:
+        self._g.add_node(uuid, present=True)
+
+    def add_edge(self, parent: UUID, child: UUID) -> None:
+        # Ensure both endpoints exist; an unknown endpoint is marked absent
+        if parent not in self._g:
+            self._g.add_node(parent, present=False)
+        if child not in self._g:
+            self._g.add_node(child, present=False)
+        self._g.add_edge(parent, child)
+
+    def reachable_from(self, start: UUID) -> set[UUID]:
+        if start not in self._g:
+            return set()
+        return {start, *nx.descendants(self._g, start)}
+
+    def orphan_refs(self) -> list[UUID]:
+        return [n for n, attrs in self._g.nodes(data=True) if not attrs.get("present", False)]
+
+    def dead_ends(self) -> list[UUID]:
+        return [
+            n for n, attrs in self._g.nodes(data=True)
+            if attrs.get("present", False) and self._g.out_degree(n) == 0
+        ]
+
+    def cycles(self) -> list[list[UUID]]:
+        return [list(c) for c in nx.simple_cycles(self._g)]
+
+    def all_nodes(self) -> set[UUID]:
+        return {n for n, attrs in self._g.nodes(data=True) if attrs.get("present", False)}
+
+    @property
+    def graph(self) -> nx.DiGraph:
+        return self._g

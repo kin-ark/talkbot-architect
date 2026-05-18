@@ -8,6 +8,7 @@ from uuid import UUID
 import pytest
 from wizcheck.ir import (
     ComponentDetails,
+    FlowGraph,
     FlowNode,
     Intent,
     Utterance,
@@ -76,3 +77,44 @@ def test_wizfile_holds_all_collections():
     )
     assert wf.components == {}
     assert wf.utterances == ()
+
+
+def _build_graph(edges: list[tuple[UUID, UUID]], all_nodes: list[UUID]) -> FlowGraph:
+    g = FlowGraph()
+    for n in all_nodes:
+        g.add_node(n)
+    for parent, child in edges:
+        g.add_edge(parent, child)
+    return g
+
+
+def test_flowgraph_reachable_from_walks_descendants():
+    a, b, c, d = (UUID(int=i) for i in range(1, 5))
+    g = _build_graph([(a, b), (b, c)], [a, b, c, d])
+    assert g.reachable_from(a) == {a, b, c}
+    assert d not in g.reachable_from(a)
+
+
+def test_flowgraph_orphan_refs_finds_referenced_but_missing():
+    a, b = UUID(int=10), UUID(int=11)
+    g = FlowGraph()
+    g.add_node(a)
+    g.add_edge(a, b)  # b is referenced but not added
+    assert b in g.orphan_refs()
+
+
+def test_flowgraph_dead_ends_finds_leaves():
+    a, b, c = UUID(int=20), UUID(int=21), UUID(int=22)
+    g = _build_graph([(a, b), (a, c)], [a, b, c])
+    leaves = g.dead_ends()
+    assert b in leaves
+    assert c in leaves
+    assert a not in leaves
+
+
+def test_flowgraph_cycles_detects_simple_cycle():
+    a, b, c = UUID(int=30), UUID(int=31), UUID(int=32)
+    g = _build_graph([(a, b), (b, c), (c, a)], [a, b, c])
+    cycles = g.cycles()
+    assert len(cycles) == 1
+    assert set(cycles[0]) == {a, b, c}
