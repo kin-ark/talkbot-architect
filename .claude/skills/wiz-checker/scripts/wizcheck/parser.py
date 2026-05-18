@@ -47,6 +47,30 @@ def _parse_int(value: Any, context: str) -> int:
         raise ParseError(f"{context}: '{value}' is not a valid integer") from e
 
 
+def _unwrap_list(raw: Any, key: str) -> list[dict[str, Any]]:
+    """Return a list value from *raw*.
+
+    Real WIZ exports store most top-level collection values as JSON-encoded
+    strings (e.g. ``"SpeechVariable": "[{...}]"``).  Test fixtures use
+    already-parsed lists.  This helper normalises both formats.
+    """
+    if raw is None:
+        return []
+    if isinstance(raw, str):
+        if not raw.strip():
+            return []
+        try:
+            parsed = json.loads(raw)
+        except json.JSONDecodeError as exc:
+            raise ParseError(f"{key}: JSON-string value is not valid JSON: {exc}") from exc
+        if not isinstance(parsed, list):
+            raise ParseError(f"{key}: expected a JSON array, got {type(parsed).__name__}")
+        return parsed  # type: ignore[return-value]
+    if isinstance(raw, list):
+        return raw  # type: ignore[return-value]
+    raise ParseError(f"{key}: expected a list or JSON-array string, got {type(raw).__name__}")
+
+
 def parse_file(path: str | Path) -> WizFile:
     """Parse a WIZ.AI exported JSON file and return a fully-populated WizFile."""
     path = Path(path)
@@ -63,11 +87,15 @@ def parse_dict(raw: dict[str, Any]) -> WizFile:
         raise ParseError(
             f"expected a JSON object at top level, got {type(raw).__name__}"
         )
-    variables = _parse_variables(raw.get("SpeechVariable", []))
-    intents = _parse_intents(raw.get("SpeechIntent", []))
-    utterances = _parse_utterances(raw.get("SentenceCutSpeech", []))
-    audios = _parse_audios(raw.get("SpeechAudio", []))
-    components = _parse_components(raw.get("BizSpeechComponent", []))
+    variables = _parse_variables(_unwrap_list(raw.get("SpeechVariable"), "SpeechVariable"))
+    intents = _parse_intents(_unwrap_list(raw.get("SpeechIntent"), "SpeechIntent"))
+    utterances = _parse_utterances(
+        _unwrap_list(raw.get("SentenceCutSpeech"), "SentenceCutSpeech")
+    )
+    audios = _parse_audios(_unwrap_list(raw.get("SpeechAudio"), "SpeechAudio"))
+    components = _parse_components(
+        _unwrap_list(raw.get("BizSpeechComponent"), "BizSpeechComponent")
+    )
     flow = _build_flow_graph(components)
 
     return WizFile(
@@ -116,12 +144,26 @@ def _parse_variables(entries: list[dict[str, Any]]) -> dict[int, Variable]:
 def _parse_intents(entries: list[dict[str, Any]]) -> dict[int, Intent]:
     out: dict[int, Intent] = {}
     for e in entries:
+        # keyWordInIntent and userResponseInIntent are stored as JSON-encoded
+        # strings in real WIZ exports; test fixtures supply plain lists.
+        kw_raw = e.get("keyWordInIntent") or []
+        ur_raw = e.get("userResponseInIntent") or []
+        if isinstance(kw_raw, str):
+            try:
+                kw_raw = json.loads(kw_raw) or []
+            except json.JSONDecodeError:
+                kw_raw = []
+        if isinstance(ur_raw, str):
+            try:
+                ur_raw = json.loads(ur_raw) or []
+            except json.JSONDecodeError:
+                ur_raw = []
         i = Intent(
             intent_id=_parse_int(_require(e, "intentId", "SpeechIntent"), "SpeechIntent.intentId"),
             name=str(_require(e, "intentName", "SpeechIntent")),
             language=str(e.get("language", "")),
-            keywords=tuple(e.get("keyWordInIntent", []) or []),
-            user_responses=tuple(e.get("userResponseInIntent", []) or []),
+            keywords=tuple(kw_raw),
+            user_responses=tuple(ur_raw),
             raw=e,
         )
         out[i.intent_id] = i
@@ -185,10 +227,25 @@ def _parse_components(entries: list[dict[str, Any]]) -> dict[UUID, Component]:
 
 
 def _parse_component_details(raw_details: str | dict[str, Any] | None) -> ComponentDetails:
-    """Parse the escaped-JSON ``details`` string into a ComponentDetails.
+    """Parse the ``details`` field of a BizSpeechComponent into a ComponentDetails.
 
-    Accepts a dict already-parsed (e.g. from tests), an empty string (treat as
-    empty tree), or None.
+    Two formats are accepted:
+
+    *Legacy / fixture format* — the JSON string decodes to a dict with a
+    ``"list"`` key whose value is a flat list of FlowNode dicts::
+
+        {"list": [{"uuid": "...", "parentId": null, ...}, ...]}
+
+    *Real WIZ export format* — the JSON string decodes to a dict keyed by node
+    UUID, where each value is a node envelope with the flow-node list nested at
+    ``canvas.component.props.list``.  ``parentId`` is ``""`` (empty string) for
+    root nodes instead of ``null``::
+
+        {"<uuid>": {"canvas": {"component": {"props": {"list": [...]}}}}, ...}
+
+    Both formats are normalised into the same ``ComponentDetails``.
+    Accepts an already-parsed dict (e.g. from unit tests), an empty/None value
+    (returns empty ComponentDetails), or a raw JSON string.
     """
     if not raw_details:
         return ComponentDetails(flow_nodes={}, root_uuids=())
@@ -200,22 +257,56 @@ def _parse_component_details(raw_details: str | dict[str, Any] | None) -> Compon
     else:
         data = raw_details
 
+    # Detect format: legacy uses {"list": [...]}, real WIZ uses {uuid: {...}}
+    if "list" in data:
+        # Legacy / fixture format: flat list at top level.
+        top_level_entries = data["list"]
+    else:
+        # Real WIZ export format: dict keyed by node UUID; flow nodes are nested
+        # inside canvas.component.props.list of each envelope.
+        top_level_entries = []
+        for _node_key, envelope in data.items():
+            if not isinstance(envelope, dict):
+                continue
+            props = (
+                envelope.get("canvas", {})
+                .get("component", {})
+                .get("props", {})
+            )
+            top_level_entries.extend(props.get("list", []))
+
     nodes: dict[UUID, FlowNode] = {}
     roots: list[UUID] = []
-    for entry in data.get("list", []):
-        uuid = _parse_uuid(_require(entry, "uuid", "FlowNode"), "FlowNode.uuid")
-        parent_raw = entry.get("parentId")
-        parent_uuid = (
-            _parse_uuid(parent_raw, "FlowNode.parentId") if parent_raw is not None else None
-        )
-        node = FlowNode(
-            uuid=uuid,
-            parent_uuid=parent_uuid,
-            label=str(entry.get("label", "")),
-            sort_index=int(entry.get("sortIndex", 0)),
-            raw=entry,
-        )
-        nodes[uuid] = node
-        if parent_uuid is None:
-            roots.append(uuid)
+    seen_uuids: set[UUID] = set()
+
+    def _process_entries(entry_list: list[dict[str, Any]]) -> None:
+        for entry in entry_list:
+            if not isinstance(entry, dict):
+                continue
+            uuid = _parse_uuid(_require(entry, "uuid", "FlowNode"), "FlowNode.uuid")
+            if uuid in seen_uuids:
+                continue
+            seen_uuids.add(uuid)
+            parent_raw = entry.get("parentId")
+            # Real WIZ uses "" for no-parent; legacy uses null/None.
+            if parent_raw is None or parent_raw == "":
+                parent_uuid = None
+            else:
+                parent_uuid = _parse_uuid(parent_raw, "FlowNode.parentId")
+            node = FlowNode(
+                uuid=uuid,
+                parent_uuid=parent_uuid,
+                label=str(entry.get("label", "")),
+                sort_index=int(entry.get("sortIndex", 0)),
+                raw=entry,
+            )
+            nodes[uuid] = node
+            if parent_uuid is None:
+                roots.append(uuid)
+            # Process nested children (real WIZ format embeds them inline)
+            children = entry.get("children", [])
+            if children:
+                _process_entries(children)
+
+    _process_entries(top_level_entries)
     return ComponentDetails(flow_nodes=nodes, root_uuids=tuple(roots))
