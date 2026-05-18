@@ -77,7 +77,11 @@ class Component:
 
 @dataclass(frozen=True)
 class Audio:
-    """SpeechAudio (plus linked VoiceRecord) entry. Stub for v1 (no checks consume yet)."""
+    """SpeechAudio (plus linked VoiceRecord) entry. Stub for v1 (no checks consume yet).
+
+    VoiceRecord fields are not promoted to typed attributes in v1; access them
+    via ``raw`` if needed (e.g. ``audio.raw.get('voiceRecord', {})``).
+    """
 
     audio_id: int
     name: str

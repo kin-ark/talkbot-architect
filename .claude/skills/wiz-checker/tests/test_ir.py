@@ -66,13 +66,13 @@ def test_component_details_can_be_empty():
 
 def test_wizfile_holds_all_collections():
     wf = WizFile(
-        raw={},
         components={},
         variables={},
         intents={},
         utterances=(),
         audios={},
         flow=None,
+        raw={},
     )
     assert wf.components == {}
     assert wf.utterances == ()
