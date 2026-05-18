@@ -1,0 +1,245 @@
+{
+  "file": "speech2572824560161596380.json",
+  "summary": {
+    "errors": 5,
+    "warnings": 18,
+    "checks_run": [
+      "schema",
+      "graph",
+      "variables",
+      "intents"
+    ]
+  },
+  "findings": [
+    {
+      "code": "WIZ100",
+      "severity": "error",
+      "location": {
+        "entity": "FlowNode",
+        "id": "a1528c51-3e2a-4a3f-9158-83bbe7e8e06f",
+        "field": "parent_uuid"
+      },
+      "message": "FlowNode a1528c51-3e2a-4a3f-9158-83bbe7e8e06f is referenced as a parent but does not exist."
+    },
+    {
+      "code": "WIZ100",
+      "severity": "error",
+      "location": {
+        "entity": "FlowNode",
+        "id": "fa3cdb6b-d7b2-4f2b-b23c-70bf78c852c8",
+        "field": "parent_uuid"
+      },
+      "message": "FlowNode fa3cdb6b-d7b2-4f2b-b23c-70bf78c852c8 is referenced as a parent but does not exist."
+    },
+    {
+      "code": "WIZ100",
+      "severity": "error",
+      "location": {
+        "entity": "FlowNode",
+        "id": "da92ff1e-1261-48f4-8ee3-3bd5c9d0be76",
+        "field": "parent_uuid"
+      },
+      "message": "FlowNode da92ff1e-1261-48f4-8ee3-3bd5c9d0be76 is referenced as a parent but does not exist."
+    },
+    {
+      "code": "WIZ100",
+      "severity": "error",
+      "location": {
+        "entity": "FlowNode",
+        "id": "160e1ead-a4c4-4e0a-852b-a851a9535ac0",
+        "field": "parent_uuid"
+      },
+      "message": "FlowNode 160e1ead-a4c4-4e0a-852b-a851a9535ac0 is referenced as a parent but does not exist."
+    },
+    {
+      "code": "WIZ100",
+      "severity": "error",
+      "location": {
+        "entity": "FlowNode",
+        "id": "8417b772-94ee-4a17-b302-34859739d7db",
+        "field": "parent_uuid"
+      },
+      "message": "FlowNode 8417b772-94ee-4a17-b302-34859739d7db is referenced as a parent but does not exist."
+    },
+    {
+      "code": "WIZ101",
+      "severity": "warning",
+      "location": {
+        "entity": "FlowNode",
+        "id": "43fdf198-6629-4768-b0c5-b6a1c1c70763",
+        "field": null
+      },
+      "message": "FlowNode 43fdf198-6629-4768-b0c5-b6a1c1c70763 is unreachable from any component root."
+    },
+    {
+      "code": "WIZ101",
+      "severity": "warning",
+      "location": {
+        "entity": "FlowNode",
+        "id": "3fc45cc9-feee-45c7-9ac8-c23938d0fe8d",
+        "field": null
+      },
+      "message": "FlowNode 3fc45cc9-feee-45c7-9ac8-c23938d0fe8d is unreachable from any component root."
+    },
+    {
+      "code": "WIZ101",
+      "severity": "warning",
+      "location": {
+        "entity": "FlowNode",
+        "id": "8ae57f92-7240-4092-b561-8b67a25e3c28",
+        "field": null
+      },
+      "message": "FlowNode 8ae57f92-7240-4092-b561-8b67a25e3c28 is unreachable from any component root."
+    },
+    {
+      "code": "WIZ101",
+      "severity": "warning",
+      "location": {
+        "entity": "FlowNode",
+        "id": "3e21e4de-2d49-4c2c-96ca-d15cf45cd975",
+        "field": null
+      },
+      "message": "FlowNode 3e21e4de-2d49-4c2c-96ca-d15cf45cd975 is unreachable from any component root."
+    },
+    {
+      "code": "WIZ101",
+      "severity": "warning",
+      "location": {
+        "entity": "FlowNode",
+        "id": "00d0c23c-28ce-4e9d-834a-14537557de90",
+        "field": null
+      },
+      "message": "FlowNode 00d0c23c-28ce-4e9d-834a-14537557de90 is unreachable from any component root."
+    },
+    {
+      "code": "WIZ101",
+      "severity": "warning",
+      "location": {
+        "entity": "FlowNode",
+        "id": "4b281543-a3a3-484b-9a6e-4cad20a7db48",
+        "field": null
+      },
+      "message": "FlowNode 4b281543-a3a3-484b-9a6e-4cad20a7db48 is unreachable from any component root."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "114796",
+        "field": "name"
+      },
+      "message": "Variable {WA_IVR_CONV} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "114797",
+        "field": "name"
+      },
+      "message": "Variable {Phone number collected} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "114798",
+        "field": "name"
+      },
+      "message": "Variable {pitch status} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "114799",
+        "field": "name"
+      },
+      "message": "Variable {Busy} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "114800",
+        "field": "name"
+      },
+      "message": "Variable {Hit Text Customer} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "114801",
+        "field": "name"
+      },
+      "message": "Variable {Hit Guidance} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "114802",
+        "field": "name"
+      },
+      "message": "Variable {Hit Will Close Shop} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "114803",
+        "field": "name"
+      },
+      "message": "Variable {Hit Busy} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "114804",
+        "field": "name"
+      },
+      "message": "Variable {greeting status} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "115028",
+        "field": "name"
+      },
+      "message": "Variable {Number Correct} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "115858",
+        "field": "name"
+      },
+      "message": "Variable {convincer_triggered} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "115859",
+        "field": "name"
+      },
+      "message": "Variable {go_to_closing} is declared but never referenced."
+    }
+  ]
+}

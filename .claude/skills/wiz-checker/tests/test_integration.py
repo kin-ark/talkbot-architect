@@ -20,6 +20,7 @@ GOLDEN_DIR = SKILL_DIR / "tests" / "golden"
 SAMPLES = [
     PROJECT_ROOT / "talkbot" / "Test+Kinan" / "speech13139256226648334285.json",
     PROJECT_ROOT / "talkbot" / "Tiktok+Paylater+DPD0" / "speech4892384019254584542.json",
+    PROJECT_ROOT / "talkbot" / "TSP+Matchmaking" / "speech2572824560161596380.json",
 ]
 
 
