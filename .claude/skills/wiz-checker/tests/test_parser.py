@@ -133,3 +133,18 @@ def test_parse_missing_variable_id_raises_parse_error(tmp_path):
         parse_file(bad)
     assert "SpeechVariable" in str(excinfo.value)
     assert "id" in str(excinfo.value)
+
+
+def test_parse_populates_flow_graph(fixture_path):
+    wf = parse_file(fixture_path("nested_details.json"))
+    root_uuid = UUID("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa")
+    child_uuid = UUID("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb")
+    assert root_uuid in wf.flow.all_nodes()
+    assert child_uuid in wf.flow.all_nodes()
+    assert wf.flow.reachable_from(root_uuid) == {root_uuid, child_uuid}
+
+
+def test_parse_detects_orphan_parent(fixture_path):
+    wf = parse_file(fixture_path("flow_with_orphans.json"))
+    orphan = UUID("dddddddd-dddd-4ddd-8ddd-dddddddddddd")
+    assert orphan in wf.flow.orphan_refs()

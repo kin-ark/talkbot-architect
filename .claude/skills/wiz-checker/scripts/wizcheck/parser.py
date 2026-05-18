@@ -68,7 +68,7 @@ def parse_dict(raw: dict[str, Any]) -> WizFile:
     utterances = _parse_utterances(raw.get("SentenceCutSpeech", []))
     audios = _parse_audios(raw.get("SpeechAudio", []))
     components = _parse_components(raw.get("BizSpeechComponent", []))
-    flow = FlowGraph()  # populated in Task 8
+    flow = _build_flow_graph(components)
 
     return WizFile(
         raw=raw,
@@ -79,6 +79,25 @@ def parse_dict(raw: dict[str, Any]) -> WizFile:
         audios=audios,
         flow=flow,
     )
+
+
+def _build_flow_graph(components: dict[UUID, Component]) -> FlowGraph:
+    """Build a FlowGraph from all components' FlowNodes.
+
+    Two-pass: first register every known node as present, then add parent->child
+    edges. add_edge will mark unknown endpoints as orphan refs (present=False).
+    """
+    g = FlowGraph()
+    # First pass: register all known nodes.
+    for comp in components.values():
+        for node_uuid in comp.details.flow_nodes:
+            g.add_node(node_uuid)
+    # Second pass: add edges. add_edge marks unknown endpoints as orphans.
+    for comp in components.values():
+        for node in comp.details.flow_nodes.values():
+            if node.parent_uuid is not None:
+                g.add_edge(node.parent_uuid, node.uuid)
+    return g
 
 
 def _parse_variables(entries: list[dict[str, Any]]) -> dict[int, Variable]:
