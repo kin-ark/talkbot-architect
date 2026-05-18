@@ -79,3 +79,18 @@ def test_parse_flownode_parent_link(fixture_path):
     assert child.parent_uuid == UUID("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa")
     assert child.label == "Pitch"
     assert child.sort_index == 1
+
+
+def test_parse_extracts_variable_refs(fixture_path):
+    wf = parse_file(fixture_path("with_variables.json"))
+    by_id = {u.id: u for u in wf.utterances}
+    u1 = by_id[UUID("11111111-1111-4111-8111-111111111111")]
+    # deduplicated, order preserved
+    assert u1.referenced_vars == ("Name", "Phone")
+
+
+def test_parse_no_variable_refs_yields_empty_tuple(fixture_path):
+    wf = parse_file(fixture_path("with_variables.json"))
+    by_id = {u.id: u for u in wf.utterances}
+    u2 = by_id[UUID("33333333-3333-4333-8333-333333333333")]
+    assert u2.referenced_vars == ()

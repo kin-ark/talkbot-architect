@@ -1,0 +1,27 @@
+{
+  "BizSpeechComponent": [],
+  "SpeechVariable": [
+    {"id": 1, "name": "Name", "textType": "DEFAULT", "type": 0},
+    {"id": 2, "name": "Phone", "textType": "PHONE", "type": 0}
+  ],
+  "SpeechIntent": [],
+  "SentenceCutSpeech": [
+    {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "componentUuid": "22222222-2222-4222-8222-222222222222",
+      "sentenceText": "Halo {Name}, nomor Anda {Phone}, terima kasih {Name}.",
+      "sortIndex": 1,
+      "sentenceCutId": 1,
+      "type": "record"
+    },
+    {
+      "id": "33333333-3333-4333-8333-333333333333",
+      "componentUuid": "22222222-2222-4222-8222-222222222222",
+      "sentenceText": "Tidak ada variable di sini.",
+      "sortIndex": 2,
+      "sentenceCutId": 2,
+      "type": "record"
+    }
+  ],
+  "SpeechAudio": []
+}

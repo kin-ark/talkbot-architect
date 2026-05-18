@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import Any
 from uuid import UUID
@@ -18,6 +19,8 @@ from wizcheck.ir import (
     Variable,
     WizFile,
 )
+
+_VAR_REF_RE = re.compile(r"\{([A-Za-z_][A-Za-z0-9_]*)\}")
 
 
 class ParseError(Exception):
@@ -87,14 +90,20 @@ def _parse_intents(entries: list[dict[str, Any]]) -> dict[int, Intent]:
 
 
 def _parse_utterances(entries: list[dict[str, Any]]) -> tuple[Utterance, ...]:
-    # referenced_vars extraction added in Task 6; for now empty
     out: list[Utterance] = []
     for e in entries:
+        text = str(e.get("sentenceText", ""))
+        # preserve first-seen order, dedupe
+        seen: list[str] = []
+        for match in _VAR_REF_RE.finditer(text):
+            name = match.group(1)
+            if name not in seen:
+                seen.append(name)
         u = Utterance(
             id=UUID(str(e["id"])),
             component_uuid=UUID(str(e["componentUuid"])),
-            text=str(e.get("sentenceText", "")),
-            referenced_vars=(),
+            text=text,
+            referenced_vars=tuple(seen),
             raw=e,
         )
         out.append(u)
