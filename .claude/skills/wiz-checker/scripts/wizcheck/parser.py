@@ -12,6 +12,7 @@ from wizcheck.ir import (
     Component,
     ComponentDetails,
     FlowGraph,
+    FlowNode,
     Intent,
     Utterance,
     Variable,
@@ -113,11 +114,10 @@ def _parse_audios(entries: list[dict[str, Any]]) -> dict[int, Audio]:
 
 
 def _parse_components(entries: list[dict[str, Any]]) -> dict[UUID, Component]:
-    # nested details unwrap is Task 5; for now use empty ComponentDetails
     out: dict[UUID, Component] = {}
     for e in entries:
         comp_uuid = UUID(str(e["componentUuid"]))
-        details = ComponentDetails(flow_nodes={}, root_uuids=())
+        details = _parse_component_details(e.get("details", ""))
         c = Component(
             uuid=comp_uuid,
             speech_id=int(e.get("speechId", 0)),
@@ -128,3 +128,38 @@ def _parse_components(entries: list[dict[str, Any]]) -> dict[UUID, Component]:
         )
         out[comp_uuid] = c
     return out
+
+
+def _parse_component_details(raw_details: str | dict | None) -> ComponentDetails:
+    """Parse the escaped-JSON ``details`` string into a ComponentDetails.
+
+    Accepts a dict already-parsed (e.g. from tests), an empty string (treat as
+    empty tree), or None.
+    """
+    if not raw_details:
+        return ComponentDetails(flow_nodes={}, root_uuids=())
+    if isinstance(raw_details, str):
+        try:
+            data = json.loads(raw_details)
+        except json.JSONDecodeError as e:
+            raise ParseError(f"BizSpeechComponent.details is not valid JSON: {e}") from e
+    else:
+        data = raw_details
+
+    nodes: dict[UUID, FlowNode] = {}
+    roots: list[UUID] = []
+    for entry in data.get("list", []):
+        uuid = UUID(str(entry["uuid"]))
+        parent_raw = entry.get("parentId")
+        parent_uuid = UUID(str(parent_raw)) if parent_raw else None
+        node = FlowNode(
+            uuid=uuid,
+            parent_uuid=parent_uuid,
+            label=str(entry.get("label", "")),
+            sort_index=int(entry.get("sortIndex", 0)),
+            raw=entry,
+        )
+        nodes[uuid] = node
+        if parent_uuid is None:
+            roots.append(uuid)
+    return ComponentDetails(flow_nodes=nodes, root_uuids=tuple(roots))
