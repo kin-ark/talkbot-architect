@@ -35,6 +35,10 @@ def parse_file(path: str | Path) -> WizFile:
 
 def parse_dict(raw: dict[str, Any]) -> WizFile:
     """Parse an already-loaded JSON dict into a WizFile."""
+    if not isinstance(raw, dict):
+        raise ParseError(
+            f"expected a JSON object at top level, got {type(raw).__name__}"
+        )
     variables = _parse_variables(raw.get("SpeechVariable", []))
     intents = _parse_intents(raw.get("SpeechIntent", []))
     utterances = _parse_utterances(raw.get("SentenceCutSpeech", []))

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from uuid import UUID
 
-import pytest  # noqa: F401  (used by later tasks)
+import pytest
 from wizcheck.ir import WizFile
 from wizcheck.parser import parse_file
 
@@ -51,3 +51,11 @@ def test_parse_minimal_has_one_audio(fixture_path):
     wf = parse_file(fixture_path("minimal_valid.json"))
     assert 300 in wf.audios
     assert wf.audios[300].name == "Nirmala"
+
+
+def test_parse_dict_rejects_non_dict_top_level():
+    from wizcheck.parser import ParseError, parse_dict
+    with pytest.raises(ParseError):
+        parse_dict([])  # type: ignore[arg-type]
+    with pytest.raises(ParseError):
+        parse_dict("not a dict")  # type: ignore[arg-type]
