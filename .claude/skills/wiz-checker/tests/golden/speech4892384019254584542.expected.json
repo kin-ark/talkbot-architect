@@ -1,0 +1,455 @@
+{
+  "file": "speech4892384019254584542.json",
+  "summary": {
+    "errors": 0,
+    "warnings": 44,
+    "checks_run": [
+      "schema",
+      "graph",
+      "variables",
+      "intents"
+    ]
+  },
+  "findings": [
+    {
+      "code": "WIZ102",
+      "severity": "warning",
+      "location": {
+        "entity": "FlowNode",
+        "id": "f91ae7dd-c2c2-4f43-8d02-fa2338cc9f9a",
+        "field": null
+      },
+      "message": "FlowNode f91ae7dd-c2c2-4f43-8d02-fa2338cc9f9a (label='Wrong Number') has no outgoing transitions; this label is configured to require children."
+    },
+    {
+      "code": "WIZ102",
+      "severity": "warning",
+      "location": {
+        "entity": "FlowNode",
+        "id": "115638c0-5fd1-4131-8a37-3b7b7565310d",
+        "field": null
+      },
+      "message": "FlowNode 115638c0-5fd1-4131-8a37-3b7b7565310d (label='Wrong Number') has no outgoing transitions; this label is configured to require children."
+    },
+    {
+      "code": "WIZ102",
+      "severity": "warning",
+      "location": {
+        "entity": "FlowNode",
+        "id": "e4154306-bbb7-4d69-9a93-1e25a2f36a28",
+        "field": null
+      },
+      "message": "FlowNode e4154306-bbb7-4d69-9a93-1e25a2f36a28 (label='Wrong Number') has no outgoing transitions; this label is configured to require children."
+    },
+    {
+      "code": "WIZ102",
+      "severity": "warning",
+      "location": {
+        "entity": "FlowNode",
+        "id": "aab96266-08e4-4ab3-ac3f-3d7087d3a8e7",
+        "field": null
+      },
+      "message": "FlowNode aab96266-08e4-4ab3-ac3f-3d7087d3a8e7 (label='Already Paid') has no outgoing transitions; this label is configured to require children."
+    },
+    {
+      "code": "WIZ102",
+      "severity": "warning",
+      "location": {
+        "entity": "FlowNode",
+        "id": "1e1a3c8c-202f-4ead-9fa8-2b8a647b9bd3",
+        "field": null
+      },
+      "message": "FlowNode 1e1a3c8c-202f-4ead-9fa8-2b8a647b9bd3 (label='Wrong Number') has no outgoing transitions; this label is configured to require children."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "112570",
+        "field": "name"
+      },
+      "message": "Variable {Phone} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "112571",
+        "field": "name"
+      },
+      "message": "Variable {Email} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "112572",
+        "field": "name"
+      },
+      "message": "Variable {Greeting} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "112573",
+        "field": "name"
+      },
+      "message": "Variable {Today} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "112574",
+        "field": "name"
+      },
+      "message": "Variable {Call Time} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "112575",
+        "field": "name"
+      },
+      "message": "Variable {TimeCollected_Atome} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "112576",
+        "field": "name"
+      },
+      "message": "Variable {MethodCollected_Atome} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "112577",
+        "field": "name"
+      },
+      "message": "Variable {CallBackTime} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "112578",
+        "field": "name"
+      },
+      "message": "Variable {FEMALE} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "112579",
+        "field": "name"
+      },
+      "message": "Variable {MALE} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "112580",
+        "field": "name"
+      },
+      "message": "Variable {DateX} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "112581",
+        "field": "name"
+      },
+      "message": "Variable {allow} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "112582",
+        "field": "name"
+      },
+      "message": "Variable {Amount Mentioned} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "112583",
+        "field": "name"
+      },
+      "message": "Variable {DateValue} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "112584",
+        "field": "name"
+      },
+      "message": "Variable {Date Collected} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "112585",
+        "field": "name"
+      },
+      "message": "Variable {TimeCollected} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "112586",
+        "field": "name"
+      },
+      "message": "Variable {Payment_Time_Today} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "112587",
+        "field": "name"
+      },
+      "message": "Variable {Method} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "112588",
+        "field": "name"
+      },
+      "message": "Variable {Payment_Date} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "112589",
+        "field": "name"
+      },
+      "message": "Variable {Payment_date_difference} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "112590",
+        "field": "name"
+      },
+      "message": "Variable {Reason} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "112591",
+        "field": "name"
+      },
+      "message": "Variable {Triggered} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "112592",
+        "field": "name"
+      },
+      "message": "Variable {Answering Machine} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "112593",
+        "field": "name"
+      },
+      "message": "Variable {HOTLINE} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "112594",
+        "field": "name"
+      },
+      "message": "Variable {BANK TRANSFER} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "112595",
+        "field": "name"
+      },
+      "message": "Variable {BANK_TRANSFER} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "112596",
+        "field": "name"
+      },
+      "message": "Variable {Pay Today} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "112597",
+        "field": "name"
+      },
+      "message": "Variable {Platform} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "112598",
+        "field": "name"
+      },
+      "message": "Variable {ProductEnd} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "112599",
+        "field": "name"
+      },
+      "message": "Variable {Product} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "112601",
+        "field": "name"
+      },
+      "message": "Variable {Gender} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "112602",
+        "field": "name"
+      },
+      "message": "Variable {Name} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "112603",
+        "field": "name"
+      },
+      "message": "Variable {Nominal} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "112604",
+        "field": "name"
+      },
+      "message": "Variable {ProductAnda} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "112605",
+        "field": "name"
+      },
+      "message": "Variable {GenderX} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "112606",
+        "field": "name"
+      },
+      "message": "Variable {Company} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "112607",
+        "field": "name"
+      },
+      "message": "Variable {Wrong_Number} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "155704",
+        "field": "name"
+      },
+      "message": "Variable {Follow-up Stage} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "155705",
+        "field": "name"
+      },
+      "message": "Variable {Customer Segment} is declared but never referenced."
+    }
+  ]
+}
