@@ -1,0 +1,16 @@
+# wiz-checker variable consistency rules
+
+# Names auto-populated by the WIZ.AI platform on every dialogue export.
+# WIZ202 (declared-but-unused) is suppressed for these.
+# TODO: verify the complete list with WIZ.AI; expand as needed.
+platform_default_variables:
+  - Phone
+  - Gender
+  - Email
+  - Answering Machine
+  - Greeting
+  - Today
+  - Call Time
+  - Follow-up Stage
+  - Customer Segment
+  - Name                # commonly seen template var

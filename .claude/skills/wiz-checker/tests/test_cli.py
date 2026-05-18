@@ -23,8 +23,7 @@ def _run(*args: str) -> subprocess.CompletedProcess:
 
 def test_cli_clean_minimal_exits_zero():
     # minimal_valid.json declares Negative and Unspecified intents (intent-coverage
-    # satisfied). A WIZ202 warning fires (Name var declared but unused) — warnings
-    # alone don't fail without --strict.
+    # satisfied). Name is a platform-default variable, so no WIZ202 fires. Exit 0.
     fixture = SKILL_DIR / "tests" / "fixtures" / "minimal_valid.json"
     result = _run(str(fixture), "--json")
     assert result.returncode == 0
@@ -64,9 +63,12 @@ def test_cli_only_filter_runs_subset():
 
 def test_cli_strict_promotes_warnings_to_failures(tmp_path):
     # Build a file that produces only WIZ202 warnings (declared but unused var)
+    # Use a non-platform-default name so WIZ202 still fires
     payload = {
         "BizSpeechComponent": [],
-        "SpeechVariable": [{"id": 1, "name": "Phone", "textType": "PHONE", "type": 0}],
+        "SpeechVariable": [
+            {"id": 1, "name": "CustomerLoyaltyTier", "textType": "DEFAULT", "type": 0},
+        ],
         "SpeechIntent": [
             {"intentId": 1, "intentName": "Negative", "language": "IDN",
              "keyWordInIntent": [], "userResponseInIntent": []},
