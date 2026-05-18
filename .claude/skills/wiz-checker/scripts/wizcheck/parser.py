@@ -71,6 +71,48 @@ def _unwrap_list(raw: Any, key: str) -> list[dict[str, Any]]:
     raise ParseError(f"{key}: expected a list or JSON-array string, got {type(raw).__name__}")
 
 
+_BRACKET_LIST_RE = re.compile(r"^\[(.+)\]$", re.DOTALL)
+
+
+def _unwrap_keyword_list(raw: Any, key: str) -> list[str]:
+    """Return a list of keyword strings from *raw*.
+
+    Intent keyword/response fields come in three forms:
+    - Already a list (test fixtures).
+    - A JSON-encoded array string: ``'["a","b"]'``.
+    - A WIZ bracket-delimited string: ``'[a;b;c]'`` or ``'[a,b,c]'``
+      (not valid JSON — items are separated by ``;`` or ``,``).
+
+    Returns an empty list for None or empty/whitespace strings.
+    """
+    if raw is None:
+        return []
+    if isinstance(raw, list):
+        return [str(item) for item in raw]
+    if not isinstance(raw, str):
+        raise ParseError(f"{key}: expected a list or string, got {type(raw).__name__}")
+    stripped = raw.strip()
+    if not stripped:
+        return []
+    # Try JSON first (handles ``["a","b"]`` arrays from newer exports).
+    try:
+        parsed = json.loads(stripped)
+        if isinstance(parsed, list):
+            return [str(item) for item in parsed]
+        raise ParseError(f"{key}: expected a JSON array, got {type(parsed).__name__}")
+    except json.JSONDecodeError:
+        pass
+    # Fall back to WIZ bracket-delimited format: ``[item1;item2]`` or ``[item1,item2]``.
+    m = _BRACKET_LIST_RE.match(stripped)
+    if m:
+        inner = m.group(1)
+        # Prefer semicolon splitting; fall back to comma if no semicolons present.
+        sep = ";" if ";" in inner else ","
+        return [item.strip() for item in inner.split(sep) if item.strip()]
+    # Plain unbracketed string — treat as single-item list.
+    return [stripped]
+
+
 def parse_file(path: str | Path) -> WizFile:
     """Parse a WIZ.AI exported JSON file and return a fully-populated WizFile."""
     path = Path(path)
@@ -144,26 +186,18 @@ def _parse_variables(entries: list[dict[str, Any]]) -> dict[int, Variable]:
 def _parse_intents(entries: list[dict[str, Any]]) -> dict[int, Intent]:
     out: dict[int, Intent] = {}
     for e in entries:
-        # keyWordInIntent and userResponseInIntent are stored as JSON-encoded
-        # strings in real WIZ exports; test fixtures supply plain lists.
-        kw_raw = e.get("keyWordInIntent") or []
-        ur_raw = e.get("userResponseInIntent") or []
-        if isinstance(kw_raw, str):
-            try:
-                kw_raw = json.loads(kw_raw) or []
-            except json.JSONDecodeError:
-                kw_raw = []
-        if isinstance(ur_raw, str):
-            try:
-                ur_raw = json.loads(ur_raw) or []
-            except json.JSONDecodeError:
-                ur_raw = []
         i = Intent(
             intent_id=_parse_int(_require(e, "intentId", "SpeechIntent"), "SpeechIntent.intentId"),
             name=str(_require(e, "intentName", "SpeechIntent")),
             language=str(e.get("language", "")),
-            keywords=tuple(kw_raw),
-            user_responses=tuple(ur_raw),
+            keywords=tuple(
+                _unwrap_keyword_list(e.get("keyWordInIntent"), "SpeechIntent.keyWordInIntent")
+            ),
+            user_responses=tuple(
+                _unwrap_keyword_list(
+                    e.get("userResponseInIntent"), "SpeechIntent.userResponseInIntent"
+                )
+            ),
             raw=e,
         )
         out[i.intent_id] = i
@@ -226,6 +260,22 @@ def _parse_components(entries: list[dict[str, Any]]) -> dict[UUID, Component]:
     return out
 
 
+def _is_legacy_details(data: dict) -> bool:
+    """Legacy fixture format: {'list': [...]} with no UUID-shaped keys."""
+    if not isinstance(data.get("list"), list):
+        return False
+    # Real-format envelopes have UUID-shaped keys at the top level alongside any "list"
+    for key in data:
+        if key == "list":
+            continue
+        try:
+            UUID(str(key))
+            return False  # found a UUID key -> real format
+        except (ValueError, TypeError):
+            pass
+    return True
+
+
 def _parse_component_details(raw_details: str | dict[str, Any] | None) -> ComponentDetails:
     """Parse the ``details`` field of a BizSpeechComponent into a ComponentDetails.
 
@@ -257,8 +307,12 @@ def _parse_component_details(raw_details: str | dict[str, Any] | None) -> Compon
     else:
         data = raw_details
 
+    if not isinstance(data, dict):
+        raise ParseError(
+            f"BizSpeechComponent.details parsed to {type(data).__name__}, expected object"
+        )
     # Detect format: legacy uses {"list": [...]}, real WIZ uses {uuid: {...}}
-    if "list" in data:
+    if _is_legacy_details(data):
         # Legacy / fixture format: flat list at top level.
         top_level_entries = data["list"]
     else:

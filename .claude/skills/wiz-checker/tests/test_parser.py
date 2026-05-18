@@ -148,3 +148,86 @@ def test_parse_detects_orphan_parent(fixture_path):
     wf = parse_file(fixture_path("flow_with_orphans.json"))
     orphan = UUID("dddddddd-dddd-4ddd-8ddd-dddddddddddd")
     assert orphan in wf.flow.orphan_refs()
+
+
+def test_parse_unwrap_list_handles_json_string_blob(tmp_path):
+    """Real WIZ files JSON-encode top-level collection values as strings."""
+    payload = {
+        "BizSpeechComponent": [],
+        "SpeechVariable": '[{"id": 99, "name": "X", "textType": "DEFAULT", "type": 0}]',
+        "SpeechIntent": [],
+        "SentenceCutSpeech": [],
+        "SpeechAudio": [],
+    }
+    import json as _json
+    p = tmp_path / "string_collections.json"
+    p.write_text(_json.dumps(payload), encoding="utf-8")
+    wf = parse_file(p)
+    assert 99 in wf.variables
+    assert wf.variables[99].name == "X"
+
+
+def test_parse_real_format_details_uuid_keyed():
+    """Real BizSpeechComponent.details uses UUID-keyed envelopes with nested canvas."""
+    from wizcheck.parser import parse_dict
+    real_format_details = {
+        "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa": {
+            "canvas": {
+                "component": {
+                    "props": {
+                        "list": [
+                            {"uuid": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+                             "parentId": "", "label": "Real Root", "sortIndex": 0}
+                        ]
+                    }
+                }
+            }
+        }
+    }
+    import json as _json
+    payload = {
+        "BizSpeechComponent": [{
+            "componentUuid": "11111111-1111-4111-8111-111111111111",
+            "speechId": 1, "category": 1, "branch": "dev",
+            "details": _json.dumps(real_format_details),
+        }],
+        "SpeechVariable": [],
+        "SpeechIntent": [],
+        "SentenceCutSpeech": [],
+        "SpeechAudio": [],
+    }
+    wf = parse_dict(payload)
+    comp = next(iter(wf.components.values()))
+    real_root = UUID("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb")
+    assert real_root in comp.details.flow_nodes
+    # parentId "" should be treated as root
+    assert real_root in comp.details.root_uuids
+
+
+def test_parse_parent_id_empty_string_treated_as_root():
+    """parentId='' is treated as 'no parent' like None."""
+    from wizcheck.parser import _parse_component_details
+
+    legacy_with_empty_parent = (
+        '{"list":[{"uuid":"cccccccc-cccc-4ccc-8ccc-cccccccccccc",'
+        '"parentId":"","label":"Root","sortIndex":0}]}'
+    )
+    details = _parse_component_details(legacy_with_empty_parent)
+    root_uuid = UUID("cccccccc-cccc-4ccc-8ccc-cccccccccccc")
+    assert root_uuid in details.root_uuids
+    assert details.flow_nodes[root_uuid].parent_uuid is None
+
+
+def test_parse_unwrap_list_malformed_string_raises_parse_error():
+    """Malformed JSON in a string-encoded collection raises ParseError, not silent failure."""
+    import tempfile
+
+    payload_text = (
+        '{"BizSpeechComponent":[],"SpeechVariable":"[{not valid json",'
+        '"SpeechIntent":[],"SentenceCutSpeech":[],"SpeechAudio":[]}'
+    )
+    with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8") as f:
+        f.write(payload_text)
+        path = f.name
+    with pytest.raises(ParseError):
+        parse_file(path)
