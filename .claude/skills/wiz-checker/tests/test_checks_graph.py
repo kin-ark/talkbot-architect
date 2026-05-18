@@ -15,8 +15,9 @@ from wizcheck.ir import (
 from wizcheck.report import Severity
 
 
-def _node(uid, parent=None, label="Other") -> FlowNode:
-    return FlowNode(uuid=uid, parent_uuid=parent, label=label, sort_index=0, raw={})
+def _node(uid, parent=None, label="Other", raw_children=None) -> FlowNode:
+    raw = {"children": raw_children} if raw_children is not None else {}
+    return FlowNode(uuid=uid, parent_uuid=parent, label=label, sort_index=0, raw=raw)
 
 
 def _wf_from_nodes(nodes: list[FlowNode]) -> WizFile:
@@ -88,6 +89,29 @@ def test_wiz102_does_not_warn_for_unknown_label_leaf():
     wf = _wf_from_nodes([n_a])
     findings = check_graph(wf)
     assert not any(f.code == "WIZ102" for f in findings)
+
+
+def test_wiz102_skips_node_with_raw_children():
+    """A FlowNode with non-empty raw['children'] is not a dead-end.
+
+    Even if parentId-based edges don't connect it to children.
+    """
+    a = UUID(int=100)
+    n_a = _node(a, label="Pitch", raw_children=[{"uuid": "fake"}])
+    wf = _wf_from_nodes([n_a])
+    findings = check_graph(wf)
+    # 'Pitch' is in labels_requiring_children, but visual children should suppress WIZ102
+    assert not any(f.code == "WIZ102" for f in findings)
+
+
+def test_wiz102_still_fires_for_node_with_no_raw_children():
+    """A leaf 'Pitch' with no raw.children still fires WIZ102."""
+    a = UUID(int=101)
+    n_a = _node(a, label="Pitch")  # raw_children defaults to None
+    wf = _wf_from_nodes([n_a])
+    findings = check_graph(wf)
+    f = next((x for x in findings if x.code == "WIZ102"), None)
+    assert f is not None
 
 
 def test_wiz103_cycle_is_warning():

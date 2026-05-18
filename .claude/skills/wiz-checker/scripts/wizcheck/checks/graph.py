@@ -64,13 +64,18 @@ def _check_unreachable(wf: WizFile) -> list[Finding]:
 
 def _check_dead_ends(wf: WizFile) -> list[Finding]:
     expected_labels = set(_RULES.get("labels_requiring_children", []))
-    # Build label lookup
+    # Build label + raw-children lookup
     label_by_uuid: dict = {}
+    has_visual_children: set = set()  # UUIDs with non-empty raw["children"]
     for comp in wf.components.values():
         for node in comp.details.flow_nodes.values():
             label_by_uuid[node.uuid] = node.label
+            if node.raw.get("children"):
+                has_visual_children.add(node.uuid)
     out: list[Finding] = []
     for leaf in wf.flow.dead_ends():
+        if leaf in has_visual_children:
+            continue  # FlowNode has nested raw children — not a real dead-end
         label = label_by_uuid.get(leaf)
         if label and label in expected_labels:
             out.append(Finding(

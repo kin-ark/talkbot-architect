@@ -2,7 +2,7 @@
   "file": "speech4892384019254584542.json",
   "summary": {
     "errors": 0,
-    "warnings": 44,
+    "warnings": 31,
     "checks_run": [
       "schema",
       "graph",
@@ -11,16 +11,6 @@
     ]
   },
   "findings": [
-    {
-      "code": "WIZ102",
-      "severity": "warning",
-      "location": {
-        "entity": "FlowNode",
-        "id": "f91ae7dd-c2c2-4f43-8d02-fa2338cc9f9a",
-        "field": null
-      },
-      "message": "FlowNode f91ae7dd-c2c2-4f43-8d02-fa2338cc9f9a (label='Wrong Number') has no outgoing transitions; this label is configured to require children."
-    },
     {
       "code": "WIZ102",
       "severity": "warning",
@@ -36,80 +26,10 @@
       "severity": "warning",
       "location": {
         "entity": "FlowNode",
-        "id": "e4154306-bbb7-4d69-9a93-1e25a2f36a28",
-        "field": null
-      },
-      "message": "FlowNode e4154306-bbb7-4d69-9a93-1e25a2f36a28 (label='Wrong Number') has no outgoing transitions; this label is configured to require children."
-    },
-    {
-      "code": "WIZ102",
-      "severity": "warning",
-      "location": {
-        "entity": "FlowNode",
-        "id": "aab96266-08e4-4ab3-ac3f-3d7087d3a8e7",
-        "field": null
-      },
-      "message": "FlowNode aab96266-08e4-4ab3-ac3f-3d7087d3a8e7 (label='Already Paid') has no outgoing transitions; this label is configured to require children."
-    },
-    {
-      "code": "WIZ102",
-      "severity": "warning",
-      "location": {
-        "entity": "FlowNode",
         "id": "1e1a3c8c-202f-4ead-9fa8-2b8a647b9bd3",
         "field": null
       },
       "message": "FlowNode 1e1a3c8c-202f-4ead-9fa8-2b8a647b9bd3 (label='Wrong Number') has no outgoing transitions; this label is configured to require children."
-    },
-    {
-      "code": "WIZ202",
-      "severity": "warning",
-      "location": {
-        "entity": "Variable",
-        "id": "112570",
-        "field": "name"
-      },
-      "message": "Variable {Phone} is declared but never referenced."
-    },
-    {
-      "code": "WIZ202",
-      "severity": "warning",
-      "location": {
-        "entity": "Variable",
-        "id": "112571",
-        "field": "name"
-      },
-      "message": "Variable {Email} is declared but never referenced."
-    },
-    {
-      "code": "WIZ202",
-      "severity": "warning",
-      "location": {
-        "entity": "Variable",
-        "id": "112572",
-        "field": "name"
-      },
-      "message": "Variable {Greeting} is declared but never referenced."
-    },
-    {
-      "code": "WIZ202",
-      "severity": "warning",
-      "location": {
-        "entity": "Variable",
-        "id": "112573",
-        "field": "name"
-      },
-      "message": "Variable {Today} is declared but never referenced."
-    },
-    {
-      "code": "WIZ202",
-      "severity": "warning",
-      "location": {
-        "entity": "Variable",
-        "id": "112574",
-        "field": "name"
-      },
-      "message": "Variable {Call Time} is declared but never referenced."
     },
     {
       "code": "WIZ202",
@@ -286,16 +206,6 @@
       "severity": "warning",
       "location": {
         "entity": "Variable",
-        "id": "112592",
-        "field": "name"
-      },
-      "message": "Variable {Answering Machine} is declared but never referenced."
-    },
-    {
-      "code": "WIZ202",
-      "severity": "warning",
-      "location": {
-        "entity": "Variable",
         "id": "112593",
         "field": "name"
       },
@@ -366,26 +276,6 @@
       "severity": "warning",
       "location": {
         "entity": "Variable",
-        "id": "112601",
-        "field": "name"
-      },
-      "message": "Variable {Gender} is declared but never referenced."
-    },
-    {
-      "code": "WIZ202",
-      "severity": "warning",
-      "location": {
-        "entity": "Variable",
-        "id": "112602",
-        "field": "name"
-      },
-      "message": "Variable {Name} is declared but never referenced."
-    },
-    {
-      "code": "WIZ202",
-      "severity": "warning",
-      "location": {
-        "entity": "Variable",
         "id": "112603",
         "field": "name"
       },
@@ -430,26 +320,6 @@
         "field": "name"
       },
       "message": "Variable {Wrong_Number} is declared but never referenced."
-    },
-    {
-      "code": "WIZ202",
-      "severity": "warning",
-      "location": {
-        "entity": "Variable",
-        "id": "155704",
-        "field": "name"
-      },
-      "message": "Variable {Follow-up Stage} is declared but never referenced."
-    },
-    {
-      "code": "WIZ202",
-      "severity": "warning",
-      "location": {
-        "entity": "Variable",
-        "id": "155705",
-        "field": "name"
-      },
-      "message": "Variable {Customer Segment} is declared but never referenced."
     }
   ]
 }
