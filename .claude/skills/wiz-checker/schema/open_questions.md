@@ -7,9 +7,10 @@ files.  They require confirmation from WIZ.AI documentation or support.
 
 ## Encoding
 
-- [ ] Are top-level collection values **always** JSON-encoded strings in WIZ
+- [x] Are top-level collection values **always** JSON-encoded strings in WIZ
   exports, or is this only in older export versions?  (Both 2025 sample files
-  use the string-encoded format.)
+  use the string-encoded format.) ANSWER: YES
+  *Applied in tightening v1 (Task 18 schema discovery); no v2 rule change.*
 
 ---
 
@@ -51,8 +52,9 @@ files.  They require confirmation from WIZ.AI documentation or support.
 
 ## SpeechIntent
 
-- [ ] Are `keyWordInIntent` and `userResponseInIntent` always JSON-encoded
-  strings (never plain lists) in real WIZ exports?
+- [x] Are `keyWordInIntent` and `userResponseInIntent` always JSON-encoded
+  strings (never plain lists) in real WIZ exports? ANSWER: YES
+  *Applied in tightening v1 (Task 18 schema discovery); no v2 rule change.*
 
 - [ ] What languages besides `IDN` are actually used in production?
   `ENG` and `ZHO` were inferred but not observed in either sample file.
@@ -67,8 +69,9 @@ files.  They require confirmation from WIZ.AI documentation or support.
 
 - [ ] Is `variableSource` always present, or is it optional?
 
-- [ ] What are all valid `textType` values beyond the observed set
-  (`""`, `DEFAULT`, `DATE`, `EMAIL`, `PHONE`)?
+- [x] What are all valid `textType` values beyond the observed set
+  (`""`, `DEFAULT`, `DATE`, `EMAIL`, `PHONE`)? ANSWER: "" is a custom variable and the others are the default by the system
+  *Applied in tightening v2 spec 2026-05-19 (WIZ202 textType filter replaces name allowlist).* 
 
 ---
 
@@ -101,13 +104,16 @@ files.  They require confirmation from WIZ.AI documentation or support.
 
 ## Intent Rules
 
-- [ ] Confirm which intents from the "present in both files" set are truly
-  **required** for a valid WIZ speech (vs project-specific).
+- [x] Confirm which intents from the "present in both files" set are truly
+  **required** for a valid WIZ speech (vs project-specific). ANSWER: the only required intent is unclassified , used when the talkbot can't classified the user response intent
+  *Applied in tightening v2 spec 2026-05-19 (WIZ301 now requires Unclassified).*
 
-- [ ] Is `"Unclassified"` the canonical catch-all name, or is `"Unspecified"`
-  also used?  (Both were observed but not in the same file.)
+- [x] Is `"Unclassified"` the canonical catch-all name, or is `"Unspecified"`
+  also used?  (Both were observed but not in the same file.) ANSWER: "Unclassified"
+  *Applied in tightening v2 spec 2026-05-19 (WIZ301).*
 
-- [ ] Is `"DNC"` (Do Not Call) always required for compliance?
+- [x] Is `"DNC"` (Do Not Call) always required for compliance? ANSWER: NO
+  *Applied in tightening v2 spec 2026-05-19 (WIZ302 removed; no fallback list).*
 
 ---
 
@@ -119,5 +125,6 @@ files.  They require confirmation from WIZ.AI documentation or support.
 - [ ] What keys can appear at the top level beyond the 25–26 observed?  In
   particular, `SpeechEntry` was absent in one file — is it always optional?
 
-- [ ] Are there schema version indicators anywhere in the export format?
-  (No version field was observed at the top level.)
+- [x] Are there schema version indicators anywhere in the export format?
+  (No version field was observed at the top level.) ANSWER: NO
+  *Documented; no rule action needed.*
