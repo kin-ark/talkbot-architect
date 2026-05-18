@@ -16,7 +16,6 @@ def _load_rules() -> dict:
     if not _RULES_FILE.exists():
         return {
             "required_intent_names": ["Negative"],
-            "fallback_intent_names": ["Unspecified", "DNC", "Answering Machine"],
         }
     return yaml.safe_load(_RULES_FILE.read_text(encoding="utf-8")) or {}
 
@@ -37,18 +36,5 @@ def check_intents(wf: WizFile) -> list[Finding]:
                 location=Location(entity="WizFile", id=None, field="SpeechIntent"),
                 message=f"Required intent {required!r} is not declared.",
             ))
-
-    # WIZ302: at least one fallback intent present
-    fallbacks = _RULES.get("fallback_intent_names", [])
-    if fallbacks and not (present_names & set(fallbacks)):
-        out.append(Finding(
-            code="WIZ302",
-            severity=Severity.ERROR,
-            location=Location(entity="WizFile", id=None, field="SpeechIntent"),
-            message=(
-                "No fallback intent declared; expected at least one of: "
-                f"{', '.join(repr(x) for x in fallbacks)}."
-            ),
-        ))
 
     return out

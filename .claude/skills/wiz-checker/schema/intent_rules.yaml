@@ -13,13 +13,6 @@
 required_intent_names:
   - Negative   # present in both files, universally required
 
-# Fallback / catch-all intents: at least one of these must be present (WIZ302).
-fallback_intent_names:
-  - Unspecified          # canonical fallback name in legacy/test fixtures
-  - Unclassified         # observed in both real sample files  # TODO: verify with WIZ.AI
-  - DNC                  # observed in both files (Do-Not-Call)  # TODO: verify with WIZ.AI
-  - "Answering Machine"  # observed in Tiktok+Paylater+DPD0 file  # TODO: verify with WIZ.AI
-
 # Intents observed in BOTH sample files (informational — not enforced by checks).
 # Kept here for Phase B spot-check with WIZ.AI to determine which are truly
 # universally required vs project-specific.
