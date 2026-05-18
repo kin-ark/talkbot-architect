@@ -1,16 +1,15 @@
 # wiz-checker variable consistency rules
-
-# Names auto-populated by the WIZ.AI platform on every dialogue export.
-# WIZ202 (declared-but-unused) is suppressed for these.
-# TODO: verify the complete list with WIZ.AI; expand as needed.
-platform_default_variables:
-  - Phone
-  - Gender
-  - Email
-  - Answering Machine
-  - Greeting
-  - Today
-  - Call Time
-  - Follow-up Stage
-  - Customer Segment
-  - Name                # commonly seen template var
+#
+# WIZ.AI variable textType convention (clarified by WIZ.AI 2026-05-19):
+#   textType = ""        -> custom variable (user-authored)
+#   textType non-empty   -> platform-managed system default
+#                           (DEFAULT, DATE, EMAIL, PHONE, etc.)
+#   textType == None     -> also platform-managed (legacy/transitional)
+#
+# WIZ202 (declared-but-unused) fires only for CUSTOM variables (textType == "").
+# Platform-managed variables are always declared on every dialogue export
+# regardless of whether the script author uses them, so unused-by-utterance is
+# not a defect.
+#
+# This file is currently doc-only. The filter logic is in
+# scripts/wizcheck/checks/variables.py.

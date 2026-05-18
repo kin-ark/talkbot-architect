@@ -63,11 +63,11 @@ def test_cli_only_filter_runs_subset():
 
 def test_cli_strict_promotes_warnings_to_failures(tmp_path):
     # Build a file that produces only WIZ202 warnings (declared but unused var)
-    # Use a non-platform-default name so WIZ202 still fires
+    # Use a custom variable (textType="") so WIZ202 fires under the textType filter
     payload = {
         "BizSpeechComponent": [],
         "SpeechVariable": [
-            {"id": 1, "name": "CustomerLoyaltyTier", "textType": "DEFAULT", "type": 0},
+            {"id": 1, "name": "CustomerLoyaltyTier", "textType": "", "type": 0},
         ],
         "SpeechIntent": [
             {"intentId": 1, "intentName": "Negative", "language": "IDN",

@@ -48,14 +48,15 @@ def test_wiz201_declared_variable_does_not_warn():
     assert not any(f.code == "WIZ201" for f in findings)
 
 
-def test_wiz202_unused_variable_is_warning():
-    v = Variable(id=1, name="CustomerLoyaltyTier", text_type="DEFAULT", raw={})
+def test_wiz202_still_fires_for_custom_unused():
+    """A custom variable (text_type='') that is unused fires WIZ202."""
+    v = Variable(id=1, name="CustomLoyaltyTier", text_type="", raw={})
     wf = _wf(variables={1: v}, utterances=())
     findings = check_variables(wf)
     f = next((x for x in findings if x.code == "WIZ202"), None)
     assert f is not None
     assert f.severity is Severity.WARNING
-    assert "CustomerLoyaltyTier" in f.message
+    assert "CustomLoyaltyTier" in f.message
 
 
 def test_wiz202_used_variable_does_not_warn():
@@ -69,33 +70,28 @@ def test_wiz202_used_variable_does_not_warn():
     assert not any(f.code == "WIZ202" for f in findings)
 
 
-def test_wiz202_skips_platform_default_phone():
-    """Platform-default variable {Phone} should not trigger WIZ202."""
+def test_wiz202_skips_variable_with_system_default_text_type():
+    """text_type='DEFAULT' is a platform-managed variable; unused is OK."""
+    v = Variable(id=1, name="Greeting", text_type="DEFAULT", raw={})
+    wf = _wf(variables={1: v}, utterances=())
+    findings = check_variables(wf)
+    assert not any(f.code == "WIZ202" for f in findings)
+
+
+def test_wiz202_skips_variable_with_phone_text_type():
+    """text_type='PHONE' is platform-managed; unused is OK."""
     v = Variable(id=1, name="Phone", text_type="PHONE", raw={})
     wf = _wf(variables={1: v}, utterances=())
     findings = check_variables(wf)
     assert not any(f.code == "WIZ202" for f in findings)
 
 
-def test_wiz202_skips_multiple_platform_defaults():
-    """Several platform-default names should all be suppressed."""
-    vars_ = {
-        i: Variable(id=i, name=name, text_type="DEFAULT", raw={})
-        for i, name in enumerate(["Gender", "Email", "Greeting", "Today"], start=1)
-    }
-    wf = _wf(variables=vars_, utterances=())
-    findings = check_variables(wf)
-    assert not any(f.code == "WIZ202" for f in findings)
-
-
-def test_wiz202_still_fires_for_non_default_unused():
-    """Custom variable not in platform defaults still fires WIZ202."""
-    v = Variable(id=1, name="CustomerLoyaltyTier", text_type="DEFAULT", raw={})
+def test_wiz202_skips_variable_with_none_text_type():
+    """text_type=None is platform-managed (legacy); unused is OK."""
+    v = Variable(id=1, name="Follow-up Stage", text_type=None, raw={})
     wf = _wf(variables={1: v}, utterances=())
     findings = check_variables(wf)
-    f = next((x for x in findings if x.code == "WIZ202"), None)
-    assert f is not None
-    assert "CustomerLoyaltyTier" in f.message
+    assert not any(f.code == "WIZ202" for f in findings)
 
 
 def test_one_finding_per_undeclared_reference_per_utterance():
