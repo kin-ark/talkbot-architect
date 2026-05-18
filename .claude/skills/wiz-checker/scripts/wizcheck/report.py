@@ -59,10 +59,22 @@ class Report:
     def is_clean(self) -> bool:
         return self.error_count() == 0 and self.warning_count() == 0
 
+    def print_terminal(self) -> None:
+        """Render directly to stdout (used by CLI). Uses a real terminal Console
+        so table borders and colors render properly when stdout is a TTY."""
+        self._render_to_console(Console())
+
     def to_terminal_string(self) -> str:
-        """Render report as a rich-formatted string suitable for terminal output."""
+        """Render report as a plain-text string (no ANSI/box-drawing).
+
+        Used by tests and consumers that need to capture output as text.
+        """
         buf = StringIO()
-        console = Console(file=buf, force_terminal=False, width=120)
+        self._render_to_console(Console(file=buf, force_terminal=False, width=120))
+        return buf.getvalue()
+
+    def _render_to_console(self, console: Console) -> None:
+        """Shared rendering logic for both terminal and string output."""
         console.print(f"[bold]wiz-checker[/bold] — {self.file}")
         console.print(
             f"Checks run: {', '.join(self.checks_run) if self.checks_run else '(none)'}"
@@ -88,9 +100,6 @@ class Report:
                 )
             console.print(table)
         errs, warns = self.error_count(), self.warning_count()
-        console.print(f"\n[bold]{errs} errors, {warns} warnings[/bold]")
-        return buf.getvalue()
-
-    def print_terminal(self) -> None:
-        """Render directly to stdout (used by CLI)."""
-        print(self.to_terminal_string())
+        err_word = "error" if errs == 1 else "errors"
+        warn_word = "warning" if warns == 1 else "warnings"
+        console.print(f"\n[bold]{errs} {err_word}, {warns} {warn_word}[/bold]")
