@@ -99,7 +99,7 @@ class WizFile:
     intents: dict[int, Intent]
     utterances: tuple[Utterance, ...]
     audios: dict[int, Audio]
-    flow: Any  # FlowGraph; typed in Task 3. Kept as Any to avoid forward-ref noise.
+    flow: FlowGraph
     raw: dict[str, Any] = field(repr=False)
 
 
@@ -148,4 +148,10 @@ class FlowGraph:
 
     @property
     def graph(self) -> nx.DiGraph:
+        """Access the underlying networkx graph for read-only algorithm use.
+
+        WARNING: Mutating the returned graph directly bypasses the present/orphan
+        bookkeeping maintained by add_node and add_edge. Callers must use the
+        provided mutators (add_node, add_edge) to modify the graph.
+        """
         return self._g

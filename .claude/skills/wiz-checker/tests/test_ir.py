@@ -118,3 +118,18 @@ def test_flowgraph_cycles_detects_simple_cycle():
     cycles = g.cycles()
     assert len(cycles) == 1
     assert set(cycles[0]) == {a, b, c}
+
+
+def test_flowgraph_add_node_after_add_edge_upgrades_orphan_to_present():
+    a, b = UUID(int=60), UUID(int=61)
+    g = FlowGraph()
+    g.add_node(a)
+    g.add_edge(a, b)
+    # Before upgrade: b is an orphan
+    assert b in g.orphan_refs()
+    assert b not in g.all_nodes()
+    # Upgrade
+    g.add_node(b)
+    # After upgrade: b is present, not an orphan
+    assert b not in g.orphan_refs()
+    assert b in g.all_nodes()
