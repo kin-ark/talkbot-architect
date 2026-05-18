@@ -130,7 +130,7 @@ def _parse_components(entries: list[dict[str, Any]]) -> dict[UUID, Component]:
     return out
 
 
-def _parse_component_details(raw_details: str | dict | None) -> ComponentDetails:
+def _parse_component_details(raw_details: str | dict[str, Any] | None) -> ComponentDetails:
     """Parse the escaped-JSON ``details`` string into a ComponentDetails.
 
     Accepts a dict already-parsed (e.g. from tests), an empty string (treat as
@@ -151,7 +151,7 @@ def _parse_component_details(raw_details: str | dict | None) -> ComponentDetails
     for entry in data.get("list", []):
         uuid = UUID(str(entry["uuid"]))
         parent_raw = entry.get("parentId")
-        parent_uuid = UUID(str(parent_raw)) if parent_raw else None
+        parent_uuid = UUID(str(parent_raw)) if parent_raw is not None else None
         node = FlowNode(
             uuid=uuid,
             parent_uuid=parent_uuid,
