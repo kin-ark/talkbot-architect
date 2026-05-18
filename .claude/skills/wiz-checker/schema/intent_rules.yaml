@@ -1,0 +1,11 @@
+# Intent coverage rules.
+# v1 ships with file-level required intents only; Phase A (Task 18) adds
+# per-category required-intent sets once we understand node-intent linkage.
+
+required_intent_names:
+  - Negative
+
+fallback_intent_names:        # at least one of these must be present
+  - Unspecified               # TODO: verify with WIZ.AI which is canonical
+  - DNC
+  - "Answering Machine"

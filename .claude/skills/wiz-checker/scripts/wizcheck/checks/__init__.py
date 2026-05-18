@@ -9,22 +9,17 @@ from __future__ import annotations
 from collections.abc import Callable
 
 from wizcheck.checks.graph import check_graph
+from wizcheck.checks.intents import check_intents
 from wizcheck.checks.schema import check_schema
 from wizcheck.checks.variables import check_variables
 from wizcheck.ir import WizFile
 from wizcheck.report import Finding
 
-
-# Stub callables — replaced as each check is implemented in Tasks 16.
-def _stub_intents(wf: WizFile) -> list[Finding]:
-    return []
-
-
 REGISTRY: dict[str, Callable[[WizFile], list[Finding]]] = {
     "schema": check_schema,
     "graph": check_graph,
     "variables": check_variables,
-    "intents": _stub_intents,
+    "intents": check_intents,
 }
 
 
