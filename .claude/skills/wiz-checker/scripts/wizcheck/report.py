@@ -8,6 +8,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import StrEnum
+from io import StringIO
+
+from rich.console import Console
+from rich.table import Table
 
 
 class Severity(StrEnum):
@@ -54,3 +58,39 @@ class Report:
 
     def is_clean(self) -> bool:
         return self.error_count() == 0 and self.warning_count() == 0
+
+    def to_terminal_string(self) -> str:
+        """Render report as a rich-formatted string suitable for terminal output."""
+        buf = StringIO()
+        console = Console(file=buf, force_terminal=False, width=120)
+        console.print(f"[bold]wiz-checker[/bold] — {self.file}")
+        console.print(
+            f"Checks run: {', '.join(self.checks_run) if self.checks_run else '(none)'}"
+        )
+        if self.findings:
+            table = Table(show_header=True, header_style="bold")
+            table.add_column("Code", width=8)
+            table.add_column("Sev", width=8)
+            table.add_column("Where", width=40)
+            table.add_column("Message")
+            for f in self.findings:
+                where = f.location.entity
+                if f.location.id:
+                    where += f" {f.location.id}"
+                if f.location.field:
+                    where += f".{f.location.field}"
+                sev_color = "red" if f.severity is Severity.ERROR else "yellow"
+                table.add_row(
+                    f.code,
+                    f"[{sev_color}]{f.severity.value}[/{sev_color}]",
+                    where,
+                    f.message,
+                )
+            console.print(table)
+        errs, warns = self.error_count(), self.warning_count()
+        console.print(f"\n[bold]{errs} errors, {warns} warnings[/bold]")
+        return buf.getvalue()
+
+    def print_terminal(self) -> None:
+        """Render directly to stdout (used by CLI)."""
+        print(self.to_terminal_string())

@@ -35,3 +35,27 @@ def test_report_with_no_findings_is_clean():
     assert r.error_count() == 0
     assert r.warning_count() == 0
     assert r.is_clean() is True
+
+
+def test_report_to_terminal_contains_filename():
+    r = Report(file="speech.json")
+    output = r.to_terminal_string()
+    assert "speech.json" in output
+
+
+def test_report_to_terminal_shows_finding_counts():
+    r = Report(file="speech.json")
+    r.add(Finding("WIZ001", Severity.ERROR, Location("WizFile", None, None), "boom"))
+    r.add(Finding("WIZ002", Severity.WARNING, Location("WizFile", None, None), "meh"))
+    output = r.to_terminal_string()
+    assert "1 error" in output or "errors: 1" in output.lower() or "1 errors" in output
+    assert "1 warning" in output or "warnings: 1" in output.lower() or "1 warnings" in output
+
+
+def test_report_to_terminal_shows_each_finding_code():
+    r = Report(file="speech.json")
+    r.add(Finding("WIZ201", Severity.ERROR, Location("Utterance", "abc", "text"),
+                  "Undeclared variable {Name}"))
+    output = r.to_terminal_string()
+    assert "WIZ201" in output
+    assert "Undeclared variable" in output
