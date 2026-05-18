@@ -89,6 +89,8 @@ def _check_intent_languages(wf: WizFile) -> list[Finding]:
     known = set(_RULES.get("known_intent_languages", []))
     out: list[Finding] = []
     for intent in wf.intents.values():
+        if not intent.language:  # "" or None: language unset, not unknown
+            continue
         if intent.language not in known:
             out.append(Finding(
                 code="WIZ004",

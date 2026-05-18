@@ -106,3 +106,25 @@ def test_known_category_produces_no_finding():
     codes = {f.code for f in findings}
     assert "WIZ002" not in codes
     assert "WIZ003" not in codes
+
+
+def test_wiz004_empty_language_does_not_fire():
+    """Empty-string language is treated as absent, not unknown."""
+    intent = Intent(
+        intent_id=1, name="Negative", language="",
+        keywords=(), user_responses=(), raw={},
+    )
+    wf = _wf(intents={1: intent})
+    findings = check_schema(wf)
+    assert not any(f.code == "WIZ004" for f in findings)
+
+
+def test_wiz004_none_language_does_not_fire():
+    """None language is treated as absent, not unknown."""
+    intent = Intent(
+        intent_id=1, name="Negative", language=None,
+        keywords=(), user_responses=(), raw={},
+    )
+    wf = _wf(intents={1: intent})
+    findings = check_schema(wf)
+    assert not any(f.code == "WIZ004" for f in findings)
