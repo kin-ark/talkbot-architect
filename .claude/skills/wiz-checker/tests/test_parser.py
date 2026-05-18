@@ -99,7 +99,7 @@ def test_parse_no_variable_refs_yields_empty_tuple(fixture_path):
 def test_parse_malformed_uuid_raises_parse_error(fixture_path):
     with pytest.raises(ParseError) as excinfo:
         parse_file(fixture_path("malformed_uuid.json"))
-    assert "componentUuid" in str(excinfo.value) or "UUID" in str(excinfo.value)
+    assert "BizSpeechComponent.componentUuid" in str(excinfo.value)
 
 
 def test_parse_unreadable_file_raises_parse_error(tmp_path):
@@ -117,5 +117,19 @@ def test_parse_missing_required_field_raises_parse_error(tmp_path):
         '"SentenceCutSpeech":[],"SpeechAudio":[]}',
         encoding="utf-8",
     )
-    with pytest.raises(ParseError):
+    with pytest.raises(ParseError) as excinfo:
         parse_file(bad)
+    assert "componentUuid" in str(excinfo.value)
+
+
+def test_parse_missing_variable_id_raises_parse_error(tmp_path):
+    bad = tmp_path / "missing_var_id.json"
+    bad.write_text(
+        '{"BizSpeechComponent":[],"SpeechVariable":[{"name":"X","textType":"DEFAULT"}],'
+        '"SpeechIntent":[],"SentenceCutSpeech":[],"SpeechAudio":[]}',
+        encoding="utf-8",
+    )
+    with pytest.raises(ParseError) as excinfo:
+        parse_file(bad)
+    assert "SpeechVariable" in str(excinfo.value)
+    assert "id" in str(excinfo.value)
