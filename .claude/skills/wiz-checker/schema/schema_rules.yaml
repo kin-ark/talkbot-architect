@@ -1,0 +1,15 @@
+# wiz-checker schema rules
+# This file ships with conservative defaults inferred from sample data.
+# Phase A (schema discovery, see plan Task 18) expands this with more rules.
+# Entries marked "# TODO: verify with WIZ.AI" are inferred-but-unverified.
+
+required_top_level_keys:
+  - BizSpeechComponent
+  - SpeechVariable
+  - SpeechIntent
+  - SentenceCutSpeech
+  - SpeechAudio
+
+known_component_categories: [1]   # TODO: verify with WIZ.AI
+known_branches: [dev, prod]       # TODO: verify with WIZ.AI
+known_intent_languages: [IDN, ENG, ZHO]   # TODO: verify with WIZ.AI
