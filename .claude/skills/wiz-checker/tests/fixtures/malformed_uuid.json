@@ -1,0 +1,15 @@
+{
+  "BizSpeechComponent": [
+    {
+      "componentUuid": "not-a-uuid",
+      "speechId": 1,
+      "category": 1,
+      "branch": "dev",
+      "details": "{\"list\":[]}"
+    }
+  ],
+  "SpeechVariable": [],
+  "SpeechIntent": [],
+  "SentenceCutSpeech": [],
+  "SpeechAudio": []
+}

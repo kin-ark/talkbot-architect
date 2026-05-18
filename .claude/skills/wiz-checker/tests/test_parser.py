@@ -6,7 +6,7 @@ from uuid import UUID
 
 import pytest
 from wizcheck.ir import WizFile
-from wizcheck.parser import parse_file
+from wizcheck.parser import ParseError, parse_file
 
 
 def test_parse_minimal_returns_wizfile(fixture_path):
@@ -94,3 +94,28 @@ def test_parse_no_variable_refs_yields_empty_tuple(fixture_path):
     by_id = {u.id: u for u in wf.utterances}
     u2 = by_id[UUID("33333333-3333-4333-8333-333333333333")]
     assert u2.referenced_vars == ()
+
+
+def test_parse_malformed_uuid_raises_parse_error(fixture_path):
+    with pytest.raises(ParseError) as excinfo:
+        parse_file(fixture_path("malformed_uuid.json"))
+    assert "componentUuid" in str(excinfo.value) or "UUID" in str(excinfo.value)
+
+
+def test_parse_unreadable_file_raises_parse_error(tmp_path):
+    bad = tmp_path / "bad.json"
+    bad.write_text("{not valid json", encoding="utf-8")
+    with pytest.raises(ParseError):
+        parse_file(bad)
+
+
+def test_parse_missing_required_field_raises_parse_error(tmp_path):
+    bad = tmp_path / "missing.json"
+    bad.write_text(
+        '{"BizSpeechComponent":[{"speechId":1,"category":1,"branch":"dev",'
+        '"details":"{\\"list\\":[]}"}],"SpeechVariable":[],"SpeechIntent":[],'
+        '"SentenceCutSpeech":[],"SpeechAudio":[]}',
+        encoding="utf-8",
+    )
+    with pytest.raises(ParseError):
+        parse_file(bad)
