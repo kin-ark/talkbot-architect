@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 from wizcheck.report import Finding, Location, Report, Severity
 
 
@@ -59,3 +61,33 @@ def test_report_to_terminal_shows_each_finding_code():
     output = r.to_terminal_string()
     assert "WIZ201" in output
     assert "Undeclared variable" in output
+
+
+def test_report_to_json_dict_has_stable_shape():
+    r = Report(file="speech.json", checks_run=["schema", "graph"])
+    r.add(Finding(
+        "WIZ201",
+        Severity.ERROR,
+        Location("Utterance", "abc-uuid", "text"),
+        "Undeclared variable {Name}",
+    ))
+    d = r.to_json_dict()
+    assert d == {
+        "file": "speech.json",
+        "summary": {"errors": 1, "warnings": 0, "checks_run": ["schema", "graph"]},
+        "findings": [
+            {
+                "code": "WIZ201",
+                "severity": "error",
+                "location": {"entity": "Utterance", "id": "abc-uuid", "field": "text"},
+                "message": "Undeclared variable {Name}",
+            }
+        ],
+    }
+
+
+def test_report_to_json_string_is_valid_json():
+    r = Report(file="x.json")
+    s = r.to_json_string()
+    parsed = json.loads(s)
+    assert parsed["file"] == "x.json"

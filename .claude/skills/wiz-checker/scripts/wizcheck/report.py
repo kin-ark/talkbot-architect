@@ -6,6 +6,7 @@ rendering live as methods on Report (Tasks 10 and 11).
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
 from enum import StrEnum
 from io import StringIO
@@ -103,3 +104,31 @@ class Report:
         err_word = "error" if errs == 1 else "errors"
         warn_word = "warning" if warns == 1 else "warnings"
         console.print(f"\n[bold]{errs} {err_word}, {warns} {warn_word}[/bold]")
+
+    def to_json_dict(self) -> dict:
+        """Serialize report to a stable dictionary structure."""
+        return {
+            "file": self.file,
+            "summary": {
+                "errors": self.error_count(),
+                "warnings": self.warning_count(),
+                "checks_run": list(self.checks_run),
+            },
+            "findings": [
+                {
+                    "code": f.code,
+                    "severity": f.severity.value,
+                    "location": {
+                        "entity": f.location.entity,
+                        "id": f.location.id,
+                        "field": f.location.field,
+                    },
+                    "message": f.message,
+                }
+                for f in self.findings
+            ],
+        }
+
+    def to_json_string(self, indent: int = 2) -> str:
+        """Serialize report to a JSON string."""
+        return json.dumps(self.to_json_dict(), indent=indent, ensure_ascii=False)
