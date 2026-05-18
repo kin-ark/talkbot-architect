@@ -21,15 +21,16 @@ def _wf(intents: dict) -> WizFile:
     )
 
 
-def test_wiz301_missing_negative_is_error():
-    wf = _wf(intents={1: _intent(1, "Positive")})
+def test_wiz301_missing_unclassified_is_error():
+    wf = _wf(intents={1: _intent(1, "Negative")})
     findings = check_intents(wf)
     f = next((x for x in findings if x.code == "WIZ301"), None)
     assert f is not None
     assert f.severity is Severity.ERROR
+    assert "Unclassified" in f.message
 
 
-def test_wiz301_present_negative_does_not_fire():
-    wf = _wf(intents={1: _intent(1, "Negative")})
+def test_wiz301_present_unclassified_does_not_fire():
+    wf = _wf(intents={1: _intent(1, "Unclassified")})
     findings = check_intents(wf)
     assert not any(f.code == "WIZ301" for f in findings)

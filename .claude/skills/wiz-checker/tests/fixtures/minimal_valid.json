@@ -23,7 +23,7 @@
     },
     {
       "intentId": 201,
-      "intentName": "Unspecified",
+      "intentName": "Unclassified",
       "language": "IDN",
       "keyWordInIntent": [],
       "userResponseInIntent": []

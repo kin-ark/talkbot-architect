@@ -15,7 +15,7 @@ _RULES_FILE = Path(__file__).resolve().parents[3] / "schema" / "intent_rules.yam
 def _load_rules() -> dict:
     if not _RULES_FILE.exists():
         return {
-            "required_intent_names": ["Negative"],
+            "required_intent_names": ["Unclassified"],
         }
     return yaml.safe_load(_RULES_FILE.read_text(encoding="utf-8")) or {}
 

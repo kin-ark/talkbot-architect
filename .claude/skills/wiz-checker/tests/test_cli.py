@@ -22,7 +22,7 @@ def _run(*args: str) -> subprocess.CompletedProcess:
 
 
 def test_cli_clean_minimal_exits_zero():
-    # minimal_valid.json declares Negative and Unspecified intents (intent-coverage
+    # minimal_valid.json declares Negative and Unclassified intents (intent-coverage
     # satisfied). Name is a platform-default variable, so no WIZ202 fires. Exit 0.
     fixture = SKILL_DIR / "tests" / "fixtures" / "minimal_valid.json"
     result = _run(str(fixture), "--json")
@@ -72,7 +72,7 @@ def test_cli_strict_promotes_warnings_to_failures(tmp_path):
         "SpeechIntent": [
             {"intentId": 1, "intentName": "Negative", "language": "IDN",
              "keyWordInIntent": [], "userResponseInIntent": []},
-            {"intentId": 2, "intentName": "Unspecified", "language": "IDN",
+            {"intentId": 2, "intentName": "Unclassified", "language": "IDN",
              "keyWordInIntent": [], "userResponseInIntent": []},
         ],
         "SentenceCutSpeech": [],

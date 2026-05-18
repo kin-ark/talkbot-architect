@@ -8,10 +8,10 @@
 # placed in required_intent_names (checked by WIZ301).
 
 # Intents that every valid WIZ speech must declare.
-# Keep this list conservative: only add an intent here if you are confident
-# it is truly universally required, not just project-specific.
+# v2 (2026-05-19): WIZ.AI clarified that "Unclassified" is the single required
+# fallback intent (used when the talkbot cannot classify the user response).
 required_intent_names:
-  - Negative   # present in both files, universally required
+  - Unclassified
 
 # Intents observed in BOTH sample files (informational — not enforced by checks).
 # Kept here for Phase B spot-check with WIZ.AI to determine which are truly

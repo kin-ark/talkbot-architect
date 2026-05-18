@@ -36,7 +36,7 @@ def test_parse_minimal_has_intents(fixture_path):
     assert wf.intents[200].name == "Negative"
     assert wf.intents[200].keywords == ("tidak", "nggak")
     assert 201 in wf.intents
-    assert wf.intents[201].name == "Unspecified"
+    assert wf.intents[201].name == "Unclassified"
 
 
 def test_parse_minimal_has_one_utterance(fixture_path):
