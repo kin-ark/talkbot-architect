@@ -1,0 +1,24 @@
+# Known WIZ.AI FlowNode labels. The compiler emits an INFO message (not an
+# error) when a manifest uses a label that isn't in this list. This catalog
+# is curated from observed real WIZ exports — extend freely as new labels
+# are encountered.
+
+labels:
+  # Canvas openers / structural
+  - Greeting
+  - Pitch
+  - Convincer
+  - Closing
+  # Decision / branching
+  - Judgement
+  - Judgement (Greeting Time)
+  # Repetition / fallback
+  - Re-ask
+  - Re-ask Limit
+  - Re-ask Tenor
+  # Knowledge / external
+  - ASR Corpus Collection
+  # Termination
+  - Positive Closing
+  - Negative Closing
+  - Unclassified Closing
