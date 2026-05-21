@@ -16,23 +16,43 @@ def apply_variables(
 ) -> dict[str, Any]:
     """Append custom_variables to the template's SpeechVariable list.
 
-    Custom variables get variableSource=0 (user-authored), textType empty string, and
-    a deterministic int id derived from the manifest hash + variable name.
-    Inherits speechId from the existing default variables (single talkbot).
+    Custom variables mirror the 12-key shape of the existing default platform
+    variables, with variableSource=0 (user-authored), type=1 (custom string),
+    textType empty string, and createTime=0 to keep builds deterministic.
+    templateCode, userId, and speechId are inherited from the existing
+    defaults so customs and defaults belong to the same speech bundle.
     """
-    vars_list = json.loads(template["SpeechVariable"])
-    # Empty+Dialogue always has 9 defaults; fall back to 0 only if something is wrong upstream.
-    speech_id = vars_list[0]["speechId"] if vars_list else 0
+    raw = template.get("SpeechVariable")
+    if not isinstance(raw, str) or not raw.strip():
+        raise ValueError(
+            "apply_variables requires template['SpeechVariable'] to be a non-empty JSON string"
+        )
+    vars_list = json.loads(raw)
+    if not vars_list:
+        raise ValueError(
+            "apply_variables: template['SpeechVariable'] decoded to an empty list; "
+            "Empty+Dialogue baseline must carry default platform variables"
+        )
+
+    default = vars_list[0]
+    speech_id = default["speechId"]
+    template_code = default["templateCode"]
+    user_id = default["userId"]
 
     for cv in manifest.custom_variables:
         vars_list.append({
+            "beInit": 0,
+            "branch": manifest.branch,
+            "createTime": 0,
+            "enumVariable": 0,
             "id": minter.int_id(f"variable:{cv.name}"),
             "name": cv.name,
-            "textType": "",
-            "type": 0,
-            "variableSource": 0,
             "speechId": speech_id,
-            "branch": manifest.branch,
+            "templateCode": template_code,
+            "textType": "",
+            "type": 1,
+            "userId": user_id,
+            "variableSource": 0,
         })
 
     template["SpeechVariable"] = json.dumps(vars_list, ensure_ascii=False)

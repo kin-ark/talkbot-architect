@@ -41,6 +41,7 @@ def test_apply_variables_appends_custom_with_source_0(template_dict):
     assert len(customs) == 2
     names = {v["name"] for v in customs}
     assert names == {"CLIENT_NAME", "DUE_AMOUNT"}
+    assert all(v["type"] == 1 for v in customs)
 
 
 def test_apply_variables_assigns_deterministic_ids(template_dict, template_path):
@@ -78,3 +79,25 @@ def test_apply_variables_sets_speech_id_consistent_with_defaults(template_dict):
     default_speech_id = vars_[0]["speechId"]
     custom = next(v for v in vars_ if v["name"] == "X")
     assert custom["speechId"] == default_speech_id
+
+
+def test_apply_variables_custom_has_same_keys_as_default(template_dict):
+    """Custom variables mirror the 12-key shape of the default platform variables."""
+    m = _manifest((CustomVariable(name="X"),))
+    minter = IdMinter(manifest_hash=manifest_hash_of(m.raw_text))
+    apply_variables(template_dict, m, minter)
+    vars_ = json.loads(template_dict["SpeechVariable"])
+    default = vars_[0]
+    custom = next(v for v in vars_ if v["name"] == "X")
+    # We only require that every key on the smallest default is also present on the custom.
+    # Some defaults carry extras (remark, varialbeFuncAssign) — those are not required on customs.
+    base_keys = {
+        "beInit", "branch", "createTime", "enumVariable", "id", "name",
+        "speechId", "templateCode", "textType", "type", "userId", "variableSource",
+    }
+    assert base_keys.issubset(default.keys())
+    assert base_keys == set(custom.keys())
+    assert custom["templateCode"] == default["templateCode"]
+    assert custom["userId"] == default["userId"]
+    assert custom["type"] == 1
+    assert custom["variableSource"] == 0
