@@ -1,15 +1,14 @@
 # wiz-checker variable consistency rules
 #
-# WIZ.AI variable textType convention (clarified by WIZ.AI 2026-05-19):
-#   textType = ""        -> custom variable (user-authored)
-#   textType non-empty   -> platform-managed system default
-#                           (DEFAULT, DATE, EMAIL, PHONE, etc.)
-#   textType == None     -> also platform-managed (legacy/transitional)
+# WIZ.AI variableSource convention (clarified in tightening v3 2026-05-21):
+#   variableSource = 0 -> user-authored custom variable
+#   variableSource = 1 -> platform/system-managed (always shipped regardless
+#                         of script usage)
 #
-# WIZ202 (declared-but-unused) fires only for CUSTOM variables (textType == "").
-# Platform-managed variables are always declared on every dialogue export
-# regardless of whether the script author uses them, so unused-by-utterance is
-# not a defect.
+# WIZ202 (declared-but-unused) fires only for variableSource == 0.
+# textType is NOT used as a filter in v3 — real exports occasionally ship
+# system variables with empty textType, which would defeat a textType-based
+# filter. variableSource was empirically stable across all three observed
+# real samples.
 #
-# This file is currently doc-only. The filter logic is in
-# scripts/wizcheck/checks/variables.py.
+# This file is doc-only; the logic lives in scripts/wizcheck/checks/variables.py.

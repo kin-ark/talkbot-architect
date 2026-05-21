@@ -256,3 +256,41 @@ def test_parser_loads_empty_canvas_fixture(fixture_path):
     comp = next(iter(wf.components.values()))
     assert comp.details.flow_nodes == {}
     assert comp.details.root_uuids == ()
+
+
+def test_parser_populates_variable_source(tmp_path):
+    """SpeechVariable.variableSource is read into Variable.variable_source."""
+    import json as _json
+    payload = {
+        "BizSpeechComponent": [],
+        "SpeechVariable": [
+            {"id": 1, "name": "UserVar", "textType": "", "type": 0, "variableSource": 0},
+            {"id": 2, "name": "SystemVar", "textType": "DEFAULT", "type": 0, "variableSource": 1},
+        ],
+        "SpeechIntent": [],
+        "SentenceCutSpeech": [],
+        "SpeechAudio": [],
+    }
+    p = tmp_path / "varsource.json"
+    p.write_text(_json.dumps(payload), encoding="utf-8")
+    wf = parse_file(p)
+    assert wf.variables[1].variable_source == 0
+    assert wf.variables[2].variable_source == 1
+
+
+def test_parser_variable_source_defaults_to_zero(tmp_path):
+    """Missing variableSource field defaults to 0 (user-authored)."""
+    import json as _json
+    payload = {
+        "BizSpeechComponent": [],
+        "SpeechVariable": [
+            {"id": 1, "name": "NoSourceField", "textType": ""},
+        ],
+        "SpeechIntent": [],
+        "SentenceCutSpeech": [],
+        "SpeechAudio": [],
+    }
+    p = tmp_path / "no_source.json"
+    p.write_text(_json.dumps(payload), encoding="utf-8")
+    wf = parse_file(p)
+    assert wf.variables[1].variable_source == 0

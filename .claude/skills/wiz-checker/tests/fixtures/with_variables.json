@@ -1,8 +1,8 @@
 {
   "BizSpeechComponent": [],
   "SpeechVariable": [
-    {"id": 1, "name": "Name", "textType": "DEFAULT", "type": 0},
-    {"id": 2, "name": "Phone", "textType": "PHONE", "type": 0}
+    {"id": 1, "name": "Name", "textType": "DEFAULT", "type": 0, "variableSource": 1},
+    {"id": 2, "name": "Phone", "textType": "PHONE", "type": 0, "variableSource": 1}
   ],
   "SpeechIntent": [],
   "SentenceCutSpeech": [

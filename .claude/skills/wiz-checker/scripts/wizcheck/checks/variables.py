@@ -1,12 +1,12 @@
 """Variable consistency checks (WIZ200..WIZ299).
 
 WIZ201: undeclared variable references in utterance text.
-WIZ202: declared-but-unused CUSTOM variables only (textType == "").
+WIZ202: declared-but-unused USER-AUTHORED variables only (variableSource == 0).
 
-Platform-managed variables (non-empty textType, including DEFAULT/DATE/EMAIL/
-PHONE/etc., as well as None) are exported on every WIZ.AI dialogue regardless
-of whether the script author uses them; flagging them as "unused" produces noise.
-See schema/variable_rules.yaml for the textType convention.
+Platform-managed variables (variableSource == 1) are exported on every WIZ.AI
+dialogue regardless of whether the script author uses them; flagging them as
+"unused" produces noise. textType is NOT used — real exports sometimes strip
+textType from system variables. See schema/variable_rules.yaml.
 """
 
 from __future__ import annotations
@@ -35,10 +35,12 @@ def check_variables(wf: WizFile) -> list[Finding]:
                     ),
                 ))
 
-    # WIZ202: declared but unused — custom variables only (text_type == "").
-    # Platform-managed variables (non-empty text_type, or None) are skipped.
+    # WIZ202: declared but unused — user-authored variables only.
+    # variableSource == 1 marks platform/system-managed variables, which are
+    # exported on every dialogue regardless of script usage. textType is NOT
+    # used as a filter — real exports sometimes strip textType from system vars.
     for var in wf.variables.values():
-        if var.text_type != "":
+        if var.variable_source == 1:
             continue  # platform-managed; skip
         if var.name not in referenced_names:
             out.append(Finding(

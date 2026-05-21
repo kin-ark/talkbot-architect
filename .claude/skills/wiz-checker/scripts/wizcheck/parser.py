@@ -178,6 +178,7 @@ def _parse_variables(entries: list[dict[str, Any]]) -> dict[int, Variable]:
             name=str(_require(e, "name", "SpeechVariable")),
             text_type=str(e.get("textType", "DEFAULT")),
             raw=e,
+            variable_source=int(e.get("variableSource", 0)),
         )
         out[v.id] = v
     return out

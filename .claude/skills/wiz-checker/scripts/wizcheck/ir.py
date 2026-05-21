@@ -21,6 +21,7 @@ class Variable:
     name: str
     text_type: str
     raw: dict[str, Any] = field(repr=False)
+    variable_source: int = 0  # 0 = user-authored, 1 = platform/system-managed
 
 
 @dataclass(frozen=True)

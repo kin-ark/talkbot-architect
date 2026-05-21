@@ -48,9 +48,9 @@ def test_wiz201_declared_variable_does_not_warn():
     assert not any(f.code == "WIZ201" for f in findings)
 
 
-def test_wiz202_still_fires_for_custom_unused():
-    """A custom variable (text_type='') that is unused fires WIZ202."""
-    v = Variable(id=1, name="CustomLoyaltyTier", text_type="", raw={})
+def test_wiz202_fires_for_variable_source_0_unused():
+    """A user-authored variable (variable_source=0) that is unused fires WIZ202."""
+    v = Variable(id=1, name="CustomLoyaltyTier", text_type="", raw={}, variable_source=0)
     wf = _wf(variables={1: v}, utterances=())
     findings = check_variables(wf)
     f = next((x for x in findings if x.code == "WIZ202"), None)
@@ -59,8 +59,8 @@ def test_wiz202_still_fires_for_custom_unused():
     assert "CustomLoyaltyTier" in f.message
 
 
-def test_wiz202_used_variable_does_not_warn():
-    v = Variable(id=1, name="CustomerLoyaltyTier", text_type="DEFAULT", raw={})
+def test_wiz202_skips_used_variable_regardless_of_source():
+    v = Variable(id=1, name="CustomerLoyaltyTier", text_type="", raw={}, variable_source=0)
     u = Utterance(
         id=UUID(int=20), component_uuid=UUID(int=21),
         text="{CustomerLoyaltyTier}", referenced_vars=("CustomerLoyaltyTier",), raw={},
@@ -70,25 +70,25 @@ def test_wiz202_used_variable_does_not_warn():
     assert not any(f.code == "WIZ202" for f in findings)
 
 
-def test_wiz202_skips_variable_with_system_default_text_type():
-    """text_type='DEFAULT' is a platform-managed variable; unused is OK."""
-    v = Variable(id=1, name="Greeting", text_type="DEFAULT", raw={})
+def test_wiz202_skips_variable_source_1():
+    """A platform-managed variable (variable_source=1) that is unused does NOT fire WIZ202."""
+    v = Variable(
+        id=1, name="Phone", text_type="PHONE", raw={}, variable_source=1,
+    )
     wf = _wf(variables={1: v}, utterances=())
     findings = check_variables(wf)
     assert not any(f.code == "WIZ202" for f in findings)
 
 
-def test_wiz202_skips_variable_with_phone_text_type():
-    """text_type='PHONE' is platform-managed; unused is OK."""
-    v = Variable(id=1, name="Phone", text_type="PHONE", raw={})
-    wf = _wf(variables={1: v}, utterances=())
-    findings = check_variables(wf)
-    assert not any(f.code == "WIZ202" for f in findings)
+def test_wiz202_skips_variable_source_1_even_with_empty_text_type():
+    """variable_source=1 trumps text_type='' — a system var without textType is still skipped.
 
-
-def test_wiz202_skips_variable_with_none_text_type():
-    """text_type=None is platform-managed (legacy); unused is OK."""
-    v = Variable(id=1, name="Follow-up Stage", text_type=None, raw={})
+    Regression case from Payment+Reminder where 16 platform vars shipped with
+    textType="" but variableSource=1.
+    """
+    v = Variable(
+        id=1, name="StrippedSystemVar", text_type="", raw={}, variable_source=1,
+    )
     wf = _wf(variables={1: v}, utterances=())
     findings = check_variables(wf)
     assert not any(f.code == "WIZ202" for f in findings)

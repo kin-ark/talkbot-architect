@@ -11,7 +11,7 @@
     }
   ],
   "SpeechVariable": [
-    {"id": 100, "name": "Name", "textType": "DEFAULT", "type": 0}
+    {"id": 100, "name": "Name", "textType": "DEFAULT", "type": 0, "variableSource": 1}
   ],
   "SpeechIntent": [
     {
