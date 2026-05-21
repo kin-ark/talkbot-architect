@@ -69,7 +69,7 @@
         "id": "",
         "field": null
       },
-      "message": "Export contains 5 external/library reference(s): 'ASR Corpus Collection', 'Re-ask Limit', 'Re-ask Tenor', 'Judgement (Greeting Time)'. Confirm each is an intentional Component Library import."
+      "message": "Export contains 5 external/library reference(s) to 4 distinct component(s): 'ASR Corpus Collection', 'Re-ask Limit', 'Re-ask Tenor', 'Judgement (Greeting Time)'. Confirm each is an intentional Component Library import."
     },
     {
       "code": "WIZ202",

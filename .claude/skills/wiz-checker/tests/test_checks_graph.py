@@ -220,6 +220,22 @@ def test_wiz103_cycle_is_warning():
     assert f.severity is Severity.WARNING
 
 
+def test_wiz104_rollup_message_clarifies_when_refs_exceed_distinct_labels():
+    """When two orphan parents share a child label, the message names both counts."""
+    a = UUID(int=90)
+    missing1, missing2 = UUID(int=91), UUID(int=92)
+    c1, c2 = UUID(int=93), UUID(int=94)
+    n_a = _node(a)
+    n_c1 = _node(c1, parent=missing1, label="Re-ask Limit")
+    n_c2 = _node(c2, parent=missing2, label="Re-ask Limit")
+    wf = _wf_from_nodes([n_a, n_c1, n_c2])
+    findings = check_graph(wf)
+    f = next((x for x in findings if x.code == "WIZ104"), None)
+    assert f is not None
+    # 2 distinct orphan parents, 1 distinct label
+    assert "2 external/library reference(s) to 1 distinct component(s)" in f.message
+
+
 def test_library_ref_fixture_emits_warnings_not_errors(fixture_path):
     """End-to-end: library_ref.json produces WIZ100 + WIZ104 warnings, no errors."""
     from wizcheck.parser import parse_file

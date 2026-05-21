@@ -156,12 +156,23 @@ def _check_library_refs_rollup(wf: WizFile) -> list[Finding]:
         ": " + ", ".join(repr(lbl) for lbl in seen_labels)
         if seen_labels else ""
     )
+    ref_count = len(refs)
+    label_count = len(seen_labels)
+    # ref_count: distinct orphan parent UUIDs (each represents one external link)
+    # label_count: distinct component labels (fewer when one library entry has
+    #              multiple instances referenced from different places)
+    if label_count and label_count != ref_count:
+        count_str = (
+            f"{ref_count} external/library reference(s) to {label_count} distinct component(s)"
+        )
+    else:
+        count_str = f"{ref_count} external/library reference(s)"
     return [Finding(
         code="WIZ104",
         severity=Severity.WARNING,
         location=Location(entity="WizFile", id="", field=None),
         message=(
-            f"Export contains {len(refs)} external/library reference(s){labels_str}. "
+            f"Export contains {count_str}{labels_str}. "
             f"Confirm each is an intentional Component Library import."
         ),
     )]
