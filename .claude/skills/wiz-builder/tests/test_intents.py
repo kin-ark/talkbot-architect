@@ -54,10 +54,7 @@ def test_custom_intent_has_correct_language(template_dict):
 
 
 def test_custom_intent_keywords_encoded_as_bracket_string(template_dict):
-    """WIZ.AI exports encode keywords as bracket-delimited semicolon-separated strings.
-
-    Format: '[a;b;c]' — matches the on-the-wire shape observed in TSP+Matchmaking.
-    """
+    """WIZ.AI exports encode keyWordInIntent as comma-separated bracket strings: '[a,b,c]'."""
     m = _manifest((
         CustomIntent(name="AskExtension", language="IDN", keywords=("bisa tunda", "extension")),
     ))
@@ -65,7 +62,7 @@ def test_custom_intent_keywords_encoded_as_bracket_string(template_dict):
     apply_intents(template_dict, m, minter)
     intents = json.loads(template_dict["SpeechIntent"])
     custom = next(i for i in intents if i["intentName"] == "AskExtension")
-    assert custom["keyWordInIntent"] == "[bisa tunda;extension]"
+    assert custom["keyWordInIntent"] == "[bisa tunda,extension]"
 
 
 def test_custom_intent_user_responses_encoded_as_bracket_string(template_dict):
@@ -84,7 +81,10 @@ def test_custom_intent_user_responses_encoded_as_bracket_string(template_dict):
 
 
 def test_custom_intent_empty_keywords_and_responses(template_dict):
-    """Empty keyword/response lists serialise as '[]'."""
+    """Empty keyword/response lists serialise as '[]' for both fields.
+
+    Separator is irrelevant when the iterable is empty.
+    """
     m = _manifest((CustomIntent(name="X", language="IDN", keywords=(), user_responses=()),))
     minter = IdMinter(manifest_hash=manifest_hash_of(m.raw_text))
     apply_intents(template_dict, m, minter)
@@ -92,6 +92,34 @@ def test_custom_intent_empty_keywords_and_responses(template_dict):
     custom = next(i for i in intents if i["intentName"] == "X")
     assert custom["keyWordInIntent"] == "[]"
     assert custom["userResponseInIntent"] == "[]"
+
+
+def test_custom_intent_single_keyword(template_dict):
+    """Single-element keyword list produces '[only]' (no trailing separator)."""
+    m = _manifest((CustomIntent(name="X", language="IDN", keywords=("only",)),))
+    minter = IdMinter(manifest_hash=manifest_hash_of(m.raw_text))
+    apply_intents(template_dict, m, minter)
+    intents = json.loads(template_dict["SpeechIntent"])
+    custom = next(i for i in intents if i["intentName"] == "X")
+    assert custom["keyWordInIntent"] == "[only]"
+
+
+def test_custom_intent_with_both_keywords_and_user_responses(template_dict):
+    """Both fields are populated independently with the correct separators."""
+    m = _manifest((
+        CustomIntent(
+            name="Both",
+            language="IDN",
+            keywords=("kw1", "kw2"),
+            user_responses=("ur1", "ur2"),
+        ),
+    ))
+    minter = IdMinter(manifest_hash=manifest_hash_of(m.raw_text))
+    apply_intents(template_dict, m, minter)
+    intents = json.loads(template_dict["SpeechIntent"])
+    custom = next(i for i in intents if i["intentName"] == "Both")
+    assert custom["keyWordInIntent"] == "[kw1,kw2]"
+    assert custom["userResponseInIntent"] == "[ur1;ur2]"
 
 
 def test_custom_intent_deterministic_id(template_dict, template_path):

@@ -10,13 +10,14 @@ from wizbuilder.ids import IdMinter
 from wizbuilder.manifest import Manifest
 
 
-def _bracket_join(items: Iterable[str]) -> str:
-    """Serialise an iterable of strings as '[a;b;c]' (or '[]' if empty).
+def _bracket_join(items: Iterable[str], sep: str) -> str:
+    """Serialise an iterable of strings as '[a<sep>b<sep>c]' (or '[]' if empty).
 
-    Matches the on-the-wire format observed in real WIZ.AI exports
-    (talkbot/TSP+Matchmaking) for keyWordInIntent / userResponseInIntent.
+    WIZ.AI exports use ',' for keyWordInIntent and ';' for userResponseInIntent.
+    The format does not escape — items must not contain the separator character
+    or '[' / ']'. Manifest authors are responsible for clean input.
     """
-    return "[" + ";".join(items) + "]"
+    return "[" + sep.join(items) + "]"
 
 
 def apply_intents(
@@ -55,13 +56,13 @@ def apply_intents(
             "intentName": ci.name,
             "isDelete": 0,
             "isInit": 0,
-            "keyWordInIntent": _bracket_join(ci.keywords),
+            "keyWordInIntent": _bracket_join(ci.keywords, sep=","),
             "language": ci.language,
             "nodeId": "",
             "speechId": speech_id,
             "templateCode": template_code,
             "updateTime": 0,
-            "userResponseInIntent": _bracket_join(ci.user_responses),
+            "userResponseInIntent": _bracket_join(ci.user_responses, sep=";"),
         })
 
     template["SpeechIntent"] = json.dumps(intents, ensure_ascii=False)
