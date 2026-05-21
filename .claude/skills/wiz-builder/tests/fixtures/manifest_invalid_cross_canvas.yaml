@@ -1,0 +1,14 @@
+name: "Bad Bot"
+branch: dev
+language: IDN
+canvases:
+  - name: "1. Greeting"
+    nodes:
+      - id: greet-root
+        label: Greeting
+        parent: null
+  - name: "2. Pitch"
+    nodes:
+      - id: pitch-child
+        label: Pitch
+        parent: greet-root   # cross-canvas ref — should fail validation

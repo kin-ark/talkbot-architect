@@ -1,0 +1,9 @@
+name: "Test Bot"
+branch: dev
+language: IDN
+canvases:
+  - name: "1. Greeting"
+    nodes:
+      - id: root
+        label: Greeting
+        parent: null

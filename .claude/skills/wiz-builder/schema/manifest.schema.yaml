@@ -1,0 +1,70 @@
+$schema: "http://json-schema.org/draft-07/schema#"
+title: "wiz-builder manifest"
+type: object
+required: [name, branch, language, canvases]
+additionalProperties: false
+properties:
+  name:
+    type: string
+    minLength: 1
+  branch:
+    type: string
+    enum: [dev, prod]
+  language:
+    type: string
+    enum: [IDN, ENG, ZHO]
+  custom_variables:
+    type: array
+    items:
+      type: object
+      required: [name]
+      additionalProperties: false
+      properties:
+        name:
+          type: string
+          pattern: "^[A-Za-z_][A-Za-z0-9_]*$"
+  custom_intents:
+    type: array
+    items:
+      type: object
+      required: [name, language]
+      additionalProperties: false
+      properties:
+        name:
+          type: string
+          minLength: 1
+        language:
+          type: string
+          enum: [IDN, ENG, ZHO]
+        keywords:
+          type: array
+          items: {type: string}
+        user_responses:
+          type: array
+          items: {type: string}
+  canvases:
+    type: array
+    minItems: 1
+    items:
+      type: object
+      required: [name, nodes]
+      additionalProperties: false
+      properties:
+        name:
+          type: string
+          minLength: 1
+        nodes:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [label, parent]
+            additionalProperties: false
+            properties:
+              id:
+                type: string
+              label:
+                type: string
+                minLength: 1
+              parent:
+                type: [string, "null"]
