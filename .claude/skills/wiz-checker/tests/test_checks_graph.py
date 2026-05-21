@@ -104,7 +104,6 @@ def test_wiz101_genuinely_disconnected_node_is_warning():
     n_a = FlowNode(uuid=a, parent_uuid=None, label="Greeting", sort_index=0, raw={})
     n_b = FlowNode(uuid=b, parent_uuid=None, label="Disconnected", sort_index=0, raw={})
     # Construct WizFile manually so only `a` is a declared root (b is NOT).
-    from wizcheck.ir import Component, ComponentDetails
     comp = Component(
         uuid=UUID(int=1), speech_id=1, category=1, branch="dev",
         details=ComponentDetails(flow_nodes={a: n_a, b: n_b}, root_uuids=(a,)),

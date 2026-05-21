@@ -99,11 +99,10 @@ def _check_unreachable(wf: WizFile) -> list[Finding]:
 def _check_dead_ends(wf: WizFile) -> list[Finding]:
     """WIZ102: leaf nodes with labels that are configured to require children."""
     expected_labels = set(_RULES.get("labels_requiring_children", []))
-    label_by_uuid: dict[UUID, str] = {}
+    label_by_uuid = _build_label_lookup(wf)
     has_visual_children: set[UUID] = set()
     for comp in wf.components.values():
         for node in comp.details.flow_nodes.values():
-            label_by_uuid[node.uuid] = node.label
             if node.raw.get("children"):
                 has_visual_children.add(node.uuid)
     out: list[Finding] = []
@@ -153,7 +152,10 @@ def _check_library_refs_rollup(wf: WizFile) -> list[Finding]:
             label = label_by_uuid.get(child, "")
             if label and label not in seen_labels:
                 seen_labels.append(label)
-    labels_str = f": {seen_labels}" if seen_labels else ""
+    labels_str = (
+        ": " + ", ".join(repr(lbl) for lbl in seen_labels)
+        if seen_labels else ""
+    )
     return [Finding(
         code="WIZ104",
         severity=Severity.WARNING,
