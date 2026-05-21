@@ -38,7 +38,7 @@ def test_wiz201_undeclared_variable_is_error():
 
 
 def test_wiz201_declared_variable_does_not_warn():
-    v = Variable(id=1, name="Name", text_type="DEFAULT", raw={})
+    v = Variable(id=1, name="Name", text_type="DEFAULT", raw={}, variable_source=1)
     u = Utterance(
         id=UUID(int=10), component_uuid=UUID(int=11),
         text="Halo {Name}", referenced_vars=("Name",), raw={},
@@ -71,7 +71,7 @@ def test_wiz202_skips_used_variable_regardless_of_source():
 
 
 def test_wiz202_skips_variable_source_1():
-    """A platform-managed variable (variable_source=1) that is unused does NOT fire WIZ202."""
+    """A platform-managed variable (variable_source=1) is skipped by WIZ202 even when unused."""
     v = Variable(
         id=1, name="Phone", text_type="PHONE", raw={}, variable_source=1,
     )

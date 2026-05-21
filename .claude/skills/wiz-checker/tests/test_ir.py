@@ -21,7 +21,7 @@ UUID_B = UUID("00000000-0000-4000-8000-000000000002")
 
 
 def test_variable_is_frozen_and_has_raw():
-    v = Variable(id=1, name="Phone", text_type="PHONE", raw={"id": 1, "name": "Phone"})
+    v = Variable(id=1, name="Phone", text_type="PHONE", raw={"id": 1, "name": "Phone"}, variable_source=1)
     assert v.id == 1
     assert v.name == "Phone"
     assert v.text_type == "PHONE"
