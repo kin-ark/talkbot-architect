@@ -29,9 +29,24 @@ def test_apply_identity_sets_speech_id(template_dict):
     m = _manifest()
     minter = IdMinter(manifest_hash=manifest_hash_of(m.raw_text))
     result = apply_identity(template_dict, m, minter)
-    # speechId should propagate to BizSpeechComponent entries and SpeechIntent entries.
+
     bsc = json.loads(result["BizSpeechComponent"])
-    assert all(10**15 <= c["speechId"] < 10**16 for c in bsc)
+    speech_id = bsc[0]["speechId"]
+    assert 10**15 <= speech_id < 10**16
+
+    for key in (
+        "BizSpeechComponent",
+        "SpeechVariable",
+        "SpeechIntent",
+        "SentenceCutSpeech",
+        "SpeechAudio",
+    ):
+        raw = result.get(key)
+        if not isinstance(raw, str) or not raw.strip():
+            continue
+        for item in json.loads(raw):
+            if "speechId" in item:
+                assert item["speechId"] == speech_id, f"{key} item has stale speechId"
 
 
 def test_apply_identity_sets_branch_on_components(template_dict):

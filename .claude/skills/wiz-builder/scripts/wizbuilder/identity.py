@@ -8,6 +8,14 @@ from typing import Any
 from wizbuilder.ids import IdMinter
 from wizbuilder.manifest import Manifest
 
+_SPEECH_ID_KEYS = (
+    "BizSpeechComponent",
+    "SpeechVariable",
+    "SpeechIntent",
+    "SentenceCutSpeech",
+    "SpeechAudio",
+)
+
 
 def apply_identity(
     template: dict[str, Any],
@@ -24,13 +32,7 @@ def apply_identity(
     speech_id = minter.random_speech_id()
 
     # Top-level string-encoded lists that carry speechId on their items.
-    for key in (
-        "BizSpeechComponent",
-        "SpeechVariable",
-        "SpeechIntent",
-        "SentenceCutSpeech",
-        "SpeechAudio",
-    ):
+    for key in _SPEECH_ID_KEYS:
         raw = template.get(key)
         if not isinstance(raw, str) or not raw.strip():
             continue
@@ -41,6 +43,11 @@ def apply_identity(
         template[key] = json.dumps(items, ensure_ascii=False)
 
     # Update BizSpeechComponent entries: branch + componentUuid for the (single) template entry.
+    bsc_raw = template.get("BizSpeechComponent")
+    if not isinstance(bsc_raw, str) or not bsc_raw.strip():
+        raise ValueError(
+            "apply_identity requires template['BizSpeechComponent'] to be a non-empty JSON string"
+        )
     bsc = json.loads(template["BizSpeechComponent"])
     for i, comp in enumerate(bsc):
         comp["branch"] = manifest.branch
