@@ -20,8 +20,8 @@ def test_load_minimal_returns_manifest(fixture_path):
     assert m.name == "Test Bot"
     assert m.branch == "dev"
     assert m.language == "IDN"
-    assert m.custom_variables == []
-    assert m.custom_intents == []
+    assert m.custom_variables == ()
+    assert m.custom_intents == ()
     assert len(m.canvases) == 1
 
 
@@ -156,7 +156,7 @@ def test_custom_variable_loaded(tmp_path):
         encoding="utf-8",
     )
     m = load_manifest(p)
-    assert m.custom_variables == [CustomVariable(name="CLIENT_NAME")]
+    assert m.custom_variables == (CustomVariable(name="CLIENT_NAME"),)
 
 
 def test_custom_intent_loaded(tmp_path):
@@ -189,6 +189,19 @@ def test_node_id_auto_generated_when_missing(tmp_path):
     m = load_manifest(p)
     node = m.canvases[0].nodes[0]
     assert node.id  # non-empty
+
+
+def test_empty_node_id_raises(tmp_path):
+    """An explicit empty-string id is rejected by the schema (not silently auto-filled)."""
+    p = tmp_path / "empty_id.yaml"
+    p.write_text(
+        "name: X\nbranch: dev\nlanguage: IDN\n"
+        "canvases:\n  - name: c\n    nodes:\n"
+        "      - id: \"\"\n        label: L\n        parent: null\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(ManifestError):
+        load_manifest(p)
 
 
 def test_parse_failure_raises_manifest_error(tmp_path):

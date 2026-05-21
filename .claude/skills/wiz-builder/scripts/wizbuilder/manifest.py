@@ -30,6 +30,14 @@ class CustomIntent:
 
 @dataclass(frozen=True)
 class Node:
+    """A FlowNode in a canvas.
+
+    `id` is the manifest-local handle used by sibling nodes' `parent` field. If
+    omitted in the YAML, the loader synthesizes ``_auto_<index>`` based on the
+    node's position within its canvas. The id is independent of the UUID
+    minted later by the compiler.
+    """
+
     id: str
     label: str
     parent: str | None
@@ -46,9 +54,9 @@ class Manifest:
     name: str
     branch: str
     language: str
-    custom_variables: list[CustomVariable]
-    custom_intents: list[CustomIntent]
-    canvases: list[Canvas]
+    custom_variables: tuple[CustomVariable, ...]
+    custom_intents: tuple[CustomIntent, ...]
+    canvases: tuple[Canvas, ...]
     raw_text: str = field(repr=False)
 
 
@@ -123,7 +131,8 @@ def _validate_cross_field_invariants(data: dict, path: Path) -> None:
                 raise ManifestError(
                     f"{path}: node {node.get('id') or node['label']!r} in canvas {cname!r} "
                     f"references parent {parent!r} which is not declared in this canvas "
-                    f"(cross-canvas refs are not supported)"
+                    f"(parent must be the id of another node in the same canvas; "
+                    f"cross-canvas references are not supported)"
                 )
 
         roots = [n for n in canvas["nodes"] if n["parent"] is None]
@@ -164,8 +173,8 @@ def _build_manifest(data: dict, raw_text: str) -> Manifest:
         name=data["name"],
         branch=data["branch"],
         language=data["language"],
-        custom_variables=custom_variables,
-        custom_intents=custom_intents,
-        canvases=canvases,
+        custom_variables=tuple(custom_variables),
+        custom_intents=tuple(custom_intents),
+        canvases=tuple(canvases),
         raw_text=raw_text,
     )
