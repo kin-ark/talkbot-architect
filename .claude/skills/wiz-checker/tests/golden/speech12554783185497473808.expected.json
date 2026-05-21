@@ -1,0 +1,235 @@
+{
+  "file": "speech12554783185497473808.json",
+  "summary": {
+    "errors": 0,
+    "warnings": 22,
+    "checks_run": [
+      "schema",
+      "graph",
+      "variables",
+      "intents"
+    ]
+  },
+  "findings": [
+    {
+      "code": "WIZ100",
+      "severity": "warning",
+      "location": {
+        "entity": "FlowNode",
+        "id": "43bb1a9f-52dc-4a4e-8908-953fe11474b2",
+        "field": "parent_uuid"
+      },
+      "message": "FlowNode 43bb1a9f-52dc-4a4e-8908-953fe11474b2 is referenced as a parent but is not present in this export (referenced by node(s) labelled 'Greeting - Bahasa'). May be a Component Library reference or a structural defect — verify in the WIZ.AI UI."
+    },
+    {
+      "code": "WIZ104",
+      "severity": "warning",
+      "location": {
+        "entity": "WizFile",
+        "id": "",
+        "field": null
+      },
+      "message": "Export contains 1 external/library reference(s): 'Greeting - Bahasa'. Confirm each is an intentional Component Library import."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "168836",
+        "field": "name"
+      },
+      "message": "Variable {Random value} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "168837",
+        "field": "name"
+      },
+      "message": "Variable {Unrepay reason} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "168838",
+        "field": "name"
+      },
+      "message": "Variable {Payment date} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "168839",
+        "field": "name"
+      },
+      "message": "Variable {Payment date interval} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "168841",
+        "field": "name"
+      },
+      "message": "Variable {random value} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "168846",
+        "field": "name"
+      },
+      "message": "Variable {TimeCollected} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "168847",
+        "field": "name"
+      },
+      "message": "Variable {Payment method} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "168848",
+        "field": "name"
+      },
+      "message": "Variable {Date Time Collected} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "168849",
+        "field": "name"
+      },
+      "message": "Variable {Greeting_Bahasa} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "168851",
+        "field": "name"
+      },
+      "message": "Variable {From Node 1} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "168852",
+        "field": "name"
+      },
+      "message": "Variable {Convincer} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "168853",
+        "field": "name"
+      },
+      "message": "Variable {Payment node} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "168854",
+        "field": "name"
+      },
+      "message": "Variable {Can't pay in Payment Method} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "168856",
+        "field": "name"
+      },
+      "message": "Variable {Payment Method} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "168857",
+        "field": "name"
+      },
+      "message": "Variable {PAYMENT_METHOD} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "168858",
+        "field": "name"
+      },
+      "message": "Variable {PAYMENT_METHOD_KB} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "168859",
+        "field": "name"
+      },
+      "message": "Variable {IsHitUserDenyOK} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "168860",
+        "field": "name"
+      },
+      "message": "Variable {Temp_PAYMENT_METHOD_KB} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "168867",
+        "field": "name"
+      },
+      "message": "Variable {LastNode} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "168868",
+        "field": "name"
+      },
+      "message": "Variable {GreetingTrigger} is declared but never referenced."
+    }
+  ]
+}

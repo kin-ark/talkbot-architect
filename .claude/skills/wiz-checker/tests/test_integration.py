@@ -21,6 +21,11 @@ SAMPLES = [
     PROJECT_ROOT / "talkbot" / "Test+Kinan" / "speech13139256226648334285.json",
     PROJECT_ROOT / "talkbot" / "Tiktok+Paylater+DPD0" / "speech4892384019254584542.json",
     PROJECT_ROOT / "talkbot" / "TSP+Matchmaking" / "speech2572824560161596380.json",
+    PROJECT_ROOT / "talkbot" / "Empty+Dialogue" / "speech4010869963530658988.json",
+    PROJECT_ROOT
+    / "talkbot"
+    / "[IN+USE]+Payment+Reminder+-+Non-IOH+Due_Overdue"
+    / "speech12554783185497473808.json",
 ]
 
 

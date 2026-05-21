@@ -1,0 +1,25 @@
+{
+  "file": "speech4010869963530658988.json",
+  "summary": {
+    "errors": 0,
+    "warnings": 1,
+    "checks_run": [
+      "schema",
+      "graph",
+      "variables",
+      "intents"
+    ]
+  },
+  "findings": [
+    {
+      "code": "WIZ006",
+      "severity": "warning",
+      "location": {
+        "entity": "Component",
+        "id": "32e3e02c-394c-4b59-b489-381a45d4dcf2",
+        "field": "details"
+      },
+      "message": "Component 'Dialogue Open' has no canvas content (empty/template dialogue)."
+    }
+  ]
+}
