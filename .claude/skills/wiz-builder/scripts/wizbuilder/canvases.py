@@ -17,7 +17,9 @@ WIZ.AI's BizSpeechComponent.details is a JSON-encoded string with the shape:
       }
     }
 
-The envelope UUID is a single key per canvas; nodes live at canvas.component.props.list.
+The envelope UUID is a top-level key; production exports may carry multiple
+envelopes per component, but this MVP emits exactly one per canvas. Nodes
+live at canvas.component.props.list.
 """
 
 from __future__ import annotations
@@ -60,12 +62,12 @@ def _build_component(
     base: dict[str, Any],
     speech_id: int,
 ) -> dict[str, Any]:
-    canvas_uuid = str(minter.uuid(f"component:{canvas_index}:{canvas.name}"))
-    envelope_uuid = str(minter.uuid(f"envelope:{canvas_index}:{canvas.name}"))
+    canvas_uuid = str(minter.uuid(f"component:{canvas_index}"))
+    envelope_uuid = str(minter.uuid(f"envelope:{canvas_index}"))
 
     node_uuids: dict[str, str] = {}
     for node in canvas.nodes:
-        seed = f"node:{canvas_index}:{canvas.name}:{node.id}"
+        seed = f"node:{canvas_index}:{node.id}"
         node_uuids[node.id] = str(minter.uuid(seed))
 
     node_dicts = []
@@ -74,7 +76,7 @@ def _build_component(
         parent_uid = node_uuids[node.parent] if node.parent is not None else ""
         node_dicts.append({
             "uuid": uid,
-            "value": uid,
+            "value": uid,  # WIZ format duplicates uuid as value on every FlowNode
             "parentId": parent_uid,
             "label": node.label,
             "sortIndex": ni,

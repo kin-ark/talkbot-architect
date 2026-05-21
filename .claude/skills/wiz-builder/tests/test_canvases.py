@@ -7,20 +7,7 @@ from uuid import UUID
 
 from wizbuilder.canvases import apply_canvases
 from wizbuilder.ids import IdMinter, manifest_hash_of
-from wizbuilder.manifest import Canvas, Manifest, load_manifest
-
-
-def _manifest(canvases: tuple[Canvas, ...]) -> Manifest:
-    raw = "name: X\nbranch: dev\nlanguage: IDN\n"
-    return Manifest(
-        name="X",
-        branch="dev",
-        language="IDN",
-        custom_variables=(),
-        custom_intents=(),
-        canvases=canvases,
-        raw_text=raw,
-    )
+from wizbuilder.manifest import load_manifest
 
 
 def test_apply_canvases_replaces_template_component(template_dict, fixture_path):
