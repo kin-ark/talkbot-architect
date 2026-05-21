@@ -1,0 +1,17 @@
+name: "Multi Canvas Test"
+branch: dev
+language: IDN
+canvases:
+  - name: "1. Greeting"
+    nodes:
+      - id: greet-root
+        label: Greeting
+        parent: null
+      - id: greet-pitch
+        label: Pitch
+        parent: greet-root
+  - name: "2. Closing"
+    nodes:
+      - id: close-root
+        label: Closing
+        parent: null
