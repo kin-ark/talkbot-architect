@@ -40,6 +40,7 @@ def check_schema(wf: WizFile) -> list[Finding]:
     findings.extend(_check_component_branches(wf))
     findings.extend(_check_intent_languages(wf))
     findings.extend(_check_component_timestamps(wf))
+    findings.extend(_check_empty_canvases(wf))
     return findings
 
 
@@ -112,5 +113,23 @@ def _check_component_timestamps(wf: WizFile) -> list[Finding]:
                 severity=Severity.ERROR,
                 location=Location(entity="Component", id=str(comp.uuid), field="createTime"),
                 message="Component has zero/missing createTime and updateTime; likely export bug.",
+            ))
+    return out
+
+
+def _check_empty_canvases(wf: WizFile) -> list[Finding]:
+    """WIZ006: warn when a component has zero FlowNodes (empty canvas / template)."""
+    out: list[Finding] = []
+    for comp in wf.components.values():
+        if not comp.details.flow_nodes:
+            name = comp.raw.get("name", str(comp.uuid))
+            out.append(Finding(
+                code="WIZ006",
+                severity=Severity.WARNING,
+                location=Location(entity="Component", id=str(comp.uuid), field="details"),
+                message=(
+                    f"Component {name!r} has no canvas content "
+                    f"(empty/template dialogue)."
+                ),
             ))
     return out

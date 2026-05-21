@@ -307,9 +307,13 @@ def _parse_component_details(raw_details: str | dict[str, Any] | None) -> Compon
     else:
         data = raw_details
 
+    if data is None:
+        # Real WIZ exports emit `details: "null"` for empty/template dialogues.
+        # Treat as zero-node canvas; WIZ006 surfaces this state to the user.
+        return ComponentDetails(flow_nodes={}, root_uuids=())
     if not isinstance(data, dict):
         raise ParseError(
-            f"BizSpeechComponent.details parsed to {type(data).__name__}, expected object"
+            f"BizSpeechComponent.details parsed to {type(data).__name__}, expected object or null"
         )
     # Detect format: legacy uses {"list": [...]}, real WIZ uses {uuid: {...}}
     if _is_legacy_details(data):

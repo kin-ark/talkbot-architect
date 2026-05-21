@@ -9,6 +9,7 @@ from wizcheck.ir import (
     Component,
     ComponentDetails,
     FlowGraph,
+    FlowNode,
     Intent,
     WizFile,
 )
@@ -128,3 +129,39 @@ def test_wiz004_none_language_does_not_fire():
     wf = _wf(intents={1: intent})
     findings = check_schema(wf)
     assert not any(f.code == "WIZ004" for f in findings)
+
+
+def test_wiz006_empty_canvas_is_warning():
+    """A component with zero FlowNodes (empty canvas / template) fires WIZ006."""
+    comp = Component(
+        uuid=UUID(int=1),
+        speech_id=1,
+        category=1,
+        branch="dev",
+        details=ComponentDetails(flow_nodes={}, root_uuids=()),
+        raw={"createTime": 1700000000000, "updateTime": 1700000000000, "name": "Empty"},
+    )
+    wf = _wf(components={comp.uuid: comp})
+    findings = check_schema(wf)
+    f = next((x for x in findings if x.code == "WIZ006"), None)
+    assert f is not None
+    assert f.severity is Severity.WARNING
+    assert "empty" in f.message.lower() or "no canvas" in f.message.lower()
+
+
+def test_wiz006_skipped_when_canvas_has_nodes():
+    """A component with at least one FlowNode does not fire WIZ006."""
+    node = FlowNode(
+        uuid=UUID(int=99), parent_uuid=None, label="Greeting", sort_index=0, raw={},
+    )
+    comp = Component(
+        uuid=UUID(int=2),
+        speech_id=1,
+        category=1,
+        branch="dev",
+        details=ComponentDetails(flow_nodes={UUID(int=99): node}, root_uuids=(UUID(int=99),)),
+        raw={"createTime": 1700000000000, "updateTime": 1700000000000, "name": "NonEmpty"},
+    )
+    wf = _wf(components={comp.uuid: comp})
+    findings = check_schema(wf)
+    assert not any(f.code == "WIZ006" for f in findings)

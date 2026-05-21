@@ -231,3 +231,28 @@ def test_parse_unwrap_list_malformed_string_raises_parse_error():
         path = f.name
     with pytest.raises(ParseError):
         parse_file(path)
+
+
+def test_parser_handles_null_details_string():
+    """details: "null" (decodes to None) is treated as empty canvas, not parse error."""
+    from wizcheck.parser import _parse_component_details
+    details = _parse_component_details("null")
+    assert details.flow_nodes == {}
+    assert details.root_uuids == ()
+
+
+def test_parser_handles_actual_null_details():
+    """details: None (Python None) also yields empty ComponentDetails."""
+    from wizcheck.parser import _parse_component_details
+    details = _parse_component_details(None)
+    assert details.flow_nodes == {}
+    assert details.root_uuids == ()
+
+
+def test_parser_loads_empty_canvas_fixture(fixture_path):
+    """End-to-end: empty_canvas.json parses cleanly and yields a zero-node component."""
+    wf = parse_file(fixture_path("empty_canvas.json"))
+    assert len(wf.components) == 1
+    comp = next(iter(wf.components.values()))
+    assert comp.details.flow_nodes == {}
+    assert comp.details.root_uuids == ()

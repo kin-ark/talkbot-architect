@@ -1,0 +1,26 @@
+{
+  "BizSpeechComponent": [
+    {
+      "componentUuid": "55555555-5555-4555-8555-555555555555",
+      "speechId": 1,
+      "category": 1,
+      "branch": "dev",
+      "details": "null",
+      "createTime": 1700000000000,
+      "updateTime": 1700000000000,
+      "name": "Dialogue Open"
+    }
+  ],
+  "SpeechVariable": [],
+  "SpeechIntent": [
+    {
+      "intentId": 1,
+      "intentName": "Unclassified",
+      "language": "IDN",
+      "keyWordInIntent": [],
+      "userResponseInIntent": []
+    }
+  ],
+  "SentenceCutSpeech": [],
+  "SpeechAudio": []
+}
