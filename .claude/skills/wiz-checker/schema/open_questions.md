@@ -32,6 +32,12 @@ files.  They require confirmation from WIZ.AI documentation or support.
   `details` holds the full canvas dict keyed by UUID;
   `topFloorDetails` holds a flat list of top-level node data objects.
 
+- [x] Can `BizSpeechComponent.details` be `null` (the string `"null"`)?
+  ANSWER: yes — that is the default state for empty/template dialogues
+  emitted by "Create New Dialogue". The parser now treats this as a
+  zero-node canvas; WIZ006 surfaces the state as a warning.
+  *Applied in tightening v3 spec 2026-05-21.*
+
 ---
 
 ## FlowNode
@@ -47,6 +53,14 @@ files.  They require confirmation from WIZ.AI documentation or support.
   always so, or can `value` differ from `uuid`?
 
 - [ ] `sortIndexABS` vs `sortIndex` — what is the difference?
+
+- [x] Are orphan parent UUIDs (parentId not present in the export) real
+  bugs?  ANSWER: typically no — they are references to WIZ.AI Component
+  Library entries (ASR Corpus Collection, Re-ask Limit/Tenor, Judgement
+  nodes, sub-canvas closings, etc.) that live outside the talkbot export.
+  Surfaced as WIZ100 (warning, was error in v2) and WIZ104 (per-file
+  rollup) in v3. User must verify each in the WIZ.AI UI to confirm intent.
+  *Applied in tightening v3 spec 2026-05-21.*
 
 ---
 
@@ -72,6 +86,11 @@ files.  They require confirmation from WIZ.AI documentation or support.
 - [x] What are all valid `textType` values beyond the observed set
   (`""`, `DEFAULT`, `DATE`, `EMAIL`, `PHONE`)? ANSWER: "" is a custom variable and the others are the default by the system
   *Applied in tightening v2 spec 2026-05-19 (WIZ202 textType filter replaces name allowlist).* 
+
+- [x] What does `variableSource` mean?  ANSWER: `0` = user-authored custom
+  variable; `1` = platform/system-managed (always present on every export
+  regardless of script usage).
+  *Applied in tightening v3 spec 2026-05-21 (WIZ202 filter swaps from textType to variableSource).*
 
 ---
 
