@@ -135,6 +135,19 @@ class FlowGraph:
     def orphan_refs(self) -> list[UUID]:
         return [n for n, attrs in self._g.nodes(data=True) if not attrs.get("present", False)]
 
+    def library_refs(self) -> dict[UUID, list[UUID]]:
+        """Return {orphan_parent_uuid: [child_uuid, ...]} for every unresolved parent.
+
+        These represent references to nodes outside this export — typically WIZ.AI
+        Component Library imports (e.g., ASR Corpus Collection, Re-ask Limit), but
+        possibly malformed parent links. Used by WIZ100 / WIZ101 / WIZ104 to
+        reason about external references.
+        """
+        return {
+            orphan: list(self._g.successors(orphan))
+            for orphan in self.orphan_refs()
+        }
+
     def dead_ends(self) -> list[UUID]:
         return [
             n for n, attrs in self._g.nodes(data=True)

@@ -48,29 +48,122 @@ def _wf_from_nodes(nodes: list[FlowNode]) -> WizFile:
     )
 
 
-def test_wiz100_orphan_reference_is_error():
+def test_wiz100_orphan_parent_is_warning_not_error():
+    """v3: orphan parent refs are warnings (likely Component Library imports)."""
     a, missing = UUID(int=10), UUID(int=11)
     n_a = _node(a)
-    n_orphan_ref = _node(UUID(int=12), parent=missing)  # claims `missing` as parent
+    n_orphan_ref = _node(UUID(int=12), parent=missing, label="ASR Corpus Collection")
     wf = _wf_from_nodes([n_a, n_orphan_ref])
     findings = check_graph(wf)
     f = next((x for x in findings if x.code == "WIZ100"), None)
     assert f is not None
-    assert f.severity is Severity.ERROR
+    assert f.severity is Severity.WARNING
     assert str(missing) in f.message or str(missing) in (f.location.id or "")
 
 
-def test_wiz101_unreachable_node_is_warning():
-    # A node whose parent is itself orphaned is unreachable from any valid root.
+def test_wiz100_message_includes_child_labels():
+    """v3: WIZ100 message hints at the referenced library component via the child's label."""
+    a, missing = UUID(int=10), UUID(int=11)
+    n_a = _node(a)
+    n_orphan_ref = _node(UUID(int=12), parent=missing, label="ASR Corpus Collection")
+    wf = _wf_from_nodes([n_a, n_orphan_ref])
+    findings = check_graph(wf)
+    f = next((x for x in findings if x.code == "WIZ100"), None)
+    assert f is not None
+    assert "ASR Corpus Collection" in f.message
+
+
+def test_wiz101_descendants_of_library_ref_are_not_unreachable():
+    """v3: a node whose only path to a root goes through a library-ref orphan is reachable.
+
+    The orphan parent is treated as an external root.
+    """
     a = UUID(int=20)
     orphan_parent = UUID(int=21)
     child = UUID(int=22)
+    grandchild = UUID(int=23)
     n_a = _node(a)
-    n_child = _node(child, parent=orphan_parent)
+    n_child = _node(child, parent=orphan_parent, label="Library Entry")
+    n_grandchild = _node(grandchild, parent=child)
+    wf = _wf_from_nodes([n_a, n_child, n_grandchild])
+    findings = check_graph(wf)
+    # Neither child nor grandchild should be flagged as unreachable.
+    assert not any(
+        f.code == "WIZ101" and str(child) in (f.location.id or "")
+        for f in findings
+    )
+    assert not any(
+        f.code == "WIZ101" and str(grandchild) in (f.location.id or "")
+        for f in findings
+    )
+
+
+def test_wiz101_genuinely_disconnected_node_is_warning():
+    """A node not reachable from any root (declared OR library-ref) still fires WIZ101."""
+    a, b = UUID(int=50), UUID(int=51)
+    n_a = FlowNode(uuid=a, parent_uuid=None, label="Greeting", sort_index=0, raw={})
+    n_b = FlowNode(uuid=b, parent_uuid=None, label="Disconnected", sort_index=0, raw={})
+    # Construct WizFile manually so only `a` is a declared root (b is NOT).
+    from wizcheck.ir import Component, ComponentDetails
+    comp = Component(
+        uuid=UUID(int=1), speech_id=1, category=1, branch="dev",
+        details=ComponentDetails(flow_nodes={a: n_a, b: n_b}, root_uuids=(a,)),
+        raw={"createTime": 1700000000000, "updateTime": 1700000000000},
+    )
+    g = FlowGraph()
+    g.add_node(a)
+    g.add_node(b)
+    # No edges; no orphan parents either.
+    wf = WizFile(
+        raw={},
+        components={comp.uuid: comp},
+        variables={}, intents={}, utterances=(), audios={},
+        flow=g,
+    )
+    findings = check_graph(wf)
+    assert any(
+        f.code == "WIZ101" and str(b) in (f.location.id or "")
+        for f in findings
+    )
+
+
+def test_wiz104_rollup_present_when_library_refs_exist():
+    """v3: WIZ104 emits one rollup finding when at least one orphan parent exists."""
+    a, missing = UUID(int=60), UUID(int=61)
+    n_a = _node(a)
+    n_child = _node(UUID(int=62), parent=missing, label="Re-ask Limit")
     wf = _wf_from_nodes([n_a, n_child])
     findings = check_graph(wf)
-    codes = [f.code for f in findings]
-    assert "WIZ101" in codes
+    f = next((x for x in findings if x.code == "WIZ104"), None)
+    assert f is not None
+    assert f.severity is Severity.WARNING
+    assert "Re-ask Limit" in f.message
+
+
+def test_wiz104_absent_when_no_library_refs():
+    """No orphan parents → no WIZ104."""
+    a, b = UUID(int=70), UUID(int=71)
+    n_a = _node(a)
+    n_b = _node(b, parent=a)  # b's parent IS present
+    wf = _wf_from_nodes([n_a, n_b])
+    findings = check_graph(wf)
+    assert not any(f.code == "WIZ104" for f in findings)
+
+
+def test_wiz104_rollup_dedupes_labels():
+    """Multiple children of the same library ref with the same label produce one label entry."""
+    a = UUID(int=80)
+    missing = UUID(int=81)
+    c1, c2 = UUID(int=82), UUID(int=83)
+    n_a = _node(a)
+    n_c1 = _node(c1, parent=missing, label="Re-ask Limit")
+    n_c2 = _node(c2, parent=missing, label="Re-ask Limit")
+    wf = _wf_from_nodes([n_a, n_c1, n_c2])
+    findings = check_graph(wf)
+    f = next((x for x in findings if x.code == "WIZ104"), None)
+    assert f is not None
+    # Label should appear exactly once in the message, even though two children share it.
+    assert f.message.count("Re-ask Limit") == 1
 
 
 def test_wiz102_dead_end_warns_for_pitch_with_no_children():
@@ -126,3 +219,18 @@ def test_wiz103_cycle_is_warning():
     f = next((x for x in findings if x.code == "WIZ103"), None)
     assert f is not None
     assert f.severity is Severity.WARNING
+
+
+def test_library_ref_fixture_emits_warnings_not_errors(fixture_path):
+    """End-to-end: library_ref.json produces WIZ100 + WIZ104 warnings, no errors."""
+    from wizcheck.parser import parse_file
+    wf = parse_file(fixture_path("library_ref.json"))
+    findings = check_graph(wf)
+    codes = [f.code for f in findings]
+    assert "WIZ100" in codes
+    assert "WIZ104" in codes
+    # No graph-layer errors — everything is a warning under v3.
+    assert not any(f.severity is Severity.ERROR for f in findings)
+    # The ASR Corpus Collection label should appear in the WIZ104 rollup message.
+    f104 = next(f for f in findings if f.code == "WIZ104")
+    assert "ASR Corpus Collection" in f104.message

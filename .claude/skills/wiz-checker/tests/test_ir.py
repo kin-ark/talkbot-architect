@@ -21,7 +21,10 @@ UUID_B = UUID("00000000-0000-4000-8000-000000000002")
 
 
 def test_variable_is_frozen_and_has_raw():
-    v = Variable(id=1, name="Phone", text_type="PHONE", raw={"id": 1, "name": "Phone"}, variable_source=1)
+    v = Variable(
+        id=1, name="Phone", text_type="PHONE",
+        raw={"id": 1, "name": "Phone"}, variable_source=1,
+    )
     assert v.id == 1
     assert v.name == "Phone"
     assert v.text_type == "PHONE"
@@ -133,3 +136,27 @@ def test_flowgraph_add_node_after_add_edge_upgrades_orphan_to_present():
     # After upgrade: b is present, not an orphan
     assert b not in g.orphan_refs()
     assert b in g.all_nodes()
+
+
+def test_flowgraph_library_refs_empty_when_no_orphans():
+    a, b = UUID(int=70), UUID(int=71)
+    g = FlowGraph()
+    g.add_node(a)
+    g.add_node(b)
+    g.add_edge(a, b)
+    # b is present (registered via add_node before edge), so no orphans
+    assert g.library_refs() == {}
+
+
+def test_flowgraph_library_refs_maps_parents_to_children():
+    a, missing = UUID(int=80), UUID(int=81)
+    child1, child2 = UUID(int=82), UUID(int=83)
+    g = FlowGraph()
+    g.add_node(a)
+    g.add_node(child1)
+    g.add_node(child2)
+    g.add_edge(missing, child1)
+    g.add_edge(missing, child2)
+    refs = g.library_refs()
+    assert missing in refs
+    assert set(refs[missing]) == {child1, child2}
