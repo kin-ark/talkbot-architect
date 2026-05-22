@@ -25,7 +25,9 @@ CHECKER_CLI = PROJECT_ROOT / ".claude" / "skills" / "wiz-checker" / "scripts" / 
 def test_build_produces_checker_clean_output(manifest_name, tmp_path):
     out = tmp_path / "speech.json"
     result = compile_manifest(FIXTURES / manifest_name, out)
-    assert result.checker_errors == 0, f"Errors: {result.finding_codes}"
+    assert result.checker_errors == 0, (
+        f"{manifest_name}: {result.checker_errors} errors, codes: {result.finding_codes}"
+    )
 
 
 def test_multi_canvas_golden_matches(tmp_path):
@@ -43,10 +45,12 @@ def test_multi_canvas_golden_matches(tmp_path):
     expected = json.loads(golden_path.read_text(encoding="utf-8"))
     if actual != expected:
         pytest.fail(
-            "Golden mismatch. To update:\n"
-            f"  python -c \"import json,sys; from tests.test_integration import _normalize; "
-            f"d=_normalize(json.load(open(r'{out}', encoding='utf-8'))); "
-            f"open(r'{golden_path}','w',encoding='utf-8').write(json.dumps(d,indent=2,ensure_ascii=False))\""
+            "Golden mismatch. To regenerate the golden, follow Step 4 in the plan "
+            "(docs/superpowers/plans/2026-05-21-wiz-builder-mvp.md, around line 2414):\n"
+            "it runs compile_manifest + _normalize from the project root via PYTHONPATH.\n"
+            f"Current build output that disagrees: {out}\n"
+            f"Golden file to update: {golden_path}\n"
+            "Diff first to make sure the change is intentional!"
         )
 
 
