@@ -65,5 +65,5 @@ def apply_intents(
             "userResponseInIntent": _bracket_join(ci.user_responses, sep=";"),
         })
 
-    template["SpeechIntent"] = json.dumps(intents, ensure_ascii=False)
+    template["SpeechIntent"] = json.dumps(intents, ensure_ascii=False, separators=(",", ":"))
     return template

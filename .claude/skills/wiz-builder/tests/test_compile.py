@@ -62,6 +62,17 @@ def test_compile_unlinks_partial_output_on_checker_rejection(fixture_path, tmp_p
     assert not out.exists()
 
 
+def test_compile_output_is_single_line_minified(fixture_path, tmp_path):
+    """Builder output must be single-line minified (matching real WIZ exports)."""
+    out = tmp_path / "speech.json"
+    compile_manifest(fixture_path("manifest_minimal.yaml"), out)
+    text = out.read_text(encoding="utf-8")
+    lines = text.splitlines()
+    assert len(lines) == 1, f"Expected single-line output, got {len(lines)} lines"
+    # No spaces after colons at the top level
+    assert '": "' not in text, "Found spaces after colons in top-level JSON"
+
+
 def test_compile_is_idempotent_for_uuids(fixture_path, tmp_path):
     """Same manifest text → same UUIDs in the output."""
     out1 = tmp_path / "speech1.json"

@@ -50,7 +50,7 @@ def apply_canvases(
         _build_component(canvas, ci, manifest, minter, base, speech_id)
         for ci, canvas in enumerate(manifest.canvases)
     ]
-    template["BizSpeechComponent"] = json.dumps(new_components, ensure_ascii=False)
+    template["BizSpeechComponent"] = json.dumps(new_components, ensure_ascii=False, separators=(",", ":"))
     return template
 
 
@@ -116,5 +116,5 @@ def _build_component(
         "createTime": base.get("createTime", 0),
         "updateTime": base.get("updateTime", 0),
         "id": minter.int_id(f"component-id:{canvas_index}"),
-        "details": json.dumps(details_payload, ensure_ascii=False),
+        "details": json.dumps(details_payload, ensure_ascii=False, separators=(",", ":")),
     }

@@ -40,7 +40,7 @@ def apply_identity(
         for item in items:
             if "speechId" in item:
                 item["speechId"] = speech_id
-        template[key] = json.dumps(items, ensure_ascii=False)
+        template[key] = json.dumps(items, ensure_ascii=False, separators=(",", ":"))
 
     # Update BizSpeechComponent entries: branch + componentUuid for the (single) template entry.
     bsc_raw = template.get("BizSpeechComponent")
@@ -53,6 +53,6 @@ def apply_identity(
         comp["branch"] = manifest.branch
         comp["componentUuid"] = str(minter.uuid(f"component:{i}"))
         # parentUuid stays "0" (root) for template's lone component.
-    template["BizSpeechComponent"] = json.dumps(bsc, ensure_ascii=False)
+    template["BizSpeechComponent"] = json.dumps(bsc, ensure_ascii=False, separators=(",", ":"))
 
     return template

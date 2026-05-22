@@ -55,5 +55,5 @@ def apply_variables(
             "variableSource": 0,
         })
 
-    template["SpeechVariable"] = json.dumps(vars_list, ensure_ascii=False)
+    template["SpeechVariable"] = json.dumps(vars_list, ensure_ascii=False, separators=(",", ":"))
     return template
