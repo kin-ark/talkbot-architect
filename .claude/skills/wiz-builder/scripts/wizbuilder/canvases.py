@@ -116,5 +116,11 @@ def _build_component(
         "createTime": base.get("createTime", 0),
         "updateTime": base.get("updateTime", 0),
         "id": minter.int_id(f"component-id:{canvas_index}"),
+        "inboundPorts": "[]",
+        "outboundPorts": "[]",
+        "routes": "[]",
+        "nluConf": "{}",
+        "sourceUuid": "",
+        "topFloorDetails": "{}",
         "details": json.dumps(details_payload, ensure_ascii=False, separators=(",", ":")),
     }

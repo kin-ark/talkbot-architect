@@ -114,3 +114,20 @@ def test_apply_canvases_sort_index_is_positional(template_dict, fixture_path):
     by_label = {n["label"]: n for n in nodes_list}
     assert by_label["Greeting"]["sortIndex"] == 0
     assert by_label["Pitch"]["sortIndex"] == 1
+
+
+def test_apply_canvases_component_has_real_export_keys(template_dict, fixture_path):
+    """Each BizSpeechComponent entry must include the 6 keys present in real WIZ exports."""
+    m = load_manifest(fixture_path("manifest_multi_canvas.yaml"))
+    minter = IdMinter(manifest_hash=manifest_hash_of(m.raw_text))
+    apply_canvases(template_dict, m, minter)
+    bsc = json.loads(template_dict["BizSpeechComponent"])
+    for comp in bsc:
+        for key in ("inboundPorts", "outboundPorts", "routes", "nluConf", "sourceUuid", "topFloorDetails"):
+            assert key in comp, f"Component '{comp['name']}' missing key '{key}'"
+        assert comp["inboundPorts"] == "[]"
+        assert comp["outboundPorts"] == "[]"
+        assert comp["routes"] == "[]"
+        assert comp["nluConf"] == "{}"
+        assert comp["sourceUuid"] == ""
+        assert comp["topFloorDetails"] == "{}"
