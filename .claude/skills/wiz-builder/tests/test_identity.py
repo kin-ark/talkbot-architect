@@ -88,6 +88,44 @@ def test_apply_identity_preserves_intent_language(template_dict):
     assert all(i.get("language") == "IDN" for i in intents)
 
 
+def test_apply_identity_propagates_speech_id_to_all_fields(template_dict):
+    """speechId must be uniform across ALL fields, not just the current hardcoded list."""
+    m = _manifest()
+    minter = IdMinter(manifest_hash=manifest_hash_of(m.raw_text))
+    result = apply_identity(template_dict, m, minter)
+
+    scene = json.loads(result["BizSpeechScene"])
+    expected_id = scene["speechId"]
+
+    fields_with_speechid = [
+        "BizKnowledgeInfo",
+        "BizSpeechComponent",
+        "BizSpeechScene",
+        "IntentionLabel",
+        "SentenceCutKnowledge",
+        "SpeechInspection",
+        "SpeechIntent",
+        "SpeechRules",
+        "SpeechVariable",
+    ]
+    for key in fields_with_speechid:
+        raw = result.get(key)
+        if not isinstance(raw, str) or not raw.strip():
+            continue
+        decoded = json.loads(raw)
+        if isinstance(decoded, list):
+            for item in decoded:
+                if "speechId" in item:
+                    assert item["speechId"] == expected_id, (
+                        f"{key} item has speechId={item['speechId']}, expected {expected_id}"
+                    )
+        elif isinstance(decoded, dict):
+            if "speechId" in decoded:
+                assert decoded["speechId"] == expected_id, (
+                    f"{key} has speechId={decoded['speechId']}, expected {expected_id}"
+                )
+
+
 def test_apply_identity_does_not_create_new_top_level_keys(template_dict):
     """apply_identity only mutates existing keys; doesn't add new ones."""
     m = _manifest()

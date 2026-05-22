@@ -8,14 +8,6 @@ from typing import Any
 from wizbuilder.ids import IdMinter
 from wizbuilder.manifest import Manifest
 
-_SPEECH_ID_KEYS = (
-    "BizSpeechComponent",
-    "SpeechVariable",
-    "SpeechIntent",
-    "SentenceCutSpeech",
-    "SpeechAudio",
-)
-
 
 def apply_identity(
     template: dict[str, Any],
@@ -24,23 +16,33 @@ def apply_identity(
 ) -> dict[str, Any]:
     """Mutate the parsed template in place to reflect the manifest's identity fields.
 
-    Sets a fresh speechId across all string-encoded top-level lists that carry it
-    (BizSpeechComponent, SpeechIntent, SpeechVariable, etc.). Replaces the single
-    template BizSpeechComponent's componentUuid with a manifest-derived UUID.
-    Updates branch on BizSpeechComponent. Does not modify intent language fields.
+    Generates a fresh speechId and propagates it to every top-level field that
+    contains one (both object and array fields). Replaces the single template
+    BizSpeechComponent's componentUuid with a manifest-derived UUID. Updates
+    branch on BizSpeechComponent. Does not modify intent language fields.
     """
     speech_id = minter.random_speech_id()
 
-    # Top-level string-encoded lists that carry speechId on their items.
-    for key in _SPEECH_ID_KEYS:
-        raw = template.get(key)
+    # Propagate speechId to every top-level field that carries it.
+    for key, raw in template.items():
         if not isinstance(raw, str) or not raw.strip():
             continue
-        items = json.loads(raw)
-        for item in items:
-            if "speechId" in item:
-                item["speechId"] = speech_id
-        template[key] = json.dumps(items, ensure_ascii=False, separators=(",", ":"))
+        try:
+            decoded = json.loads(raw)
+        except (json.JSONDecodeError, ValueError):
+            continue
+        changed = False
+        if isinstance(decoded, list):
+            for item in decoded:
+                if isinstance(item, dict) and "speechId" in item:
+                    item["speechId"] = speech_id
+                    changed = True
+        elif isinstance(decoded, dict):
+            if "speechId" in decoded:
+                decoded["speechId"] = speech_id
+                changed = True
+        if changed:
+            template[key] = json.dumps(decoded, ensure_ascii=False, separators=(",", ":"))
 
     # Update BizSpeechComponent entries: branch + componentUuid for the (single) template entry.
     bsc_raw = template.get("BizSpeechComponent")
