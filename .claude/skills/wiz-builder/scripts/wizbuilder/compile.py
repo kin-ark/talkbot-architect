@@ -21,6 +21,15 @@ _PROJECT_ROOT = _SKILL_DIR.parents[2]
 _CHECKER_CLI = _PROJECT_ROOT / ".claude" / "skills" / "wiz-checker" / "scripts" / "check.py"
 
 
+class CompileError(RuntimeError):
+    """Raised when wiz-checker reports errors > 0 against the compiler's output.
+
+    This indicates a bug in the compiler itself (the produced speech*.json failed
+    structural/logical validation). Distinct from plain RuntimeError, which is
+    reserved for unexpected internal failures (e.g. checker crash, malformed JSON).
+    """
+
+
 @dataclass
 class CompileResult:
     output_path: Path
@@ -59,7 +68,7 @@ def compile_manifest(manifest_path: Path, output_path: Path) -> CompileResult:
     if result.checker_errors > 0:
         # The compiler has a bug — delete the partial output.
         output_path.unlink(missing_ok=True)
-        raise RuntimeError(
+        raise CompileError(
             f"compiler bug: wiz-checker rejected the output with "
             f"{result.checker_errors} errors. Codes: {result.finding_codes}"
         )
@@ -81,14 +90,23 @@ def _run_checker(output_path: Path) -> CompileResult:
         raise RuntimeError(
             f"wiz-checker exited {proc.returncode} unexpectedly. stderr:\n{proc.stderr}"
         )
-    report = json.loads(proc.stdout)
-    summary = report["summary"]
+    try:
+        report = json.loads(proc.stdout)
+        summary = report["summary"]
+        findings = report["findings"]
+        errors = summary["errors"]
+        warnings = summary["warnings"]
+    except (json.JSONDecodeError, KeyError, TypeError) as e:
+        raise RuntimeError(
+            f"wiz-checker output is malformed ({type(e).__name__}: {e}). "
+            f"stdout was:\n{proc.stdout[:500]}"
+        ) from e
     codes: dict[str, int] = {}
-    for f in report["findings"]:
+    for f in findings:
         codes[f["code"]] = codes.get(f["code"], 0) + 1
     return CompileResult(
         output_path=output_path,
-        checker_errors=summary["errors"],
-        checker_warnings=summary["warnings"],
+        checker_errors=errors,
+        checker_warnings=warnings,
         finding_codes=codes,
     )

@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 
 import pytest
-from wizbuilder.compile import CompileResult, compile_manifest
+from wizbuilder.compile import CompileError, CompileResult, compile_manifest
 
 
 def test_compile_minimal_produces_valid_json(fixture_path, tmp_path):
@@ -40,6 +40,26 @@ def test_compile_invalid_manifest_raises(fixture_path, tmp_path):
     with pytest.raises(ManifestError):
         compile_manifest(fixture_path("manifest_invalid_cross_canvas.yaml"), out)
     assert not out.exists()  # no partial output on failure
+
+
+def test_compile_unlinks_partial_output_on_checker_rejection(fixture_path, tmp_path, monkeypatch):
+    """If wiz-checker reports errors > 0, the partial speech.json must be deleted."""
+    from wizbuilder import compile as compile_module
+
+    def fake_run_checker(output_path):
+        return compile_module.CompileResult(
+            output_path=output_path,
+            checker_errors=2,
+            checker_warnings=0,
+            finding_codes={"WIZ001": 1, "WIZ002": 1},
+        )
+
+    monkeypatch.setattr(compile_module, "_run_checker", fake_run_checker)
+
+    out = tmp_path / "speech.json"
+    with pytest.raises(CompileError):
+        compile_module.compile_manifest(fixture_path("manifest_minimal.yaml"), out)
+    assert not out.exists()
 
 
 def test_compile_is_idempotent_for_uuids(fixture_path, tmp_path):

@@ -32,7 +32,7 @@ _SCRIPTS_DIR = Path(__file__).resolve().parent
 if str(_SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS_DIR))
 
-from wizbuilder.compile import compile_manifest  # noqa: E402
+from wizbuilder.compile import CompileError, compile_manifest  # noqa: E402
 from wizbuilder.manifest import ManifestError, load_manifest  # noqa: E402
 
 
@@ -81,23 +81,23 @@ def main(argv: list[str] | None = None) -> int:
 
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    # Copy manifest alongside the output for self-contained builds.
-    manifest_copy = out_dir / "manifest.yaml"
-    if args.manifest.resolve() != manifest_copy.resolve():
-        shutil.copy2(args.manifest, manifest_copy)
-
     try:
         result = compile_manifest(args.manifest, out_path)
     except ManifestError as e:
         print(f"manifest error: {e}", file=sys.stderr)
         return 2
-    except RuntimeError as e:
-        # Internal compiler failure or checker rejection.
+    except CompileError as e:
+        # Checker rejected the output — the compiler has a bug.
         print(f"compile failed: {e}", file=sys.stderr)
         return 5
     except Exception:
         traceback.print_exc()
         return 4
+
+    # Compile succeeded — copy manifest alongside the output for self-contained builds.
+    manifest_copy = out_dir / "manifest.yaml"
+    if args.manifest.resolve() != manifest_copy.resolve():
+        shutil.copy2(args.manifest, manifest_copy)
 
     print(json.dumps({
         "output": str(result.output_path),
