@@ -57,15 +57,25 @@ def test_multi_canvas_golden_matches(tmp_path):
 def _normalize(data: dict) -> dict:
     """Zero out the random speechId so goldens are stable."""
     data = dict(data)
-    for key in ("BizSpeechComponent", "SpeechVariable", "SpeechIntent", "SentenceCutSpeech", "SpeechAudio"):  # noqa: E501
-        raw = data.get(key)
+    for key, raw in data.items():
         if not isinstance(raw, str) or not raw.strip():
             continue
-        items = json.loads(raw)
-        for item in items:
-            if "speechId" in item:
-                item["speechId"] = 0
-        data[key] = json.dumps(items, ensure_ascii=False)
+        try:
+            decoded = json.loads(raw)
+        except (json.JSONDecodeError, ValueError):
+            continue
+        changed = False
+        if isinstance(decoded, list):
+            for item in decoded:
+                if isinstance(item, dict) and "speechId" in item:
+                    item["speechId"] = 0
+                    changed = True
+        elif isinstance(decoded, dict):
+            if "speechId" in decoded:
+                decoded["speechId"] = 0
+                changed = True
+        if changed:
+            data[key] = json.dumps(decoded, ensure_ascii=False, separators=(",", ":"))
     return data
 
 
