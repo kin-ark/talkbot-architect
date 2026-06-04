@@ -3,12 +3,17 @@ from wizmodifier.apply import run_mods
 from wizmodifier.io import InputBundle
 
 
-def test_zero_ops_is_byte_identical_after_reserialize(baseline_json_path):
-    """A no-op run must equal the re-serialized baseline exactly (no noise)."""
+def test_zero_ops_is_byte_identical_to_source(baseline_json_path):
+    """A no-op run must leave serialized output byte-identical to the source file.
+
+    The Empty+Dialogue export is already in canonical compact form, so this is a
+    true round-trip check: it would fail if codec/io or run_mods introduced any
+    serialization noise (whitespace, key reordering, re-encoding drift).
+    """
+    source_text = baseline_json_path.read_text(encoding="utf-8")
     b = InputBundle.load(baseline_json_path)
-    reserialized = codec.encode(codec.decode(codec.encode(b.data)))  # canonical form
     run_mods(b, [], manifest_hash="t")
-    assert b.serialize_json() == reserialized
+    assert b.serialize_json() == source_text
 
 
 def test_untouched_fields_unchanged(baseline_json_path):
