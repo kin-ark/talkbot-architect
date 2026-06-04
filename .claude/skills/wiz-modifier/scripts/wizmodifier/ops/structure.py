@@ -1,5 +1,12 @@
 """Structure ops: add BSC keys, populate the details payload, add a component."""
 
+# NOTE: The BSC key set, details-envelope shape, and node-dict shape below are
+# deliberately reproduced from wiz-builder (canvases.py) rather than imported:
+# builder functions consume Manifest/Canvas dataclasses and re-serialize from
+# template order, whereas these ops take plain params and must preserve the
+# loaded export's key order. wiz-builder is the canonical shape-of-record —
+# keep these in sync if its shapes change.
+
 from __future__ import annotations
 
 from wizmodifier import codec

@@ -1,5 +1,11 @@
 """Content ops: append custom variables and intents (wiz-builder shapes)."""
 
+# NOTE: The 12-key variable and 13-key intent shapes are reproduced from
+# wiz-builder (variables.py / intents.py), the canonical shape-of-record.
+# branch/language fall back to the loaded file's first default entry when a
+# param is omitted (a modifier inherits the export's existing values), which
+# differs intentionally from wiz-builder's Manifest-sourced values.
+
 from __future__ import annotations
 
 from collections.abc import Iterable

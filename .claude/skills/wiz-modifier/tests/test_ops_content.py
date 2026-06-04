@@ -45,3 +45,16 @@ def test_add_intent_appends_13_key_shape(baseline_dict):
     assert added["intentName"] == "yes"
     assert added["keyWordInIntent"] == "[ya,betul]"
     assert added["userResponseInIntent"] == "[Ya]"
+    assert set(added.keys()) == {
+        "branch", "createTime", "intentId", "intentName", "isDelete", "isInit",
+        "keyWordInIntent", "language", "nodeId", "speechId", "templateCode",
+        "updateTime", "userResponseInIntent",
+    }
+
+
+def test_add_intent_empty_keywords(baseline_dict):
+    b = InputBundle(data=baseline_dict, speech_name="s.json")
+    content.add_intent(b, {"name": "fallback"}, MINTER)
+    added = codec.decode(b.data["SpeechIntent"])[-1]
+    assert added["keyWordInIntent"] == "[]"
+    assert added["userResponseInIntent"] == "[]"

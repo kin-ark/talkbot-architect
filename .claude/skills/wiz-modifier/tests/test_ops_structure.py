@@ -48,5 +48,22 @@ def test_add_component_appends_entry(baseline_dict):
     structure.add_component(b, {"name": "Second Canvas"}, MINTER)
     comps = get_components(b)
     assert len(comps) == before + 1
-    assert comps[-1]["name"] == "Second Canvas"
-    assert comps[-1]["details"] == "null"  # no nodes given
+    new = comps[-1]
+    assert new["name"] == "Second Canvas"
+    assert new["details"] == "null"  # no nodes given
+    assert new["parentUuid"] == "0"
+    assert new["sortIndex"] == before + 1
+
+
+def test_add_component_with_nodes_populates_details(baseline_dict):
+    b = InputBundle(data=baseline_dict, speech_name="s.json")
+    structure.add_component(
+        b,
+        {"name": "Flow", "nodes": [{"id": "root", "label": "Open", "parent": None}]},
+        MINTER,
+    )
+    new = get_components(b)[-1]
+    assert new["details"] != "null"
+    details = codec.decode(new["details"])
+    nodes = next(iter(details.values()))["canvas"]["component"]["props"]["list"]
+    assert nodes[0]["label"] == "Open"
