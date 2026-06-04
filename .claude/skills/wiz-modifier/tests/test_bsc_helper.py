@@ -1,5 +1,4 @@
 import pytest
-
 from wizmodifier import codec
 from wizmodifier.io import InputBundle
 from wizmodifier.ops._bsc import get_components, require_component, set_components

@@ -7,7 +7,6 @@ sys.path.insert(
 )
 
 from wizbuilder.ids import IdMinter  # noqa: E402
-
 from wizmodifier import codec  # noqa: E402
 from wizmodifier.io import InputBundle  # noqa: E402
 from wizmodifier.ops import identity  # noqa: E402
