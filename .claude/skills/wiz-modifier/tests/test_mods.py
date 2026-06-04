@@ -1,5 +1,4 @@
 import pytest
-
 from wizmodifier.mods import ModManifest, ModManifestError, load_mods
 
 
