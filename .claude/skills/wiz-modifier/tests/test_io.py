@@ -1,17 +1,16 @@
-import io as _io
 import json
-import sys
 import zipfile
-from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-
+import pytest
 from wizmodifier.io import InputBundle
 
 
 def test_load_bare_json(baseline_json_path):
     b = InputBundle.load(baseline_json_path)
+    # Empty+Dialogue baseline: 25 top-level keys
+    # (see docs/original-vs-builder-deep-comparison.md §2)
     assert len(b.data) == 25
+    assert "BizSpeechComponent" in b.data
     assert b.speech_name == baseline_json_path.name
     assert b.wavs == {}
 
@@ -31,8 +30,5 @@ def test_load_zip_requires_one_speech_json(tmp_path):
     zpath = tmp_path / "bad.zip"
     with zipfile.ZipFile(zpath, "w") as z:
         z.writestr("notspeech.txt", "x")
-    try:
+    with pytest.raises(ValueError, match="speech"):
         InputBundle.load(zpath)
-        assert False, "expected IOError"
-    except IOError as e:
-        assert "speech" in str(e).lower()

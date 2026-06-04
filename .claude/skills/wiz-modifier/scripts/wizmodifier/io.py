@@ -24,7 +24,7 @@ class InputBundle:
     wavs: dict[str, bytes] = field(default_factory=dict)
 
     @classmethod
-    def load(cls, path: Path) -> "InputBundle":
+    def load(cls, path: Path) -> InputBundle:
         path = Path(path)
         if path.suffix.lower() == ".zip":
             return cls._load_zip(path)
@@ -32,12 +32,12 @@ class InputBundle:
         return cls(data=json.loads(text), speech_name=path.name)
 
     @classmethod
-    def _load_zip(cls, path: Path) -> "InputBundle":
+    def _load_zip(cls, path: Path) -> InputBundle:
         with zipfile.ZipFile(path) as z:
             names = [n for n in z.namelist() if not n.endswith("/")]
             speech = [n for n in names if Path(n).name.startswith("speech") and n.endswith(".json")]
             if len(speech) != 1:
-                raise IOError(
+                raise ValueError(
                     f"expected exactly one speech*.json in {path.name}, found {speech}"
                 )
             speech_name = Path(speech[0]).name
