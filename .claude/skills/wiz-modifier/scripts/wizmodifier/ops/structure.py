@@ -65,3 +65,27 @@ def populate_details(bundle: InputBundle, params: dict, minter) -> None:
     payload = _build_details_payload(params["nodes"], minter, index)
     comp["details"] = codec.encode(payload)
     set_components(bundle, comps)
+
+
+def add_component(bundle: InputBundle, params: dict, minter) -> None:
+    """Append a new BizSpeechComponent, cloning the first entry's shared keys.
+
+    If params has a 'nodes' list, the details payload is populated; otherwise
+    details is the literal string "null" (empty-canvas convention).
+    """
+    comps = get_components(bundle)
+    base = comps[0] if comps else {}
+    index = len(comps)
+    nodes = params.get("nodes")
+    details = "null"
+    if nodes:
+        details = codec.encode(_build_details_payload(nodes, minter, index))
+    new_comp = dict(base)
+    new_comp["componentUuid"] = str(minter.uuid(f"modifier-component:{index}"))
+    new_comp["name"] = params["name"]
+    new_comp["id"] = minter.int_id(f"modifier-component-id:{index}")
+    new_comp["parentUuid"] = "0"
+    new_comp["sortIndex"] = index + 1
+    new_comp["details"] = details
+    comps.append(new_comp)
+    set_components(bundle, comps)

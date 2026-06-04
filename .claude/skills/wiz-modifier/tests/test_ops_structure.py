@@ -7,7 +7,6 @@ sys.path.insert(
 )
 
 from wizbuilder.ids import IdMinter  # noqa: E402
-
 from wizmodifier import codec  # noqa: E402
 from wizmodifier.io import InputBundle  # noqa: E402
 from wizmodifier.ops import structure  # noqa: E402
@@ -41,3 +40,13 @@ def test_populate_details_builds_envelope(baseline_dict):
     assert nodes[0]["label"] == "Greeting"
     assert nodes[0]["parentId"] == ""
     assert nodes[0]["uuid"] == nodes[0]["value"]
+
+
+def test_add_component_appends_entry(baseline_dict):
+    b = InputBundle(data=baseline_dict, speech_name="s.json")
+    before = len(get_components(b))
+    structure.add_component(b, {"name": "Second Canvas"}, MINTER)
+    comps = get_components(b)
+    assert len(comps) == before + 1
+    assert comps[-1]["name"] == "Second Canvas"
+    assert comps[-1]["details"] == "null"  # no nodes given
