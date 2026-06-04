@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import uuid
-
 from wizmodifier import codec
 from wizmodifier.io import InputBundle
 from wizmodifier.ops._bsc import get_components, require_component, set_components
@@ -45,10 +43,17 @@ def set_speech_id(bundle: InputBundle, params: dict, minter) -> None:
 
 
 def set_component_uuid(bundle: InputBundle, params: dict, minter) -> None:
+    """Set a component's componentUuid to an explicit value or a minted one.
+
+    "random" mints a deterministic, manifest-hash-seeded UUID (new relative to
+    the original file but reproducible across runs, matching wiz-builder).
+    """
     comps = get_components(bundle)
     comp = require_component(comps, params["component"])
     value = params.get("value", "random")
-    comp["componentUuid"] = str(uuid.uuid4()) if value == "random" else value
+    if value == "random":
+        value = str(minter.uuid(f"modifier-uuid:{params['component']}"))
+    comp["componentUuid"] = value
     set_components(bundle, comps)
 
 

@@ -1,3 +1,4 @@
+import copy
 import sys
 from pathlib import Path
 
@@ -48,3 +49,14 @@ def test_set_component_uuid_explicit(baseline_dict):
     b = InputBundle(data=baseline_dict, speech_name="s.json")
     identity.set_component_uuid(b, {"component": 0, "value": "abc-123"}, MINTER)
     assert get_components(b)[0]["componentUuid"] == "abc-123"
+
+
+def test_set_component_uuid_random_is_minted_and_stable(baseline_dict):
+    b1 = InputBundle(data=copy.deepcopy(baseline_dict), speech_name="s.json")
+    b2 = InputBundle(data=copy.deepcopy(baseline_dict), speech_name="s.json")
+    original = get_components(b1)[0]["componentUuid"]
+    identity.set_component_uuid(b1, {"component": 0}, MINTER)
+    identity.set_component_uuid(b2, {"component": 0}, MINTER)
+    minted = get_components(b1)[0]["componentUuid"]
+    assert minted != original
+    assert minted == get_components(b2)[0]["componentUuid"]

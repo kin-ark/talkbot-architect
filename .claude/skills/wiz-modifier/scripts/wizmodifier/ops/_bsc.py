@@ -22,8 +22,6 @@ def set_components(bundle: InputBundle, comps: list[dict]) -> None:
 def require_component(comps: list[dict], index: int) -> dict:
     """Return comps[index] or raise a precise error."""
     if not isinstance(index, int) or index < 0 or index >= len(comps):
-        raise ValueError(
-            f"component {index} not found (file has {len(comps)} BSC entr"
-            f"{'y' if len(comps) == 1 else 'ies'})"
-        )
+        noun = "entry" if len(comps) == 1 else "entries"
+        raise ValueError(f"component {index} not found (file has {len(comps)} BSC {noun})")
     return comps[index]
