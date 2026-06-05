@@ -47,6 +47,8 @@ def _advisory_check(json_path: Path) -> None:
     if proc.stdout.strip():
         print("--- wiz-checker (advisory) ---")
         print(proc.stdout)
+    if proc.stderr.strip():
+        print(proc.stderr, file=sys.stderr)
 
 
 def _run_mods_manifest(args) -> int:

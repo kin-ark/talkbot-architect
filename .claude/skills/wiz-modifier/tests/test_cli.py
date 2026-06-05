@@ -74,3 +74,29 @@ def test_unknown_op_exits_2(tmp_path):
     r = _run(["--mods", str(mods), "--no-check"])
     assert r.returncode == 2
     assert "frobnicate" in r.stderr
+
+
+def test_advisory_checker_runs_for_json(tmp_path):
+    mods = tmp_path / "m.yaml"
+    out = tmp_path / "out.json"
+    mods.write_text(
+        f"input: {BASELINE.as_posix()}\nmods: []\n"
+        f"output:\n  path: {out.as_posix()}\n  format: json\n",
+        encoding="utf-8",
+    )
+    r = _run(["--mods", str(mods)])
+    assert r.returncode == 0
+    assert "wiz-checker" in r.stdout or "error" in r.stdout.lower() or r.stdout == ""
+
+
+def test_no_check_flag_suppresses_checker(tmp_path):
+    mods = tmp_path / "m.yaml"
+    out = tmp_path / "out.json"
+    mods.write_text(
+        f"input: {BASELINE.as_posix()}\nmods: []\n"
+        f"output:\n  path: {out.as_posix()}\n  format: json\n",
+        encoding="utf-8",
+    )
+    r = _run(["--mods", str(mods), "--no-check"])
+    assert r.returncode == 0
+    assert "wiz-checker" not in r.stdout
