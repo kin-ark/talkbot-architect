@@ -1,0 +1,527 @@
+{
+  "T0-baseline": {
+    "bsc0_details": "null",
+    "bsc0_keys": [
+      "branch",
+      "category",
+      "componentUuid",
+      "createBy",
+      "createTime",
+      "details",
+      "editStatus",
+      "id",
+      "language",
+      "name",
+      "parentUuid",
+      "sortIndex",
+      "speechId",
+      "templateCode",
+      "type",
+      "updateBy",
+      "updateTime",
+      "useStatus"
+    ],
+    "bsc_count": 1,
+    "intent_count": 15,
+    "topkeys": 25,
+    "var_count": 9
+  },
+  "T1-reserialized": {
+    "bsc0_details": "null",
+    "bsc0_keys": [
+      "branch",
+      "category",
+      "componentUuid",
+      "createBy",
+      "createTime",
+      "details",
+      "editStatus",
+      "id",
+      "language",
+      "name",
+      "parentUuid",
+      "sortIndex",
+      "speechId",
+      "templateCode",
+      "type",
+      "updateBy",
+      "updateTime",
+      "useStatus"
+    ],
+    "bsc_count": 1,
+    "intent_count": 15,
+    "topkeys": 25,
+    "var_count": 9
+  },
+  "T10-custom-intents": {
+    "bsc0_details": {
+      "f2cd2c8a-d2d8-5efb-b128-4c42d1e6a955": {
+        "canvas": {
+          "component": {
+            "props": {
+              "list": [
+                {
+                  "children": [],
+                  "editStatus": 1,
+                  "label": "Greeting",
+                  "parentId": "",
+                  "sortIndex": 0,
+                  "sortIndexABS": 0,
+                  "useStatus": 1,
+                  "uuid": "<uuid>",
+                  "value": "<uuid>"
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "bsc0_keys": [
+      "branch",
+      "category",
+      "componentUuid",
+      "createBy",
+      "createTime",
+      "details",
+      "editStatus",
+      "id",
+      "inboundPorts",
+      "language",
+      "name",
+      "nluConf",
+      "outboundPorts",
+      "parentUuid",
+      "routes",
+      "sortIndex",
+      "sourceUuid",
+      "speechId",
+      "templateCode",
+      "topFloorDetails",
+      "type",
+      "updateBy",
+      "updateTime",
+      "useStatus"
+    ],
+    "bsc_count": 2,
+    "intent_count": 17,
+    "topkeys": 25,
+    "var_count": 12
+  },
+  "T11-no-wav": {
+    "bsc0_details": {
+      "f2cd2c8a-d2d8-5efb-b128-4c42d1e6a955": {
+        "canvas": {
+          "component": {
+            "props": {
+              "list": [
+                {
+                  "children": [],
+                  "editStatus": 1,
+                  "label": "Greeting",
+                  "parentId": "",
+                  "sortIndex": 0,
+                  "sortIndexABS": 0,
+                  "useStatus": 1,
+                  "uuid": "<uuid>",
+                  "value": "<uuid>"
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "bsc0_keys": [
+      "branch",
+      "category",
+      "componentUuid",
+      "createBy",
+      "createTime",
+      "details",
+      "editStatus",
+      "id",
+      "inboundPorts",
+      "language",
+      "name",
+      "nluConf",
+      "outboundPorts",
+      "parentUuid",
+      "routes",
+      "sortIndex",
+      "sourceUuid",
+      "speechId",
+      "templateCode",
+      "topFloorDetails",
+      "type",
+      "updateBy",
+      "updateTime",
+      "useStatus"
+    ],
+    "bsc_count": 2,
+    "intent_count": 17,
+    "topkeys": 25,
+    "var_count": 12
+  },
+  "T12-bare-json": {
+    "bsc0_details": {
+      "f2cd2c8a-d2d8-5efb-b128-4c42d1e6a955": {
+        "canvas": {
+          "component": {
+            "props": {
+              "list": [
+                {
+                  "children": [],
+                  "editStatus": 1,
+                  "label": "Greeting",
+                  "parentId": "",
+                  "sortIndex": 0,
+                  "sortIndexABS": 0,
+                  "useStatus": 1,
+                  "uuid": "<uuid>",
+                  "value": "<uuid>"
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "bsc0_keys": [
+      "branch",
+      "category",
+      "componentUuid",
+      "createBy",
+      "createTime",
+      "details",
+      "editStatus",
+      "id",
+      "inboundPorts",
+      "language",
+      "name",
+      "nluConf",
+      "outboundPorts",
+      "parentUuid",
+      "routes",
+      "sortIndex",
+      "sourceUuid",
+      "speechId",
+      "templateCode",
+      "topFloorDetails",
+      "type",
+      "updateBy",
+      "updateTime",
+      "useStatus"
+    ],
+    "bsc_count": 2,
+    "intent_count": 17,
+    "topkeys": 25,
+    "var_count": 12
+  },
+  "T2-new-speechid": {
+    "bsc0_details": "null",
+    "bsc0_keys": [
+      "branch",
+      "category",
+      "componentUuid",
+      "createBy",
+      "createTime",
+      "details",
+      "editStatus",
+      "id",
+      "language",
+      "name",
+      "parentUuid",
+      "sortIndex",
+      "speechId",
+      "templateCode",
+      "type",
+      "updateBy",
+      "updateTime",
+      "useStatus"
+    ],
+    "bsc_count": 1,
+    "intent_count": 15,
+    "topkeys": 25,
+    "var_count": 9
+  },
+  "T3-new-componentuuid": {
+    "bsc0_details": "null",
+    "bsc0_keys": [
+      "branch",
+      "category",
+      "componentUuid",
+      "createBy",
+      "createTime",
+      "details",
+      "editStatus",
+      "id",
+      "language",
+      "name",
+      "parentUuid",
+      "sortIndex",
+      "speechId",
+      "templateCode",
+      "type",
+      "updateBy",
+      "updateTime",
+      "useStatus"
+    ],
+    "bsc_count": 1,
+    "intent_count": 15,
+    "topkeys": 25,
+    "var_count": 9
+  },
+  "T4-new-name": {
+    "bsc0_details": "null",
+    "bsc0_keys": [
+      "branch",
+      "category",
+      "componentUuid",
+      "createBy",
+      "createTime",
+      "details",
+      "editStatus",
+      "id",
+      "language",
+      "name",
+      "parentUuid",
+      "sortIndex",
+      "speechId",
+      "templateCode",
+      "type",
+      "updateBy",
+      "updateTime",
+      "useStatus"
+    ],
+    "bsc_count": 1,
+    "intent_count": 15,
+    "topkeys": 25,
+    "var_count": 9
+  },
+  "T5-new-id": {
+    "bsc0_details": "null",
+    "bsc0_keys": [
+      "branch",
+      "category",
+      "componentUuid",
+      "createBy",
+      "createTime",
+      "details",
+      "editStatus",
+      "id",
+      "language",
+      "name",
+      "parentUuid",
+      "sortIndex",
+      "speechId",
+      "templateCode",
+      "type",
+      "updateBy",
+      "updateTime",
+      "useStatus"
+    ],
+    "bsc_count": 1,
+    "intent_count": 15,
+    "topkeys": 25,
+    "var_count": 9
+  },
+  "T6-extra-bsc-keys": {
+    "bsc0_details": "null",
+    "bsc0_keys": [
+      "branch",
+      "category",
+      "componentUuid",
+      "createBy",
+      "createTime",
+      "details",
+      "editStatus",
+      "id",
+      "inboundPorts",
+      "language",
+      "name",
+      "nluConf",
+      "outboundPorts",
+      "parentUuid",
+      "routes",
+      "sortIndex",
+      "sourceUuid",
+      "speechId",
+      "templateCode",
+      "topFloorDetails",
+      "type",
+      "updateBy",
+      "updateTime",
+      "useStatus"
+    ],
+    "bsc_count": 1,
+    "intent_count": 15,
+    "topkeys": 25,
+    "var_count": 9
+  },
+  "T7-populated-details": {
+    "bsc0_details": {
+      "f2cd2c8a-d2d8-5efb-b128-4c42d1e6a955": {
+        "canvas": {
+          "component": {
+            "props": {
+              "list": [
+                {
+                  "children": [],
+                  "editStatus": 1,
+                  "label": "Greeting",
+                  "parentId": "",
+                  "sortIndex": 0,
+                  "sortIndexABS": 0,
+                  "useStatus": 1,
+                  "uuid": "<uuid>",
+                  "value": "<uuid>"
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "bsc0_keys": [
+      "branch",
+      "category",
+      "componentUuid",
+      "createBy",
+      "createTime",
+      "details",
+      "editStatus",
+      "id",
+      "inboundPorts",
+      "language",
+      "name",
+      "nluConf",
+      "outboundPorts",
+      "parentUuid",
+      "routes",
+      "sortIndex",
+      "sourceUuid",
+      "speechId",
+      "templateCode",
+      "topFloorDetails",
+      "type",
+      "updateBy",
+      "updateTime",
+      "useStatus"
+    ],
+    "bsc_count": 1,
+    "intent_count": 15,
+    "topkeys": 25,
+    "var_count": 9
+  },
+  "T8-multi-component": {
+    "bsc0_details": {
+      "f2cd2c8a-d2d8-5efb-b128-4c42d1e6a955": {
+        "canvas": {
+          "component": {
+            "props": {
+              "list": [
+                {
+                  "children": [],
+                  "editStatus": 1,
+                  "label": "Greeting",
+                  "parentId": "",
+                  "sortIndex": 0,
+                  "sortIndexABS": 0,
+                  "useStatus": 1,
+                  "uuid": "<uuid>",
+                  "value": "<uuid>"
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "bsc0_keys": [
+      "branch",
+      "category",
+      "componentUuid",
+      "createBy",
+      "createTime",
+      "details",
+      "editStatus",
+      "id",
+      "inboundPorts",
+      "language",
+      "name",
+      "nluConf",
+      "outboundPorts",
+      "parentUuid",
+      "routes",
+      "sortIndex",
+      "sourceUuid",
+      "speechId",
+      "templateCode",
+      "topFloorDetails",
+      "type",
+      "updateBy",
+      "updateTime",
+      "useStatus"
+    ],
+    "bsc_count": 2,
+    "intent_count": 15,
+    "topkeys": 25,
+    "var_count": 9
+  },
+  "T9-custom-variables": {
+    "bsc0_details": {
+      "f2cd2c8a-d2d8-5efb-b128-4c42d1e6a955": {
+        "canvas": {
+          "component": {
+            "props": {
+              "list": [
+                {
+                  "children": [],
+                  "editStatus": 1,
+                  "label": "Greeting",
+                  "parentId": "",
+                  "sortIndex": 0,
+                  "sortIndexABS": 0,
+                  "useStatus": 1,
+                  "uuid": "<uuid>",
+                  "value": "<uuid>"
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "bsc0_keys": [
+      "branch",
+      "category",
+      "componentUuid",
+      "createBy",
+      "createTime",
+      "details",
+      "editStatus",
+      "id",
+      "inboundPorts",
+      "language",
+      "name",
+      "nluConf",
+      "outboundPorts",
+      "parentUuid",
+      "routes",
+      "sortIndex",
+      "sourceUuid",
+      "speechId",
+      "templateCode",
+      "topFloorDetails",
+      "type",
+      "updateBy",
+      "updateTime",
+      "useStatus"
+    ],
+    "bsc_count": 2,
+    "intent_count": 15,
+    "topkeys": 25,
+    "var_count": 12
+  }
+}

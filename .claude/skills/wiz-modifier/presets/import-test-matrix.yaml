@@ -1,0 +1,78 @@
+# T0-T12 import-test matrix (docs/original-vs-builder-deep-comparison.md §6.3).
+# Applied cumulatively: each test starts from the previous test's bundle.
+# T0 has no mods and uses the WAV (true baseline). T11 drops the WAV; T12 is bare JSON.
+tests:
+  - name: T0-baseline
+    format: zip
+    mods: []
+  - name: T1-reserialized
+    format: zip
+    mods: []
+  - name: T2-new-speechid
+    format: zip
+    mods:
+      - op: set-speech-id
+        value: random
+  - name: T3-new-componentuuid
+    format: zip
+    mods:
+      - op: set-component-uuid
+        component: 0
+        value: random
+  - name: T4-new-name
+    format: zip
+    mods:
+      - op: set-bsc-name
+        component: 0
+        value: "1. Greeting"
+  - name: T5-new-id
+    format: zip
+    mods:
+      - op: set-bsc-id
+        component: 0
+        value: 99000001
+  - name: T6-extra-bsc-keys
+    format: zip
+    mods:
+      - op: add-bsc-keys
+        component: 0
+  - name: T7-populated-details
+    format: zip
+    mods:
+      - op: populate-details
+        component: 0
+        nodes:
+          - {id: greeting, label: "Greeting", parent: null}
+  - name: T8-multi-component
+    format: zip
+    mods:
+      - op: add-component
+        name: "2. Second Canvas"
+        nodes:
+          - {id: n1, label: "Open", parent: null}
+  - name: T9-custom-variables
+    format: zip
+    mods:
+      - op: add-variable
+        name: custom_var_1
+      - op: add-variable
+        name: custom_var_2
+      - op: add-variable
+        name: custom_var_3
+  - name: T10-custom-intents
+    format: zip
+    mods:
+      - op: add-intent
+        name: custom_intent_1
+        keywords: ["ya"]
+        user_responses: ["Ya"]
+      - op: add-intent
+        name: custom_intent_2
+        keywords: ["tidak"]
+        user_responses: ["Tidak"]
+  - name: T11-no-wav
+    format: zip-no-wav
+    mods: []
+  - name: T12-bare-json
+    format: json
+    mods: []
