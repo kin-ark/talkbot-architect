@@ -14,6 +14,8 @@ from wizmodifier.io import InputBundle
 from wizmodifier.ops._bsc import get_components, require_component, set_components
 
 # The 6 keys wiz-builder adds to every BSC entry (canvases.py:119-124).
+# NOTE: nluConf and outboundPorts overlap with _SECONDARY_STRIP_KEYS. add-bsc-keys is an
+# opt-in op that intentionally re-adds those keys when explicit template parity is needed.
 DEFAULT_BSC_KEYS = {
     "inboundPorts": "[]",
     "outboundPorts": "[]",

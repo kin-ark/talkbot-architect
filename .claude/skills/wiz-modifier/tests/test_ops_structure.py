@@ -1,6 +1,8 @@
 import sys
 from pathlib import Path
 
+import pytest
+
 # wiz-builder's scripts dir is a sibling skill, not on pythonpath.
 sys.path.insert(
     0, str(Path(__file__).resolve().parents[2] / "wiz-builder" / "scripts")
@@ -71,7 +73,6 @@ def test_add_component_with_nodes_populates_details(baseline_dict):
 
 def test_add_component_strips_template_keys_from_secondary(baseline_dict):
     """Secondary components (index>0) must not carry template-only and first-comp-only keys."""
-    import json as _json
     _KEYS_TO_STRIP = {"createBy", "createTime", "language", "nluConf", "outboundPorts", "updateBy"}
 
     b = InputBundle(data=baseline_dict, speech_name="s.json")
@@ -81,7 +82,7 @@ def test_add_component_strips_template_keys_from_secondary(baseline_dict):
     comp0_keys = set(comps_before[0].keys())
     # Skip test if baseline doesn't have any of these keys (already clean)
     if not (_KEYS_TO_STRIP & comp0_keys):
-        return  # nothing to test
+        pytest.skip("baseline has none of the expected strippable keys")
 
     structure.add_component(b, {"name": "2. Canvas"}, MINTER)
 
