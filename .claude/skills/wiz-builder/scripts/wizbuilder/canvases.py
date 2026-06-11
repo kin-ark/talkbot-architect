@@ -30,6 +30,17 @@ from typing import Any
 from wizbuilder.ids import IdMinter
 from wizbuilder.manifest import Canvas, Manifest
 
+# Keys present only on component[0] in real WIZ.AI exports.
+# Secondary components (index > 0) must NOT carry these keys.
+_SECONDARY_STRIP_KEYS = frozenset({
+    "createBy",
+    "createTime",
+    "language",
+    "nluConf",
+    "outboundPorts",
+    "updateBy",
+})
+
 
 def apply_canvases(
     template: dict[str, Any],
@@ -98,7 +109,7 @@ def _build_component(
         }
     }
 
-    return {
+    entry = {
         "componentUuid": canvas_uuid,
         "name": canvas.name,
         "branch": manifest.branch,
@@ -124,3 +135,9 @@ def _build_component(
         "topFloorDetails": "{}",
         "details": json.dumps(details_payload, ensure_ascii=False, separators=(",", ":")),
     }
+
+    if canvas_index > 0:
+        for key in _SECONDARY_STRIP_KEYS:
+            entry.pop(key, None)
+
+    return entry

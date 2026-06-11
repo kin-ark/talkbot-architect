@@ -122,12 +122,32 @@ def test_apply_canvases_component_has_real_export_keys(template_dict, fixture_pa
     minter = IdMinter(manifest_hash=manifest_hash_of(m.raw_text))
     apply_canvases(template_dict, m, minter)
     bsc = json.loads(template_dict["BizSpeechComponent"])
+    # All components share these structural keys
     for comp in bsc:
-        for key in ("inboundPorts", "outboundPorts", "routes", "nluConf", "sourceUuid", "topFloorDetails"):
+        for key in ("inboundPorts", "routes", "sourceUuid", "topFloorDetails"):
             assert key in comp, f"Component '{comp['name']}' missing key '{key}'"
         assert comp["inboundPorts"] == "[]"
-        assert comp["outboundPorts"] == "[]"
         assert comp["routes"] == "[]"
-        assert comp["nluConf"] == "{}"
         assert comp["sourceUuid"] == ""
         assert comp["topFloorDetails"] == "{}"
+    # outboundPorts and nluConf are only on component[0] in real WIZ exports
+    assert bsc[0]["outboundPorts"] == "[]"
+    assert bsc[0]["nluConf"] == "{}"
+
+
+def test_apply_canvases_secondary_strips_template_keys(template_dict, fixture_path):
+    """Secondary BSC entries (index>0) must not carry template-only and first-comp-only keys."""
+    _KEYS_TO_STRIP = {"createBy", "createTime", "language", "nluConf", "outboundPorts", "updateBy"}
+
+    manifest = load_manifest(fixture_path("manifest_multi_canvas.yaml"))
+    minter = IdMinter(manifest_hash=manifest_hash_of(manifest.raw_text))
+    result = apply_canvases(template_dict, manifest, minter)
+
+    comps = json.loads(result["BizSpeechComponent"])
+    assert len(comps) == 2
+
+    comp1_keys = set(comps[1].keys())
+    leaked = _KEYS_TO_STRIP & comp1_keys
+    assert not leaked, (
+        f"secondary BSC entry should not have template-only keys, but found: {leaked}"
+    )
