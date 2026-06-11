@@ -45,7 +45,7 @@ def _diff_field(label: str, va, vb) -> list[str]:
     va_dec = decode_field(va)
     vb_dec = decode_field(vb)
     if isinstance(va_dec, list) and isinstance(vb_dec, list):
-        match = "✓" if len(va_dec) == len(vb_dec) else "✗ MISMATCH"
+        match = "OK" if len(va_dec) == len(vb_dec) else "MISMATCH"
         lines.append(f"  {label:<35} A:{len(va_dec):4}  B:{len(vb_dec):4}  {match}")
         if va_dec and vb_dec and isinstance(va_dec[0], dict) and isinstance(vb_dec[0], dict):
             ka, kb = set(va_dec[0]), set(vb_dec[0])
@@ -55,7 +55,7 @@ def _diff_field(label: str, va, vb) -> list[str]:
             if only_b:
                 lines.append(f"    entry[0] only in B: {sorted(only_b)}")
     else:
-        match = "✓" if normalize_speech_ids(va_dec) == normalize_speech_ids(vb_dec) else "✗ MISMATCH"
+        match = "OK" if normalize_speech_ids(va_dec) == normalize_speech_ids(vb_dec) else "MISMATCH"
         lines.append(f"  {label:<35} {match}")
     return lines
 
@@ -78,7 +78,7 @@ def main(argv=None):
     p = argparse.ArgumentParser(description="Structural diff between two WIZ.AI exports")
     p.add_argument("a", type=Path, metavar="PATH_A")
     p.add_argument("b", type=Path, metavar="PATH_B")
-    p.add_argument("--focus", nargs="*", metavar="FIELD")
+    p.add_argument("--focus", nargs="+", metavar="FIELD")
     args = p.parse_args(argv)
     diff_exports(load_export(args.a), load_export(args.b), args.focus)
 
