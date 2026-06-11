@@ -23,6 +23,15 @@ DEFAULT_BSC_KEYS = {
     "topFloorDetails": "{}",
 }
 
+# Keys from the Empty+Dialogue template that must not appear on secondary components.
+# Confirmed by diffing real WIZ.AI multi-component exports vs T8 output:
+# - createBy/createTime/language: template server metadata, absent from all real secondary BSCs
+# - nluConf/outboundPorts/updateBy: only on real component[0], not component[1+]
+_SECONDARY_STRIP_KEYS = frozenset({
+    "createBy", "createTime", "language",
+    "nluConf", "outboundPorts", "updateBy",
+})
+
 
 def add_bsc_keys(bundle: InputBundle, params: dict, minter) -> None:
     comps = get_components(bundle)
@@ -88,6 +97,9 @@ def add_component(bundle: InputBundle, params: dict, minter) -> None:
     if nodes:
         details = codec.encode(_build_details_payload(nodes, minter, index))
     new_comp = dict(base)
+    if index > 0:
+        for key in _SECONDARY_STRIP_KEYS:
+            new_comp.pop(key, None)
     new_comp["componentUuid"] = str(minter.uuid(f"modifier-component:{index}"))
     new_comp["name"] = params["name"]
     new_comp["id"] = minter.int_id(f"modifier-component-id:{index}")

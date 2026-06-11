@@ -67,3 +67,27 @@ def test_add_component_with_nodes_populates_details(baseline_dict):
     details = codec.decode(new["details"])
     nodes = next(iter(details.values()))["canvas"]["component"]["props"]["list"]
     assert nodes[0]["label"] == "Open"
+
+
+def test_add_component_strips_template_keys_from_secondary(baseline_dict):
+    """Secondary components (index>0) must not carry template-only and first-comp-only keys."""
+    import json as _json
+    _KEYS_TO_STRIP = {"createBy", "createTime", "language", "nluConf", "outboundPorts", "updateBy"}
+
+    b = InputBundle(data=baseline_dict, speech_name="s.json")
+
+    # Ensure baseline component 0 has at least some of these keys (it inherits from template)
+    comps_before = get_components(b)
+    comp0_keys = set(comps_before[0].keys())
+    # Skip test if baseline doesn't have any of these keys (already clean)
+    if not (_KEYS_TO_STRIP & comp0_keys):
+        return  # nothing to test
+
+    structure.add_component(b, {"name": "2. Canvas"}, MINTER)
+
+    comps = get_components(b)
+    comp1_keys = set(comps[1].keys())
+    leaked = _KEYS_TO_STRIP & comp1_keys
+    assert not leaked, (
+        f"secondary component should not have template-only keys, but found: {leaked}"
+    )
