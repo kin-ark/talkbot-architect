@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import UploadZone from './components/UploadZone';
+import SummaryCards from './components/SummaryCards';
 
 function App() {
   const [file, setFile] = useState(null);
   const [analysis, setAnalysis] = useState(null);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   const handleUpload = async (uploadedFile) => {
@@ -48,12 +48,18 @@ function App() {
                 </button>
               </div>
               
-              {loading && <p className="text-gray-600">Processing...</p>}
               {error && <p className="text-red-600">{error}</p>}
               {analysis && (
-                <div className="prose">
-                  {/* Analysis results component will go here */}
-                  <pre>{JSON.stringify(analysis, null, 2)}</pre>
+                <div className="mt-6">
+                  <SummaryCards 
+                    errors={analysis.summary?.errors || 0} 
+                    warnings={analysis.summary?.warnings || 0} 
+                  />
+                  <div className="prose max-w-none">
+                    <pre className="bg-gray-100 p-4 rounded text-xs overflow-auto">
+                      {JSON.stringify(analysis, null, 2)}
+                    </pre>
+                  </div>
                 </div>
               )}
             </div>
