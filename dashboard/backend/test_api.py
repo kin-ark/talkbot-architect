@@ -8,3 +8,12 @@ def test_analyze_upload():
     response = client.post("/analyze", files={"file": ("speech.json", content)})
     assert response.status_code == 200
     assert "summary" in response.json()
+
+def test_chat_endpoint():
+    payload = {
+        "message": "Tell me about my errors",
+        "context": {"errors": 5}
+    }
+    response = client.post("/chat", json=payload)
+    assert response.status_code == 200
+    assert response.json()["response"] == "I see you have 5 errors. How can I help?"

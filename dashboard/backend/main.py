@@ -1,10 +1,22 @@
 from fastapi import FastAPI, UploadFile, File
+from pydantic import BaseModel
 import json
 import sys
 from pathlib import Path
 from dataclasses import asdict
 
 app = FastAPI(title="Talkbot Architect API")
+
+class ChatRequest(BaseModel):
+    message: str
+    context: dict | None = None
+
+@app.post("/chat")
+async def chat(req: ChatRequest):
+    # This is a stub for the 9-hour MVP. 
+    # Real implementation would call OpenAI/Gemini with the findings context.
+    context = req.context or {}
+    return {"response": f"I see you have {context.get('errors', 0)} errors. How can I help?"}
 
 # Add project root to path to import wizcheck
 # Project root is ../../ relative to dashboard/backend/main.py
