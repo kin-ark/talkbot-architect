@@ -249,3 +249,94 @@ def test_library_ref_fixture_emits_warnings_not_errors(fixture_path):
     # The ASR Corpus Collection label should appear in the WIZ104 rollup message.
     f104 = next(f for f in findings if f.code == "WIZ104")
     assert "ASR Corpus Collection" in f104.message
+
+
+def test_wiz105_missing_null_branch_on_date_variable():
+    """WIZ105: Conditional judgment on date field MUST have a default or Null branch."""
+    uid = UUID(int=200)
+    # Missing default branch and no empty/null check
+    raw = {
+        "type": 7,
+        "branch": [
+            {
+                "name": "Is today",
+                "branch_judgement_condition": [
+                    {
+                        "left_value": "Date Collected",
+                        "operator": "=",
+                        "right_value": "Today"
+                    }
+                ]
+            }
+        ]
+    }
+    n = FlowNode(uuid=uid, parent_uuid=None, label="Check Date", sort_index=0, raw=raw)
+    wf = _wf_from_nodes([n])
+    findings = check_graph(wf)
+    f = next((x for x in findings if x.code == "WIZ105"), None)
+    assert f is not None
+    assert f.severity is Severity.ERROR
+    assert "Missing fallback/null branch" in f.message
+
+
+def test_wiz105_has_null_branch_on_date_variable():
+    """WIZ105 passes if there is a branch checking for Null or empty."""
+    uid = UUID(int=201)
+    raw = {
+        "type": 7,
+        "branch": [
+            {
+                "name": "Is today",
+                "branch_judgement_condition": [
+                    {
+                        "left_value": "date_collected",
+                        "operator": "=",
+                        "right_value": "Today"
+                    }
+                ]
+            },
+            {
+                "name": "Fallback",
+                "branch_judgement_condition": [
+                    {
+                        "left_value": "date_collected",
+                        "operator": "is_empty",
+                        "right_value": ""
+                    }
+                ]
+            }
+        ]
+    }
+    n = FlowNode(uuid=uid, parent_uuid=None, label="Check Date", sort_index=0, raw=raw)
+    wf = _wf_from_nodes([n])
+    findings = check_graph(wf)
+    assert not any(x.code == "WIZ105" for x in findings)
+
+
+def test_wiz105_has_default_branch_on_date_variable():
+    """WIZ105 passes if there is a branch with no conditions (default)."""
+    uid = UUID(int=202)
+    raw = {
+        "type": 7,
+        "branch": [
+            {
+                "name": "Is today",
+                "branch_judgement_condition": [
+                    {
+                        "left_value": "Date",
+                        "operator": "=",
+                        "right_value": "Today"
+                    }
+                ]
+            },
+            {
+                "name": "Default",
+                "branch_judgement_condition": []
+            }
+        ]
+    }
+    n = FlowNode(uuid=uid, parent_uuid=None, label="Check Date", sort_index=0, raw=raw)
+    wf = _wf_from_nodes([n])
+    findings = check_graph(wf)
+    assert not any(x.code == "WIZ105" for x in findings)
+

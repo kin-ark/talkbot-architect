@@ -29,6 +29,7 @@ def check_graph(wf: WizFile) -> list[Finding]:
     findings.extend(_check_dead_ends(wf))
     findings.extend(_check_cycles(wf))
     findings.extend(_check_library_refs_rollup(wf))
+    findings.extend(_check_null_branches(wf))
     return findings
 
 
@@ -176,3 +177,54 @@ def _check_library_refs_rollup(wf: WizFile) -> list[Finding]:
             f"Confirm each is an intentional Component Library import."
         ),
     )]
+
+
+def _check_null_branches(wf: WizFile) -> list[Finding]:
+    """WIZ105: Conditional Judgment missing Null branch on a date field."""
+    out: list[Finding] = []
+    for comp in wf.components.values():
+        for node in comp.details.flow_nodes.values():
+            if node.raw.get("type") != 7:
+                continue
+            
+            # Check if this node evaluates a date variable
+            branches = node.raw.get("branch", [])
+            is_date_evaluation = False
+            for branch in branches:
+                for cond in branch.get("branch_judgement_condition", []):
+                    left_val = str(cond.get("left_value", "")).lower()
+                    if "date" in left_val:
+                        is_date_evaluation = True
+                        break
+                if is_date_evaluation:
+                    break
+            
+            if not is_date_evaluation:
+                continue
+            
+            # If it is a date evaluation, ensure there is a branch handling Null or empty
+            has_null_branch = False
+            for branch in branches:
+                conditions = branch.get("branch_judgement_condition")
+                # A branch with no conditions acts as a fallback/default
+                if not conditions:
+                    has_null_branch = True
+                    break
+                for cond in conditions:
+                    op = str(cond.get("operator", "")).lower()
+                    rval = str(cond.get("right_value", "")).lower()
+                    if op in ("is empty", "is_empty", "isnull", "is_null") or rval in ("null", "empty", ""):
+                        has_null_branch = True
+                        break
+                if has_null_branch:
+                    break
+            
+            if not has_null_branch:
+                out.append(Finding(
+                    code="WIZ105",
+                    severity=Severity.ERROR,
+                    location=Location(entity="FlowNode", id=str(node.uuid), field=None),
+                    message="Missing fallback/null branch on Date variable"
+                ))
+    return out
+
