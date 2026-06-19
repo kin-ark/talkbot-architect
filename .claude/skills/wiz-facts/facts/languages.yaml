@@ -1,0 +1,16 @@
+schema_version: 1
+source_manuals:
+  product: { title: "Talkbot Product Guidance", version: "unknown" }
+  config:  { title: "Talkbot Configuration Guidance", version: "unknown" }
+facts:
+  - id: lang.supported
+    value: [ZHO, ENG, IDN, THA]
+    cite: { manual: product, pages: [13] }
+    quote: "When creating the Dialogue you can select the language Language options include Chinese English and Indonesian among others"
+    confidence: documented
+    note: "THA confirmed via product:103 (Chinese and Thai language bots)."
+  - id: lang.global_hotword_unsupported
+    value: [ZHO, THA]
+    cite: { manual: product, pages: [103] }
+    quote: "Note Chinese and Thai language bots do not support global hotwords yet"
+    confidence: documented

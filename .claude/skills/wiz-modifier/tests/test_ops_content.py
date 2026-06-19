@@ -1,6 +1,8 @@
 import sys
 from pathlib import Path
 
+import pytest
+
 # wiz-builder's scripts dir is a sibling skill, not on pythonpath.
 sys.path.insert(
     0, str(Path(__file__).resolve().parents[2] / "wiz-builder" / "scripts")
@@ -10,6 +12,7 @@ from wizbuilder.ids import IdMinter  # noqa: E402
 from wizmodifier import codec  # noqa: E402
 from wizmodifier.io import InputBundle  # noqa: E402
 from wizmodifier.ops import content  # noqa: E402
+from wizmodifier.ops.content import add_intent  # noqa: E402
 
 MINTER = IdMinter(manifest_hash="deadbeef")
 
@@ -58,3 +61,14 @@ def test_add_intent_empty_keywords(baseline_dict):
     added = codec.decode(b.data["SpeechIntent"])[-1]
     assert added["keyWordInIntent"] == "[]"
     assert added["userResponseInIntent"] == "[]"
+
+
+def test_add_intent_rejects_unsupported_language(baseline_dict):
+    b = InputBundle(data=baseline_dict, speech_name="s.json")
+    with pytest.raises(ValueError, match="language"):
+        add_intent(b, {"name": "Foo", "language": "JPN"}, MINTER)
+
+
+def test_add_intent_accepts_supported_language(baseline_dict):
+    b = InputBundle(data=baseline_dict, speech_name="s.json")
+    add_intent(b, {"name": "Foo", "language": "THA"}, MINTER)  # must not raise

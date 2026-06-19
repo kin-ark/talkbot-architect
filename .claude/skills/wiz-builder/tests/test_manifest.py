@@ -210,3 +210,30 @@ def test_parse_failure_raises_manifest_error(tmp_path):
     with pytest.raises(ManifestError) as exc:
         load_manifest(p)
     assert "yaml" in str(exc.value).lower() or "parse" in str(exc.value).lower()
+
+
+def test_manifest_schema_language_enum_matches_facts():
+    """The static schema enum must stay in sync with facts lang.supported."""
+    import yaml as _yaml
+    from pathlib import Path as _Path
+
+    from wizfacts import load_facts
+
+    schema_path = (
+        _Path(__file__).resolve().parents[1] / "schema" / "manifest.schema.yaml"
+    )
+    schema = _yaml.safe_load(schema_path.read_text(encoding="utf-8"))
+    enum = set(schema["properties"]["language"]["enum"])
+    assert enum == set(load_facts().get("lang.supported"))
+
+
+def test_manifest_accepts_thai(tmp_path):
+    from wizbuilder.manifest import load_manifest
+    body = (
+        "name: T\nbranch: dev\nlanguage: THA\n"
+        "canvases:\n  - name: C\n    nodes:\n      - label: Greeting\n        parent: null\n"
+    )
+    p = tmp_path / "m.yaml"
+    p.write_text(body, encoding="utf-8")
+    m = load_manifest(p)
+    assert m.language == "THA"

@@ -10,6 +10,7 @@ from collections.abc import Callable
 
 from wizcheck.checks.graph import check_graph
 from wizcheck.checks.intents import check_intents
+from wizcheck.checks.platform import check_platform
 from wizcheck.checks.schema import check_schema
 from wizcheck.checks.variables import check_variables
 from wizcheck.ir import WizFile
@@ -20,6 +21,7 @@ REGISTRY: dict[str, Callable[[WizFile], list[Finding]]] = {
     "graph": check_graph,
     "variables": check_variables,
     "intents": check_intents,
+    "platform": check_platform,
 }
 
 
@@ -31,6 +33,6 @@ def get_check(name: str) -> Callable[[WizFile], list[Finding]]:
 
 def run_all_checks(wf: WizFile) -> list[Finding]:
     findings: list[Finding] = []
-    for name in ["schema", "graph", "variables", "intents"]:
+    for name in ["schema", "graph", "variables", "intents", "platform"]:
         findings.extend(REGISTRY[name](wf))
     return findings

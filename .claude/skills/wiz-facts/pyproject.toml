@@ -1,21 +1,15 @@
 [project]
-name = "wiz-checker"
+name = "wiz-facts"
 version = "0.1.0"
-description = "Deterministic validator for WIZ.AI exported talkbot dialogue JSON files."
+description = "Shared, citable facts extracted from the WIZ.AI Product/Config manuals."
 requires-python = ">=3.11"
 dependencies = [
-    "networkx>=3.0",
-    "rich>=13.0",
     "pyyaml>=6.0",
-    "wiz-facts",
+    "jsonschema>=4.0",
 ]
 
 [project.optional-dependencies]
-dev = [
-    "pytest>=7.0",
-    "pytest-cov>=4.0",
-    "ruff>=0.4",
-]
+dev = ["pytest>=7.0", "ruff>=0.4"]
 
 [tool.setuptools.packages.find]
 where = ["scripts"]
@@ -28,6 +22,3 @@ addopts = "-v --strict-markers"
 [tool.ruff]
 line-length = 100
 target-version = "py311"
-
-[tool.ruff.lint]
-select = ["E", "F", "W", "I", "UP", "B", "SIM"]

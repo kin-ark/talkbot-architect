@@ -1,0 +1,21 @@
+schema_version: 1
+source_manuals:
+  product: { title: "Talkbot Product Guidance", version: "unknown" }
+  config:  { title: "Talkbot Configuration Guidance", version: "unknown" }
+facts:
+  - id: enum.next_step
+    value:
+      - Hang up
+      - Go to a specific component
+      - Go to a specific knowledge base
+      - Transfer to human agent
+    cite: { manual: config, pages: [41] }
+    quote: "It decides where you want the current node to go. There are 4 options available. Hang up ... Go to a specific component ... Go to a specific knowledge base ... Transfer to human agent"
+    confidence: documented
+    note: "End-node Next Step options (config 1.8.1.2). Same option set appears for talk-node next step."
+  - id: enum.kb_category
+    value: [General, Business-related]
+    cite: { manual: config, pages: [49] }
+    quote: "The Category determines whether the question is general or business-related"
+    confidence: documented
+    note: "Knowledge-base question category (config 1.9.2.1.1)."

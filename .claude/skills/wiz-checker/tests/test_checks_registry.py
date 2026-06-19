@@ -20,8 +20,8 @@ def empty_wizfile() -> WizFile:
     )
 
 
-def test_registry_lists_four_checks():
-    assert set(REGISTRY.keys()) == {"schema", "graph", "variables", "intents"}
+def test_registry_lists_five_checks():
+    assert set(REGISTRY.keys()) == {"schema", "graph", "variables", "intents", "platform"}
 
 
 def test_get_check_by_name():

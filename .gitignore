@@ -1,1 +1,13 @@
 __pycache__/
+*.wav
+
+# WIZ manuals and decoded extraction scratch — never committed
+docs/personal/*.pdf
+*_dec.txt
+/tmp/product*.txt
+/tmp/config*.txt
+# PDF extraction scratch — never committed
+.wizscratch/
+
+# Python build artifacts
+*.egg-info/
