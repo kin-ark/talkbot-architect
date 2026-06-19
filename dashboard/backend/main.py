@@ -33,6 +33,7 @@ async def chat(req: ChatRequest):
 sys.path.append(str(Path(__file__).parent.parent.parent / ".claude/skills/wiz-checker/scripts"))
 from wizcheck.parser import parse_dict
 from wizcheck.checks import run_all_checks
+from wizcheck.summarizer import build_summary_tree
 
 @app.get("/health")
 async def health():
@@ -53,3 +54,11 @@ async def analyze(file: UploadFile = File(...)):
         "summary": {"errors": errors, "warnings": warnings},
         "findings": [asdict(f) for f in findings]
     }
+
+@app.post("/summarize")
+async def summarize_file(file: UploadFile = File(...)):
+    content = await file.read()
+    raw_data = json.loads(content)
+    bot = parse_dict(raw_data)
+    summary_tree = build_summary_tree(bot)
+    return {"summary": summary_tree}
