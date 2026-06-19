@@ -9,9 +9,32 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+from functools import lru_cache
+
+from wizfacts import load_facts
 
 from wizmodifier import codec
 from wizmodifier.io import InputBundle
+
+
+@lru_cache(maxsize=1)
+def _supported_langs() -> frozenset[str]:
+    return frozenset(load_facts().get("lang.supported"))
+
+
+def _check_language(value) -> None:
+    """Reject a string language not in the documented supported set.
+
+    Only strings are checked; a non-string (e.g. the defensive int-0 default)
+    passes through unchanged because it is not an author-supplied ISO code.
+    """
+    if isinstance(value, str) and value.strip():
+        supported = _supported_langs()
+        if value not in supported:
+            raise ValueError(
+                f"add-intent/add-variable: language {value!r} is not a documented "
+                f"supported language ({sorted(supported)})"
+            )
 
 
 def add_variable(bundle: InputBundle, params: dict, minter) -> None:
@@ -20,6 +43,7 @@ def add_variable(bundle: InputBundle, params: dict, minter) -> None:
     if not vars_list:
         raise ValueError("SpeechVariable is empty; baseline must carry defaults")
     default = vars_list[0]
+    _check_language(params.get("language"))
     vars_list.append({
         "beInit": 0,
         "branch": params.get("branch", default["branch"]),
@@ -48,6 +72,7 @@ def add_intent(bundle: InputBundle, params: dict, minter) -> None:
     if not intents:
         raise ValueError("SpeechIntent is empty; baseline must carry defaults")
     default = intents[0]
+    _check_language(params.get("language"))
     intents.append({
         "branch": params.get("branch", default["branch"]),
         "createTime": 0,
