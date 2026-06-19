@@ -5,7 +5,7 @@ source_manuals:
 facts:
   - id: intent.required
     value: [Unclassified]
-    cite: { manual: config, pages: [390] }
-    quote: "Unclassified used when the talkbot can't classify the user response intent"
+    cite: { manual: config, pages: [14] }
+    quote: "If the Bot can't get the customers' intents or customers say something out of scope, the final response will be categorized as \"Unclassified\""
     confidence: documented
     note: "Only required intent. Mirrors existing checker WIZ301."
