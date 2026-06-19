@@ -1,0 +1,11 @@
+schema_version: 1
+source_manuals:
+  product: { title: "Talkbot Product Guidance", version: "unknown" }
+  config:  { title: "Talkbot Configuration Guidance", version: "unknown" }
+facts:
+  - id: lang.supported
+    value: [ZHO, ENG, IDN, THA]
+    cite: { manual: product, pages: [364, 365] }
+    quote: "you can select the language Language options include Chinese English and Indonesian among others"
+    confidence: documented
+    note: "THA confirmed via product:2467 (Chinese and Thai language bots)."
