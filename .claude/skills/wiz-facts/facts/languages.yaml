@@ -9,3 +9,8 @@ facts:
     quote: "you can select the language Language options include Chinese English and Indonesian among others"
     confidence: documented
     note: "THA confirmed via product:2467 (Chinese and Thai language bots)."
+  - id: lang.global_hotword_unsupported
+    value: [ZHO, THA]
+    cite: { manual: product, pages: [2467] }
+    quote: "Note Chinese and Thai language bots do not support global hotwords yet"
+    confidence: documented
