@@ -11,6 +11,7 @@ from wizcheck.ir import (
     FlowGraph,
     FlowNode,
     Intent,
+    Utterance,
     WizFile,
 )
 from wizcheck.report import Severity
@@ -165,3 +166,44 @@ def test_wiz006_skipped_when_canvas_has_nodes():
     wf = _wf(components={comp.uuid: comp})
     findings = check_schema(wf)
     assert not any(f.code == "WIZ006" for f in findings)
+
+
+def test_wiz106_empty_wait_script_is_warning():
+    """WIZ106 warns if Wait or Exit node has sentenceText 'blank' or ''."""
+    node = FlowNode(
+        uuid=UUID(int=106), parent_uuid=None, label="Wait", sort_index=0,
+        raw={"sentenceText": "blank"}
+    )
+    node2 = FlowNode(
+        uuid=UUID(int=107), parent_uuid=None, label="Exit", sort_index=1,
+        raw={"sentenceText": ""}
+    )
+    comp = Component(
+        uuid=UUID(int=3), speech_id=1, category=1, branch="dev",
+        details=ComponentDetails(flow_nodes={node.uuid: node, node2.uuid: node2}, root_uuids=(node.uuid,)),
+        raw={"createTime": 1700000000000, "updateTime": 1700000000000},
+    )
+    wf = _wf(components={comp.uuid: comp})
+    findings = check_schema(wf)
+    
+    f_wait = next((x for x in findings if x.code == "WIZ106" and x.location.id == str(node.uuid)), None)
+    assert f_wait is not None
+    assert f_wait.severity is Severity.WARNING
+
+    f_exit = next((x for x in findings if x.code == "WIZ106" and x.location.id == str(node2.uuid)), None)
+    assert f_exit is not None
+    assert f_exit.severity is Severity.WARNING
+
+
+def test_wiz107_truncated_script_is_warning():
+    """WIZ107 warns if Utterance text ends with '...'"""
+    u = Utterance(
+        id=UUID(int=200), component_uuid=UUID(int=3), text="This is truncated...",
+        referenced_vars=(), raw={}
+    )
+    wf = _wf(utterances=(u,))
+    findings = check_schema(wf)
+    
+    f = next((x for x in findings if x.code == "WIZ107"), None)
+    assert f is not None
+    assert f.severity is Severity.WARNING
