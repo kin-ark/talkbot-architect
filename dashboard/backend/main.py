@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, HTTPException
 from pydantic import BaseModel
 import json
 import sys
@@ -31,7 +31,7 @@ async def chat(req: ChatRequest):
 # Add project root to path to import wizcheck
 # Project root is ../../ relative to dashboard/backend/main.py
 sys.path.append(str(Path(__file__).parent.parent.parent / ".claude/skills/wiz-checker/scripts"))
-from wizcheck.parser import parse_dict
+from wizcheck.parser import parse_dict, ParseError
 from wizcheck.checks import run_all_checks
 from wizcheck.summarizer import build_summary_tree
 
@@ -39,18 +39,19 @@ from wizcheck.summarizer import build_summary_tree
 async def health():
     return {"status": "ok"}
 
-@app.post("/analyze")
-async def analyze(file: UploadFile = File(...)):
+async def parse_upload_file(file: UploadFile):
     content = await file.read()
     try:
         raw_data = json.loads(content)
-        bot = parse_dict(raw_data)
+        return parse_dict(raw_data)
     except json.JSONDecodeError as e:
-        from fastapi import HTTPException
         raise HTTPException(status_code=400, detail=f"Invalid JSON: {str(e)}")
-    except Exception as e:
-        from fastapi import HTTPException
+    except ParseError as e:
         raise HTTPException(status_code=400, detail=f"Invalid Talkbot Export: {str(e)}")
+
+@app.post("/analyze")
+async def analyze(file: UploadFile = File(...)):
+    bot = await parse_upload_file(file)
         
     findings = run_all_checks(bot)
     
@@ -65,16 +66,7 @@ async def analyze(file: UploadFile = File(...)):
 
 @app.post("/summarize")
 async def summarize_file(file: UploadFile = File(...)):
-    content = await file.read()
-    try:
-        raw_data = json.loads(content)
-        bot = parse_dict(raw_data)
-    except json.JSONDecodeError as e:
-        from fastapi import HTTPException
-        raise HTTPException(status_code=400, detail=f"Invalid JSON: {str(e)}")
-    except Exception as e:
-        from fastapi import HTTPException
-        raise HTTPException(status_code=400, detail=f"Invalid Talkbot Export: {str(e)}")
+    bot = await parse_upload_file(file)
         
     summary_tree = build_summary_tree(bot)
     return {"summary": summary_tree}
