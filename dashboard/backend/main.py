@@ -42,8 +42,16 @@ async def health():
 @app.post("/analyze")
 async def analyze(file: UploadFile = File(...)):
     content = await file.read()
-    raw_data = json.loads(content)
-    bot = parse_dict(raw_data)
+    try:
+        raw_data = json.loads(content)
+        bot = parse_dict(raw_data)
+    except json.JSONDecodeError as e:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail=f"Invalid JSON: {str(e)}")
+    except Exception as e:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail=f"Invalid Talkbot Export: {str(e)}")
+        
     findings = run_all_checks(bot)
     
     # Simple summary calculation
@@ -58,7 +66,15 @@ async def analyze(file: UploadFile = File(...)):
 @app.post("/summarize")
 async def summarize_file(file: UploadFile = File(...)):
     content = await file.read()
-    raw_data = json.loads(content)
-    bot = parse_dict(raw_data)
+    try:
+        raw_data = json.loads(content)
+        bot = parse_dict(raw_data)
+    except json.JSONDecodeError as e:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail=f"Invalid JSON: {str(e)}")
+    except Exception as e:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail=f"Invalid Talkbot Export: {str(e)}")
+        
     summary_tree = build_summary_tree(bot)
     return {"summary": summary_tree}
