@@ -4,10 +4,12 @@ import UploadZone from './components/UploadZone';
 import SummaryCards from './components/SummaryCards';
 import FindingList from './components/FindingList';
 import ChatSidebar from './components/ChatSidebar';
+import StructureTree from './components/StructureTree';
 import { RefreshCw, FileText } from 'lucide-react';
 
 function App() {
   const [data, setData] = useState(null);
+  const [summaryData, setSummaryData] = useState(null);
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -23,6 +25,13 @@ function App() {
     try {
       const res = await axios.post('http://localhost:8000/analyze', formData);
       setData(res.data);
+      
+      try {
+        const summaryRes = await axios.post('http://localhost:8000/summarize', formData);
+        setSummaryData(summaryRes.data);
+      } catch (sumErr) {
+        console.error('Summary fetch failed:', sumErr);
+      }
     } catch (err) {
       console.error('Upload and analysis failed:', err);
       setError('Analysis failed. Make sure the backend server is running on port 8000 and the JSON schema is valid.');
@@ -34,6 +43,7 @@ function App() {
 
   const handleReset = () => {
     setData(null);
+    setSummaryData(null);
     setFile(null);
     setError(null);
   };
@@ -118,6 +128,10 @@ function App() {
               
               <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
                 <FindingList findings={data.findings} />
+              </div>
+              
+              <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+                <StructureTree summary={summaryData} />
               </div>
             </div>
           )}
