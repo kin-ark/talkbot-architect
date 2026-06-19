@@ -18,7 +18,7 @@ facts:
       - Positive Closing
       - Negative Closing
       - Unclassified Closing
-    cite: { manual: config, pages: [265, 272] }
-    quote: "Greeting Introduction Purpose of call ... and Conclusion"
+    cite: { manual: config, pages: [10] }
+    quote: "The Main flow of a TALKBOT outbound call can be divided into four parts: \"Greeting/Introduction\", \"Purpose of Call\", \"'Event' invitation\", and \"Conclusion\""
     confidence: inferred
-    note: "Seeded from observed exports + config Main flow section; expand with documented labels during bulk extraction (Task 9)."
+    note: "Config p.10 (1.2 Main Flow) documents the canonical four-part structure; the extended labels (Convincer, Judgement, Re-ask*, *Closing) are inferred from observed real exports (e.g. 'Negative Closing' confirmed at config p.41). confidence=inferred because the full list is not enumerated in the manual."
