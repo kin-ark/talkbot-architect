@@ -16,7 +16,7 @@ def _wf(variables: dict | None = None, utterances: tuple = ()) -> WizFile:
         variables=variables or {},
         intents={},
         utterances=utterances,
-        audios={},
+        audios={}, knowledge_bases={},
         flow=FlowGraph(),
     )
 

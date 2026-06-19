@@ -294,3 +294,32 @@ def test_parser_variable_source_defaults_to_zero(tmp_path):
     p.write_text(_json.dumps(payload), encoding="utf-8")
     wf = parse_file(p)
     assert wf.variables[1].variable_source == 0
+
+
+def test_parse_knowledge_bases(tmp_path):
+    import json as _json
+    payload = {
+        "BizSpeechComponent": [],
+        "SpeechVariable": [],
+        "SpeechIntent": [],
+        "SentenceCutSpeech": [],
+        "SpeechAudio": [],
+        "BizKnowledgeInfo": [
+            {
+                "knowledgeId": 400,
+                "title": "FAQ 1",
+                "kdType": 1,
+                "intents": [{"intentId": 200}, {"intentId": 201}]
+            }
+        ]
+    }
+    p = tmp_path / "kb.json"
+    p.write_text(_json.dumps(payload), encoding="utf-8")
+    wf = parse_file(p)
+    assert 400 in wf.knowledge_bases
+    kb = wf.knowledge_bases[400]
+    assert kb.knowledge_id == 400
+    assert kb.title == "FAQ 1"
+    assert kb.kd_type == 1
+    assert kb.intents == (200, 201)
+

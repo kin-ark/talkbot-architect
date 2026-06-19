@@ -9,7 +9,7 @@ from wizcheck.report import Severity
 def _wf(intents: dict | None = None) -> WizFile:
     return WizFile(
         raw={}, components={}, variables={},
-        intents=intents or {}, utterances=(), audios={}, flow=FlowGraph(),
+        intents=intents or {}, utterances=(), audios={}, knowledge_bases={}, flow=FlowGraph(),
     )
 
 

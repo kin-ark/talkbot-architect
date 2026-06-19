@@ -17,7 +17,7 @@ def _intent(intent_id: int, name: str) -> Intent:
 def _wf(intents: dict) -> WizFile:
     return WizFile(
         raw={}, components={}, variables={},
-        intents=intents, utterances=(), audios={}, flow=FlowGraph(),
+        intents=intents, utterances=(), audios={}, knowledge_bases={}, flow=FlowGraph(),
     )
 
 

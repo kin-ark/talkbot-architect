@@ -44,7 +44,7 @@ def _wf_from_nodes(nodes: list[FlowNode], variables: dict | None = None) -> WizF
         variables=variables or {},
         intents={},
         utterances=(),
-        audios={},
+        audios={}, knowledge_bases={},
         flow=g,
     )
 
@@ -117,7 +117,7 @@ def test_wiz101_genuinely_disconnected_node_is_warning():
     wf = WizFile(
         raw={},
         components={comp.uuid: comp},
-        variables={}, intents={}, utterances=(), audios={},
+        variables={}, intents={}, utterances=(), audios={}, knowledge_bases={},
         flow=g,
     )
     findings = check_graph(wf)

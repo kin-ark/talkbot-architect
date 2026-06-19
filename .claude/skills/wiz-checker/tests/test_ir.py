@@ -74,7 +74,7 @@ def test_wizfile_holds_all_collections():
         variables={},
         intents={},
         utterances=(),
-        audios={},
+        audios={}, knowledge_bases={},
         flow=None,
         raw={},
     )

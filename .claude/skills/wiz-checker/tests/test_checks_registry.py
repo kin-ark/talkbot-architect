@@ -15,7 +15,7 @@ def empty_wizfile() -> WizFile:
         variables={},
         intents={},
         utterances=(),
-        audios={},
+        audios={}, knowledge_bases={},
         flow=FlowGraph(),
     )
 

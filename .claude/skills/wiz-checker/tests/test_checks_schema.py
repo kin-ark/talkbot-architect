@@ -25,7 +25,7 @@ def _wf(**overrides) -> WizFile:
         variables={},
         intents={},
         utterances=(),
-        audios={},
+        audios={}, knowledge_bases={},
         flow=FlowGraph(),
     )
     defaults.update(overrides)
@@ -51,7 +51,7 @@ def test_wiz001_required_top_level_missing():
         variables={},
         intents={},
         utterances=(),
-        audios={},
+        audios={}, knowledge_bases={},
         flow=FlowGraph(),
     )
     findings = check_schema(wf)

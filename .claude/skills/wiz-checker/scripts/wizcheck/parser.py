@@ -15,6 +15,7 @@ from wizcheck.ir import (
     FlowGraph,
     FlowNode,
     Intent,
+    KnowledgeBase,
     Utterance,
     Variable,
     WizFile,
@@ -138,6 +139,9 @@ def parse_dict(raw: dict[str, Any]) -> WizFile:
     components = _parse_components(
         _unwrap_list(raw.get("BizSpeechComponent"), "BizSpeechComponent")
     )
+    knowledge_bases = _parse_knowledge_bases(
+        _unwrap_list(raw.get("BizKnowledgeInfo"), "BizKnowledgeInfo")
+    )
     flow = _build_flow_graph(components)
 
     return WizFile(
@@ -147,6 +151,7 @@ def parse_dict(raw: dict[str, Any]) -> WizFile:
         intents=intents,
         utterances=utterances,
         audios=audios,
+        knowledge_bases=knowledge_bases,
         flow=flow,
     )
 
@@ -239,6 +244,29 @@ def _parse_audios(entries: list[dict[str, Any]]) -> dict[int, Audio]:
         )
         out[a.audio_id] = a
     return out
+
+
+def _parse_knowledge_bases(entries: list[dict[str, Any]]) -> dict[int, KnowledgeBase]:
+    out: dict[int, KnowledgeBase] = {}
+    for e in entries:
+        intents_raw = e.get("intents", [])
+        if not isinstance(intents_raw, list):
+            intents_raw = []
+        intents_list = []
+        for intent in intents_raw:
+            if isinstance(intent, dict) and "intentId" in intent:
+                intents_list.append(_parse_int(intent["intentId"], "BizKnowledgeInfo.intents.intentId"))
+                
+        kb = KnowledgeBase(
+            knowledge_id=_parse_int(_require(e, "knowledgeId", "BizKnowledgeInfo"), "BizKnowledgeInfo.knowledgeId"),
+            title=str(e.get("title", "")),
+            kd_type=_parse_int(e.get("kdType", 0), "BizKnowledgeInfo.kdType"),
+            intents=tuple(intents_list),
+            raw=e,
+        )
+        out[kb.knowledge_id] = kb
+    return out
+
 
 
 def _parse_components(entries: list[dict[str, Any]]) -> dict[UUID, Component]:

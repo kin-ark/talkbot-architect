@@ -92,6 +92,17 @@ class Audio:
 
 
 @dataclass(frozen=True)
+class KnowledgeBase:
+    """BizKnowledgeInfo entry: A system or user-defined FAQ/Knowledge Base."""
+
+    knowledge_id: int
+    title: str
+    kd_type: int
+    intents: tuple[int, ...]
+    raw: dict[str, Any] = field(repr=False)
+
+
+@dataclass(frozen=True)
 class WizFile:
     """Top-level container for a parsed WIZ.AI exported JSON file."""
 
@@ -100,6 +111,7 @@ class WizFile:
     intents: dict[int, Intent]
     utterances: tuple[Utterance, ...]
     audios: dict[int, Audio]
+    knowledge_bases: dict[int, KnowledgeBase]
     flow: FlowGraph
     raw: dict[str, Any] = field(repr=False)
 
