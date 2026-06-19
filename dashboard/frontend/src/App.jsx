@@ -23,14 +23,16 @@ function App() {
     formData.append('file', uploadedFile);
     
     try {
-      const res = await axios.post('http://localhost:8000/analyze', formData);
+      const [res, summaryRes] = await Promise.all([
+        axios.post('http://localhost:8000/analyze', formData),
+        axios.post('http://localhost:8000/summarize', formData).catch(sumErr => {
+          console.error('Summary fetch failed:', sumErr);
+          return { data: null };
+        })
+      ]);
       setData(res.data);
-      
-      try {
-        const summaryRes = await axios.post('http://localhost:8000/summarize', formData);
+      if (summaryRes && summaryRes.data) {
         setSummaryData(summaryRes.data);
-      } catch (sumErr) {
-        console.error('Summary fetch failed:', sumErr);
       }
     } catch (err) {
       console.error('Upload and analysis failed:', err);
