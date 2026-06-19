@@ -10,6 +10,7 @@ from wizcheck.ir import (
     ComponentDetails,
     FlowGraph,
     FlowNode,
+    Variable,
     WizFile,
 )
 from wizcheck.report import Severity
@@ -20,7 +21,7 @@ def _node(uid, parent=None, label="Other", raw_children=None) -> FlowNode:
     return FlowNode(uuid=uid, parent_uuid=parent, label=label, sort_index=0, raw=raw)
 
 
-def _wf_from_nodes(nodes: list[FlowNode]) -> WizFile:
+def _wf_from_nodes(nodes: list[FlowNode], variables: dict | None = None) -> WizFile:
     by_uuid = {n.uuid: n for n in nodes}
     roots = tuple(n.uuid for n in nodes if n.parent_uuid is None)
     comp = Component(
@@ -40,7 +41,7 @@ def _wf_from_nodes(nodes: list[FlowNode]) -> WizFile:
     return WizFile(
         raw={},
         components={comp.uuid: comp},
-        variables={},
+        variables=variables or {},
         intents={},
         utterances=(),
         audios={},
@@ -262,7 +263,7 @@ def test_wiz105_missing_null_branch_on_date_variable():
                 "name": "Is today",
                 "branch_judgement_condition": [
                     {
-                        "left_value": "Date Collected",
+                        "left_value": "[{101}]",
                         "operator": "=",
                         "right_value": "Today"
                     }
@@ -271,7 +272,8 @@ def test_wiz105_missing_null_branch_on_date_variable():
         ]
     }
     n = FlowNode(uuid=uid, parent_uuid=None, label="Check Date", sort_index=0, raw=raw)
-    wf = _wf_from_nodes([n])
+    variables = {101: Variable(id=101, name="Date Collected", text_type="DATE", raw={}, variable_source=0)}
+    wf = _wf_from_nodes([n], variables=variables)
     findings = check_graph(wf)
     f = next((x for x in findings if x.code == "WIZ105"), None)
     assert f is not None
@@ -289,7 +291,7 @@ def test_wiz105_has_null_branch_on_date_variable():
                 "name": "Is today",
                 "branch_judgement_condition": [
                     {
-                        "left_value": "date_collected",
+                        "left_value": "{102}",
                         "operator": "=",
                         "right_value": "Today"
                     }
@@ -299,7 +301,7 @@ def test_wiz105_has_null_branch_on_date_variable():
                 "name": "Fallback",
                 "branch_judgement_condition": [
                     {
-                        "left_value": "date_collected",
+                        "left_value": "{102}",
                         "operator": "is_empty",
                         "right_value": ""
                     }
@@ -308,7 +310,8 @@ def test_wiz105_has_null_branch_on_date_variable():
         ]
     }
     n = FlowNode(uuid=uid, parent_uuid=None, label="Check Date", sort_index=0, raw=raw)
-    wf = _wf_from_nodes([n])
+    variables = {102: Variable(id=102, name="date_collected", text_type="DATE", raw={}, variable_source=0)}
+    wf = _wf_from_nodes([n], variables=variables)
     findings = check_graph(wf)
     assert not any(x.code == "WIZ105" for x in findings)
 
@@ -323,7 +326,7 @@ def test_wiz105_has_default_branch_on_date_variable():
                 "name": "Is today",
                 "branch_judgement_condition": [
                     {
-                        "left_value": "Date",
+                        "left_value": "103",
                         "operator": "=",
                         "right_value": "Today"
                     }
@@ -336,7 +339,8 @@ def test_wiz105_has_default_branch_on_date_variable():
         ]
     }
     n = FlowNode(uuid=uid, parent_uuid=None, label="Check Date", sort_index=0, raw=raw)
-    wf = _wf_from_nodes([n])
+    variables = {103: Variable(id=103, name="Date", text_type="DATE", raw={}, variable_source=0)}
+    wf = _wf_from_nodes([n], variables=variables)
     findings = check_graph(wf)
     assert not any(x.code == "WIZ105" for x in findings)
 

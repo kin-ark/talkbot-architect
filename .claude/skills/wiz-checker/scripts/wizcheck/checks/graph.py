@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import re
 from uuid import UUID
 
 import yaml
@@ -11,6 +12,9 @@ from wizcheck.ir import WizFile
 from wizcheck.report import Finding, Location, Severity
 
 _RULES_FILE = Path(__file__).resolve().parents[3] / "schema" / "dead_end_rules.yaml"
+
+NODE_TYPE_CONDITIONAL_JUDGMENT = 7
+_VAR_ID_RE = re.compile(r"\[?\{(\d+)\}\]?")
 
 
 def _load_rules() -> dict:
@@ -184,47 +188,56 @@ def _check_null_branches(wf: WizFile) -> list[Finding]:
     out: list[Finding] = []
     for comp in wf.components.values():
         for node in comp.details.flow_nodes.values():
-            if node.raw.get("type") != 7:
+            if node.raw.get("type") != NODE_TYPE_CONDITIONAL_JUDGMENT:
                 continue
             
-            # Check if this node evaluates a date variable
+            # Find which date variables are being evaluated in this node
+            date_var_ids_evaluated: set[int] = set()
             branches = node.raw.get("branch", [])
-            is_date_evaluation = False
             for branch in branches:
-                for cond in branch.get("branch_judgement_condition", []):
-                    left_val = str(cond.get("left_value", "")).lower()
-                    if "date" in left_val:
-                        is_date_evaluation = True
-                        break
-                if is_date_evaluation:
-                    break
+                for cond in (branch.get("branch_judgement_condition") or []):
+                    left_val = str(cond.get("left_value", ""))
+                    match = _VAR_ID_RE.search(left_val)
+                    if match:
+                        var_id = int(match.group(1))
+                        v = wf.variables.get(var_id)
+                        if v and v.text_type == "DATE":
+                            date_var_ids_evaluated.add(var_id)
             
-            if not is_date_evaluation:
+            if not date_var_ids_evaluated:
                 continue
             
-            # If it is a date evaluation, ensure there is a branch handling Null or empty
-            has_null_branch = False
-            for branch in branches:
-                conditions = branch.get("branch_judgement_condition")
-                # A branch with no conditions acts as a fallback/default
-                if not conditions:
-                    has_null_branch = True
-                    break
-                for cond in conditions:
-                    op = str(cond.get("operator", "")).lower()
-                    rval = str(cond.get("right_value", "")).lower()
-                    if op in ("is empty", "is_empty", "isnull", "is_null") or rval in ("null", "empty", ""):
+            # For each date variable evaluated, ensure there is a branch handling Null or empty
+            for var_id in date_var_ids_evaluated:
+                has_null_branch = False
+                for branch in branches:
+                    conditions = branch.get("branch_judgement_condition")
+                    # A branch with no conditions acts as a fallback/default
+                    if not conditions:
                         has_null_branch = True
                         break
-                if has_null_branch:
+                    
+                    # Look for an explicit empty check on *this specific date variable*
+                    for cond in conditions:
+                        cond_left_val = str(cond.get("left_value", ""))
+                        match = _VAR_ID_RE.search(cond_left_val)
+                        if match and int(match.group(1)) == var_id:
+                            op = str(cond.get("operator", "")).lower()
+                            rval = str(cond.get("right_value", "")).lower()
+                            if op in ("is empty", "is_empty", "isnull", "is_null") or rval in ("null", "empty", ""):
+                                has_null_branch = True
+                                break
+                    if has_null_branch:
+                        break
+                
+                if not has_null_branch:
+                    out.append(Finding(
+                        code="WIZ105",
+                        severity=Severity.ERROR,
+                        location=Location(entity="FlowNode", id=str(node.uuid), field=None),
+                        message="Missing fallback/null branch on Date variable"
+                    ))
+                    # Only emit once per node even if multiple date variables are missing checks
                     break
-            
-            if not has_null_branch:
-                out.append(Finding(
-                    code="WIZ105",
-                    severity=Severity.ERROR,
-                    location=Location(entity="FlowNode", id=str(node.uuid), field=None),
-                    message="Missing fallback/null branch on Date variable"
-                ))
     return out
 
