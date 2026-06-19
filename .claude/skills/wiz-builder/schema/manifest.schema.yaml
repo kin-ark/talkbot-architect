@@ -12,7 +12,7 @@ properties:
     enum: [dev, prod]
   language:
     type: string
-    enum: [IDN, ENG, ZHO]
+    enum: [ZHO, ENG, IDN, THA]
   custom_variables:
     type: array
     items:
@@ -35,7 +35,7 @@ properties:
           minLength: 1
         language:
           type: string
-          enum: [IDN, ENG, ZHO]
+          enum: [ZHO, ENG, IDN, THA]
         keywords:
           type: array
           items: {type: string}

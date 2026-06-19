@@ -1,24 +1,19 @@
-# Known WIZ.AI FlowNode labels. The compiler emits an INFO message (not an
-# error) when a manifest uses a label that isn't in this list. This catalog
-# is curated from observed real WIZ exports — extend freely as new labels
-# are encountered.
+# Known WIZ.AI FlowNode labels. SOURCE OF TRUTH: wiz-facts
+# facts/vocabulary.yaml (id: vocabulary.node_labels). Regenerate this file
+# from that fact; do not hand-edit. The compiler emits an INFO (not an error)
+# when a manifest uses a label not in this list.
 
 labels:
-  # Canvas openers / structural
   - Greeting
   - Pitch
   - Convincer
   - Closing
-  # Decision / branching
   - Judgement
   - Judgement (Greeting Time)
-  # Repetition / fallback
   - Re-ask
   - Re-ask Limit
   - Re-ask Tenor
-  # Knowledge / external
   - ASR Corpus Collection
-  # Termination
   - Positive Closing
   - Negative Closing
   - Unclassified Closing
