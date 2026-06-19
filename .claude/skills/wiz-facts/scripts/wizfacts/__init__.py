@@ -39,12 +39,17 @@ class Facts:
 
     def cite(self, fact_id: str) -> dict[str, Any]:
         """Return the citation dict for a fact (for audit / messages)."""
+        if fact_id not in self._by_id:
+            raise KeyError(f"unknown fact id: {fact_id!r}")
         return self._by_id[fact_id]["cite"]
 
 
 def load_facts(facts_dir: Path | None = None) -> Facts:
     facts_dir = facts_dir or _FACTS_DIR
-    schema = yaml.safe_load(_META_SCHEMA_PATH.read_text(encoding="utf-8"))
+    try:
+        schema = yaml.safe_load(_META_SCHEMA_PATH.read_text(encoding="utf-8"))
+    except OSError as e:
+        raise FactsError(f"cannot read meta-schema at {_META_SCHEMA_PATH}: {e}") from e
     validator = Draft7Validator(schema)
 
     by_id: dict[str, Any] = {}
@@ -52,7 +57,10 @@ def load_facts(facts_dir: Path | None = None) -> Facts:
     for path in sorted(facts_dir.glob("*.yaml")):
         if path.name == "_meta.schema.yaml":
             continue
-        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        try:
+            data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        except (OSError, yaml.YAMLError) as e:
+            raise FactsError(f"{path.name}: cannot read/parse: {e}") from e
         errors = sorted(validator.iter_errors(data), key=lambda e: list(e.absolute_path))
         if errors:
             first = errors[0]
