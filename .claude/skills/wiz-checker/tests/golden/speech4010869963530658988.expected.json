@@ -7,7 +7,8 @@
       "schema",
       "graph",
       "variables",
-      "intents"
+      "intents",
+      "platform"
     ]
   },
   "findings": [
