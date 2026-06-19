@@ -1,0 +1,11 @@
+schema_version: 1
+source_manuals:
+  product: { title: "Talkbot Product Guidance", version: "unknown" }
+  config:  { title: "Talkbot Configuration Guidance", version: "unknown" }
+facts:
+  - id: default.branch
+    value: dev
+    cite: { manual: config, pages: [576] }
+    quote: "branch"
+    confidence: inferred
+    note: "Builder already defaults branch to dev; recorded here as the single source. Re-verify page during bulk extraction."

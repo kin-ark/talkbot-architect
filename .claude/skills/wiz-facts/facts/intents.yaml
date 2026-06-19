@@ -1,0 +1,11 @@
+schema_version: 1
+source_manuals:
+  product: { title: "Talkbot Product Guidance", version: "unknown" }
+  config:  { title: "Talkbot Configuration Guidance", version: "unknown" }
+facts:
+  - id: intent.required
+    value: [Unclassified]
+    cite: { manual: config, pages: [390] }
+    quote: "Unclassified used when the talkbot can't classify the user response intent"
+    confidence: documented
+    note: "Only required intent. Mirrors existing checker WIZ301."

@@ -1,0 +1,24 @@
+schema_version: 1
+source_manuals:
+  product: { title: "Talkbot Product Guidance", version: "unknown" }
+  config:  { title: "Talkbot Configuration Guidance", version: "unknown" }
+facts:
+  - id: vocabulary.node_labels
+    value:
+      - Greeting
+      - Pitch
+      - Convincer
+      - Closing
+      - Judgement
+      - Judgement (Greeting Time)
+      - Re-ask
+      - Re-ask Limit
+      - Re-ask Tenor
+      - ASR Corpus Collection
+      - Positive Closing
+      - Negative Closing
+      - Unclassified Closing
+    cite: { manual: config, pages: [265, 272] }
+    quote: "Greeting Introduction Purpose of call ... and Conclusion"
+    confidence: inferred
+    note: "Seeded from observed exports + config Main flow section; expand with documented labels during bulk extraction (Task 9)."
