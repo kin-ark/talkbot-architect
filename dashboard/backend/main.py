@@ -69,4 +69,4 @@ async def summarize_file(file: UploadFile = File(...)):
     bot = await parse_upload_file(file)
         
     summary_tree = build_summary_tree(bot)
-    return {"summary": summary_tree}
+    return summary_tree

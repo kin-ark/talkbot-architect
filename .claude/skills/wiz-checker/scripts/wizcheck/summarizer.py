@@ -4,12 +4,9 @@ from uuid import UUID
 
 def build_summary_tree(wf: WizFile) -> dict:
     if not hasattr(wf, 'components') or not wf.components:
-        return {}
+        return {"mainFlow": [], "knowledgeBases": []}
 
-    root_node = {
-        "name": "Talkbot Dialogue",
-        "children": []
-    }
+    main_flow = []
     
     for comp_uuid, comp in wf.components.items():
         comp_name = comp.raw.get("componentName", f"Component {comp_uuid}")
@@ -32,7 +29,12 @@ def build_summary_tree(wf: WizFile) -> dict:
             if not node:
                 return {"name": f"Unknown Node {node_uuid}"}
                 
-            node_data = {"name": node.label, "uuid": str(node_uuid)}
+            node_data = {
+                "name": node.label, 
+                "uuid": str(node_uuid),
+                "node_type": comp.category,
+                "allowedKBs": node.raw.get("data", {}).get("allow_jump_knowledges", [])
+            }
             children = children_map.get(node_uuid, [])
             if children:
                 children.sort(key=lambda x: x.sort_index)
@@ -42,21 +44,42 @@ def build_summary_tree(wf: WizFile) -> dict:
         for r_uuid in comp.details.root_uuids:
             comp_tree["children"].append(build_node_tree(r_uuid, set()))
             
-        root_node["children"].append(comp_tree)
+        main_flow.append(comp_tree)
         
-    return root_node
+    knowledge_bases = []
+    if getattr(wf, 'knowledge_bases', None):
+        for kb_id, kb in wf.knowledge_bases.items():
+            knowledge_bases.append({
+                "knowledgeId": kb.knowledge_id,
+                "title": kb.title,
+                "kdType": kb.kd_type,
+                "intents": list(kb.intents)
+            })
+            
+    return {"mainFlow": main_flow, "knowledgeBases": knowledge_bases}
 
 def build_markdown_summary(wf: WizFile) -> str:
     tree = build_summary_tree(wf)
-    if not tree:
+    if not tree or not tree.get("mainFlow"):
         return "No summary available"
         
     lines = []
     def _walk(node, depth):
         indent = "  " * depth
-        lines.append(f"{indent}- {node.get('name', 'Unknown')}")
+        node_type = f" [Type: {node['node_type']}]" if "node_type" in node else ""
+        allowed_kbs = f" [KBs: {node['allowedKBs']}]" if node.get("allowedKBs") else ""
+        lines.append(f"{indent}- {node.get('name', 'Unknown')}{node_type}{allowed_kbs}")
         for child in node.get("children", []):
             _walk(child, depth + 1)
             
-    _walk(tree, 0)
+    lines.append("- Talkbot Dialogue")
+    for comp in tree.get("mainFlow", []):
+        _walk(comp, 1)
+        
+    kbs = tree.get("knowledgeBases", [])
+    if kbs:
+        lines.append("- Knowledge Bases")
+        for kb in kbs:
+            lines.append(f"  - {kb['title']} (ID: {kb['knowledgeId']})")
+            
     return "\n".join(lines)
