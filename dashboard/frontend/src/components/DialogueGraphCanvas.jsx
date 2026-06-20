@@ -44,7 +44,7 @@ export function flattenFlow(mainFlow = []) {
           nodes.push({
             id: nodeId,
             position: { x: currentX, y: currentY },
-            data: { label },
+            data: { label, originalNode: node },
             style: nodeStyle
           });
         }
@@ -77,12 +77,28 @@ export function flattenFlow(mainFlow = []) {
   return { nodes, edges };
 }
 
-export default function DialogueGraphCanvas({ mainFlow = [] }) {
+export default function DialogueGraphCanvas({ mainFlow = [], onNodeClick }) {
   const { nodes, edges } = useMemo(() => flattenFlow(mainFlow), [mainFlow]);
+
+  const handleNodeClick = (event, node) => {
+    if (onNodeClick) {
+      if (node.data && node.data.originalNode) {
+        onNodeClick(node.data.originalNode);
+      } else {
+        // For components or basic nodes without originalNode
+        onNodeClick({ name: node.data?.label || 'Component', node_type: 'Component' });
+      }
+    }
+  };
 
   return (
     <div className="w-full h-full bg-slate-50" data-testid="dialogue-graph-canvas">
-      <ReactFlow nodes={nodes} edges={edges} fitView>
+      <ReactFlow 
+        nodes={nodes} 
+        edges={edges} 
+        fitView 
+        onNodeClick={handleNodeClick}
+      >
         <Background color="#ccc" gap={16} />
         <Controls />
       </ReactFlow>

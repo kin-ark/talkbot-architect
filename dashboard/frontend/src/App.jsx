@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import GlobalSidebar from './components/GlobalSidebar';
 import DialogueGraphCanvas from './components/DialogueGraphCanvas';
+import NodePropertiesPanel from './components/NodePropertiesPanel';
 import axios from 'axios';
 
 const mockFallbackData = {
@@ -25,12 +26,16 @@ const mockFallbackData = {
         }
       ]
     }
+  ],
+  knowledgeBases: [
+    { id: "KB-1", title: "Test Knowledge Base" }
   ]
 };
 
 export default function App() {
-  const [data, setData] = useState({ mainFlow: [] });
+  const [data, setData] = useState({ mainFlow: [], knowledgeBases: [] });
   const [loading, setLoading] = useState(true);
+  const [selectedNode, setSelectedNode] = useState(null);
 
   useEffect(() => {
     const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -53,7 +58,18 @@ export default function App() {
         {loading ? (
           <div className="flex-1 flex items-center justify-center">Loading...</div>
         ) : (
-          <DialogueGraphCanvas mainFlow={data.mainFlow} />
+          <>
+            <div className="flex-1 flex overflow-hidden relative">
+              <DialogueGraphCanvas 
+                mainFlow={data.mainFlow} 
+                onNodeClick={setSelectedNode} 
+              />
+            </div>
+            <NodePropertiesPanel 
+              selectedNode={selectedNode} 
+              knowledgeBases={data.knowledgeBases} 
+            />
+          </>
         )}
       </main>
     </div>
