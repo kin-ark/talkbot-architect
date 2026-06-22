@@ -329,16 +329,25 @@ def build_components(data: dict) -> list[FlowComponent]:
     Task 3 will call this directly when building the KB plane.
     """
     raw_components = unwrap(data.get("BizSpeechComponent"))
+    if not isinstance(raw_components, list):
+        raw_components = []
     components: list[FlowComponent] = []
 
     for comp in raw_components:
+        if not isinstance(comp, dict):
+            continue
         comp_uuid = comp.get("componentUuid", "")
         comp_name = comp.get("name", "")
         sort_index = comp.get("sortIndex", 0)
-        raw_details = comp.get("details")
-        details = unwrap(raw_details) if raw_details is not None else {}
-        raw_routes = comp.get("routes")
-        routes = unwrap(raw_routes) if raw_routes is not None else {}
+        # details/routes may be absent, an empty/"null" JSON string (real exports
+        # emit `details: "null"` for empty components), or already-parsed objects.
+        # Coerce anything that isn't a dict to an empty dict.
+        details = unwrap(comp.get("details"))
+        if not isinstance(details, dict):
+            details = {}
+        routes = unwrap(comp.get("routes"))
+        if not isinstance(routes, dict):
+            routes = {}
 
         entry_uuid: str | None = None
         nodes: dict[str, FlowModelNode] = {}
