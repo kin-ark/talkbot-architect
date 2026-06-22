@@ -1,0 +1,375 @@
+"""FlowModel — envelope/routes-based node and branch extraction.
+
+Builds a FlowModel directly from the raw WIZ export dict.
+Canonical sources:
+  - Nodes:  BizSpeechComponent[i].details  (dict keyed by node UUID)
+  - Edges:  BizSpeechComponent[i].routes   (dict keyed by source node UUID)
+  - Labels: details[nodeUuid].data.all_client_intent[j].id == portUuid in routes
+
+JSON-string wrapping: raw exports wrap BizSpeechComponent and details as JSON
+strings. unwrap() handles both forms transparently.
+
+Task 3 will populate KBView.multi_round; this task leaves it None.
+"""
+from __future__ import annotations
+
+import json
+import re
+from dataclasses import dataclass, field
+from typing import Any
+
+from flow_constants import NODE_TYPE_MAP, UNKNOWN_NODE_TYPE
+
+
+# ---------------------------------------------------------------------------
+# Public helpers
+# ---------------------------------------------------------------------------
+
+def unwrap(value: Any) -> list | dict:
+    """Normalise a value that may be a JSON-encoded string, a list, or a dict.
+
+    - JSON string → json.loads result (list or dict)
+    - list/dict   → returned as-is (same object)
+    - None        → [] (empty list sentinel)
+    """
+    if value is None:
+        return []
+    if isinstance(value, (list, dict)):
+        return value
+    if isinstance(value, str):
+        return json.loads(value)
+    return value
+
+
+def node_type_of(envelope_or_data: dict) -> str:
+    """Return the stable node-type name for an envelope or data dict.
+
+    Reads the ``type`` key at the top level of *envelope_or_data* first;
+    if absent, falls back to ``envelope_or_data["data"]["type"]``.
+    Maps through NODE_TYPE_MAP; returns ``"unknown"`` for unmapped values
+    or when ``type`` is entirely absent.
+    """
+    raw_type = envelope_or_data.get("type")
+    if raw_type is None:
+        data = envelope_or_data.get("data", {})
+        raw_type = data.get("type") if isinstance(data, dict) else None
+    if raw_type is None:
+        return UNKNOWN_NODE_TYPE
+    return NODE_TYPE_MAP.get(raw_type, UNKNOWN_NODE_TYPE)
+
+
+# ---------------------------------------------------------------------------
+# Dataclasses (exact field names — Phase 5 frontend depends on these)
+# ---------------------------------------------------------------------------
+
+@dataclass
+class BranchEdge:
+    label: str                          # branch/intent name, condition name, or ""
+    kind: str                           # "intent" | "condition" | "default" | "next" | "exit"
+    target_uuid: str | None = None      # destination node in SAME component
+    target_component: str | None = None # type-4 cross-component jump (componentUuid)
+    target_kb: int | None = None        # type-8 KB jump (knowledgeId as int)
+    terminal: str | None = None         # "hangup" | "transfer" (type-2 exit)
+
+
+@dataclass
+class FlowModelNode:
+    uuid: str
+    label: str
+    node_type: str                       # via NODE_TYPE_MAP, else "unknown"
+    text: str                            # first data.list[].text (joined by " / " if multiple)
+    referenced_vars: list[str]           # names from data.node_variables[].name + {var} refs
+    allowed_kbs: list[int]               # data.allow_jump_knowledges cast to int
+    branches: list[BranchEdge] = field(default_factory=list)
+
+
+@dataclass
+class FlowComponent:
+    uuid: str
+    name: str
+    sort_index: int
+    entry_uuid: str | None              # node with is_default true
+    root_uuids: list[str]               # [entry_uuid] if present else []
+    nodes: dict[str, FlowModelNode]
+
+
+@dataclass
+class KBView:
+    knowledge_id: int
+    title: str
+    kd_type: int
+    intents: list[int]
+    multi_round: "FlowModel | None" = None  # set in Task 3; leave None here
+
+
+@dataclass
+class FlowModel:
+    components: list[FlowComponent]
+    knowledge_bases: list[KBView]
+
+
+# ---------------------------------------------------------------------------
+# Internal extraction helpers
+# ---------------------------------------------------------------------------
+
+_VAR_REF_RE = re.compile(r"\{([A-Za-z_]\w*)\}")
+
+
+def _extract_text(data: dict) -> str:
+    """Join text from data.list[].text with ' / ', skipping empty strings."""
+    items = data.get("list", [])
+    parts = [item["text"] for item in items if item.get("text")]
+    return " / ".join(parts)
+
+
+def _extract_referenced_vars(data: dict, text: str) -> list[str]:
+    """Collect variable names from data.node_variables[] plus {Name} refs in text."""
+    seen: dict[str, None] = {}  # ordered set
+    for v in data.get("node_variables", []):
+        name = v.get("name")
+        if name:
+            seen[name] = None
+    for match in _VAR_REF_RE.finditer(text):
+        name = match.group(1)
+        if name not in seen:
+            seen[name] = None
+    return list(seen)
+
+
+def _build_branches(
+    node_uuid: str,
+    node_type: str,
+    data: dict,
+    routes: dict,
+) -> list[BranchEdge]:
+    """Build the branch list for one node according to the brief's rules."""
+    branches: list[BranchEdge] = []
+
+    if node_type == "goto_component":
+        # type 4: ONE cross-component exit edge
+        target_comp = data.get("appoint_node_id")
+        label = data.get("specificComponentName") or "go to component"
+        branches.append(BranchEdge(
+            label=label,
+            kind="exit",
+            target_component=target_comp,
+        ))
+        return branches
+
+    if node_type == "goto_kb":
+        # type 8: ONE KB exit edge
+        raw_kb_id = data.get("appoint_knowledge_id")
+        branches.append(BranchEdge(
+            label="go to KB",
+            kind="exit",
+            target_kb=int(raw_kb_id) if raw_kb_id is not None else None,
+        ))
+        return branches
+
+    if node_type == "exit":
+        # type 2: ONE terminal edge
+        is_transfer = data.get("is_transfer", 0)
+        terminal = "transfer" if is_transfer else "hangup"
+        label = "transfer" if is_transfer else "hang up"
+        branches.append(BranchEdge(
+            label=label,
+            kind="exit",
+            terminal=terminal,
+        ))
+        return branches
+
+    # types 1, 5, 7, 10 — derive edges from routes + all_client_intent
+    edge_map = routes.get(node_uuid, {})
+    if not edge_map:
+        return branches
+
+    # Build port-uuid → intent-name lookup from all_client_intent
+    intent_lookup: dict[str, str] = {}
+    for entry in data.get("all_client_intent", []):
+        port_id = entry.get("id")
+        if port_id:
+            intent_lookup[port_id] = entry.get("name", "")
+
+    for port_uuid, edge in edge_map.items():
+        target_uuid = edge["target"]["uuid"]
+        label = intent_lookup.get(port_uuid, "")
+
+        if node_type == "conditional":
+            kind = "default" if label == "Default" else "condition"
+        elif node_type in ("talk", "talk_continue"):
+            kind = "intent"
+        elif node_type == "variable_assignment":
+            kind = "next"
+        else:
+            kind = "next"
+
+        branches.append(BranchEdge(
+            label=label,
+            kind=kind,
+            target_uuid=target_uuid,
+        ))
+
+    return branches
+
+
+def _build_node(
+    node_uuid: str,
+    envelope: dict,
+    routes: dict,
+) -> FlowModelNode:
+    """Build a FlowModelNode from a details envelope."""
+    node_type = node_type_of(envelope)
+    data = envelope.get("data", {})
+
+    label = (
+        envelope.get("name")
+        or (data.get("name") if isinstance(data, dict) else None)
+        or node_uuid
+    )
+
+    text = _extract_text(data)
+    referenced_vars = _extract_referenced_vars(data, text)
+    allowed_kbs = [int(k) for k in data.get("allow_jump_knowledges", [])]
+
+    branches = _build_branches(node_uuid, node_type, data, routes)
+
+    return FlowModelNode(
+        uuid=node_uuid,
+        label=label,
+        node_type=node_type,
+        text=text,
+        referenced_vars=referenced_vars,
+        allowed_kbs=allowed_kbs,
+        branches=branches,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Public build functions
+# ---------------------------------------------------------------------------
+
+def build_components(data: dict) -> list[FlowComponent]:
+    """Build FlowComponent list from raw export dict.
+
+    Task 3 will call this directly when building the KB plane.
+    """
+    raw_components = unwrap(data.get("BizSpeechComponent"))
+    components: list[FlowComponent] = []
+
+    for comp in raw_components:
+        comp_uuid = comp.get("componentUuid", "")
+        comp_name = comp.get("name", "")
+        sort_index = comp.get("sortIndex", 0)
+        details = unwrap(comp.get("details") or {})
+        routes = comp.get("routes", {})
+        if isinstance(routes, str):
+            routes = json.loads(routes)
+
+        entry_uuid: str | None = None
+        nodes: dict[str, FlowModelNode] = {}
+
+        for node_uuid, envelope in details.items():
+            node = _build_node(node_uuid, envelope, routes)
+            nodes[node_uuid] = node
+            if envelope.get("is_default"):
+                entry_uuid = node_uuid
+
+        root_uuids = [entry_uuid] if entry_uuid else []
+
+        components.append(FlowComponent(
+            uuid=comp_uuid,
+            name=comp_name,
+            sort_index=sort_index,
+            entry_uuid=entry_uuid,
+            root_uuids=root_uuids,
+            nodes=nodes,
+        ))
+
+    return components
+
+
+def build_flow_model(data: dict) -> FlowModel:
+    """Build a FlowModel from the raw export dict.
+
+    KB plane (KBView assembly, multi_round links) is left to Task 3.
+    """
+    components = build_components(data)
+
+    # Minimal KB pass: build KBView stubs from BizKnowledgeInfo.
+    # multi_round left None (Task 3).
+    raw_kbs = unwrap(data.get("BizKnowledgeInfo"))
+    knowledge_bases: list[KBView] = []
+    for kb in raw_kbs:
+        kb_id = kb.get("knowledgeId")
+        if kb_id is None:
+            continue
+        intents = [
+            item["intentId"]
+            for item in kb.get("intents", [])
+            if "intentId" in item
+        ]
+        knowledge_bases.append(KBView(
+            knowledge_id=int(kb_id),
+            title=kb.get("kdTitle", ""),
+            kd_type=int(kb.get("kdType", 0)),
+            intents=intents,
+            multi_round=None,
+        ))
+
+    return FlowModel(components=components, knowledge_bases=knowledge_bases)
+
+
+# ---------------------------------------------------------------------------
+# Serialisation
+# ---------------------------------------------------------------------------
+
+def _branch_to_dict(b: BranchEdge) -> dict:
+    return {
+        "label": b.label,
+        "kind": b.kind,
+        "target_uuid": b.target_uuid,
+        "target_component": b.target_component,
+        "target_kb": b.target_kb,
+        "terminal": b.terminal,
+    }
+
+
+def _node_to_dict(n: FlowModelNode) -> dict:
+    return {
+        "uuid": n.uuid,
+        "label": n.label,
+        "node_type": n.node_type,
+        "text": n.text,
+        "referenced_vars": n.referenced_vars,
+        "allowed_kbs": n.allowed_kbs,
+        "branches": [_branch_to_dict(b) for b in n.branches],
+    }
+
+
+def _component_to_dict(c: FlowComponent) -> dict:
+    return {
+        "uuid": c.uuid,
+        "name": c.name,
+        "sort_index": c.sort_index,
+        "entry_uuid": c.entry_uuid,
+        "root_uuids": c.root_uuids,
+        "nodes": {uuid: _node_to_dict(n) for uuid, n in c.nodes.items()},
+    }
+
+
+def _kb_to_dict(kb: KBView) -> dict:
+    return {
+        "knowledge_id": kb.knowledge_id,
+        "title": kb.title,
+        "kd_type": kb.kd_type,
+        "intents": kb.intents,
+        "multi_round": None,  # Task 3 fills this in
+    }
+
+
+def flow_model_to_dict(fm: FlowModel) -> dict:
+    """Serialise FlowModel to a JSON-compatible dict."""
+    return {
+        "components": [_component_to_dict(c) for c in fm.components],
+        "knowledge_bases": [_kb_to_dict(kb) for kb in fm.knowledge_bases],
+    }
