@@ -70,10 +70,9 @@ def _normalize(data: dict) -> dict:
                 if isinstance(item, dict) and "speechId" in item:
                     item["speechId"] = 0
                     changed = True
-        elif isinstance(decoded, dict):
-            if "speechId" in decoded:
-                decoded["speechId"] = 0
-                changed = True
+        elif isinstance(decoded, dict) and "speechId" in decoded:
+            decoded["speechId"] = 0
+            changed = True
         if changed:
             data[key] = json.dumps(decoded, ensure_ascii=False, separators=(",", ":"))
     return data

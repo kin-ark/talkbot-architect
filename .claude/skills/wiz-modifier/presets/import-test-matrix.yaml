@@ -42,14 +42,14 @@ tests:
       - op: populate-details
         component: 0
         nodes:
-          - {id: greeting, label: "Greeting", parent: null}
+          - {id: greeting, prompt: "Greeting"}
   - name: T8-multi-component
     format: zip
     mods:
       - op: add-component
         name: "2. Second Canvas"
         nodes:
-          - {id: n1, label: "Open", parent: null}
+          - {id: n1, prompt: "Open"}
   - name: T9-custom-variables
     format: zip
     mods:

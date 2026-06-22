@@ -10,6 +10,8 @@ from jsonschema import Draft7Validator
 
 _SCHEMA_PATH = Path(__file__).resolve().parents[2] / "schema" / "manifest.schema.yaml"
 
+_VALID_BRANCHES = frozenset({"Positive", "Negative", "Reject", "Unclassified", "No answer"})
+
 
 class ManifestError(Exception):
     """Raised when a manifest fails to load, parse, or validate."""
@@ -32,21 +34,32 @@ class CustomIntent:
 class Node:
     """A FlowNode in a canvas.
 
-    `id` is the manifest-local handle used by sibling nodes' `parent` field. If
-    omitted in the YAML, the loader synthesizes ``_auto_<index>`` based on the
-    node's position within its canvas. The id is independent of the UUID
-    minted later by the compiler.
+    `id` is the manifest-local handle used in edge definitions. The id is
+    independent of the UUID minted later by the compiler.
     """
 
     id: str
-    label: str
-    parent: str | None
+    prompt: str
+
+
+@dataclass(frozen=True)
+class Edge:
+    """A directed edge between two canvas nodes along a named branch port.
+
+    In YAML the keys are ``from``/``to``/``branch``; the loader maps
+    ``from`` → ``src`` and ``to`` → ``dst`` to avoid Python's reserved keyword.
+    """
+
+    src: str
+    branch: str
+    dst: str
 
 
 @dataclass(frozen=True)
 class Canvas:
     name: str
     nodes: tuple[Node, ...]
+    edges: tuple[Edge, ...]
 
 
 @dataclass(frozen=True)
@@ -113,33 +126,55 @@ def _validate_cross_field_invariants(data: dict, path: Path) -> None:
         dupes = [n for n in intent_names if intent_names.count(n) > 1]
         raise ManifestError(f"{path}: duplicate custom intent name: {sorted(set(dupes))}")
 
-    # Per-canvas: at least one root, no cross-canvas parent refs, unique local IDs
+    # Per-canvas invariants
     for canvas in data["canvases"]:
         cname = canvas["name"]
+        node_list = canvas["nodes"]
+        edge_list = canvas.get("edges") or []
+
+        # Unique node ids
         ids_in_canvas: set[str] = set()
-        for i, node in enumerate(canvas["nodes"]):
-            nid = node.get("id") or f"_auto_{i}"
+        for node in node_list:
+            nid = node["id"]
             if nid in ids_in_canvas:
                 raise ManifestError(f"{path}: duplicate node id {nid!r} in canvas {cname!r}")
             ids_in_canvas.add(nid)
 
-        for node in canvas["nodes"]:
-            parent = node["parent"]
-            if parent is None:
-                continue
-            if parent not in ids_in_canvas:
-                raise ManifestError(
-                    f"{path}: node {node.get('id') or node['label']!r} in canvas {cname!r} "
-                    f"references parent {parent!r} which is not declared in this canvas "
-                    f"(parent must be the id of another node in the same canvas; "
-                    f"cross-canvas references are not supported)"
-                )
+        # Edge endpoint existence and branch validity
+        seen_src_branch: set[tuple[str, str]] = set()
+        incoming: set[str] = set()
+        for edge in edge_list:
+            src = edge["from"]
+            dst = edge["to"]
+            branch = edge["branch"]
 
-        roots = [n for n in canvas["nodes"] if n["parent"] is None]
-        if not roots:
+            if src not in ids_in_canvas:
+                raise ManifestError(
+                    f"{path}: edge in canvas {cname!r} references unknown source node {src!r}"
+                )
+            if dst not in ids_in_canvas:
+                raise ManifestError(
+                    f"{path}: edge in canvas {cname!r} references unknown destination node {dst!r}"
+                )
+            if branch not in _VALID_BRANCHES:
+                raise ManifestError(
+                    f"{path}: edge in canvas {cname!r} has invalid branch {branch!r}; "
+                    f"must be one of {sorted(_VALID_BRANCHES)}"
+                )
+            key = (src, branch)
+            if key in seen_src_branch:
+                raise ManifestError(
+                    f"{path}: canvas {cname!r} has duplicate edge ({src!r}, {branch!r})"
+                )
+            seen_src_branch.add(key)
+            incoming.add(dst)
+
+        # Exactly one entry node (node with no incoming edge)
+        entry_nodes = [nid for nid in ids_in_canvas if nid not in incoming]
+        if len(entry_nodes) != 1:
             raise ManifestError(
-                f"{path}: canvas {cname!r} has no root node "
-                f"(need at least one node with parent: null)"
+                f"{path}: canvas {cname!r} must have exactly one entry node "
+                f"(a node with no incoming edge), found {len(entry_nodes)}: {sorted(entry_nodes)}"
             )
 
 
@@ -159,15 +194,23 @@ def _build_manifest(data: dict, raw_text: str) -> Manifest:
     canvases = []
     for canvas in data["canvases"]:
         nodes = []
-        for i, node in enumerate(canvas["nodes"]):
+        for node in canvas["nodes"]:
             nodes.append(
                 Node(
-                    id=node.get("id") or f"_auto_{i}",
-                    label=node["label"],
-                    parent=node["parent"],
+                    id=node["id"],
+                    prompt=node["prompt"],
                 )
             )
-        canvases.append(Canvas(name=canvas["name"], nodes=tuple(nodes)))
+        edges = []
+        for edge in canvas.get("edges") or []:
+            edges.append(
+                Edge(
+                    src=edge["from"],
+                    branch=edge["branch"],
+                    dst=edge["to"],
+                )
+            )
+        canvases.append(Canvas(name=canvas["name"], nodes=tuple(nodes), edges=tuple(edges)))
 
     return Manifest(
         name=data["name"],

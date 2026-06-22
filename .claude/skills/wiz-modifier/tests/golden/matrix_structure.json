@@ -55,26 +55,313 @@
   },
   "T10-custom-intents": {
     "bsc0_details": {
-      "f2cd2c8a-d2d8-5efb-b128-4c42d1e6a955": {
+      "8309e714-71e5-5080-98bd-10cdbe29b84d": {
         "canvas": {
           "component": {
             "props": {
-              "list": [
-                {
-                  "children": [],
-                  "editStatus": 1,
-                  "label": "Greeting",
-                  "parentId": "",
-                  "sortIndex": 0,
-                  "sortIndexABS": 0,
-                  "useStatus": 1,
-                  "uuid": "<uuid>",
-                  "value": "<uuid>"
-                }
-              ]
+              "list": [],
+              "text": "Talk Node",
+              "type": 1
             }
-          }
-        }
+          },
+          "id": "8309e714-71e5-5080-98bd-10cdbe29b84d",
+          "portMarkup": [
+            {
+              "children": [
+                {
+                  "attrs": {
+                    "xmlns": "http://www.w3.org/1999/xhtml"
+                  },
+                  "children": [
+                    {
+                      "selector": "foContent",
+                      "style": {
+                        "height": "100%",
+                        "width": "100%"
+                      },
+                      "tagName": "div"
+                    }
+                  ],
+                  "ns": "http://www.w3.org/1999/xhtml",
+                  "selector": "foBody",
+                  "style": {
+                    "background": "transparent",
+                    "height": "100%",
+                    "width": "100%"
+                  },
+                  "tagName": "body"
+                }
+              ],
+              "selector": "fo",
+              "tagName": "foreignObject"
+            }
+          ],
+          "ports": {
+            "groups": {
+              "in": {
+                "attrs": {
+                  "fo": {
+                    "height": 24,
+                    "magnet": "true",
+                    "width": 140,
+                    "x": -30,
+                    "y": -30
+                  }
+                },
+                "position": {
+                  "name": "top"
+                }
+              },
+              "out": {
+                "attrs": {
+                  "fo": {
+                    "height": 24,
+                    "magnet": "true"
+                  }
+                },
+                "position": {
+                  "left": 200,
+                  "name": "bottom"
+                }
+              }
+            },
+            "items": [
+              {
+                "attrs": {
+                  "fo": {
+                    "height": 24,
+                    "magnet": "true",
+                    "width": 70,
+                    "x": -37.67,
+                    "y": -30
+                  }
+                },
+                "group": "out",
+                "id": "18503cd6-7f93-5300-853b-31c6fd36ca23",
+                "name": "Positive"
+              },
+              {
+                "attrs": {
+                  "fo": {
+                    "height": 24,
+                    "magnet": "true",
+                    "width": 70,
+                    "x": -37.67,
+                    "y": -30
+                  }
+                },
+                "group": "out",
+                "id": "63277e0d-a09d-582f-8d95-3f30f27ff3ab",
+                "name": "Negative"
+              },
+              {
+                "attrs": {
+                  "fo": {
+                    "height": 24,
+                    "magnet": "true",
+                    "width": 70,
+                    "x": -37.67,
+                    "y": -30
+                  }
+                },
+                "group": "out",
+                "id": "bf1f1929-59a3-58c0-bda8-8853618b3985",
+                "name": "Unclassified"
+              }
+            ]
+          },
+          "position": {
+            "x": -461.97,
+            "y": 157.23
+          },
+          "shape": "react-shape",
+          "size": {
+            "height": 106,
+            "width": 346
+          },
+          "view": "react-shape-view",
+          "zIndex": 1
+        },
+        "data": {
+          "agent_type": "SYSTEM",
+          "all_client_intent": [
+            {
+              "checked": true,
+              "id": "18503cd6-7f93-5300-853b-31c6fd36ca23",
+              "intents": [
+                {
+                  "intentId": "463428"
+                }
+              ],
+              "language": "3",
+              "match": false,
+              "name": "Positive",
+              "threshold": ""
+            },
+            {
+              "checked": true,
+              "id": "63277e0d-a09d-582f-8d95-3f30f27ff3ab",
+              "intents": [
+                {
+                  "intentId": "463429"
+                }
+              ],
+              "language": "3",
+              "match": false,
+              "name": "Negative",
+              "threshold": ""
+            },
+            {
+              "checked": false,
+              "intents": [
+                {
+                  "intentId": "463430"
+                }
+              ],
+              "language": "3",
+              "match": false,
+              "name": "Reject",
+              "threshold": ""
+            },
+            {
+              "checked": true,
+              "id": "bf1f1929-59a3-58c0-bda8-8853618b3985",
+              "intents": [
+                {
+                  "intentId": "463431"
+                }
+              ],
+              "language": "3",
+              "match": false,
+              "name": "Unclassified",
+              "threshold": ""
+            },
+            {
+              "checked": false,
+              "intents": [
+                {
+                  "intentId": "463433"
+                }
+              ],
+              "language": "3",
+              "match": false,
+              "name": "No answer",
+              "threshold": ""
+            }
+          ],
+          "allow_jump_knowledges": [
+            "244811",
+            "244812",
+            "244813",
+            "244814",
+            "244815",
+            "244816",
+            "244817",
+            "244818",
+            "244819",
+            "244820",
+            "244821",
+            "244822"
+          ],
+          "allow_jump_knowledges_switch": 0,
+          "can_be_interrupted": 0,
+          "can_interrupt_percent": 0.8,
+          "client_intent": [
+            "Positive",
+            "Negative",
+            "Unclassified"
+          ],
+          "dialog_list": [
+            {
+              "html": "<p>Greeting</p>",
+              "text": "Greeting",
+              "xml": "<speak xmlns:wiz=\"http://www.wiz.ai/develop/xml/tts\"><wiz:express-as style=\"default\">Greeting</wiz:express-as></speak>"
+            }
+          ],
+          "global_unclassified_switch": 0,
+          "hot_words_list": [],
+          "id": "8309e714-71e5-5080-98bd-10cdbe29b84d",
+          "intent_rollback_enable": false,
+          "intent_tag_def": {
+            "Negative": {
+              "intent_code": "",
+              "tag_list": []
+            },
+            "No answer": {
+              "intent_code": "",
+              "tag_list": []
+            },
+            "Positive": {
+              "intent_code": "",
+              "tag_list": []
+            },
+            "Reject": {
+              "intent_code": "",
+              "tag_list": []
+            },
+            "Unclassified": {
+              "intent_code": "",
+              "tag_list": []
+            }
+          },
+          "intention_judgment_time": 2,
+          "is_default": true,
+          "is_transfer": 0,
+          "list": [
+            "Greeting"
+          ],
+          "name": "Talk Node",
+          "nodeLabelArr": [],
+          "node_language": "3",
+          "node_language_item": "3",
+          "node_repetition": 0,
+          "node_variables": [],
+          "notice_send_type": 0,
+          "notices_info": [],
+          "openChasingDedayTim": false,
+          "openChasingDedayTime": false,
+          "openUserPauseDuration": false,
+          "open_pause_duration": false,
+          "open_talk_finish": false,
+          "position": {
+            "x": -461.97,
+            "y": 157.23
+          },
+          "repeat_script_type": 0,
+          "selected": false,
+          "speakType": 1,
+          "tag_list": [],
+          "tts_language": "3",
+          "type": 1,
+          "user_response_mode": "voice",
+          "value_assignment": []
+        },
+        "data_extra": {
+          "hot_words_list": [],
+          "intents": [
+            {
+              "intentId": "463428"
+            },
+            {
+              "intentId": "463429"
+            },
+            {
+              "intentId": "463430"
+            },
+            {
+              "intentId": "463431"
+            },
+            {
+              "intentId": "463433"
+            }
+          ],
+          "sentence_cut": [],
+          "serviceCall": [],
+          "variables": []
+        },
+        "is_default": true,
+        "name": "Talk Node",
+        "type": 1
       }
     },
     "bsc0_keys": [
@@ -110,26 +397,313 @@
   },
   "T11-no-wav": {
     "bsc0_details": {
-      "f2cd2c8a-d2d8-5efb-b128-4c42d1e6a955": {
+      "8309e714-71e5-5080-98bd-10cdbe29b84d": {
         "canvas": {
           "component": {
             "props": {
-              "list": [
-                {
-                  "children": [],
-                  "editStatus": 1,
-                  "label": "Greeting",
-                  "parentId": "",
-                  "sortIndex": 0,
-                  "sortIndexABS": 0,
-                  "useStatus": 1,
-                  "uuid": "<uuid>",
-                  "value": "<uuid>"
-                }
-              ]
+              "list": [],
+              "text": "Talk Node",
+              "type": 1
             }
-          }
-        }
+          },
+          "id": "8309e714-71e5-5080-98bd-10cdbe29b84d",
+          "portMarkup": [
+            {
+              "children": [
+                {
+                  "attrs": {
+                    "xmlns": "http://www.w3.org/1999/xhtml"
+                  },
+                  "children": [
+                    {
+                      "selector": "foContent",
+                      "style": {
+                        "height": "100%",
+                        "width": "100%"
+                      },
+                      "tagName": "div"
+                    }
+                  ],
+                  "ns": "http://www.w3.org/1999/xhtml",
+                  "selector": "foBody",
+                  "style": {
+                    "background": "transparent",
+                    "height": "100%",
+                    "width": "100%"
+                  },
+                  "tagName": "body"
+                }
+              ],
+              "selector": "fo",
+              "tagName": "foreignObject"
+            }
+          ],
+          "ports": {
+            "groups": {
+              "in": {
+                "attrs": {
+                  "fo": {
+                    "height": 24,
+                    "magnet": "true",
+                    "width": 140,
+                    "x": -30,
+                    "y": -30
+                  }
+                },
+                "position": {
+                  "name": "top"
+                }
+              },
+              "out": {
+                "attrs": {
+                  "fo": {
+                    "height": 24,
+                    "magnet": "true"
+                  }
+                },
+                "position": {
+                  "left": 200,
+                  "name": "bottom"
+                }
+              }
+            },
+            "items": [
+              {
+                "attrs": {
+                  "fo": {
+                    "height": 24,
+                    "magnet": "true",
+                    "width": 70,
+                    "x": -37.67,
+                    "y": -30
+                  }
+                },
+                "group": "out",
+                "id": "18503cd6-7f93-5300-853b-31c6fd36ca23",
+                "name": "Positive"
+              },
+              {
+                "attrs": {
+                  "fo": {
+                    "height": 24,
+                    "magnet": "true",
+                    "width": 70,
+                    "x": -37.67,
+                    "y": -30
+                  }
+                },
+                "group": "out",
+                "id": "63277e0d-a09d-582f-8d95-3f30f27ff3ab",
+                "name": "Negative"
+              },
+              {
+                "attrs": {
+                  "fo": {
+                    "height": 24,
+                    "magnet": "true",
+                    "width": 70,
+                    "x": -37.67,
+                    "y": -30
+                  }
+                },
+                "group": "out",
+                "id": "bf1f1929-59a3-58c0-bda8-8853618b3985",
+                "name": "Unclassified"
+              }
+            ]
+          },
+          "position": {
+            "x": -461.97,
+            "y": 157.23
+          },
+          "shape": "react-shape",
+          "size": {
+            "height": 106,
+            "width": 346
+          },
+          "view": "react-shape-view",
+          "zIndex": 1
+        },
+        "data": {
+          "agent_type": "SYSTEM",
+          "all_client_intent": [
+            {
+              "checked": true,
+              "id": "18503cd6-7f93-5300-853b-31c6fd36ca23",
+              "intents": [
+                {
+                  "intentId": "463428"
+                }
+              ],
+              "language": "3",
+              "match": false,
+              "name": "Positive",
+              "threshold": ""
+            },
+            {
+              "checked": true,
+              "id": "63277e0d-a09d-582f-8d95-3f30f27ff3ab",
+              "intents": [
+                {
+                  "intentId": "463429"
+                }
+              ],
+              "language": "3",
+              "match": false,
+              "name": "Negative",
+              "threshold": ""
+            },
+            {
+              "checked": false,
+              "intents": [
+                {
+                  "intentId": "463430"
+                }
+              ],
+              "language": "3",
+              "match": false,
+              "name": "Reject",
+              "threshold": ""
+            },
+            {
+              "checked": true,
+              "id": "bf1f1929-59a3-58c0-bda8-8853618b3985",
+              "intents": [
+                {
+                  "intentId": "463431"
+                }
+              ],
+              "language": "3",
+              "match": false,
+              "name": "Unclassified",
+              "threshold": ""
+            },
+            {
+              "checked": false,
+              "intents": [
+                {
+                  "intentId": "463433"
+                }
+              ],
+              "language": "3",
+              "match": false,
+              "name": "No answer",
+              "threshold": ""
+            }
+          ],
+          "allow_jump_knowledges": [
+            "244811",
+            "244812",
+            "244813",
+            "244814",
+            "244815",
+            "244816",
+            "244817",
+            "244818",
+            "244819",
+            "244820",
+            "244821",
+            "244822"
+          ],
+          "allow_jump_knowledges_switch": 0,
+          "can_be_interrupted": 0,
+          "can_interrupt_percent": 0.8,
+          "client_intent": [
+            "Positive",
+            "Negative",
+            "Unclassified"
+          ],
+          "dialog_list": [
+            {
+              "html": "<p>Greeting</p>",
+              "text": "Greeting",
+              "xml": "<speak xmlns:wiz=\"http://www.wiz.ai/develop/xml/tts\"><wiz:express-as style=\"default\">Greeting</wiz:express-as></speak>"
+            }
+          ],
+          "global_unclassified_switch": 0,
+          "hot_words_list": [],
+          "id": "8309e714-71e5-5080-98bd-10cdbe29b84d",
+          "intent_rollback_enable": false,
+          "intent_tag_def": {
+            "Negative": {
+              "intent_code": "",
+              "tag_list": []
+            },
+            "No answer": {
+              "intent_code": "",
+              "tag_list": []
+            },
+            "Positive": {
+              "intent_code": "",
+              "tag_list": []
+            },
+            "Reject": {
+              "intent_code": "",
+              "tag_list": []
+            },
+            "Unclassified": {
+              "intent_code": "",
+              "tag_list": []
+            }
+          },
+          "intention_judgment_time": 2,
+          "is_default": true,
+          "is_transfer": 0,
+          "list": [
+            "Greeting"
+          ],
+          "name": "Talk Node",
+          "nodeLabelArr": [],
+          "node_language": "3",
+          "node_language_item": "3",
+          "node_repetition": 0,
+          "node_variables": [],
+          "notice_send_type": 0,
+          "notices_info": [],
+          "openChasingDedayTim": false,
+          "openChasingDedayTime": false,
+          "openUserPauseDuration": false,
+          "open_pause_duration": false,
+          "open_talk_finish": false,
+          "position": {
+            "x": -461.97,
+            "y": 157.23
+          },
+          "repeat_script_type": 0,
+          "selected": false,
+          "speakType": 1,
+          "tag_list": [],
+          "tts_language": "3",
+          "type": 1,
+          "user_response_mode": "voice",
+          "value_assignment": []
+        },
+        "data_extra": {
+          "hot_words_list": [],
+          "intents": [
+            {
+              "intentId": "463428"
+            },
+            {
+              "intentId": "463429"
+            },
+            {
+              "intentId": "463430"
+            },
+            {
+              "intentId": "463431"
+            },
+            {
+              "intentId": "463433"
+            }
+          ],
+          "sentence_cut": [],
+          "serviceCall": [],
+          "variables": []
+        },
+        "is_default": true,
+        "name": "Talk Node",
+        "type": 1
       }
     },
     "bsc0_keys": [
@@ -165,26 +739,313 @@
   },
   "T12-bare-json": {
     "bsc0_details": {
-      "f2cd2c8a-d2d8-5efb-b128-4c42d1e6a955": {
+      "8309e714-71e5-5080-98bd-10cdbe29b84d": {
         "canvas": {
           "component": {
             "props": {
-              "list": [
-                {
-                  "children": [],
-                  "editStatus": 1,
-                  "label": "Greeting",
-                  "parentId": "",
-                  "sortIndex": 0,
-                  "sortIndexABS": 0,
-                  "useStatus": 1,
-                  "uuid": "<uuid>",
-                  "value": "<uuid>"
-                }
-              ]
+              "list": [],
+              "text": "Talk Node",
+              "type": 1
             }
-          }
-        }
+          },
+          "id": "8309e714-71e5-5080-98bd-10cdbe29b84d",
+          "portMarkup": [
+            {
+              "children": [
+                {
+                  "attrs": {
+                    "xmlns": "http://www.w3.org/1999/xhtml"
+                  },
+                  "children": [
+                    {
+                      "selector": "foContent",
+                      "style": {
+                        "height": "100%",
+                        "width": "100%"
+                      },
+                      "tagName": "div"
+                    }
+                  ],
+                  "ns": "http://www.w3.org/1999/xhtml",
+                  "selector": "foBody",
+                  "style": {
+                    "background": "transparent",
+                    "height": "100%",
+                    "width": "100%"
+                  },
+                  "tagName": "body"
+                }
+              ],
+              "selector": "fo",
+              "tagName": "foreignObject"
+            }
+          ],
+          "ports": {
+            "groups": {
+              "in": {
+                "attrs": {
+                  "fo": {
+                    "height": 24,
+                    "magnet": "true",
+                    "width": 140,
+                    "x": -30,
+                    "y": -30
+                  }
+                },
+                "position": {
+                  "name": "top"
+                }
+              },
+              "out": {
+                "attrs": {
+                  "fo": {
+                    "height": 24,
+                    "magnet": "true"
+                  }
+                },
+                "position": {
+                  "left": 200,
+                  "name": "bottom"
+                }
+              }
+            },
+            "items": [
+              {
+                "attrs": {
+                  "fo": {
+                    "height": 24,
+                    "magnet": "true",
+                    "width": 70,
+                    "x": -37.67,
+                    "y": -30
+                  }
+                },
+                "group": "out",
+                "id": "18503cd6-7f93-5300-853b-31c6fd36ca23",
+                "name": "Positive"
+              },
+              {
+                "attrs": {
+                  "fo": {
+                    "height": 24,
+                    "magnet": "true",
+                    "width": 70,
+                    "x": -37.67,
+                    "y": -30
+                  }
+                },
+                "group": "out",
+                "id": "63277e0d-a09d-582f-8d95-3f30f27ff3ab",
+                "name": "Negative"
+              },
+              {
+                "attrs": {
+                  "fo": {
+                    "height": 24,
+                    "magnet": "true",
+                    "width": 70,
+                    "x": -37.67,
+                    "y": -30
+                  }
+                },
+                "group": "out",
+                "id": "bf1f1929-59a3-58c0-bda8-8853618b3985",
+                "name": "Unclassified"
+              }
+            ]
+          },
+          "position": {
+            "x": -461.97,
+            "y": 157.23
+          },
+          "shape": "react-shape",
+          "size": {
+            "height": 106,
+            "width": 346
+          },
+          "view": "react-shape-view",
+          "zIndex": 1
+        },
+        "data": {
+          "agent_type": "SYSTEM",
+          "all_client_intent": [
+            {
+              "checked": true,
+              "id": "18503cd6-7f93-5300-853b-31c6fd36ca23",
+              "intents": [
+                {
+                  "intentId": "463428"
+                }
+              ],
+              "language": "3",
+              "match": false,
+              "name": "Positive",
+              "threshold": ""
+            },
+            {
+              "checked": true,
+              "id": "63277e0d-a09d-582f-8d95-3f30f27ff3ab",
+              "intents": [
+                {
+                  "intentId": "463429"
+                }
+              ],
+              "language": "3",
+              "match": false,
+              "name": "Negative",
+              "threshold": ""
+            },
+            {
+              "checked": false,
+              "intents": [
+                {
+                  "intentId": "463430"
+                }
+              ],
+              "language": "3",
+              "match": false,
+              "name": "Reject",
+              "threshold": ""
+            },
+            {
+              "checked": true,
+              "id": "bf1f1929-59a3-58c0-bda8-8853618b3985",
+              "intents": [
+                {
+                  "intentId": "463431"
+                }
+              ],
+              "language": "3",
+              "match": false,
+              "name": "Unclassified",
+              "threshold": ""
+            },
+            {
+              "checked": false,
+              "intents": [
+                {
+                  "intentId": "463433"
+                }
+              ],
+              "language": "3",
+              "match": false,
+              "name": "No answer",
+              "threshold": ""
+            }
+          ],
+          "allow_jump_knowledges": [
+            "244811",
+            "244812",
+            "244813",
+            "244814",
+            "244815",
+            "244816",
+            "244817",
+            "244818",
+            "244819",
+            "244820",
+            "244821",
+            "244822"
+          ],
+          "allow_jump_knowledges_switch": 0,
+          "can_be_interrupted": 0,
+          "can_interrupt_percent": 0.8,
+          "client_intent": [
+            "Positive",
+            "Negative",
+            "Unclassified"
+          ],
+          "dialog_list": [
+            {
+              "html": "<p>Greeting</p>",
+              "text": "Greeting",
+              "xml": "<speak xmlns:wiz=\"http://www.wiz.ai/develop/xml/tts\"><wiz:express-as style=\"default\">Greeting</wiz:express-as></speak>"
+            }
+          ],
+          "global_unclassified_switch": 0,
+          "hot_words_list": [],
+          "id": "8309e714-71e5-5080-98bd-10cdbe29b84d",
+          "intent_rollback_enable": false,
+          "intent_tag_def": {
+            "Negative": {
+              "intent_code": "",
+              "tag_list": []
+            },
+            "No answer": {
+              "intent_code": "",
+              "tag_list": []
+            },
+            "Positive": {
+              "intent_code": "",
+              "tag_list": []
+            },
+            "Reject": {
+              "intent_code": "",
+              "tag_list": []
+            },
+            "Unclassified": {
+              "intent_code": "",
+              "tag_list": []
+            }
+          },
+          "intention_judgment_time": 2,
+          "is_default": true,
+          "is_transfer": 0,
+          "list": [
+            "Greeting"
+          ],
+          "name": "Talk Node",
+          "nodeLabelArr": [],
+          "node_language": "3",
+          "node_language_item": "3",
+          "node_repetition": 0,
+          "node_variables": [],
+          "notice_send_type": 0,
+          "notices_info": [],
+          "openChasingDedayTim": false,
+          "openChasingDedayTime": false,
+          "openUserPauseDuration": false,
+          "open_pause_duration": false,
+          "open_talk_finish": false,
+          "position": {
+            "x": -461.97,
+            "y": 157.23
+          },
+          "repeat_script_type": 0,
+          "selected": false,
+          "speakType": 1,
+          "tag_list": [],
+          "tts_language": "3",
+          "type": 1,
+          "user_response_mode": "voice",
+          "value_assignment": []
+        },
+        "data_extra": {
+          "hot_words_list": [],
+          "intents": [
+            {
+              "intentId": "463428"
+            },
+            {
+              "intentId": "463429"
+            },
+            {
+              "intentId": "463430"
+            },
+            {
+              "intentId": "463431"
+            },
+            {
+              "intentId": "463433"
+            }
+          ],
+          "sentence_cut": [],
+          "serviceCall": [],
+          "variables": []
+        },
+        "is_default": true,
+        "name": "Talk Node",
+        "type": 1
       }
     },
     "bsc0_keys": [
@@ -361,26 +1222,313 @@
   },
   "T7-populated-details": {
     "bsc0_details": {
-      "f2cd2c8a-d2d8-5efb-b128-4c42d1e6a955": {
+      "8309e714-71e5-5080-98bd-10cdbe29b84d": {
         "canvas": {
           "component": {
             "props": {
-              "list": [
-                {
-                  "children": [],
-                  "editStatus": 1,
-                  "label": "Greeting",
-                  "parentId": "",
-                  "sortIndex": 0,
-                  "sortIndexABS": 0,
-                  "useStatus": 1,
-                  "uuid": "<uuid>",
-                  "value": "<uuid>"
-                }
-              ]
+              "list": [],
+              "text": "Talk Node",
+              "type": 1
             }
-          }
-        }
+          },
+          "id": "8309e714-71e5-5080-98bd-10cdbe29b84d",
+          "portMarkup": [
+            {
+              "children": [
+                {
+                  "attrs": {
+                    "xmlns": "http://www.w3.org/1999/xhtml"
+                  },
+                  "children": [
+                    {
+                      "selector": "foContent",
+                      "style": {
+                        "height": "100%",
+                        "width": "100%"
+                      },
+                      "tagName": "div"
+                    }
+                  ],
+                  "ns": "http://www.w3.org/1999/xhtml",
+                  "selector": "foBody",
+                  "style": {
+                    "background": "transparent",
+                    "height": "100%",
+                    "width": "100%"
+                  },
+                  "tagName": "body"
+                }
+              ],
+              "selector": "fo",
+              "tagName": "foreignObject"
+            }
+          ],
+          "ports": {
+            "groups": {
+              "in": {
+                "attrs": {
+                  "fo": {
+                    "height": 24,
+                    "magnet": "true",
+                    "width": 140,
+                    "x": -30,
+                    "y": -30
+                  }
+                },
+                "position": {
+                  "name": "top"
+                }
+              },
+              "out": {
+                "attrs": {
+                  "fo": {
+                    "height": 24,
+                    "magnet": "true"
+                  }
+                },
+                "position": {
+                  "left": 200,
+                  "name": "bottom"
+                }
+              }
+            },
+            "items": [
+              {
+                "attrs": {
+                  "fo": {
+                    "height": 24,
+                    "magnet": "true",
+                    "width": 70,
+                    "x": -37.67,
+                    "y": -30
+                  }
+                },
+                "group": "out",
+                "id": "18503cd6-7f93-5300-853b-31c6fd36ca23",
+                "name": "Positive"
+              },
+              {
+                "attrs": {
+                  "fo": {
+                    "height": 24,
+                    "magnet": "true",
+                    "width": 70,
+                    "x": -37.67,
+                    "y": -30
+                  }
+                },
+                "group": "out",
+                "id": "63277e0d-a09d-582f-8d95-3f30f27ff3ab",
+                "name": "Negative"
+              },
+              {
+                "attrs": {
+                  "fo": {
+                    "height": 24,
+                    "magnet": "true",
+                    "width": 70,
+                    "x": -37.67,
+                    "y": -30
+                  }
+                },
+                "group": "out",
+                "id": "bf1f1929-59a3-58c0-bda8-8853618b3985",
+                "name": "Unclassified"
+              }
+            ]
+          },
+          "position": {
+            "x": -461.97,
+            "y": 157.23
+          },
+          "shape": "react-shape",
+          "size": {
+            "height": 106,
+            "width": 346
+          },
+          "view": "react-shape-view",
+          "zIndex": 1
+        },
+        "data": {
+          "agent_type": "SYSTEM",
+          "all_client_intent": [
+            {
+              "checked": true,
+              "id": "18503cd6-7f93-5300-853b-31c6fd36ca23",
+              "intents": [
+                {
+                  "intentId": "463428"
+                }
+              ],
+              "language": "3",
+              "match": false,
+              "name": "Positive",
+              "threshold": ""
+            },
+            {
+              "checked": true,
+              "id": "63277e0d-a09d-582f-8d95-3f30f27ff3ab",
+              "intents": [
+                {
+                  "intentId": "463429"
+                }
+              ],
+              "language": "3",
+              "match": false,
+              "name": "Negative",
+              "threshold": ""
+            },
+            {
+              "checked": false,
+              "intents": [
+                {
+                  "intentId": "463430"
+                }
+              ],
+              "language": "3",
+              "match": false,
+              "name": "Reject",
+              "threshold": ""
+            },
+            {
+              "checked": true,
+              "id": "bf1f1929-59a3-58c0-bda8-8853618b3985",
+              "intents": [
+                {
+                  "intentId": "463431"
+                }
+              ],
+              "language": "3",
+              "match": false,
+              "name": "Unclassified",
+              "threshold": ""
+            },
+            {
+              "checked": false,
+              "intents": [
+                {
+                  "intentId": "463433"
+                }
+              ],
+              "language": "3",
+              "match": false,
+              "name": "No answer",
+              "threshold": ""
+            }
+          ],
+          "allow_jump_knowledges": [
+            "244811",
+            "244812",
+            "244813",
+            "244814",
+            "244815",
+            "244816",
+            "244817",
+            "244818",
+            "244819",
+            "244820",
+            "244821",
+            "244822"
+          ],
+          "allow_jump_knowledges_switch": 0,
+          "can_be_interrupted": 0,
+          "can_interrupt_percent": 0.8,
+          "client_intent": [
+            "Positive",
+            "Negative",
+            "Unclassified"
+          ],
+          "dialog_list": [
+            {
+              "html": "<p>Greeting</p>",
+              "text": "Greeting",
+              "xml": "<speak xmlns:wiz=\"http://www.wiz.ai/develop/xml/tts\"><wiz:express-as style=\"default\">Greeting</wiz:express-as></speak>"
+            }
+          ],
+          "global_unclassified_switch": 0,
+          "hot_words_list": [],
+          "id": "8309e714-71e5-5080-98bd-10cdbe29b84d",
+          "intent_rollback_enable": false,
+          "intent_tag_def": {
+            "Negative": {
+              "intent_code": "",
+              "tag_list": []
+            },
+            "No answer": {
+              "intent_code": "",
+              "tag_list": []
+            },
+            "Positive": {
+              "intent_code": "",
+              "tag_list": []
+            },
+            "Reject": {
+              "intent_code": "",
+              "tag_list": []
+            },
+            "Unclassified": {
+              "intent_code": "",
+              "tag_list": []
+            }
+          },
+          "intention_judgment_time": 2,
+          "is_default": true,
+          "is_transfer": 0,
+          "list": [
+            "Greeting"
+          ],
+          "name": "Talk Node",
+          "nodeLabelArr": [],
+          "node_language": "3",
+          "node_language_item": "3",
+          "node_repetition": 0,
+          "node_variables": [],
+          "notice_send_type": 0,
+          "notices_info": [],
+          "openChasingDedayTim": false,
+          "openChasingDedayTime": false,
+          "openUserPauseDuration": false,
+          "open_pause_duration": false,
+          "open_talk_finish": false,
+          "position": {
+            "x": -461.97,
+            "y": 157.23
+          },
+          "repeat_script_type": 0,
+          "selected": false,
+          "speakType": 1,
+          "tag_list": [],
+          "tts_language": "3",
+          "type": 1,
+          "user_response_mode": "voice",
+          "value_assignment": []
+        },
+        "data_extra": {
+          "hot_words_list": [],
+          "intents": [
+            {
+              "intentId": "463428"
+            },
+            {
+              "intentId": "463429"
+            },
+            {
+              "intentId": "463430"
+            },
+            {
+              "intentId": "463431"
+            },
+            {
+              "intentId": "463433"
+            }
+          ],
+          "sentence_cut": [],
+          "serviceCall": [],
+          "variables": []
+        },
+        "is_default": true,
+        "name": "Talk Node",
+        "type": 1
       }
     },
     "bsc0_keys": [
@@ -416,26 +1564,313 @@
   },
   "T8-multi-component": {
     "bsc0_details": {
-      "f2cd2c8a-d2d8-5efb-b128-4c42d1e6a955": {
+      "8309e714-71e5-5080-98bd-10cdbe29b84d": {
         "canvas": {
           "component": {
             "props": {
-              "list": [
-                {
-                  "children": [],
-                  "editStatus": 1,
-                  "label": "Greeting",
-                  "parentId": "",
-                  "sortIndex": 0,
-                  "sortIndexABS": 0,
-                  "useStatus": 1,
-                  "uuid": "<uuid>",
-                  "value": "<uuid>"
-                }
-              ]
+              "list": [],
+              "text": "Talk Node",
+              "type": 1
             }
-          }
-        }
+          },
+          "id": "8309e714-71e5-5080-98bd-10cdbe29b84d",
+          "portMarkup": [
+            {
+              "children": [
+                {
+                  "attrs": {
+                    "xmlns": "http://www.w3.org/1999/xhtml"
+                  },
+                  "children": [
+                    {
+                      "selector": "foContent",
+                      "style": {
+                        "height": "100%",
+                        "width": "100%"
+                      },
+                      "tagName": "div"
+                    }
+                  ],
+                  "ns": "http://www.w3.org/1999/xhtml",
+                  "selector": "foBody",
+                  "style": {
+                    "background": "transparent",
+                    "height": "100%",
+                    "width": "100%"
+                  },
+                  "tagName": "body"
+                }
+              ],
+              "selector": "fo",
+              "tagName": "foreignObject"
+            }
+          ],
+          "ports": {
+            "groups": {
+              "in": {
+                "attrs": {
+                  "fo": {
+                    "height": 24,
+                    "magnet": "true",
+                    "width": 140,
+                    "x": -30,
+                    "y": -30
+                  }
+                },
+                "position": {
+                  "name": "top"
+                }
+              },
+              "out": {
+                "attrs": {
+                  "fo": {
+                    "height": 24,
+                    "magnet": "true"
+                  }
+                },
+                "position": {
+                  "left": 200,
+                  "name": "bottom"
+                }
+              }
+            },
+            "items": [
+              {
+                "attrs": {
+                  "fo": {
+                    "height": 24,
+                    "magnet": "true",
+                    "width": 70,
+                    "x": -37.67,
+                    "y": -30
+                  }
+                },
+                "group": "out",
+                "id": "18503cd6-7f93-5300-853b-31c6fd36ca23",
+                "name": "Positive"
+              },
+              {
+                "attrs": {
+                  "fo": {
+                    "height": 24,
+                    "magnet": "true",
+                    "width": 70,
+                    "x": -37.67,
+                    "y": -30
+                  }
+                },
+                "group": "out",
+                "id": "63277e0d-a09d-582f-8d95-3f30f27ff3ab",
+                "name": "Negative"
+              },
+              {
+                "attrs": {
+                  "fo": {
+                    "height": 24,
+                    "magnet": "true",
+                    "width": 70,
+                    "x": -37.67,
+                    "y": -30
+                  }
+                },
+                "group": "out",
+                "id": "bf1f1929-59a3-58c0-bda8-8853618b3985",
+                "name": "Unclassified"
+              }
+            ]
+          },
+          "position": {
+            "x": -461.97,
+            "y": 157.23
+          },
+          "shape": "react-shape",
+          "size": {
+            "height": 106,
+            "width": 346
+          },
+          "view": "react-shape-view",
+          "zIndex": 1
+        },
+        "data": {
+          "agent_type": "SYSTEM",
+          "all_client_intent": [
+            {
+              "checked": true,
+              "id": "18503cd6-7f93-5300-853b-31c6fd36ca23",
+              "intents": [
+                {
+                  "intentId": "463428"
+                }
+              ],
+              "language": "3",
+              "match": false,
+              "name": "Positive",
+              "threshold": ""
+            },
+            {
+              "checked": true,
+              "id": "63277e0d-a09d-582f-8d95-3f30f27ff3ab",
+              "intents": [
+                {
+                  "intentId": "463429"
+                }
+              ],
+              "language": "3",
+              "match": false,
+              "name": "Negative",
+              "threshold": ""
+            },
+            {
+              "checked": false,
+              "intents": [
+                {
+                  "intentId": "463430"
+                }
+              ],
+              "language": "3",
+              "match": false,
+              "name": "Reject",
+              "threshold": ""
+            },
+            {
+              "checked": true,
+              "id": "bf1f1929-59a3-58c0-bda8-8853618b3985",
+              "intents": [
+                {
+                  "intentId": "463431"
+                }
+              ],
+              "language": "3",
+              "match": false,
+              "name": "Unclassified",
+              "threshold": ""
+            },
+            {
+              "checked": false,
+              "intents": [
+                {
+                  "intentId": "463433"
+                }
+              ],
+              "language": "3",
+              "match": false,
+              "name": "No answer",
+              "threshold": ""
+            }
+          ],
+          "allow_jump_knowledges": [
+            "244811",
+            "244812",
+            "244813",
+            "244814",
+            "244815",
+            "244816",
+            "244817",
+            "244818",
+            "244819",
+            "244820",
+            "244821",
+            "244822"
+          ],
+          "allow_jump_knowledges_switch": 0,
+          "can_be_interrupted": 0,
+          "can_interrupt_percent": 0.8,
+          "client_intent": [
+            "Positive",
+            "Negative",
+            "Unclassified"
+          ],
+          "dialog_list": [
+            {
+              "html": "<p>Greeting</p>",
+              "text": "Greeting",
+              "xml": "<speak xmlns:wiz=\"http://www.wiz.ai/develop/xml/tts\"><wiz:express-as style=\"default\">Greeting</wiz:express-as></speak>"
+            }
+          ],
+          "global_unclassified_switch": 0,
+          "hot_words_list": [],
+          "id": "8309e714-71e5-5080-98bd-10cdbe29b84d",
+          "intent_rollback_enable": false,
+          "intent_tag_def": {
+            "Negative": {
+              "intent_code": "",
+              "tag_list": []
+            },
+            "No answer": {
+              "intent_code": "",
+              "tag_list": []
+            },
+            "Positive": {
+              "intent_code": "",
+              "tag_list": []
+            },
+            "Reject": {
+              "intent_code": "",
+              "tag_list": []
+            },
+            "Unclassified": {
+              "intent_code": "",
+              "tag_list": []
+            }
+          },
+          "intention_judgment_time": 2,
+          "is_default": true,
+          "is_transfer": 0,
+          "list": [
+            "Greeting"
+          ],
+          "name": "Talk Node",
+          "nodeLabelArr": [],
+          "node_language": "3",
+          "node_language_item": "3",
+          "node_repetition": 0,
+          "node_variables": [],
+          "notice_send_type": 0,
+          "notices_info": [],
+          "openChasingDedayTim": false,
+          "openChasingDedayTime": false,
+          "openUserPauseDuration": false,
+          "open_pause_duration": false,
+          "open_talk_finish": false,
+          "position": {
+            "x": -461.97,
+            "y": 157.23
+          },
+          "repeat_script_type": 0,
+          "selected": false,
+          "speakType": 1,
+          "tag_list": [],
+          "tts_language": "3",
+          "type": 1,
+          "user_response_mode": "voice",
+          "value_assignment": []
+        },
+        "data_extra": {
+          "hot_words_list": [],
+          "intents": [
+            {
+              "intentId": "463428"
+            },
+            {
+              "intentId": "463429"
+            },
+            {
+              "intentId": "463430"
+            },
+            {
+              "intentId": "463431"
+            },
+            {
+              "intentId": "463433"
+            }
+          ],
+          "sentence_cut": [],
+          "serviceCall": [],
+          "variables": []
+        },
+        "is_default": true,
+        "name": "Talk Node",
+        "type": 1
       }
     },
     "bsc0_keys": [
@@ -471,26 +1906,313 @@
   },
   "T9-custom-variables": {
     "bsc0_details": {
-      "f2cd2c8a-d2d8-5efb-b128-4c42d1e6a955": {
+      "8309e714-71e5-5080-98bd-10cdbe29b84d": {
         "canvas": {
           "component": {
             "props": {
-              "list": [
-                {
-                  "children": [],
-                  "editStatus": 1,
-                  "label": "Greeting",
-                  "parentId": "",
-                  "sortIndex": 0,
-                  "sortIndexABS": 0,
-                  "useStatus": 1,
-                  "uuid": "<uuid>",
-                  "value": "<uuid>"
-                }
-              ]
+              "list": [],
+              "text": "Talk Node",
+              "type": 1
             }
-          }
-        }
+          },
+          "id": "8309e714-71e5-5080-98bd-10cdbe29b84d",
+          "portMarkup": [
+            {
+              "children": [
+                {
+                  "attrs": {
+                    "xmlns": "http://www.w3.org/1999/xhtml"
+                  },
+                  "children": [
+                    {
+                      "selector": "foContent",
+                      "style": {
+                        "height": "100%",
+                        "width": "100%"
+                      },
+                      "tagName": "div"
+                    }
+                  ],
+                  "ns": "http://www.w3.org/1999/xhtml",
+                  "selector": "foBody",
+                  "style": {
+                    "background": "transparent",
+                    "height": "100%",
+                    "width": "100%"
+                  },
+                  "tagName": "body"
+                }
+              ],
+              "selector": "fo",
+              "tagName": "foreignObject"
+            }
+          ],
+          "ports": {
+            "groups": {
+              "in": {
+                "attrs": {
+                  "fo": {
+                    "height": 24,
+                    "magnet": "true",
+                    "width": 140,
+                    "x": -30,
+                    "y": -30
+                  }
+                },
+                "position": {
+                  "name": "top"
+                }
+              },
+              "out": {
+                "attrs": {
+                  "fo": {
+                    "height": 24,
+                    "magnet": "true"
+                  }
+                },
+                "position": {
+                  "left": 200,
+                  "name": "bottom"
+                }
+              }
+            },
+            "items": [
+              {
+                "attrs": {
+                  "fo": {
+                    "height": 24,
+                    "magnet": "true",
+                    "width": 70,
+                    "x": -37.67,
+                    "y": -30
+                  }
+                },
+                "group": "out",
+                "id": "18503cd6-7f93-5300-853b-31c6fd36ca23",
+                "name": "Positive"
+              },
+              {
+                "attrs": {
+                  "fo": {
+                    "height": 24,
+                    "magnet": "true",
+                    "width": 70,
+                    "x": -37.67,
+                    "y": -30
+                  }
+                },
+                "group": "out",
+                "id": "63277e0d-a09d-582f-8d95-3f30f27ff3ab",
+                "name": "Negative"
+              },
+              {
+                "attrs": {
+                  "fo": {
+                    "height": 24,
+                    "magnet": "true",
+                    "width": 70,
+                    "x": -37.67,
+                    "y": -30
+                  }
+                },
+                "group": "out",
+                "id": "bf1f1929-59a3-58c0-bda8-8853618b3985",
+                "name": "Unclassified"
+              }
+            ]
+          },
+          "position": {
+            "x": -461.97,
+            "y": 157.23
+          },
+          "shape": "react-shape",
+          "size": {
+            "height": 106,
+            "width": 346
+          },
+          "view": "react-shape-view",
+          "zIndex": 1
+        },
+        "data": {
+          "agent_type": "SYSTEM",
+          "all_client_intent": [
+            {
+              "checked": true,
+              "id": "18503cd6-7f93-5300-853b-31c6fd36ca23",
+              "intents": [
+                {
+                  "intentId": "463428"
+                }
+              ],
+              "language": "3",
+              "match": false,
+              "name": "Positive",
+              "threshold": ""
+            },
+            {
+              "checked": true,
+              "id": "63277e0d-a09d-582f-8d95-3f30f27ff3ab",
+              "intents": [
+                {
+                  "intentId": "463429"
+                }
+              ],
+              "language": "3",
+              "match": false,
+              "name": "Negative",
+              "threshold": ""
+            },
+            {
+              "checked": false,
+              "intents": [
+                {
+                  "intentId": "463430"
+                }
+              ],
+              "language": "3",
+              "match": false,
+              "name": "Reject",
+              "threshold": ""
+            },
+            {
+              "checked": true,
+              "id": "bf1f1929-59a3-58c0-bda8-8853618b3985",
+              "intents": [
+                {
+                  "intentId": "463431"
+                }
+              ],
+              "language": "3",
+              "match": false,
+              "name": "Unclassified",
+              "threshold": ""
+            },
+            {
+              "checked": false,
+              "intents": [
+                {
+                  "intentId": "463433"
+                }
+              ],
+              "language": "3",
+              "match": false,
+              "name": "No answer",
+              "threshold": ""
+            }
+          ],
+          "allow_jump_knowledges": [
+            "244811",
+            "244812",
+            "244813",
+            "244814",
+            "244815",
+            "244816",
+            "244817",
+            "244818",
+            "244819",
+            "244820",
+            "244821",
+            "244822"
+          ],
+          "allow_jump_knowledges_switch": 0,
+          "can_be_interrupted": 0,
+          "can_interrupt_percent": 0.8,
+          "client_intent": [
+            "Positive",
+            "Negative",
+            "Unclassified"
+          ],
+          "dialog_list": [
+            {
+              "html": "<p>Greeting</p>",
+              "text": "Greeting",
+              "xml": "<speak xmlns:wiz=\"http://www.wiz.ai/develop/xml/tts\"><wiz:express-as style=\"default\">Greeting</wiz:express-as></speak>"
+            }
+          ],
+          "global_unclassified_switch": 0,
+          "hot_words_list": [],
+          "id": "8309e714-71e5-5080-98bd-10cdbe29b84d",
+          "intent_rollback_enable": false,
+          "intent_tag_def": {
+            "Negative": {
+              "intent_code": "",
+              "tag_list": []
+            },
+            "No answer": {
+              "intent_code": "",
+              "tag_list": []
+            },
+            "Positive": {
+              "intent_code": "",
+              "tag_list": []
+            },
+            "Reject": {
+              "intent_code": "",
+              "tag_list": []
+            },
+            "Unclassified": {
+              "intent_code": "",
+              "tag_list": []
+            }
+          },
+          "intention_judgment_time": 2,
+          "is_default": true,
+          "is_transfer": 0,
+          "list": [
+            "Greeting"
+          ],
+          "name": "Talk Node",
+          "nodeLabelArr": [],
+          "node_language": "3",
+          "node_language_item": "3",
+          "node_repetition": 0,
+          "node_variables": [],
+          "notice_send_type": 0,
+          "notices_info": [],
+          "openChasingDedayTim": false,
+          "openChasingDedayTime": false,
+          "openUserPauseDuration": false,
+          "open_pause_duration": false,
+          "open_talk_finish": false,
+          "position": {
+            "x": -461.97,
+            "y": 157.23
+          },
+          "repeat_script_type": 0,
+          "selected": false,
+          "speakType": 1,
+          "tag_list": [],
+          "tts_language": "3",
+          "type": 1,
+          "user_response_mode": "voice",
+          "value_assignment": []
+        },
+        "data_extra": {
+          "hot_words_list": [],
+          "intents": [
+            {
+              "intentId": "463428"
+            },
+            {
+              "intentId": "463429"
+            },
+            {
+              "intentId": "463430"
+            },
+            {
+              "intentId": "463431"
+            },
+            {
+              "intentId": "463433"
+            }
+          ],
+          "sentence_cut": [],
+          "serviceCall": [],
+          "variables": []
+        },
+        "is_default": true,
+        "name": "Talk Node",
+        "type": 1
       }
     },
     "bsc0_keys": [

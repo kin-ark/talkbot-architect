@@ -62,7 +62,9 @@ def compile_manifest(manifest_path: Path, output_path: Path) -> CompileResult:
 
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(json.dumps(template, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    output_path.write_text(
+        json.dumps(template, ensure_ascii=False, separators=(",", ":")), encoding="utf-8"
+    )
 
     result = _run_checker(output_path)
     if result.checker_errors > 0:

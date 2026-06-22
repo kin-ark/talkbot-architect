@@ -5,10 +5,11 @@ canvases:
   - name: "1. Greeting"
     nodes:
       - id: greet-root
-        label: Greeting
-        parent: null
+        prompt: Greeting
   - name: "2. Pitch"
     nodes:
       - id: pitch-child
-        label: Pitch
-        parent: greet-root   # cross-canvas ref — should fail validation
+        prompt: Pitch
+    edges:
+      # cross-canvas ref — greet-root is in canvas "1. Greeting", not here
+      - {from: pitch-child, branch: Unclassified, to: greet-root}

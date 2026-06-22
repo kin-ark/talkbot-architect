@@ -19,7 +19,7 @@ def _manifest(name="My Bot", branch="dev", language="IDN") -> Manifest:
         custom_variables=(),
         custom_intents=(),
         canvases=(
-            Canvas(name="c", nodes=(Node(id="r", label="Greeting", parent=None),)),
+            Canvas(name="c", nodes=(Node(id="r", prompt="Greeting"),), edges=()),
         ),
         raw_text=raw,
     )
@@ -119,11 +119,10 @@ def test_apply_identity_propagates_speech_id_to_all_fields(template_dict):
                     assert item["speechId"] == expected_id, (
                         f"{key} item has speechId={item['speechId']}, expected {expected_id}"
                     )
-        elif isinstance(decoded, dict):
-            if "speechId" in decoded:
-                assert decoded["speechId"] == expected_id, (
-                    f"{key} has speechId={decoded['speechId']}, expected {expected_id}"
-                )
+        elif isinstance(decoded, dict) and "speechId" in decoded:
+            assert decoded["speechId"] == expected_id, (
+                f"{key} has speechId={decoded['speechId']}, expected {expected_id}"
+            )
 
 
 def test_apply_identity_does_not_create_new_top_level_keys(template_dict):

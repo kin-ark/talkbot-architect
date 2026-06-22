@@ -34,8 +34,8 @@ def test_load_minimal_canvas_structure(fixture_path):
     node = canvas.nodes[0]
     assert isinstance(node, Node)
     assert node.id == "root"
-    assert node.label == "Greeting"
-    assert node.parent is None
+    assert node.prompt == "Greeting"
+    assert canvas.edges == ()
 
 
 def test_load_attaches_manifest_text(fixture_path):
@@ -57,7 +57,7 @@ def test_invalid_branch_raises(tmp_path):
     p = tmp_path / "bad_branch.yaml"
     p.write_text(
         "name: X\nbranch: staging\nlanguage: IDN\n"
-        "canvases:\n  - name: c\n    nodes:\n      - label: L\n        parent: null\n",
+        "canvases:\n  - name: c\n    nodes:\n      - id: root\n        prompt: L\n",
         encoding="utf-8",
     )
     with pytest.raises(ManifestError) as exc:
@@ -85,26 +85,30 @@ def test_canvas_with_no_nodes_raises(tmp_path):
     assert "node" in str(exc.value).lower()
 
 
-def test_canvas_with_no_root_raises(tmp_path):
-    """Every canvas must have at least one node with parent: null."""
-    p = tmp_path / "no_root.yaml"
+def test_canvas_with_no_entry_raises(tmp_path):
+    """A canvas where every node has an incoming edge has no entry node."""
+    p = tmp_path / "no_entry.yaml"
+    # Both nodes have incoming edges → no entry node → ManifestError
     p.write_text(
         "name: X\nbranch: dev\nlanguage: IDN\n"
-        "canvases:\n  - name: c\n    nodes:\n      - id: a\n        label: L\n        parent: b\n"
-        "      - id: b\n        label: M\n        parent: a\n",
+        "canvases:\n  - name: c\n    nodes:\n"
+        "      - id: a\n        prompt: L\n"
+        "      - id: b\n        prompt: M\n"
+        "    edges:\n"
+        "      - {from: a, branch: Unclassified, to: b}\n"
+        "      - {from: b, branch: Positive, to: a}\n",
         encoding="utf-8",
     )
-    with pytest.raises(ManifestError) as exc:
+    with pytest.raises(ManifestError, match="exactly one entry"):
         load_manifest(p)
-    assert "root" in str(exc.value).lower()
 
 
-def test_cross_canvas_parent_ref_raises(fixture_path):
+def test_cross_canvas_edge_ref_raises(fixture_path):
+    """An edge referencing a node id from a different canvas is rejected."""
     with pytest.raises(ManifestError) as exc:
         load_manifest(fixture_path("manifest_invalid_cross_canvas.yaml"))
     msg = str(exc.value).lower()
-    assert "parent" in msg
-    assert "cross-canvas" in msg or "same canvas" in msg
+    assert "unknown" in msg or "destination" in msg or "source" in msg
 
 
 def test_duplicate_canvas_name_raises(tmp_path):
@@ -112,8 +116,8 @@ def test_duplicate_canvas_name_raises(tmp_path):
     p.write_text(
         "name: X\nbranch: dev\nlanguage: IDN\n"
         "canvases:\n"
-        "  - name: same\n    nodes:\n      - label: L\n        parent: null\n"
-        "  - name: same\n    nodes:\n      - label: M\n        parent: null\n",
+        "  - name: same\n    nodes:\n      - id: a\n        prompt: L\n"
+        "  - name: same\n    nodes:\n      - id: b\n        prompt: M\n",
         encoding="utf-8",
     )
     with pytest.raises(ManifestError) as exc:
@@ -126,7 +130,7 @@ def test_duplicate_variable_name_raises(tmp_path):
     p.write_text(
         "name: X\nbranch: dev\nlanguage: IDN\n"
         "custom_variables:\n  - name: A\n  - name: A\n"
-        "canvases:\n  - name: c\n    nodes:\n      - label: L\n        parent: null\n",
+        "canvases:\n  - name: c\n    nodes:\n      - id: root\n        prompt: L\n",
         encoding="utf-8",
     )
     with pytest.raises(ManifestError) as exc:
@@ -140,7 +144,7 @@ def test_invalid_variable_name_pattern_raises(tmp_path):
     p.write_text(
         "name: X\nbranch: dev\nlanguage: IDN\n"
         "custom_variables:\n  - name: \"1starts-with-digit\"\n"
-        "canvases:\n  - name: c\n    nodes:\n      - label: L\n        parent: null\n",
+        "canvases:\n  - name: c\n    nodes:\n      - id: root\n        prompt: L\n",
         encoding="utf-8",
     )
     with pytest.raises(ManifestError):
@@ -152,7 +156,7 @@ def test_custom_variable_loaded(tmp_path):
     p.write_text(
         "name: X\nbranch: dev\nlanguage: IDN\n"
         "custom_variables:\n  - name: CLIENT_NAME\n"
-        "canvases:\n  - name: c\n    nodes:\n      - label: L\n        parent: null\n",
+        "canvases:\n  - name: c\n    nodes:\n      - id: root\n        prompt: L\n",
         encoding="utf-8",
     )
     m = load_manifest(p)
@@ -165,7 +169,7 @@ def test_custom_intent_loaded(tmp_path):
         "name: X\nbranch: dev\nlanguage: IDN\n"
         "custom_intents:\n"
         "  - name: AskExtension\n    language: IDN\n    keywords: [\"bisa tunda\"]\n"
-        "canvases:\n  - name: c\n    nodes:\n      - label: L\n        parent: null\n",
+        "canvases:\n  - name: c\n    nodes:\n      - id: root\n        prompt: L\n",
         encoding="utf-8",
     )
     m = load_manifest(p)
@@ -178,17 +182,17 @@ def test_custom_intent_loaded(tmp_path):
     assert i.user_responses == ()
 
 
-def test_node_id_auto_generated_when_missing(tmp_path):
-    """A node without explicit id gets a synthesized id (e.g., 'node-0')."""
-    p = tmp_path / "no_id.yaml"
+def test_node_id_required_by_schema(tmp_path):
+    """Node `id` is mandatory (required by schema); no auto-synthesis."""
+    p = tmp_path / "with_explicit_id.yaml"
     p.write_text(
         "name: X\nbranch: dev\nlanguage: IDN\n"
-        "canvases:\n  - name: c\n    nodes:\n      - label: L\n        parent: null\n",
+        "canvases:\n  - name: c\n    nodes:\n      - id: root\n        prompt: L\n",
         encoding="utf-8",
     )
     m = load_manifest(p)
     node = m.canvases[0].nodes[0]
-    assert node.id  # non-empty
+    assert node.id == "root"
 
 
 def test_empty_node_id_raises(tmp_path):
@@ -197,7 +201,7 @@ def test_empty_node_id_raises(tmp_path):
     p.write_text(
         "name: X\nbranch: dev\nlanguage: IDN\n"
         "canvases:\n  - name: c\n    nodes:\n"
-        "      - id: \"\"\n        label: L\n        parent: null\n",
+        "      - id: \"\"\n        prompt: L\n",
         encoding="utf-8",
     )
     with pytest.raises(ManifestError):
@@ -214,9 +218,9 @@ def test_parse_failure_raises_manifest_error(tmp_path):
 
 def test_manifest_schema_language_enum_matches_facts():
     """The static schema enum must stay in sync with facts lang.supported."""
-    import yaml as _yaml
     from pathlib import Path as _Path
 
+    import yaml as _yaml
     from wizfacts import load_facts
 
     schema_path = (
@@ -231,9 +235,97 @@ def test_manifest_accepts_thai(tmp_path):
     from wizbuilder.manifest import load_manifest
     body = (
         "name: T\nbranch: dev\nlanguage: THA\n"
-        "canvases:\n  - name: C\n    nodes:\n      - label: Greeting\n        parent: null\n"
+        "canvases:\n  - name: C\n    nodes:\n      - id: root\n        prompt: Greeting\n"
     )
     p = tmp_path / "m.yaml"
     p.write_text(body, encoding="utf-8")
     m = load_manifest(p)
     assert m.language == "THA"
+
+
+# ---------------------------------------------------------------------------
+# New tests: prompt + edges model (Step 1 — written before implementation)
+# ---------------------------------------------------------------------------
+
+def _write(tmp_path, text):
+    p = tmp_path / "m.yaml"
+    p.write_text(text, encoding="utf-8")
+    return p
+
+
+GOOD = """
+name: T
+branch: dev
+language: IDN
+canvases:
+  - name: "1. Greeting"
+    nodes:
+      - {id: greet, prompt: "Halo"}
+      - {id: bye, prompt: "Terima kasih"}
+    edges:
+      - {from: greet, branch: Unclassified, to: bye}
+"""
+
+
+def test_loads_prompt_and_edges(tmp_path):
+    m = load_manifest(_write(tmp_path, GOOD))
+    c = m.canvases[0]
+    assert [n.prompt for n in c.nodes] == ["Halo", "Terima kasih"]
+    assert (c.edges[0].src, c.edges[0].branch, c.edges[0].dst) == ("greet", "Unclassified", "bye")
+
+
+def test_rejects_two_entry_nodes(tmp_path):
+    """Two nodes with no incoming edges → not exactly one entry → ManifestError."""
+    # Remove the entire edges block so both nodes have no incoming edge
+    txt = GOOD.replace(
+        "    edges:\n      - {from: greet, branch: Unclassified, to: bye}\n", ""
+    )
+    with pytest.raises(ManifestError, match="exactly one entry"):
+        load_manifest(_write(tmp_path, txt))
+
+
+def test_rejects_bad_branch(tmp_path):
+    """An edge with a branch name outside the 5 allowed names is rejected."""
+    with pytest.raises(ManifestError):
+        load_manifest(_write(tmp_path, GOOD.replace("Unclassified", "Sideways")))
+
+
+def test_rejects_unknown_edge_endpoint(tmp_path):
+    """An edge referencing a node id not declared in the canvas is rejected."""
+    bad = GOOD.replace("to: bye", "to: ghost")
+    with pytest.raises(ManifestError):
+        load_manifest(_write(tmp_path, bad))
+
+
+def test_rejects_duplicate_src_branch(tmp_path):
+    """Two edges with the same (from, branch) pair are rejected."""
+    dup = GOOD.replace(
+        "      - {from: greet, branch: Unclassified, to: bye}",
+        "      - {from: greet, branch: Unclassified, to: bye}\n"
+        "      - {from: greet, branch: Unclassified, to: bye}",
+    )
+    with pytest.raises(ManifestError):
+        load_manifest(_write(tmp_path, dup))
+
+
+def test_single_node_canvas_is_valid(tmp_path):
+    """A single-node canvas with no edges is valid — that node is the entry."""
+    single = """
+name: T
+branch: dev
+language: IDN
+canvases:
+  - name: "1. Greeting"
+    nodes:
+      - {id: greet, prompt: "Halo"}
+"""
+    m = load_manifest(_write(tmp_path, single))
+    assert len(m.canvases[0].nodes) == 1
+    assert m.canvases[0].edges == ()
+
+
+def test_no_answer_branch_accepted(tmp_path):
+    """'No answer' (with space) is a valid branch name."""
+    txt = GOOD.replace("Unclassified", "No answer")
+    m = load_manifest(_write(tmp_path, txt))
+    assert m.canvases[0].edges[0].branch == "No answer"

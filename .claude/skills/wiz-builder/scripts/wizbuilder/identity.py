@@ -37,10 +37,9 @@ def apply_identity(
                 if isinstance(item, dict) and "speechId" in item:
                     item["speechId"] = speech_id
                     changed = True
-        elif isinstance(decoded, dict):
-            if "speechId" in decoded:
-                decoded["speechId"] = speech_id
-                changed = True
+        elif isinstance(decoded, dict) and "speechId" in decoded:
+            decoded["speechId"] = speech_id
+            changed = True
         if changed:
             template[key] = json.dumps(decoded, ensure_ascii=False, separators=(",", ":"))
 
