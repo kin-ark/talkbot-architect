@@ -1,4 +1,3 @@
-import React from 'react';
 
 export default function KBPlane({ knowledgeBases = [], onDrillIn }) {
   return (
@@ -11,7 +10,7 @@ export default function KBPlane({ knowledgeBases = [], onDrillIn }) {
               <span className="text-sm font-medium text-slate-700">{kb.title}</span>
               {kb.multi_round && <span className="text-[10px] bg-indigo-100 text-indigo-600 rounded px-1.5 py-0.5">multi-round ▸</span>}
             </div>
-            <div className="text-[11px] text-slate-400">id {kb.knowledge_id} · {kb.intents.length} intents</div>
+            <div className="text-[11px] text-slate-400">id {kb.knowledge_id} · {(kb.intents?.length ?? 0)} intents</div>
           </li>
         ))}
       </ul>

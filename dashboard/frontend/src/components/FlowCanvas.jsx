@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { ReactFlow, Background, Controls, MiniMap } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import dagre from 'dagre';
@@ -36,6 +36,7 @@ export default function FlowCanvas({ summary, onSelectNode }) {
     // We render dialogue nodes only; component grouping is visual-only.
     const dialogueNodes = rawNodes
       .filter((n) => n.data?.kind !== 'component')
+      // eslint-disable-next-line no-unused-vars
       .map(({ parentNode: _parentNode, extent: _extent, ...n }) => ({
         ...n,
         style: {

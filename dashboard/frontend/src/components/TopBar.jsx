@@ -1,11 +1,13 @@
-import React from 'react';
 import SettingsPopover from './SettingsPopover';
 
-export default function TopBar({ canUndo, canRedo, onUndo, onRedo, onExport, onNew }) {
-  const Btn = ({ onClick, disabled, children }) => (
+function Btn({ onClick, disabled, children }) {
+  return (
     <button onClick={onClick} disabled={disabled}
       className="px-3 py-1 text-sm rounded border border-slate-200 disabled:opacity-40 hover:bg-slate-50">{children}</button>
   );
+}
+
+export default function TopBar({ canUndo, canRedo, onUndo, onRedo, onExport, onNew }) {
   return (
     <div className="h-12 border-b border-slate-200 bg-white flex items-center justify-between px-4">
       <span className="font-semibold text-slate-700">Talkbot Architect</span>

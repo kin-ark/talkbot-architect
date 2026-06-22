@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import FlowCanvas from './FlowCanvas';
 import FindingList from './FindingList';
 import NodePropertiesPanel from './NodePropertiesPanel';

@@ -1,9 +1,6 @@
-import React from 'react';
 
-export default function FindingList({ findings = [], onSelect }) {
-  const errors = findings.filter((f) => f.severity === 'error');
-  const warnings = findings.filter((f) => f.severity === 'warning');
-  const Group = ({ title, items, color }) => (
+function Group({ title, items, color, onSelect }) {
+  return (
     <div className="mb-4">
       <h3 className={`text-xs font-bold uppercase tracking-wider mb-2 ${color}`}>{title} ({items.length})</h3>
       <ul className="space-y-1">
@@ -17,11 +14,16 @@ export default function FindingList({ findings = [], onSelect }) {
       </ul>
     </div>
   );
+}
+
+export default function FindingList({ findings = [], onSelect }) {
+  const errors = findings.filter((f) => f.severity === 'error');
+  const warnings = findings.filter((f) => f.severity === 'warning');
   return (
     <div className="p-4 overflow-y-auto h-full" data-testid="finding-list">
       {findings.length === 0 && <p className="text-sm text-emerald-600">No findings. ✓</p>}
-      {errors.length > 0 && <Group title="Errors" items={errors} color="text-red-600" />}
-      {warnings.length > 0 && <Group title="Warnings" items={warnings} color="text-amber-600" />}
+      {errors.length > 0 && <Group title="Errors" items={errors} color="text-red-600" onSelect={onSelect} />}
+      {warnings.length > 0 && <Group title="Warnings" items={warnings} color="text-amber-600" onSelect={onSelect} />}
     </div>
   );
 }

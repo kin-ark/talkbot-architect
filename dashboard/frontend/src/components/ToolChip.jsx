@@ -1,4 +1,3 @@
-import React from 'react';
 export default function ToolChip({ name, args }) {
   const label = { validate: '🔍 Validating', summarize: '🗺️ Summarizing', read_node: '📖 Reading node',
     apply_mods: '✏️ Proposing edits', set_path: '✏️ Editing', delete_path: '🗑️ Deleting',

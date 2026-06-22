@@ -1,4 +1,3 @@
-import React from 'react';
 export default function DiffCard({ proposal, onApply, onReject }) {
   if (!proposal) return null;
   const d = proposal.checker_delta;

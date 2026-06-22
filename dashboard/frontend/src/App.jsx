@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useSession } from './state/useSession';
 import TopBar from './components/TopBar';
 import ChatPane from './components/ChatPane';
