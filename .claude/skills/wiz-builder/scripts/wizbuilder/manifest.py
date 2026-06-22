@@ -134,8 +134,8 @@ def _validate_cross_field_invariants(data: dict, path: Path) -> None:
 
         # Unique node ids
         ids_in_canvas: set[str] = set()
-        for i, node in enumerate(node_list):
-            nid = node.get("id") or f"_auto_{i}"
+        for node in node_list:
+            nid = node["id"]
             if nid in ids_in_canvas:
                 raise ManifestError(f"{path}: duplicate node id {nid!r} in canvas {cname!r}")
             ids_in_canvas.add(nid)
@@ -194,10 +194,10 @@ def _build_manifest(data: dict, raw_text: str) -> Manifest:
     canvases = []
     for canvas in data["canvases"]:
         nodes = []
-        for i, node in enumerate(canvas["nodes"]):
+        for node in canvas["nodes"]:
             nodes.append(
                 Node(
-                    id=node.get("id") or f"_auto_{i}",
+                    id=node["id"],
                     prompt=node["prompt"],
                 )
             )

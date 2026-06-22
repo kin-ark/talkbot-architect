@@ -182,11 +182,9 @@ def test_custom_intent_loaded(tmp_path):
     assert i.user_responses == ()
 
 
-def test_node_id_auto_generated_when_missing(tmp_path):
-    """A node without explicit id gets a synthesized id (e.g., '_auto_0')."""
-    p = tmp_path / "no_id.yaml"
-    # Note: schema requires 'id' now, so we can't omit it; this test now
-    # verifies that an explicit id is properly stored.
+def test_node_id_required_by_schema(tmp_path):
+    """Node `id` is mandatory (required by schema); no auto-synthesis."""
+    p = tmp_path / "with_explicit_id.yaml"
     p.write_text(
         "name: X\nbranch: dev\nlanguage: IDN\n"
         "canvases:\n  - name: c\n    nodes:\n      - id: root\n        prompt: L\n",
@@ -194,7 +192,7 @@ def test_node_id_auto_generated_when_missing(tmp_path):
     )
     m = load_manifest(p)
     node = m.canvases[0].nodes[0]
-    assert node.id  # non-empty
+    assert node.id == "root"
 
 
 def test_empty_node_id_raises(tmp_path):
