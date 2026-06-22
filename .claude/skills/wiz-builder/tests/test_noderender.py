@@ -1,0 +1,39 @@
+import json
+import re
+from pathlib import Path
+
+from wizbuilder.ids import IdMinter
+from wizbuilder.noderender import EdgeSpec, NodeSpec, render_component_nodes  # noqa: F401
+
+FIX = Path(__file__).parent / "fixtures"
+UUID_RE = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
+
+
+def test_single_node_matches_reference_shape():
+    ref = json.loads((FIX / "ref_one_node.json").read_text(encoding="utf-8"))
+    ref_comp = json.loads(ref["BizSpeechComponent"])[0]
+    ref_details = json.loads(ref_comp["details"])
+    ref_node = next(iter(ref_details.values()))
+
+    r = render_component_nodes(
+        [NodeSpec(id="greet", prompt="Test only")], [],
+        canvas_index=0, comp_uuid="comp-uuid", speech_id=8309,
+        branch_intent_ids={"Positive": 463428, "Negative": 463429, "Reject": 463430,
+                           "Unclassified": 463431, "No answer": 463433},
+        kb_ids=["244811"], node_language="3", minter=IdMinter("h"),
+    )
+    got_node = next(iter(r.details.values()))
+    # same top-level node keys
+    assert set(got_node) == set(ref_node)
+    # same data keys (39) and same canvas keys
+    assert set(got_node["data"]) == set(ref_node["data"])
+    assert set(got_node["canvas"]) == set(ref_node["canvas"])
+    # prompt is carried into dialog_list + SentenceCutSpeech
+    assert got_node["data"]["dialog_list"][0]["text"] == "Test only"
+    scs = r.sentence_cut_speech[0]
+    assert scs["sentenceText"] == "Test only"
+    assert scs["type"] == "record" and UUID_RE.fullmatch(scs["speechRecCutId"])
+    # leaf node -> empty routes entry, entry node -> inbound port
+    nid = next(iter(r.details))
+    assert r.routes[nid] == {}
+    assert r.inbound_ports == [{"name": "Talk Node", "type": 1, "uuid": nid, "is_default": True}]
