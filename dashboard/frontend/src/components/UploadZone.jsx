@@ -10,7 +10,8 @@ export default function UploadZone({ onUpload }) {
   };
 
   return (
-    <div 
+    <div
+      data-testid="upload-zone"
       className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center hover:border-blue-500 transition-colors cursor-pointer relative"
       onClick={() => fileInputRef.current.click()}
     >

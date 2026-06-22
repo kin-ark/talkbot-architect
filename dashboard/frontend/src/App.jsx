@@ -1,77 +1,38 @@
-import React, { useEffect, useState } from 'react';
-import GlobalSidebar from './components/GlobalSidebar';
-import DialogueGraphCanvas from './components/DialogueGraphCanvas';
-import NodePropertiesPanel from './components/NodePropertiesPanel';
-import axios from 'axios';
-
-const mockFallbackData = {
-  mainFlow: [
-    {
-      name: "Fallback Component",
-      children: [
-        {
-          name: "Start Node",
-          uuid: "start-1",
-          node_type: "Talk",
-          allowedKBs: [],
-          children: [
-            {
-              name: "Welcome Node",
-              uuid: "welcome-1",
-              node_type: "Talk",
-              allowedKBs: ["KB-1"],
-              children: []
-            }
-          ]
-        }
-      ]
-    }
-  ],
-  knowledgeBases: [
-    { id: "KB-1", title: "Test Knowledge Base" }
-  ]
-};
+import React, { useState } from 'react';
+import { useSession } from './state/useSession';
+import TopBar from './components/TopBar';
+import ChatPane from './components/ChatPane';
+import SidePanel from './components/SidePanel';
+import UploadZone from './components/UploadZone';
+import { exportUrl } from './api';
 
 export default function App() {
-  const [data, setData] = useState({ mainFlow: [], knowledgeBases: [] });
-  const [loading, setLoading] = useState(true);
+  const s = useSession();
   const [selectedNode, setSelectedNode] = useState(null);
+  const onExport = () => window.open(exportUrl(), '_blank');
+  const onNew = () => window.location.reload();
 
-  useEffect(() => {
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-    axios.get(`${apiUrl}/summarize`)
-      .then(res => {
-        setData(res.data.summary || res.data || { mainFlow: [] });
-        setLoading(false);
-      })
-      .catch(err => {
-        console.warn('Backend not available, using fallback data', err.message);
-        setData(mockFallbackData);
-        setLoading(false);
-      });
-  }, []);
-
+  if (!s.summary) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-slate-50">
+        <div className="max-w-md w-full">
+          <h2 className="text-2xl font-semibold mb-4 text-center text-slate-800">Talkbot Architect</h2>
+          <p className="text-center text-slate-500 mb-6 text-sm">Upload a WIZ dialogue JSON or ZIP to begin.</p>
+          <UploadZone onUpload={s.upload} />
+          {s.loading && <p className="text-center mt-4 text-slate-400">Analyzing…</p>}
+        </div>
+      </div>
+    );
+  }
   return (
-    <div className="flex h-screen bg-gray-50 text-gray-900 font-sans" data-testid="app-container">
-      <GlobalSidebar />
-      <main className="flex-1 flex overflow-hidden relative">
-        {loading ? (
-          <div className="flex-1 flex items-center justify-center">Loading...</div>
-        ) : (
-          <>
-            <div className="flex-1 flex overflow-hidden relative">
-              <DialogueGraphCanvas 
-                mainFlow={data.mainFlow} 
-                onNodeClick={setSelectedNode} 
-              />
-            </div>
-            <NodePropertiesPanel 
-              selectedNode={selectedNode} 
-              knowledgeBases={data.knowledgeBases} 
-            />
-          </>
-        )}
-      </main>
+    <div className="h-screen flex flex-col bg-slate-50">
+      <TopBar canUndo={s.canUndo} canRedo={s.canRedo} onUndo={s.undo} onRedo={s.redo} onExport={onExport} onNew={onNew} />
+      <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 min-w-0">
+          <ChatPane transcript={s.transcript} proposal={s.proposal} onSend={s.send} onApply={s.apply} onReject={s.reject} />
+        </div>
+        <SidePanel summary={s.summary} findings={s.findings} selectedNode={selectedNode} onSelectNode={setSelectedNode} />
+      </div>
     </div>
   );
 }

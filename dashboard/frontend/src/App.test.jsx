@@ -1,10 +1,11 @@
 import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+vi.mock('./api');
 import App from './App';
 
-describe('App Layout', () => {
-  it('renders without crashing and displays the global sidebar', () => {
+describe('App', () => {
+  it('shows the upload zone before any session', () => {
     render(<App />);
-    expect(screen.getByTestId('app-container')).toBeInTheDocument();
-    expect(screen.getByTestId('global-sidebar')).toBeInTheDocument();
+    expect(screen.getByTestId('upload-zone')).toBeInTheDocument();
   });
 });
