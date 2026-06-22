@@ -32,16 +32,16 @@ def test_populate_details_builds_envelope(baseline_dict):
     b = InputBundle(data=baseline_dict, speech_name="s.json")
     structure.populate_details(
         b,
-        {"component": 0, "nodes": [{"id": "n1", "label": "Greeting", "parent": None}]},
+        {"component": 0, "nodes": [{"id": "n1", "prompt": "Greeting"}]},
         MINTER,
     )
     comp = get_components(b)[0]
     details = codec.decode(comp["details"])
-    envelope = next(iter(details.values()))
-    nodes = envelope["canvas"]["component"]["props"]["list"]
-    assert nodes[0]["label"] == "Greeting"
-    assert nodes[0]["parentId"] == ""
-    assert nodes[0]["uuid"] == nodes[0]["value"]
+    node_obj = next(iter(details.values()))
+    # New real node shape: top-level has canvas + data keys (not props.list)
+    assert "data" in node_obj
+    assert node_obj["data"]["dialog_list"][0]["text"] == "Greeting"
+    assert "canvas" in node_obj
 
 
 def test_add_component_appends_entry(baseline_dict):
@@ -61,14 +61,16 @@ def test_add_component_with_nodes_populates_details(baseline_dict):
     b = InputBundle(data=baseline_dict, speech_name="s.json")
     structure.add_component(
         b,
-        {"name": "Flow", "nodes": [{"id": "root", "label": "Open", "parent": None}]},
+        {"name": "Flow", "nodes": [{"id": "root", "prompt": "Open"}]},
         MINTER,
     )
     new = get_components(b)[-1]
     assert new["details"] != "null"
     details = codec.decode(new["details"])
-    nodes = next(iter(details.values()))["canvas"]["component"]["props"]["list"]
-    assert nodes[0]["label"] == "Open"
+    node_obj = next(iter(details.values()))
+    # New real node shape: top-level has data key
+    assert "data" in node_obj
+    assert node_obj["data"]["dialog_list"][0]["text"] == "Open"
 
 
 def test_add_component_strips_template_keys_from_secondary(baseline_dict):
