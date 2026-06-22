@@ -161,7 +161,7 @@ def propose_mods(data: dict, mods_yaml: str) -> dict:
             "ok": True,
             "proposed_data": proposed,
             "diff": diffing.unified_diff_of(packed, proposed),
-            "checker_delta": diffing.checker_delta(data, proposed),
+            "checker_delta": diffing.checker_delta(packed, proposed),
             "error": None,
         }
     except (ValueError, KeyError) as e:

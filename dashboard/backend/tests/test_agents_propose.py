@@ -17,3 +17,10 @@ def test_propose_unknown_op_returns_error():
     res = agents.propose_mods(_DATA, "- op: not-a-real-op\n")
     assert res["ok"] is False
     assert "not-a-real-op" in res["error"]
+
+
+def test_propose_does_not_mutate_input():
+    import copy
+    original = copy.deepcopy(_DATA)
+    agents.propose_mods(_DATA, "- op: set-speech-id\n  value: 99999\n")
+    assert _DATA == original, "propose_mods must not mutate caller's data"
