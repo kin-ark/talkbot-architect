@@ -116,9 +116,22 @@ _VAR_REF_RE = re.compile(r"\{([A-Za-z_]\w*)\}")
 
 
 def _extract_text(data: dict) -> str:
-    """Join text from data.list[].text with ' / ', skipping empty strings."""
+    """Join text from data.list[] with ' / ', skipping empty strings.
+
+    Handles both dict form (``{"text": "..."}`` — spec shape) and plain
+    string form (bare string — observed in the real export).
+    """
     items = data.get("list", [])
-    parts = [item["text"] for item in items if item.get("text")]
+    parts: list[str] = []
+    for item in items:
+        if isinstance(item, dict):
+            t = item.get("text", "")
+        elif isinstance(item, str):
+            t = item
+        else:
+            t = ""
+        if t:
+            parts.append(t)
     return " / ".join(parts)
 
 
@@ -245,6 +258,63 @@ def _build_node(
 
 
 # ---------------------------------------------------------------------------
+# KB-plane helpers
+# ---------------------------------------------------------------------------
+
+def _build_multiround(kb: dict, data: dict) -> "FlowModel | None":
+    """Return a shallow FlowModel containing the multi-round component, or None.
+
+    Scans kb.kdInfo for an entry with a non-empty multipleAppointId.  If found,
+    builds all components from `data`, picks the one matching that UUID, and
+    returns FlowModel(components=[that_component], knowledge_bases=[]).
+    Does NOT recurse into nested multi-round (one level only).
+    """
+    multi_uuid: str | None = None
+    for item in kb.get("kdInfo", []):
+        candidate = item.get("multipleAppointId")
+        if candidate:
+            multi_uuid = candidate
+            break
+
+    if not multi_uuid:
+        return None
+
+    all_components = build_components(data)
+    target = next((c for c in all_components if c.uuid == multi_uuid), None)
+    if target is None:
+        return None
+
+    return FlowModel(components=[target], knowledge_bases=[])
+
+
+def _build_kbs(data: dict) -> "list[KBView]":
+    """Build KBView list from BizKnowledgeInfo in the raw export dict."""
+    kbs_raw = unwrap(data.get("BizKnowledgeInfo"))
+    result: list[KBView] = []
+    for kb in kbs_raw:
+        kb_id = kb.get("knowledgeId")
+        if kb_id is None:
+            continue
+        knowledge_id = int(kb_id)
+        title = kb.get("kdTitle", "")
+        kd_type = int(kb.get("kdType", 0))
+        intents = [
+            int(i["intentId"])
+            for i in kb.get("intents", [])
+            if isinstance(i, dict) and "intentId" in i
+        ]
+        multi_round = _build_multiround(kb, data)
+        result.append(KBView(
+            knowledge_id=knowledge_id,
+            title=title,
+            kd_type=kd_type,
+            intents=intents,
+            multi_round=multi_round,
+        ))
+    return result
+
+
+# ---------------------------------------------------------------------------
 # Public build functions
 # ---------------------------------------------------------------------------
 
@@ -260,10 +330,10 @@ def build_components(data: dict) -> list[FlowComponent]:
         comp_uuid = comp.get("componentUuid", "")
         comp_name = comp.get("name", "")
         sort_index = comp.get("sortIndex", 0)
-        details = unwrap(comp.get("details") or {})
-        routes = comp.get("routes", {})
-        if isinstance(routes, str):
-            routes = json.loads(routes)
+        raw_details = comp.get("details")
+        details = unwrap(raw_details) if raw_details is not None else {}
+        raw_routes = comp.get("routes")
+        routes = unwrap(raw_routes) if raw_routes is not None else {}
 
         entry_uuid: str | None = None
         nodes: dict[str, FlowModelNode] = {}
@@ -294,28 +364,7 @@ def build_flow_model(data: dict) -> FlowModel:
     KB plane (KBView assembly, multi_round links) is left to Task 3.
     """
     components = build_components(data)
-
-    # Minimal KB pass: build KBView stubs from BizKnowledgeInfo.
-    # multi_round left None (Task 3).
-    raw_kbs = unwrap(data.get("BizKnowledgeInfo"))
-    knowledge_bases: list[KBView] = []
-    for kb in raw_kbs:
-        kb_id = kb.get("knowledgeId")
-        if kb_id is None:
-            continue
-        intents = [
-            item["intentId"]
-            for item in kb.get("intents", [])
-            if "intentId" in item
-        ]
-        knowledge_bases.append(KBView(
-            knowledge_id=int(kb_id),
-            title=kb.get("kdTitle", ""),
-            kd_type=int(kb.get("kdType", 0)),
-            intents=intents,
-            multi_round=None,
-        ))
-
+    knowledge_bases = _build_kbs(data)
     return FlowModel(components=components, knowledge_bases=knowledge_bases)
 
 
@@ -363,7 +412,7 @@ def _kb_to_dict(kb: KBView) -> dict:
         "title": kb.title,
         "kd_type": kb.kd_type,
         "intents": kb.intents,
-        "multi_round": None,  # Task 3 fills this in
+        "multi_round": flow_model_to_dict(kb.multi_round) if kb.multi_round else None,
     }
 
 

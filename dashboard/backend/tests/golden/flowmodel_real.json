@@ -1,0 +1,3132 @@
+{
+  "components": [
+    {
+      "uuid": "36777260-f53d-4d9a-b7e0-c512f833ea8d",
+      "name": "1. Greeting",
+      "sort_index": 1,
+      "entry_uuid": "5e77a1e3-58ff-4daf-9c93-843813f45ac7",
+      "root_uuids": [
+        "5e77a1e3-58ff-4daf-9c93-843813f45ac7"
+      ],
+      "nodes": {
+        "de471459-672e-4f12-b81b-59a7ebce666d": {
+          "uuid": "de471459-672e-4f12-b81b-59a7ebce666d",
+          "label": "Go To Unclasified Closing",
+          "node_type": "goto_component",
+          "text": "",
+          "referenced_vars": [],
+          "allowed_kbs": [
+            183795,
+            183798,
+            183802,
+            183793,
+            183801,
+            183803,
+            183804,
+            183800,
+            183797,
+            183794,
+            183796,
+            183799
+          ],
+          "branches": [
+            {
+              "label": "9. Unclassified Closing",
+              "kind": "exit",
+              "target_uuid": null,
+              "target_component": "8dc9787f-aa1b-4f91-b677-d3ac845e83ca",
+              "target_kb": null,
+              "terminal": null
+            }
+          ]
+        },
+        "5e77a1e3-58ff-4daf-9c93-843813f45ac7": {
+          "uuid": "5e77a1e3-58ff-4daf-9c93-843813f45ac7",
+          "label": "Greeting",
+          "node_type": "talk",
+          "text": "Halo Kak! Saya Rani dari TikTok Shop Partner, program resmi TikTok yang bantu hubungkan toko Kakak dengan agensi mitra terpercaya. Saya lihat toko Kakak terpilih untuk dapat dukungan layanan profesional yang bisa bantu ningkatin konten dan penjualan. Apa tertarik untuk saya jelaskan lebih lanjut kak? / Kita bisa membantu kakak untuk meningkatkan konten dan penjualan kakak, boleh ya saya lanjut jelaskan? / Toko kakak mendapatkan bantuan untuk meningkatkan konten dan penjualan, apa boleh ya saya pandu sebentar?",
+          "referenced_vars": [
+            "greeting status"
+          ],
+          "allowed_kbs": [
+            183813,
+            183814,
+            183815,
+            183812,
+            183811,
+            183805,
+            183810,
+            183809,
+            183808,
+            183807,
+            183806,
+            183821,
+            183819,
+            183817,
+            183818,
+            183816,
+            183820,
+            224365,
+            183795,
+            183798,
+            183802,
+            183793,
+            183801,
+            183803,
+            183804,
+            183800,
+            183797,
+            183794,
+            183796,
+            183799
+          ],
+          "branches": [
+            {
+              "label": "Not Interested",
+              "kind": "intent",
+              "target_uuid": "304d0a09-0ba5-485a-ace2-ffa808d6c9cc",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            },
+            {
+              "label": "Unclassified",
+              "kind": "intent",
+              "target_uuid": "de471459-672e-4f12-b81b-59a7ebce666d",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            },
+            {
+              "label": "Interested",
+              "kind": "intent",
+              "target_uuid": "31e2be00-e172-40bd-8eca-be54d8df87b2",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            }
+          ]
+        },
+        "31e2be00-e172-40bd-8eca-be54d8df87b2": {
+          "uuid": "31e2be00-e172-40bd-8eca-be54d8df87b2",
+          "label": "Go To Pitch",
+          "node_type": "goto_component",
+          "text": "",
+          "referenced_vars": [],
+          "allowed_kbs": [
+            183795,
+            183798,
+            183802,
+            183793,
+            183801,
+            183803,
+            183804,
+            183800,
+            183797,
+            183794,
+            183796,
+            183799
+          ],
+          "branches": [
+            {
+              "label": "2. Pitch",
+              "kind": "exit",
+              "target_uuid": null,
+              "target_component": "eb658c8c-dd71-41b2-b9f6-696280a460d4",
+              "target_kb": null,
+              "terminal": null
+            }
+          ]
+        },
+        "304d0a09-0ba5-485a-ace2-ffa808d6c9cc": {
+          "uuid": "304d0a09-0ba5-485a-ace2-ffa808d6c9cc",
+          "label": "Go To KB Busy",
+          "node_type": "goto_kb",
+          "text": "",
+          "referenced_vars": [],
+          "allowed_kbs": [
+            183795,
+            183798,
+            183802,
+            183793,
+            183801,
+            183803,
+            183804,
+            183800,
+            183797,
+            183794,
+            183796,
+            183799
+          ],
+          "branches": [
+            {
+              "label": "go to KB",
+              "kind": "exit",
+              "target_uuid": null,
+              "target_component": null,
+              "target_kb": 183805,
+              "terminal": null
+            }
+          ]
+        }
+      }
+    },
+    {
+      "uuid": "eb658c8c-dd71-41b2-b9f6-696280a460d4",
+      "name": "2. Pitch",
+      "sort_index": 2,
+      "entry_uuid": "6a3c20a9-24a6-4573-aef0-24f8cc957dd9",
+      "root_uuids": [
+        "6a3c20a9-24a6-4573-aef0-24f8cc957dd9"
+      ],
+      "nodes": {
+        "89128678-aa62-4965-8050-c2f16c448231": {
+          "uuid": "89128678-aa62-4965-8050-c2f16c448231",
+          "label": "Go To Convincer",
+          "node_type": "goto_component",
+          "text": "",
+          "referenced_vars": [],
+          "allowed_kbs": [
+            183795,
+            183798,
+            183802,
+            183793,
+            183801,
+            183803,
+            183804,
+            183800,
+            183797,
+            183794,
+            183796,
+            183799
+          ],
+          "branches": [
+            {
+              "label": "3. Convincer",
+              "kind": "exit",
+              "target_uuid": null,
+              "target_component": "82eb9986-1fed-4d5c-9e0d-cf002066b393",
+              "target_kb": null,
+              "terminal": null
+            }
+          ]
+        },
+        "6a3c20a9-24a6-4573-aef0-24f8cc957dd9": {
+          "uuid": "6a3c20a9-24a6-4573-aef0-24f8cc957dd9",
+          "label": "Pitch",
+          "node_type": "talk",
+          "text": "Baik, saya lanjut jelaskan ya kak. TikTok Shop Partner atau T S P bisa bantu toko Kakak dengan berbagai layanan, seperti pelatihan untuk host, penyediaan studio untuk produksi konten livestream serta video pendek. Tim kami bisa bantu mencocokkan dengan T S P yang paling sesuai dengan kebutuhan toko Kakak. Apa bersedia kak melanjutkan ke percakapan singkat berikutnya? / Jadi apakah boleh untuk kami bantu hubungkan dengan TikTok Shop Partner? / Boleh ya kak kami bantu hubungkan dengan TikTok Shop Partner-nya?",
+          "referenced_vars": [
+            "pitch status"
+          ],
+          "allowed_kbs": [
+            183814,
+            183813,
+            183815,
+            183816,
+            183817,
+            183818,
+            183819,
+            183820,
+            183821,
+            183806,
+            183807,
+            183808,
+            183809,
+            183810,
+            183805,
+            183811,
+            183812,
+            183795,
+            183798,
+            183802,
+            183793,
+            183801,
+            183803,
+            183804,
+            183800,
+            183797,
+            183794,
+            183796,
+            183799
+          ],
+          "branches": [
+            {
+              "label": "Positive",
+              "kind": "intent",
+              "target_uuid": "7ef1ab09-5b98-47e7-a8e8-95bed95aef6d",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            },
+            {
+              "label": "Unclassified",
+              "kind": "intent",
+              "target_uuid": "f3f6aca0-21a2-48ec-8577-d036d8247136",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            },
+            {
+              "label": "Negative",
+              "kind": "intent",
+              "target_uuid": "89128678-aa62-4965-8050-c2f16c448231",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            }
+          ]
+        },
+        "f3f6aca0-21a2-48ec-8577-d036d8247136": {
+          "uuid": "f3f6aca0-21a2-48ec-8577-d036d8247136",
+          "label": "Go To Unclassified",
+          "node_type": "goto_component",
+          "text": "",
+          "referenced_vars": [],
+          "allowed_kbs": [
+            183795,
+            183798,
+            183802,
+            183793,
+            183801,
+            183803,
+            183804,
+            183800,
+            183797,
+            183794,
+            183796,
+            183799
+          ],
+          "branches": [
+            {
+              "label": "9. Unclassified Closing",
+              "kind": "exit",
+              "target_uuid": null,
+              "target_component": "8dc9787f-aa1b-4f91-b677-d3ac845e83ca",
+              "target_kb": null,
+              "terminal": null
+            }
+          ]
+        },
+        "7ef1ab09-5b98-47e7-a8e8-95bed95aef6d": {
+          "uuid": "7ef1ab09-5b98-47e7-a8e8-95bed95aef6d",
+          "label": "Go To WhatsApp Confirmation",
+          "node_type": "goto_component",
+          "text": "",
+          "referenced_vars": [],
+          "allowed_kbs": [
+            183795,
+            183798,
+            183802,
+            183793,
+            183801,
+            183803,
+            183804,
+            183800,
+            183797,
+            183794,
+            183796,
+            183799
+          ],
+          "branches": [
+            {
+              "label": "4. WhatsApp Confirmation",
+              "kind": "exit",
+              "target_uuid": null,
+              "target_component": "9aa9affd-60f7-472a-b7a6-c1538888df17",
+              "target_kb": null,
+              "terminal": null
+            }
+          ]
+        }
+      }
+    },
+    {
+      "uuid": "82eb9986-1fed-4d5c-9e0d-cf002066b393",
+      "name": "3. Convincer",
+      "sort_index": 3,
+      "entry_uuid": "0ba939a5-6854-4436-a827-ab78f4b5e196",
+      "root_uuids": [
+        "0ba939a5-6854-4436-a827-ab78f4b5e196"
+      ],
+      "nodes": {
+        "f9fc6384-f0bb-42c7-a2e3-ade021c1c722": {
+          "uuid": "f9fc6384-f0bb-42c7-a2e3-ade021c1c722",
+          "label": "Go To WhatsApp Confirmation",
+          "node_type": "goto_component",
+          "text": "",
+          "referenced_vars": [],
+          "allowed_kbs": [
+            183795,
+            183798,
+            183802,
+            183793,
+            183801,
+            183803,
+            183804,
+            183800,
+            183797,
+            183794,
+            183796,
+            183799
+          ],
+          "branches": [
+            {
+              "label": "4. WhatsApp Confirmation",
+              "kind": "exit",
+              "target_uuid": null,
+              "target_component": "9aa9affd-60f7-472a-b7a6-c1538888df17",
+              "target_kb": null,
+              "terminal": null
+            }
+          ]
+        },
+        "630546aa-4ef8-4701-a38d-d6acd38f27e0": {
+          "uuid": "630546aa-4ef8-4701-a38d-d6acd38f27e0",
+          "label": "Go To Check Consent",
+          "node_type": "goto_component",
+          "text": "",
+          "referenced_vars": [],
+          "allowed_kbs": [
+            183795,
+            183798,
+            183802,
+            183793,
+            183801,
+            183803,
+            183804,
+            183800,
+            183797,
+            183794,
+            183796,
+            183799
+          ],
+          "branches": [
+            {
+              "label": "6. Check Consent",
+              "kind": "exit",
+              "target_uuid": null,
+              "target_component": "3c6c5c30-5a29-4144-85bf-b090bc3fa08e",
+              "target_kb": null,
+              "terminal": null
+            }
+          ]
+        },
+        "f5e2f7d2-813e-4261-a770-4f7b2167febf": {
+          "uuid": "f5e2f7d2-813e-4261-a770-4f7b2167febf",
+          "label": "Check to positive",
+          "node_type": "variable_assignment",
+          "text": "",
+          "referenced_vars": [
+            "go_to_closing"
+          ],
+          "allowed_kbs": [],
+          "branches": [
+            {
+              "label": "Default",
+              "kind": "next",
+              "target_uuid": "f9fc6384-f0bb-42c7-a2e3-ade021c1c722",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            }
+          ]
+        },
+        "0ba939a5-6854-4436-a827-ab78f4b5e196": {
+          "uuid": "0ba939a5-6854-4436-a827-ab78f4b5e196",
+          "label": "Convincer",
+          "node_type": "talk",
+          "text": "Wah sayang banget kak kalau kesempatan ini dilewatkan, TikTok Shop Partner bisa bantu kakak untuk menyediakan lebih banyak konten menarik yang tentunya akan meningkatkkan performa dan penjual toko. Jadi bersedia ya kak untuk matchmaking dengan TikTok Shop Partner kami? / Boleh ya kak kami bantu hubungkan dengan TikTok Shop Partner-nya? / Jadi apakah boleh untuk kami bantu hubungkan dengan TikTok Shop Partner?",
+          "referenced_vars": [],
+          "allowed_kbs": [
+            183814,
+            183815,
+            183816,
+            183817,
+            183818,
+            183819,
+            183806,
+            183820,
+            183821,
+            183808,
+            183809,
+            183810,
+            183805,
+            183811,
+            183795,
+            183798,
+            183802,
+            183793,
+            183801,
+            183803,
+            183804,
+            183800,
+            183797,
+            183794,
+            183796,
+            183799
+          ],
+          "branches": [
+            {
+              "label": "Unclassified",
+              "kind": "intent",
+              "target_uuid": "fc69e154-b0ca-45f9-a13b-b54e38795a05",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            },
+            {
+              "label": "Willing",
+              "kind": "intent",
+              "target_uuid": "f5e2f7d2-813e-4261-a770-4f7b2167febf",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            },
+            {
+              "label": "Not WIlling",
+              "kind": "intent",
+              "target_uuid": "a5e1c339-7358-4cc2-b526-422c587749c6",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            }
+          ]
+        },
+        "a5e1c339-7358-4cc2-b526-422c587749c6": {
+          "uuid": "a5e1c339-7358-4cc2-b526-422c587749c6",
+          "label": "Check to negative",
+          "node_type": "variable_assignment",
+          "text": "",
+          "referenced_vars": [
+            "go_to_closing"
+          ],
+          "allowed_kbs": [],
+          "branches": [
+            {
+              "label": "Default",
+              "kind": "next",
+              "target_uuid": "630546aa-4ef8-4701-a38d-d6acd38f27e0",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            }
+          ]
+        },
+        "fc69e154-b0ca-45f9-a13b-b54e38795a05": {
+          "uuid": "fc69e154-b0ca-45f9-a13b-b54e38795a05",
+          "label": "Go To Unclassified",
+          "node_type": "goto_component",
+          "text": "",
+          "referenced_vars": [],
+          "allowed_kbs": [
+            183795,
+            183798,
+            183802,
+            183793,
+            183801,
+            183803,
+            183804,
+            183800,
+            183797,
+            183794,
+            183796,
+            183799
+          ],
+          "branches": [
+            {
+              "label": "9. Unclassified Closing",
+              "kind": "exit",
+              "target_uuid": null,
+              "target_component": "8dc9787f-aa1b-4f91-b677-d3ac845e83ca",
+              "target_kb": null,
+              "terminal": null
+            }
+          ]
+        }
+      }
+    },
+    {
+      "uuid": "9aa9affd-60f7-472a-b7a6-c1538888df17",
+      "name": "4. WhatsApp Confirmation",
+      "sort_index": 4,
+      "entry_uuid": "8fb905d2-5a7f-4bd5-b58c-5ebd4c4ac6af",
+      "root_uuids": [
+        "8fb905d2-5a7f-4bd5-b58c-5ebd4c4ac6af"
+      ],
+      "nodes": {
+        "8fb905d2-5a7f-4bd5-b58c-5ebd4c4ac6af": {
+          "uuid": "8fb905d2-5a7f-4bd5-b58c-5ebd4c4ac6af",
+          "label": "WhatsApp Confirmation",
+          "node_type": "talk",
+          "text": "Terimakasih kak, lalu untuk mengkonfirmasi, apa nomor telepon yang ini sudah terhubung dengan WhatsApp? / Apakah nomor ini sudah terhubung dengan WhatsApp? / Bagaimana kak apakah nomor ini sudah terhubung dengan WhatsApp?",
+          "referenced_vars": [],
+          "allowed_kbs": [
+            183813,
+            183814,
+            183815,
+            183816,
+            183817,
+            183818,
+            183819,
+            183820,
+            183821,
+            183806,
+            183807,
+            183809,
+            183810,
+            183811,
+            183805,
+            183812,
+            183795,
+            183798,
+            183802,
+            183793,
+            183801,
+            183803,
+            183804,
+            183800,
+            183797,
+            183794,
+            183796,
+            183799
+          ],
+          "branches": [
+            {
+              "label": "Unclassified",
+              "kind": "intent",
+              "target_uuid": "7de0be30-f669-464a-817c-13a29ef16945",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            },
+            {
+              "label": "Connected",
+              "kind": "intent",
+              "target_uuid": "508067c7-9c81-4463-8081-cd7a05f8937a",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            },
+            {
+              "label": "Not Connected",
+              "kind": "intent",
+              "target_uuid": "a65cc4a2-56a2-47ec-82c0-17cd1cda8abd",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            }
+          ]
+        },
+        "a65cc4a2-56a2-47ec-82c0-17cd1cda8abd": {
+          "uuid": "a65cc4a2-56a2-47ec-82c0-17cd1cda8abd",
+          "label": "Go To Collect WA Number",
+          "node_type": "goto_component",
+          "text": "",
+          "referenced_vars": [],
+          "allowed_kbs": [
+            183795,
+            183798,
+            183802,
+            183793,
+            183801,
+            183803,
+            183804,
+            183800,
+            183797,
+            183794,
+            183796,
+            183799
+          ],
+          "branches": [
+            {
+              "label": "5. Collect WA Number IVR",
+              "kind": "exit",
+              "target_uuid": null,
+              "target_component": "01740a65-9f50-46ce-9c21-f6a381b7e979",
+              "target_kb": null,
+              "terminal": null
+            }
+          ]
+        },
+        "7de0be30-f669-464a-817c-13a29ef16945": {
+          "uuid": "7de0be30-f669-464a-817c-13a29ef16945",
+          "label": "Go To Unclassified",
+          "node_type": "goto_component",
+          "text": "",
+          "referenced_vars": [],
+          "allowed_kbs": [
+            183795,
+            183798,
+            183802,
+            183793,
+            183801,
+            183803,
+            183804,
+            183800,
+            183797,
+            183794,
+            183796,
+            183799
+          ],
+          "branches": [
+            {
+              "label": "9. Unclassified Closing",
+              "kind": "exit",
+              "target_uuid": null,
+              "target_component": "8dc9787f-aa1b-4f91-b677-d3ac845e83ca",
+              "target_kb": null,
+              "terminal": null
+            }
+          ]
+        },
+        "508067c7-9c81-4463-8081-cd7a05f8937a": {
+          "uuid": "508067c7-9c81-4463-8081-cd7a05f8937a",
+          "label": "Go To Check consent",
+          "node_type": "goto_component",
+          "text": "",
+          "referenced_vars": [],
+          "allowed_kbs": [
+            183795,
+            183798,
+            183802,
+            183793,
+            183801,
+            183803,
+            183804,
+            183800,
+            183797,
+            183794,
+            183796,
+            183799
+          ],
+          "branches": [
+            {
+              "label": "6. Check Consent",
+              "kind": "exit",
+              "target_uuid": null,
+              "target_component": "3c6c5c30-5a29-4144-85bf-b090bc3fa08e",
+              "target_kb": null,
+              "terminal": null
+            }
+          ]
+        }
+      }
+    },
+    {
+      "uuid": "3c6c5c30-5a29-4144-85bf-b090bc3fa08e",
+      "name": "6. Check Consent",
+      "sort_index": 6,
+      "entry_uuid": "28c84dec-3c7c-470e-8ba6-5224542f2d3c",
+      "root_uuids": [
+        "28c84dec-3c7c-470e-8ba6-5224542f2d3c"
+      ],
+      "nodes": {
+        "28c84dec-3c7c-470e-8ba6-5224542f2d3c": {
+          "uuid": "28c84dec-3c7c-470e-8ba6-5224542f2d3c",
+          "label": "Check Consent",
+          "node_type": "talk",
+          "text": "{Number Correct} Sebelum saya akhiri, saya mau konfirmasi kak apakah kakak berkenan jika tim kami hubungi lebih lanjut kedepannya kak?  / Apakah boleh kami hubungi kedepannya? / Bagaimana kak apakah boleh kami hubungi lagi?",
+          "referenced_vars": [],
+          "allowed_kbs": [
+            183815,
+            183817,
+            183820,
+            183819,
+            183821,
+            183808,
+            183811,
+            183813,
+            183814,
+            183818,
+            183795,
+            183798,
+            183802,
+            183793,
+            183801,
+            183803,
+            183804,
+            183800,
+            183797,
+            183794,
+            183796,
+            183799
+          ],
+          "branches": [
+            {
+              "label": "Not Agree",
+              "kind": "intent",
+              "target_uuid": "20d01ccf-7a79-483b-82dd-09e40798d4f9",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            },
+            {
+              "label": "Unclassified",
+              "kind": "intent",
+              "target_uuid": "d8efd788-41ff-481f-9ef4-a288b1f33a02",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            },
+            {
+              "label": "Agree",
+              "kind": "intent",
+              "target_uuid": "20d01ccf-7a79-483b-82dd-09e40798d4f9",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            }
+          ]
+        },
+        "20d01ccf-7a79-483b-82dd-09e40798d4f9": {
+          "uuid": "20d01ccf-7a79-483b-82dd-09e40798d4f9",
+          "label": "Closing check",
+          "node_type": "conditional",
+          "text": "",
+          "referenced_vars": [
+            "go_to_closing"
+          ],
+          "allowed_kbs": [],
+          "branches": [
+            {
+              "label": "Positive Closing",
+              "kind": "condition",
+              "target_uuid": "e372401b-1eb4-4428-ac20-d7d661478603",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            },
+            {
+              "label": "Negative Closing",
+              "kind": "condition",
+              "target_uuid": "6b0a6ed2-a883-47ed-bfb4-4d7e0c088101",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            },
+            {
+              "label": "Default",
+              "kind": "default",
+              "target_uuid": "e372401b-1eb4-4428-ac20-d7d661478603",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            }
+          ]
+        },
+        "6b0a6ed2-a883-47ed-bfb4-4d7e0c088101": {
+          "uuid": "6b0a6ed2-a883-47ed-bfb4-4d7e0c088101",
+          "label": "Go To Negative Closing",
+          "node_type": "goto_component",
+          "text": "",
+          "referenced_vars": [],
+          "allowed_kbs": [
+            183795,
+            183798,
+            183802,
+            183793,
+            183801,
+            183803,
+            183804,
+            183800,
+            183797,
+            183794,
+            183796,
+            183799
+          ],
+          "branches": [
+            {
+              "label": "8. Negative Closing",
+              "kind": "exit",
+              "target_uuid": null,
+              "target_component": "e7ca84a0-6522-4828-83bb-c8c7dad4e139",
+              "target_kb": null,
+              "terminal": null
+            }
+          ]
+        },
+        "e372401b-1eb4-4428-ac20-d7d661478603": {
+          "uuid": "e372401b-1eb4-4428-ac20-d7d661478603",
+          "label": "Go To Positive Closing",
+          "node_type": "goto_component",
+          "text": "",
+          "referenced_vars": [],
+          "allowed_kbs": [
+            183795,
+            183798,
+            183802,
+            183793,
+            183801,
+            183803,
+            183804,
+            183800,
+            183797,
+            183794,
+            183796,
+            183799
+          ],
+          "branches": [
+            {
+              "label": "7. Positive Closing",
+              "kind": "exit",
+              "target_uuid": null,
+              "target_component": "8f9f71af-d664-4026-8a0b-e4baa9a20572",
+              "target_kb": null,
+              "terminal": null
+            }
+          ]
+        },
+        "d8efd788-41ff-481f-9ef4-a288b1f33a02": {
+          "uuid": "d8efd788-41ff-481f-9ef4-a288b1f33a02",
+          "label": "Unclassified Closing",
+          "node_type": "goto_component",
+          "text": "",
+          "referenced_vars": [],
+          "allowed_kbs": [
+            183795,
+            183798,
+            183802,
+            183793,
+            183801,
+            183803,
+            183804,
+            183800,
+            183797,
+            183794,
+            183796,
+            183799
+          ],
+          "branches": [
+            {
+              "label": "9. Unclassified Closing",
+              "kind": "exit",
+              "target_uuid": null,
+              "target_component": "8dc9787f-aa1b-4f91-b677-d3ac845e83ca",
+              "target_kb": null,
+              "terminal": null
+            }
+          ]
+        }
+      }
+    },
+    {
+      "uuid": "8f9f71af-d664-4026-8a0b-e4baa9a20572",
+      "name": "7. Positive Closing",
+      "sort_index": 7,
+      "entry_uuid": "db979c40-0d06-45e2-a42f-3d967e0e6dcc",
+      "root_uuids": [
+        "db979c40-0d06-45e2-a42f-3d967e0e6dcc"
+      ],
+      "nodes": {
+        "db979c40-0d06-45e2-a42f-3d967e0e6dcc": {
+          "uuid": "db979c40-0d06-45e2-a42f-3d967e0e6dcc",
+          "label": "Exit Node",
+          "node_type": "exit",
+          "text": "Baik, itu saja dari saya untuk hari ini. Pastikan nomor W A Kakak aktif untuk T S P matchmaking. Terima kasih dan selamat beraktivitas kembali ya kak!",
+          "referenced_vars": [],
+          "allowed_kbs": [
+            183795,
+            183798,
+            183802,
+            183793,
+            183801,
+            183803,
+            183804,
+            183800,
+            183797,
+            183794,
+            183796,
+            183799
+          ],
+          "branches": [
+            {
+              "label": "hang up",
+              "kind": "exit",
+              "target_uuid": null,
+              "target_component": null,
+              "target_kb": null,
+              "terminal": "hangup"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "uuid": "e7ca84a0-6522-4828-83bb-c8c7dad4e139",
+      "name": "8. Negative Closing",
+      "sort_index": 8,
+      "entry_uuid": "75ee77d6-6d7b-4627-90ee-57266ba77e1c",
+      "root_uuids": [
+        "75ee77d6-6d7b-4627-90ee-57266ba77e1c"
+      ],
+      "nodes": {
+        "75ee77d6-6d7b-4627-90ee-57266ba77e1c": {
+          "uuid": "75ee77d6-6d7b-4627-90ee-57266ba77e1c",
+          "label": "Exit Node",
+          "node_type": "exit",
+          "text": "Baik, gapapa kak, kalau mungkin nanti kakak ingin mengetahui lebih lanjut, bisa akses ke seller center dapat information lengkap mengenai T S P kami. Terimakasih untuk waktunya kak, semoga sukses selalu.",
+          "referenced_vars": [],
+          "allowed_kbs": [
+            183795,
+            183798,
+            183802,
+            183793,
+            183801,
+            183803,
+            183804,
+            183800,
+            183797,
+            183794,
+            183796,
+            183799
+          ],
+          "branches": [
+            {
+              "label": "hang up",
+              "kind": "exit",
+              "target_uuid": null,
+              "target_component": null,
+              "target_kb": null,
+              "terminal": "hangup"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "uuid": "8dc9787f-aa1b-4f91-b677-d3ac845e83ca",
+      "name": "9. Unclassified Closing",
+      "sort_index": 9,
+      "entry_uuid": "aa395090-69dc-424e-b55f-98ea83242691",
+      "root_uuids": [
+        "aa395090-69dc-424e-b55f-98ea83242691"
+      ],
+      "nodes": {
+        "aa395090-69dc-424e-b55f-98ea83242691": {
+          "uuid": "aa395090-69dc-424e-b55f-98ea83242691",
+          "label": "Exit Node",
+          "node_type": "exit",
+          "text": "Um, mohon maaf sepertinya ada kendala sinyal. Saya akan segera menghubungi Kakak kembali ya untuk membantu memberikan panduan singkat dalam mengembangkan Toko dengan TikTok Shop Partner.",
+          "referenced_vars": [],
+          "allowed_kbs": [
+            183795,
+            183798,
+            183802,
+            183793,
+            183801,
+            183803,
+            183804,
+            183800,
+            183797,
+            183794,
+            183796,
+            183799
+          ],
+          "branches": [
+            {
+              "label": "hang up",
+              "kind": "exit",
+              "target_uuid": null,
+              "target_component": null,
+              "target_kb": null,
+              "terminal": "hangup"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "uuid": "01740a65-9f50-46ce-9c21-f6a381b7e979",
+      "name": "5. Collect WA Number IVR",
+      "sort_index": 5,
+      "entry_uuid": "1ffa6ad0-4fe7-4dea-b0c2-c891ce669a61",
+      "root_uuids": [
+        "1ffa6ad0-4fe7-4dea-b0c2-c891ce669a61"
+      ],
+      "nodes": {
+        "1502fb62-3d30-49f7-9ab4-4e8eb63e6dc3": {
+          "uuid": "1502fb62-3d30-49f7-9ab4-4e8eb63e6dc3",
+          "label": "Recollect Phone Number - IVR",
+          "node_type": "talk",
+          "text": "Mohon maaf apa bisa diulang nomornya? Pastikan untuk memasukan nomor setelah beep dan diakhiri dengan tanda pagar ya.",
+          "referenced_vars": [],
+          "allowed_kbs": [
+            183795,
+            183798,
+            183802,
+            183793,
+            183801,
+            183803,
+            183804,
+            183800,
+            183797,
+            183794,
+            183796,
+            183799
+          ],
+          "branches": [
+            {
+              "label": "Unclassified",
+              "kind": "intent",
+              "target_uuid": "65c2eb97-5b95-4f20-987e-cf3a1bb043a8",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            }
+          ]
+        },
+        "ee5ca180-c23b-4217-bed5-174c02f61ea7": {
+          "uuid": "ee5ca180-c23b-4217-bed5-174c02f61ea7",
+          "label": "Capture Phone Number",
+          "node_type": "variable_assignment",
+          "text": "",
+          "referenced_vars": [
+            "Phone number collected"
+          ],
+          "allowed_kbs": [],
+          "branches": [
+            {
+              "label": "Default",
+              "kind": "next",
+              "target_uuid": "8cc97c4a-1f34-4509-aac2-4f8586e692ec",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            }
+          ]
+        },
+        "a9d8fc69-c3ad-4c53-8007-8988a1ef1412": {
+          "uuid": "a9d8fc69-c3ad-4c53-8007-8988a1ef1412",
+          "label": "Chasing sentence",
+          "node_type": "variable_assignment",
+          "text": "",
+          "referenced_vars": [
+            "Number Correct"
+          ],
+          "allowed_kbs": [],
+          "branches": [
+            {
+              "label": "Default",
+              "kind": "next",
+              "target_uuid": "b150fa0d-cd3e-4637-b5bc-275f4394cd50",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            }
+          ]
+        },
+        "c761036c-62c8-412a-9070-3da2299cbbf0": {
+          "uuid": "c761036c-62c8-412a-9070-3da2299cbbf0",
+          "label": "Chasing sentence not collected",
+          "node_type": "variable_assignment",
+          "text": "",
+          "referenced_vars": [
+            "Number Correct"
+          ],
+          "allowed_kbs": [],
+          "branches": [
+            {
+              "label": "Default",
+              "kind": "next",
+              "target_uuid": "c4deada4-a671-4e89-8256-88e9de4c0ec4",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            }
+          ]
+        },
+        "1ffa6ad0-4fe7-4dea-b0c2-c891ce669a61": {
+          "uuid": "1ffa6ad0-4fe7-4dea-b0c2-c891ce669a61",
+          "label": "Collect Phone Number - IVR",
+          "node_type": "talk",
+          "text": "Untuk nomor lain yang tersambung dengan Whatsapp aktif, boleh tolong diketik pada keypad HPnya? Silakan diketik setelah beep dan diakhiri dengan tanda pagar ya. / Apakah boleh tolong diinput pada keypad HP kakak? / Boleh tolong diketik pada keypad H P kakak?",
+          "referenced_vars": [],
+          "allowed_kbs": [
+            183813,
+            183818,
+            183820,
+            183821,
+            183805,
+            183811,
+            183810,
+            183809,
+            183819,
+            183817,
+            183795,
+            183798,
+            183802,
+            183793,
+            183801,
+            183803,
+            183804,
+            183800,
+            183797,
+            183794,
+            183796,
+            183799
+          ],
+          "branches": [
+            {
+              "label": "Unclassified",
+              "kind": "intent",
+              "target_uuid": "ee5ca180-c23b-4217-bed5-174c02f61ea7",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            }
+          ]
+        },
+        "c4deada4-a671-4e89-8256-88e9de4c0ec4": {
+          "uuid": "c4deada4-a671-4e89-8256-88e9de4c0ec4",
+          "label": "Phone number not collected/not valid",
+          "node_type": "goto_component",
+          "text": "",
+          "referenced_vars": [],
+          "allowed_kbs": [
+            183795,
+            183798,
+            183802,
+            183793,
+            183801,
+            183803,
+            183804,
+            183800,
+            183797,
+            183794,
+            183796,
+            183799
+          ],
+          "branches": [
+            {
+              "label": "6. Check Consent",
+              "kind": "exit",
+              "target_uuid": null,
+              "target_component": "3c6c5c30-5a29-4144-85bf-b090bc3fa08e",
+              "target_kb": null,
+              "terminal": null
+            }
+          ]
+        },
+        "b150fa0d-cd3e-4637-b5bc-275f4394cd50": {
+          "uuid": "b150fa0d-cd3e-4637-b5bc-275f4394cd50",
+          "label": "Valid phone number collected",
+          "node_type": "goto_component",
+          "text": "",
+          "referenced_vars": [],
+          "allowed_kbs": [
+            183795,
+            183798,
+            183802,
+            183793,
+            183801,
+            183803,
+            183804,
+            183800,
+            183797,
+            183794,
+            183796,
+            183799
+          ],
+          "branches": [
+            {
+              "label": "6. Check Consent",
+              "kind": "exit",
+              "target_uuid": null,
+              "target_component": "3c6c5c30-5a29-4144-85bf-b090bc3fa08e",
+              "target_kb": null,
+              "terminal": null
+            }
+          ]
+        },
+        "8cc97c4a-1f34-4509-aac2-4f8586e692ec": {
+          "uuid": "8cc97c4a-1f34-4509-aac2-4f8586e692ec",
+          "label": "Check if phone number is captured/valid",
+          "node_type": "conditional",
+          "text": "",
+          "referenced_vars": [
+            "Phone number collected"
+          ],
+          "allowed_kbs": [],
+          "branches": [
+            {
+              "label": "Invalid Number",
+              "kind": "condition",
+              "target_uuid": "1502fb62-3d30-49f7-9ab4-4e8eb63e6dc3",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            },
+            {
+              "label": "Default",
+              "kind": "default",
+              "target_uuid": "1502fb62-3d30-49f7-9ab4-4e8eb63e6dc3",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            },
+            {
+              "label": "Valid Number",
+              "kind": "condition",
+              "target_uuid": "a9d8fc69-c3ad-4c53-8007-8988a1ef1412",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            }
+          ]
+        },
+        "f5736053-2d94-4c8e-98c8-3263b327baa4": {
+          "uuid": "f5736053-2d94-4c8e-98c8-3263b327baa4",
+          "label": "Check if phone number is captured/valid",
+          "node_type": "conditional",
+          "text": "",
+          "referenced_vars": [
+            "Phone number collected"
+          ],
+          "allowed_kbs": [],
+          "branches": [
+            {
+              "label": "Default",
+              "kind": "default",
+              "target_uuid": "b150fa0d-cd3e-4637-b5bc-275f4394cd50",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            },
+            {
+              "label": "Valid Number",
+              "kind": "condition",
+              "target_uuid": "a9d8fc69-c3ad-4c53-8007-8988a1ef1412",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            },
+            {
+              "label": "Invalid Number",
+              "kind": "condition",
+              "target_uuid": "c761036c-62c8-412a-9070-3da2299cbbf0",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            }
+          ]
+        },
+        "65c2eb97-5b95-4f20-987e-cf3a1bb043a8": {
+          "uuid": "65c2eb97-5b95-4f20-987e-cf3a1bb043a8",
+          "label": "Capture Phone Number",
+          "node_type": "variable_assignment",
+          "text": "",
+          "referenced_vars": [
+            "Phone number collected"
+          ],
+          "allowed_kbs": [],
+          "branches": [
+            {
+              "label": "Default",
+              "kind": "next",
+              "target_uuid": "f5736053-2d94-4c8e-98c8-3263b327baa4",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            }
+          ]
+        }
+      }
+    },
+    {
+      "uuid": "9f3ce4bc-0b90-49a0-a9ca-ce04c5c252f5",
+      "name": "Busy/Call back later",
+      "sort_index": 1,
+      "entry_uuid": "87d12962-eeb4-4b1e-bfd9-7b211c058551",
+      "root_uuids": [
+        "87d12962-eeb4-4b1e-bfd9-7b211c058551"
+      ],
+      "nodes": {
+        "491f6dba-7a8e-4189-99cd-bc29f73c4735": {
+          "uuid": "491f6dba-7a8e-4189-99cd-bc29f73c4735",
+          "label": "Go to Pitch",
+          "node_type": "goto_component",
+          "text": "",
+          "referenced_vars": [],
+          "allowed_kbs": [
+            183795,
+            183798,
+            183802,
+            183793,
+            183801,
+            183803,
+            183804,
+            183800,
+            183797,
+            183794,
+            183796,
+            183799
+          ],
+          "branches": [
+            {
+              "label": "2. Pitch",
+              "kind": "exit",
+              "target_uuid": null,
+              "target_component": "eb658c8c-dd71-41b2-b9f6-696280a460d4",
+              "target_kb": null,
+              "terminal": null
+            }
+          ]
+        },
+        "87d12962-eeb4-4b1e-bfd9-7b211c058551": {
+          "uuid": "87d12962-eeb4-4b1e-bfd9-7b211c058551",
+          "label": "Triggered",
+          "node_type": "conditional",
+          "text": "",
+          "referenced_vars": [
+            "Busy"
+          ],
+          "allowed_kbs": [],
+          "branches": [
+            {
+              "label": "Triggered",
+              "kind": "condition",
+              "target_uuid": "def332a8-257b-412e-92c8-339a7d00f260",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            },
+            {
+              "label": "Default",
+              "kind": "default",
+              "target_uuid": "c5a4e499-0e34-478f-b3ea-24e8afe1c5df",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            }
+          ]
+        },
+        "c5a4e499-0e34-478f-b3ea-24e8afe1c5df": {
+          "uuid": "c5a4e499-0e34-478f-b3ea-24e8afe1c5df",
+          "label": "Busy/Call back later",
+          "node_type": "talk",
+          "text": "Hmm. Untuk info yang akan saya sampaikan tidak memakan waktu lebih dari 3 menit kok kak dan akan sangat membantu toko kakak. Boleh ya saya lanjut jelaskan sedikit saja? / Boleh ya saya berikan panduannya sebentar saja?",
+          "referenced_vars": [
+            "Busy"
+          ],
+          "allowed_kbs": [
+            183813,
+            183814,
+            183816,
+            183817,
+            183821,
+            183806,
+            183807,
+            183808,
+            183809,
+            183810,
+            183805,
+            183811,
+            183812,
+            183795,
+            183798,
+            183802,
+            183793,
+            183801,
+            183803,
+            183804,
+            183800,
+            183797,
+            183794,
+            183796,
+            183799
+          ],
+          "branches": [
+            {
+              "label": "Busy",
+              "kind": "intent",
+              "target_uuid": "def332a8-257b-412e-92c8-339a7d00f260",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            },
+            {
+              "label": "Positive/I have time",
+              "kind": "intent",
+              "target_uuid": "dbd55c13-1d6e-41ab-a9bf-3d59f0a8bca2",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            },
+            {
+              "label": "Unclassified",
+              "kind": "intent",
+              "target_uuid": "dbd55c13-1d6e-41ab-a9bf-3d59f0a8bca2",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            }
+          ]
+        },
+        "dbd55c13-1d6e-41ab-a9bf-3d59f0a8bca2": {
+          "uuid": "dbd55c13-1d6e-41ab-a9bf-3d59f0a8bca2",
+          "label": "Triggered",
+          "node_type": "conditional",
+          "text": "",
+          "referenced_vars": [
+            "pitch status"
+          ],
+          "allowed_kbs": [],
+          "branches": [
+            {
+              "label": "From Greeting",
+              "kind": "condition",
+              "target_uuid": "491f6dba-7a8e-4189-99cd-bc29f73c4735",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            },
+            {
+              "label": "Default",
+              "kind": "default",
+              "target_uuid": "03992877-d500-47bd-9caf-98e315c4d527",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            }
+          ]
+        },
+        "def332a8-257b-412e-92c8-339a7d00f260": {
+          "uuid": "def332a8-257b-412e-92c8-339a7d00f260",
+          "label": "Negative",
+          "node_type": "exit",
+          "text": "Oh baik, kalau begitu nanti akan kami hubungi kembali ya, terimakasih.",
+          "referenced_vars": [],
+          "allowed_kbs": [
+            183795,
+            183798,
+            183802,
+            183793,
+            183801,
+            183803,
+            183804,
+            183800,
+            183797,
+            183794,
+            183796,
+            183799
+          ],
+          "branches": [
+            {
+              "label": "hang up",
+              "kind": "exit",
+              "target_uuid": null,
+              "target_component": null,
+              "target_kb": null,
+              "terminal": "hangup"
+            }
+          ]
+        },
+        "03992877-d500-47bd-9caf-98e315c4d527": {
+          "uuid": "03992877-d500-47bd-9caf-98e315c4d527",
+          "label": "Continue the call",
+          "node_type": "talk_continue",
+          "text": "blank",
+          "referenced_vars": [],
+          "allowed_kbs": [],
+          "branches": []
+        }
+      }
+    },
+    {
+      "uuid": "29107ce8-1a8f-4273-82b4-cc1ac1e65cbc",
+      "name": "Send Info/Text customer",
+      "sort_index": 1,
+      "entry_uuid": "17f03dc2-fd69-44b3-931d-fe5eb282d7cf",
+      "root_uuids": [
+        "17f03dc2-fd69-44b3-931d-fe5eb282d7cf"
+      ],
+      "nodes": {
+        "17f03dc2-fd69-44b3-931d-fe5eb282d7cf": {
+          "uuid": "17f03dc2-fd69-44b3-931d-fe5eb282d7cf",
+          "label": "Negative",
+          "node_type": "exit",
+          "text": "Baik kak, kami juga akan memberikan detail nya di seller center kakak secara berkala, bisa di bantu cek untuk notifikasi yang masuk ya kak. Terimakasih",
+          "referenced_vars": [],
+          "allowed_kbs": [
+            183795,
+            183798,
+            183802,
+            183793,
+            183801,
+            183803,
+            183804,
+            183800,
+            183797,
+            183794,
+            183796,
+            183799
+          ],
+          "branches": [
+            {
+              "label": "hang up",
+              "kind": "exit",
+              "target_uuid": null,
+              "target_component": null,
+              "target_kb": null,
+              "terminal": "hangup"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "uuid": "3012bb57-c647-4d66-9c3e-9510f6e3faf7",
+      "name": "Will close shop",
+      "sort_index": 2,
+      "entry_uuid": "a82a4d82-40ac-4958-8e13-ce3610424824",
+      "root_uuids": [
+        "a82a4d82-40ac-4958-8e13-ce3610424824"
+      ],
+      "nodes": {
+        "3d21434f-2dfa-4de8-8d1b-47c5ce08686a": {
+          "uuid": "3d21434f-2dfa-4de8-8d1b-47c5ce08686a",
+          "label": "Negative",
+          "node_type": "exit",
+          "text": "Baik jika begitu kak, terima kasih ya Kak atas konfirmasinya. Semoga sehat dan sukses selalu Kak. Selamat melanjutkan aktivitas.",
+          "referenced_vars": [],
+          "allowed_kbs": [
+            183795,
+            183798,
+            183802,
+            183793,
+            183801,
+            183803,
+            183804,
+            183800,
+            183797,
+            183794,
+            183796,
+            183799
+          ],
+          "branches": [
+            {
+              "label": "hang up",
+              "kind": "exit",
+              "target_uuid": null,
+              "target_component": null,
+              "target_kb": null,
+              "terminal": "hangup"
+            }
+          ]
+        },
+        "d9d72558-cde9-4e9d-8684-2f93a1a53239": {
+          "uuid": "d9d72558-cde9-4e9d-8684-2f93a1a53239",
+          "label": "Will Close Shop",
+          "node_type": "talk",
+          "text": "Wah sangat disayangkan ya kak, apakah memungkinkan untuk lanjut berjualan di Tiktok Shop nya?",
+          "referenced_vars": [
+            "Hit Will Close Shop"
+          ],
+          "allowed_kbs": [
+            183813,
+            183815,
+            183817,
+            183816,
+            183818,
+            183806,
+            183807,
+            183808,
+            183809,
+            183810,
+            183805,
+            183811,
+            183795,
+            183798,
+            183802,
+            183793,
+            183801,
+            183803,
+            183804,
+            183800,
+            183797,
+            183794,
+            183796,
+            183799
+          ],
+          "branches": [
+            {
+              "label": "Unclassified",
+              "kind": "intent",
+              "target_uuid": "66e5565b-82f3-41af-8046-e5fe32adc840",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            },
+            {
+              "label": "No",
+              "kind": "intent",
+              "target_uuid": "3d21434f-2dfa-4de8-8d1b-47c5ce08686a",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            },
+            {
+              "label": "Yes",
+              "kind": "intent",
+              "target_uuid": "cd489d9f-2877-4041-9eee-79ed3c9a2623",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            }
+          ]
+        },
+        "1705ce58-faa5-402b-98d0-4137ba5b36f2": {
+          "uuid": "1705ce58-faa5-402b-98d0-4137ba5b36f2",
+          "label": "Go to Pitching",
+          "node_type": "goto_component",
+          "text": "",
+          "referenced_vars": [],
+          "allowed_kbs": [
+            183795,
+            183798,
+            183802,
+            183793,
+            183801,
+            183803,
+            183804,
+            183800,
+            183797,
+            183794,
+            183796,
+            183799
+          ],
+          "branches": [
+            {
+              "label": "2. Pitch",
+              "kind": "exit",
+              "target_uuid": null,
+              "target_component": "eb658c8c-dd71-41b2-b9f6-696280a460d4",
+              "target_kb": null,
+              "terminal": null
+            }
+          ]
+        },
+        "cd489d9f-2877-4041-9eee-79ed3c9a2623": {
+          "uuid": "cd489d9f-2877-4041-9eee-79ed3c9a2623",
+          "label": "Conditional Judgment Node",
+          "node_type": "conditional",
+          "text": "",
+          "referenced_vars": [
+            "pitch status"
+          ],
+          "allowed_kbs": [],
+          "branches": [
+            {
+              "label": "Go to pitching",
+              "kind": "condition",
+              "target_uuid": "1705ce58-faa5-402b-98d0-4137ba5b36f2",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            },
+            {
+              "label": "Default",
+              "kind": "default",
+              "target_uuid": "f02c1a23-6eed-4d17-a192-196554007ab1",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            }
+          ]
+        },
+        "66e5565b-82f3-41af-8046-e5fe32adc840": {
+          "uuid": "66e5565b-82f3-41af-8046-e5fe32adc840",
+          "label": "Go to Unclassified",
+          "node_type": "goto_component",
+          "text": "",
+          "referenced_vars": [],
+          "allowed_kbs": [
+            183795,
+            183798,
+            183802,
+            183793,
+            183801,
+            183803,
+            183804,
+            183800,
+            183797,
+            183794,
+            183796,
+            183799
+          ],
+          "branches": [
+            {
+              "label": "9. Unclassified Closing",
+              "kind": "exit",
+              "target_uuid": null,
+              "target_component": "8dc9787f-aa1b-4f91-b677-d3ac845e83ca",
+              "target_kb": null,
+              "terminal": null
+            }
+          ]
+        },
+        "a82a4d82-40ac-4958-8e13-ce3610424824": {
+          "uuid": "a82a4d82-40ac-4958-8e13-ce3610424824",
+          "label": "Conditional Judgment Node",
+          "node_type": "conditional",
+          "text": "",
+          "referenced_vars": [
+            "Hit Will Close Shop"
+          ],
+          "allowed_kbs": [],
+          "branches": [
+            {
+              "label": "Triggered",
+              "kind": "condition",
+              "target_uuid": "3d21434f-2dfa-4de8-8d1b-47c5ce08686a",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            },
+            {
+              "label": "Default",
+              "kind": "default",
+              "target_uuid": "d9d72558-cde9-4e9d-8684-2f93a1a53239",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            }
+          ]
+        },
+        "f02c1a23-6eed-4d17-a192-196554007ab1": {
+          "uuid": "f02c1a23-6eed-4d17-a192-196554007ab1",
+          "label": "Continue the call",
+          "node_type": "talk_continue",
+          "text": "Baik kak saya izin lanjutkan sebentar ya,",
+          "referenced_vars": [],
+          "allowed_kbs": [],
+          "branches": []
+        }
+      }
+    },
+    {
+      "uuid": "beef268d-85eb-4824-9c42-0598813b6c3c",
+      "name": "Wrong Person/Who are you looking for",
+      "sort_index": 3,
+      "entry_uuid": "fe98baa7-a570-4bdc-ac90-878bbf49f022",
+      "root_uuids": [
+        "fe98baa7-a570-4bdc-ac90-878bbf49f022"
+      ],
+      "nodes": {
+        "878954c8-be4a-4ab9-b117-d509f78e7ff6": {
+          "uuid": "878954c8-be4a-4ab9-b117-d509f78e7ff6",
+          "label": "Wrong person",
+          "node_type": "exit",
+          "text": "Oh baik, mohon maaf jika sudah menggangu waktunya. terima kasih",
+          "referenced_vars": [],
+          "allowed_kbs": [
+            183795,
+            183798,
+            183802,
+            183793,
+            183801,
+            183803,
+            183804,
+            183800,
+            183797,
+            183794,
+            183796,
+            183799
+          ],
+          "branches": [
+            {
+              "label": "hang up",
+              "kind": "exit",
+              "target_uuid": null,
+              "target_component": null,
+              "target_kb": null,
+              "terminal": "hangup"
+            }
+          ]
+        },
+        "1e4d81e0-2140-480c-9ce5-4b053f1d9cc9": {
+          "uuid": "1e4d81e0-2140-480c-9ce5-4b053f1d9cc9",
+          "label": "Know the PIC",
+          "node_type": "exit",
+          "text": "Bisa di bantu informasikan kepada team terkait bahwa Kami dari TikTok Shop Partner ingin membantu memberi panduan untuk mengembangkan Toko ini ya Kak. Nanti kami akan hubungi kembali, Terima kasih.",
+          "referenced_vars": [],
+          "allowed_kbs": [
+            183795,
+            183798,
+            183802,
+            183793,
+            183801,
+            183803,
+            183804,
+            183800,
+            183797,
+            183794,
+            183796,
+            183799
+          ],
+          "branches": [
+            {
+              "label": "hang up",
+              "kind": "exit",
+              "target_uuid": null,
+              "target_component": null,
+              "target_kb": null,
+              "terminal": "hangup"
+            }
+          ]
+        },
+        "c55de534-0f53-4a9b-bc2f-ee61b16c5e8d": {
+          "uuid": "c55de534-0f53-4a9b-bc2f-ee61b16c5e8d",
+          "label": "Continue the call",
+          "node_type": "talk_continue",
+          "text": "blank",
+          "referenced_vars": [],
+          "allowed_kbs": [],
+          "branches": []
+        },
+        "fe98baa7-a570-4bdc-ac90-878bbf49f022": {
+          "uuid": "fe98baa7-a570-4bdc-ac90-878bbf49f022",
+          "label": "Triggered",
+          "node_type": "conditional",
+          "text": "",
+          "referenced_vars": [
+            "Hit Busy"
+          ],
+          "allowed_kbs": [],
+          "branches": [
+            {
+              "label": "Triggered",
+              "kind": "condition",
+              "target_uuid": "878954c8-be4a-4ab9-b117-d509f78e7ff6",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            },
+            {
+              "label": "Default",
+              "kind": "default",
+              "target_uuid": "9572fb1b-ee45-4ca3-976a-fb0c0a3cbfcf",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            }
+          ]
+        },
+        "9572fb1b-ee45-4ca3-976a-fb0c0a3cbfcf": {
+          "uuid": "9572fb1b-ee45-4ca3-976a-fb0c0a3cbfcf",
+          "label": "Talk Node",
+          "node_type": "talk",
+          "text": "Hm, apa kakak memiliki akun di TikTok Shop Partner?\t",
+          "referenced_vars": [
+            "Hit Busy"
+          ],
+          "allowed_kbs": [
+            183816,
+            183815,
+            183818,
+            183819,
+            183817,
+            183806,
+            183807,
+            183808,
+            183809,
+            183810,
+            183805,
+            183811,
+            183795,
+            183798,
+            183802,
+            183793,
+            183801,
+            183803,
+            183804,
+            183800,
+            183797,
+            183794,
+            183796,
+            183799
+          ],
+          "branches": [
+            {
+              "label": "Know the PIC",
+              "kind": "intent",
+              "target_uuid": "1e4d81e0-2140-480c-9ce5-4b053f1d9cc9",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            },
+            {
+              "label": "Unclassified",
+              "kind": "intent",
+              "target_uuid": "c55de534-0f53-4a9b-bc2f-ee61b16c5e8d",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            },
+            {
+              "label": "Yes_1",
+              "kind": "intent",
+              "target_uuid": "c55de534-0f53-4a9b-bc2f-ee61b16c5e8d",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            },
+            {
+              "label": "No_1",
+              "kind": "intent",
+              "target_uuid": "878954c8-be4a-4ab9-b117-d509f78e7ff6",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            }
+          ]
+        }
+      }
+    },
+    {
+      "uuid": "62c23afb-9c22-4d21-b0e7-a1717657b7fa",
+      "name": "Already Contacted",
+      "sort_index": 4,
+      "entry_uuid": "90297f65-ae54-4483-9c64-29d8849f3a0a",
+      "root_uuids": [
+        "90297f65-ae54-4483-9c64-29d8849f3a0a"
+      ],
+      "nodes": {
+        "90297f65-ae54-4483-9c64-29d8849f3a0a": {
+          "uuid": "90297f65-ae54-4483-9c64-29d8849f3a0a",
+          "label": "Already Contacted",
+          "node_type": "exit",
+          "text": "Oh baik, mohon maaf jika sudah menggangu waktunya. terimakasih",
+          "referenced_vars": [],
+          "allowed_kbs": [
+            183795,
+            183798,
+            183802,
+            183793,
+            183801,
+            183803,
+            183804,
+            183800,
+            183797,
+            183794,
+            183796,
+            183799
+          ],
+          "branches": [
+            {
+              "label": "hang up",
+              "kind": "exit",
+              "target_uuid": null,
+              "target_component": null,
+              "target_kb": null,
+              "terminal": "hangup"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "uuid": "c5d9b0c9-b870-4813-b1f8-93c652126e71",
+      "name": "No Answer",
+      "sort_index": 5,
+      "entry_uuid": "edb7e4dd-d810-46d5-91ee-f54239977c0c",
+      "root_uuids": [
+        "edb7e4dd-d810-46d5-91ee-f54239977c0c"
+      ],
+      "nodes": {
+        "edb7e4dd-d810-46d5-91ee-f54239977c0c": {
+          "uuid": "edb7e4dd-d810-46d5-91ee-f54239977c0c",
+          "label": "Exit Node",
+          "node_type": "exit",
+          "text": "Um, mohon maaf sepertinya ada kendala sinyal. Saya akan segera menghubungi Kakak kembali ya untuk membantu memberikan panduan singkat dalam mengembangkan Toko dengan TikTok Shop Partner.",
+          "referenced_vars": [],
+          "allowed_kbs": [],
+          "branches": [
+            {
+              "label": "hang up",
+              "kind": "exit",
+              "target_uuid": null,
+              "target_component": null,
+              "target_kb": null,
+              "terminal": "hangup"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "uuid": "00d0c23c-28ce-4e9d-834a-14537557de90",
+      "name": "Loop \"Ok\"",
+      "sort_index": 1,
+      "entry_uuid": "f672048f-4b94-47ab-a45c-95a93240f817",
+      "root_uuids": [
+        "f672048f-4b94-47ab-a45c-95a93240f817"
+      ],
+      "nodes": {
+        "591aff26-8718-46fe-83e2-684a3924cbc3": {
+          "uuid": "591aff26-8718-46fe-83e2-684a3924cbc3",
+          "label": "Repeat",
+          "node_type": "goto_component",
+          "text": "",
+          "referenced_vars": [],
+          "allowed_kbs": [],
+          "branches": [
+            {
+              "label": "Loop \"Ok\"",
+              "kind": "exit",
+              "target_uuid": null,
+              "target_component": "00d0c23c-28ce-4e9d-834a-14537557de90",
+              "target_kb": null,
+              "terminal": null
+            }
+          ]
+        },
+        "f672048f-4b94-47ab-a45c-95a93240f817": {
+          "uuid": "f672048f-4b94-47ab-a45c-95a93240f817",
+          "label": "Ok",
+          "node_type": "talk",
+          "text": "",
+          "referenced_vars": [],
+          "allowed_kbs": [],
+          "branches": [
+            {
+              "label": "Unclassified",
+              "kind": "intent",
+              "target_uuid": "591aff26-8718-46fe-83e2-684a3924cbc3",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "knowledge_bases": [
+    {
+      "knowledge_id": 183793,
+      "title": "Can not hear clearly",
+      "kd_type": 0,
+      "intents": [
+        352182
+      ],
+      "multi_round": null
+    },
+    {
+      "knowledge_id": 183794,
+      "title": "No answer",
+      "kd_type": 0,
+      "intents": [
+        352183
+      ],
+      "multi_round": {
+        "components": [
+          {
+            "uuid": "c5d9b0c9-b870-4813-b1f8-93c652126e71",
+            "name": "No Answer",
+            "sort_index": 5,
+            "entry_uuid": "edb7e4dd-d810-46d5-91ee-f54239977c0c",
+            "root_uuids": [
+              "edb7e4dd-d810-46d5-91ee-f54239977c0c"
+            ],
+            "nodes": {
+              "edb7e4dd-d810-46d5-91ee-f54239977c0c": {
+                "uuid": "edb7e4dd-d810-46d5-91ee-f54239977c0c",
+                "label": "Exit Node",
+                "node_type": "exit",
+                "text": "Um, mohon maaf sepertinya ada kendala sinyal. Saya akan segera menghubungi Kakak kembali ya untuk membantu memberikan panduan singkat dalam mengembangkan Toko dengan TikTok Shop Partner.",
+                "referenced_vars": [],
+                "allowed_kbs": [],
+                "branches": [
+                  {
+                    "label": "hang up",
+                    "kind": "exit",
+                    "target_uuid": null,
+                    "target_component": null,
+                    "target_kb": null,
+                    "terminal": "hangup"
+                  }
+                ]
+              }
+            }
+          }
+        ],
+        "knowledge_bases": []
+      }
+    },
+    {
+      "knowledge_id": 183795,
+      "title": "AI can not hear clearly",
+      "kd_type": 0,
+      "intents": [
+        352184
+      ],
+      "multi_round": null
+    },
+    {
+      "knowledge_id": 183796,
+      "title": "Transferring to Human Agent",
+      "kd_type": 0,
+      "intents": [
+        352185
+      ],
+      "multi_round": null
+    },
+    {
+      "knowledge_id": 183797,
+      "title": "Interrupt",
+      "kd_type": 0,
+      "intents": [
+        352186
+      ],
+      "multi_round": null
+    },
+    {
+      "knowledge_id": 183798,
+      "title": "AI wait",
+      "kd_type": 0,
+      "intents": [
+        352187
+      ],
+      "multi_round": null
+    },
+    {
+      "knowledge_id": 183799,
+      "title": "User hesitate",
+      "kd_type": 0,
+      "intents": [
+        352188
+      ],
+      "multi_round": null
+    },
+    {
+      "knowledge_id": 183800,
+      "title": "Global unclassified",
+      "kd_type": 0,
+      "intents": [
+        352181
+      ],
+      "multi_round": null
+    },
+    {
+      "knowledge_id": 183801,
+      "title": "Chasing statement",
+      "kd_type": 0,
+      "intents": [
+        352189
+      ],
+      "multi_round": null
+    },
+    {
+      "knowledge_id": 183802,
+      "title": "Answering Machine",
+      "kd_type": 0,
+      "intents": [
+        352190
+      ],
+      "multi_round": null
+    },
+    {
+      "knowledge_id": 183803,
+      "title": "DNC",
+      "kd_type": 0,
+      "intents": [
+        352191
+      ],
+      "multi_round": null
+    },
+    {
+      "knowledge_id": 183804,
+      "title": "Echo Monitoring",
+      "kd_type": 0,
+      "intents": [
+        352192
+      ],
+      "multi_round": null
+    },
+    {
+      "knowledge_id": 183805,
+      "title": "G6. Busy/Call back later",
+      "kd_type": 0,
+      "intents": [
+        352196
+      ],
+      "multi_round": {
+        "components": [
+          {
+            "uuid": "9f3ce4bc-0b90-49a0-a9ca-ce04c5c252f5",
+            "name": "Busy/Call back later",
+            "sort_index": 1,
+            "entry_uuid": "87d12962-eeb4-4b1e-bfd9-7b211c058551",
+            "root_uuids": [
+              "87d12962-eeb4-4b1e-bfd9-7b211c058551"
+            ],
+            "nodes": {
+              "491f6dba-7a8e-4189-99cd-bc29f73c4735": {
+                "uuid": "491f6dba-7a8e-4189-99cd-bc29f73c4735",
+                "label": "Go to Pitch",
+                "node_type": "goto_component",
+                "text": "",
+                "referenced_vars": [],
+                "allowed_kbs": [
+                  183795,
+                  183798,
+                  183802,
+                  183793,
+                  183801,
+                  183803,
+                  183804,
+                  183800,
+                  183797,
+                  183794,
+                  183796,
+                  183799
+                ],
+                "branches": [
+                  {
+                    "label": "2. Pitch",
+                    "kind": "exit",
+                    "target_uuid": null,
+                    "target_component": "eb658c8c-dd71-41b2-b9f6-696280a460d4",
+                    "target_kb": null,
+                    "terminal": null
+                  }
+                ]
+              },
+              "87d12962-eeb4-4b1e-bfd9-7b211c058551": {
+                "uuid": "87d12962-eeb4-4b1e-bfd9-7b211c058551",
+                "label": "Triggered",
+                "node_type": "conditional",
+                "text": "",
+                "referenced_vars": [
+                  "Busy"
+                ],
+                "allowed_kbs": [],
+                "branches": [
+                  {
+                    "label": "Triggered",
+                    "kind": "condition",
+                    "target_uuid": "def332a8-257b-412e-92c8-339a7d00f260",
+                    "target_component": null,
+                    "target_kb": null,
+                    "terminal": null
+                  },
+                  {
+                    "label": "Default",
+                    "kind": "default",
+                    "target_uuid": "c5a4e499-0e34-478f-b3ea-24e8afe1c5df",
+                    "target_component": null,
+                    "target_kb": null,
+                    "terminal": null
+                  }
+                ]
+              },
+              "c5a4e499-0e34-478f-b3ea-24e8afe1c5df": {
+                "uuid": "c5a4e499-0e34-478f-b3ea-24e8afe1c5df",
+                "label": "Busy/Call back later",
+                "node_type": "talk",
+                "text": "Hmm. Untuk info yang akan saya sampaikan tidak memakan waktu lebih dari 3 menit kok kak dan akan sangat membantu toko kakak. Boleh ya saya lanjut jelaskan sedikit saja? / Boleh ya saya berikan panduannya sebentar saja?",
+                "referenced_vars": [
+                  "Busy"
+                ],
+                "allowed_kbs": [
+                  183813,
+                  183814,
+                  183816,
+                  183817,
+                  183821,
+                  183806,
+                  183807,
+                  183808,
+                  183809,
+                  183810,
+                  183805,
+                  183811,
+                  183812,
+                  183795,
+                  183798,
+                  183802,
+                  183793,
+                  183801,
+                  183803,
+                  183804,
+                  183800,
+                  183797,
+                  183794,
+                  183796,
+                  183799
+                ],
+                "branches": [
+                  {
+                    "label": "Busy",
+                    "kind": "intent",
+                    "target_uuid": "def332a8-257b-412e-92c8-339a7d00f260",
+                    "target_component": null,
+                    "target_kb": null,
+                    "terminal": null
+                  },
+                  {
+                    "label": "Positive/I have time",
+                    "kind": "intent",
+                    "target_uuid": "dbd55c13-1d6e-41ab-a9bf-3d59f0a8bca2",
+                    "target_component": null,
+                    "target_kb": null,
+                    "terminal": null
+                  },
+                  {
+                    "label": "Unclassified",
+                    "kind": "intent",
+                    "target_uuid": "dbd55c13-1d6e-41ab-a9bf-3d59f0a8bca2",
+                    "target_component": null,
+                    "target_kb": null,
+                    "terminal": null
+                  }
+                ]
+              },
+              "dbd55c13-1d6e-41ab-a9bf-3d59f0a8bca2": {
+                "uuid": "dbd55c13-1d6e-41ab-a9bf-3d59f0a8bca2",
+                "label": "Triggered",
+                "node_type": "conditional",
+                "text": "",
+                "referenced_vars": [
+                  "pitch status"
+                ],
+                "allowed_kbs": [],
+                "branches": [
+                  {
+                    "label": "From Greeting",
+                    "kind": "condition",
+                    "target_uuid": "491f6dba-7a8e-4189-99cd-bc29f73c4735",
+                    "target_component": null,
+                    "target_kb": null,
+                    "terminal": null
+                  },
+                  {
+                    "label": "Default",
+                    "kind": "default",
+                    "target_uuid": "03992877-d500-47bd-9caf-98e315c4d527",
+                    "target_component": null,
+                    "target_kb": null,
+                    "terminal": null
+                  }
+                ]
+              },
+              "def332a8-257b-412e-92c8-339a7d00f260": {
+                "uuid": "def332a8-257b-412e-92c8-339a7d00f260",
+                "label": "Negative",
+                "node_type": "exit",
+                "text": "Oh baik, kalau begitu nanti akan kami hubungi kembali ya, terimakasih.",
+                "referenced_vars": [],
+                "allowed_kbs": [
+                  183795,
+                  183798,
+                  183802,
+                  183793,
+                  183801,
+                  183803,
+                  183804,
+                  183800,
+                  183797,
+                  183794,
+                  183796,
+                  183799
+                ],
+                "branches": [
+                  {
+                    "label": "hang up",
+                    "kind": "exit",
+                    "target_uuid": null,
+                    "target_component": null,
+                    "target_kb": null,
+                    "terminal": "hangup"
+                  }
+                ]
+              },
+              "03992877-d500-47bd-9caf-98e315c4d527": {
+                "uuid": "03992877-d500-47bd-9caf-98e315c4d527",
+                "label": "Continue the call",
+                "node_type": "talk_continue",
+                "text": "blank",
+                "referenced_vars": [],
+                "allowed_kbs": [],
+                "branches": []
+              }
+            }
+          }
+        ],
+        "knowledge_bases": []
+      }
+    },
+    {
+      "knowledge_id": 183806,
+      "title": "G1. Are you a bot/Who are you/ Where are you calling from",
+      "kd_type": 0,
+      "intents": [
+        352221,
+        352216
+      ],
+      "multi_round": null
+    },
+    {
+      "knowledge_id": 183807,
+      "title": "G2. Is this scam/Is this legal",
+      "kd_type": 0,
+      "intents": [
+        352207
+      ],
+      "multi_round": null
+    },
+    {
+      "knowledge_id": 183808,
+      "title": "G3. Hotline/Office",
+      "kd_type": 0,
+      "intents": [
+        352339
+      ],
+      "multi_round": null
+    },
+    {
+      "knowledge_id": 183809,
+      "title": "G4. Wrong Number/Who are you looking for",
+      "kd_type": 0,
+      "intents": [
+        352200,
+        352204,
+        352214,
+        352215,
+        352209,
+        352223
+      ],
+      "multi_round": {
+        "components": [
+          {
+            "uuid": "beef268d-85eb-4824-9c42-0598813b6c3c",
+            "name": "Wrong Person/Who are you looking for",
+            "sort_index": 3,
+            "entry_uuid": "fe98baa7-a570-4bdc-ac90-878bbf49f022",
+            "root_uuids": [
+              "fe98baa7-a570-4bdc-ac90-878bbf49f022"
+            ],
+            "nodes": {
+              "878954c8-be4a-4ab9-b117-d509f78e7ff6": {
+                "uuid": "878954c8-be4a-4ab9-b117-d509f78e7ff6",
+                "label": "Wrong person",
+                "node_type": "exit",
+                "text": "Oh baik, mohon maaf jika sudah menggangu waktunya. terima kasih",
+                "referenced_vars": [],
+                "allowed_kbs": [
+                  183795,
+                  183798,
+                  183802,
+                  183793,
+                  183801,
+                  183803,
+                  183804,
+                  183800,
+                  183797,
+                  183794,
+                  183796,
+                  183799
+                ],
+                "branches": [
+                  {
+                    "label": "hang up",
+                    "kind": "exit",
+                    "target_uuid": null,
+                    "target_component": null,
+                    "target_kb": null,
+                    "terminal": "hangup"
+                  }
+                ]
+              },
+              "1e4d81e0-2140-480c-9ce5-4b053f1d9cc9": {
+                "uuid": "1e4d81e0-2140-480c-9ce5-4b053f1d9cc9",
+                "label": "Know the PIC",
+                "node_type": "exit",
+                "text": "Bisa di bantu informasikan kepada team terkait bahwa Kami dari TikTok Shop Partner ingin membantu memberi panduan untuk mengembangkan Toko ini ya Kak. Nanti kami akan hubungi kembali, Terima kasih.",
+                "referenced_vars": [],
+                "allowed_kbs": [
+                  183795,
+                  183798,
+                  183802,
+                  183793,
+                  183801,
+                  183803,
+                  183804,
+                  183800,
+                  183797,
+                  183794,
+                  183796,
+                  183799
+                ],
+                "branches": [
+                  {
+                    "label": "hang up",
+                    "kind": "exit",
+                    "target_uuid": null,
+                    "target_component": null,
+                    "target_kb": null,
+                    "terminal": "hangup"
+                  }
+                ]
+              },
+              "c55de534-0f53-4a9b-bc2f-ee61b16c5e8d": {
+                "uuid": "c55de534-0f53-4a9b-bc2f-ee61b16c5e8d",
+                "label": "Continue the call",
+                "node_type": "talk_continue",
+                "text": "blank",
+                "referenced_vars": [],
+                "allowed_kbs": [],
+                "branches": []
+              },
+              "fe98baa7-a570-4bdc-ac90-878bbf49f022": {
+                "uuid": "fe98baa7-a570-4bdc-ac90-878bbf49f022",
+                "label": "Triggered",
+                "node_type": "conditional",
+                "text": "",
+                "referenced_vars": [
+                  "Hit Busy"
+                ],
+                "allowed_kbs": [],
+                "branches": [
+                  {
+                    "label": "Triggered",
+                    "kind": "condition",
+                    "target_uuid": "878954c8-be4a-4ab9-b117-d509f78e7ff6",
+                    "target_component": null,
+                    "target_kb": null,
+                    "terminal": null
+                  },
+                  {
+                    "label": "Default",
+                    "kind": "default",
+                    "target_uuid": "9572fb1b-ee45-4ca3-976a-fb0c0a3cbfcf",
+                    "target_component": null,
+                    "target_kb": null,
+                    "terminal": null
+                  }
+                ]
+              },
+              "9572fb1b-ee45-4ca3-976a-fb0c0a3cbfcf": {
+                "uuid": "9572fb1b-ee45-4ca3-976a-fb0c0a3cbfcf",
+                "label": "Talk Node",
+                "node_type": "talk",
+                "text": "Hm, apa kakak memiliki akun di TikTok Shop Partner?\t",
+                "referenced_vars": [
+                  "Hit Busy"
+                ],
+                "allowed_kbs": [
+                  183816,
+                  183815,
+                  183818,
+                  183819,
+                  183817,
+                  183806,
+                  183807,
+                  183808,
+                  183809,
+                  183810,
+                  183805,
+                  183811,
+                  183795,
+                  183798,
+                  183802,
+                  183793,
+                  183801,
+                  183803,
+                  183804,
+                  183800,
+                  183797,
+                  183794,
+                  183796,
+                  183799
+                ],
+                "branches": [
+                  {
+                    "label": "Know the PIC",
+                    "kind": "intent",
+                    "target_uuid": "1e4d81e0-2140-480c-9ce5-4b053f1d9cc9",
+                    "target_component": null,
+                    "target_kb": null,
+                    "terminal": null
+                  },
+                  {
+                    "label": "Unclassified",
+                    "kind": "intent",
+                    "target_uuid": "c55de534-0f53-4a9b-bc2f-ee61b16c5e8d",
+                    "target_component": null,
+                    "target_kb": null,
+                    "terminal": null
+                  },
+                  {
+                    "label": "Yes_1",
+                    "kind": "intent",
+                    "target_uuid": "c55de534-0f53-4a9b-bc2f-ee61b16c5e8d",
+                    "target_component": null,
+                    "target_kb": null,
+                    "terminal": null
+                  },
+                  {
+                    "label": "No_1",
+                    "kind": "intent",
+                    "target_uuid": "878954c8-be4a-4ab9-b117-d509f78e7ff6",
+                    "target_component": null,
+                    "target_kb": null,
+                    "terminal": null
+                  }
+                ]
+              }
+            }
+          }
+        ],
+        "knowledge_bases": []
+      }
+    },
+    {
+      "knowledge_id": 183810,
+      "title": "G5. Already Contacted/Stop Calling me",
+      "kd_type": 0,
+      "intents": [
+        352206
+      ],
+      "multi_round": {
+        "components": [
+          {
+            "uuid": "62c23afb-9c22-4d21-b0e7-a1717657b7fa",
+            "name": "Already Contacted",
+            "sort_index": 4,
+            "entry_uuid": "90297f65-ae54-4483-9c64-29d8849f3a0a",
+            "root_uuids": [
+              "90297f65-ae54-4483-9c64-29d8849f3a0a"
+            ],
+            "nodes": {
+              "90297f65-ae54-4483-9c64-29d8849f3a0a": {
+                "uuid": "90297f65-ae54-4483-9c64-29d8849f3a0a",
+                "label": "Already Contacted",
+                "node_type": "exit",
+                "text": "Oh baik, mohon maaf jika sudah menggangu waktunya. terimakasih",
+                "referenced_vars": [],
+                "allowed_kbs": [
+                  183795,
+                  183798,
+                  183802,
+                  183793,
+                  183801,
+                  183803,
+                  183804,
+                  183800,
+                  183797,
+                  183794,
+                  183796,
+                  183799
+                ],
+                "branches": [
+                  {
+                    "label": "hang up",
+                    "kind": "exit",
+                    "target_uuid": null,
+                    "target_component": null,
+                    "target_kb": null,
+                    "terminal": "hangup"
+                  }
+                ]
+              }
+            }
+          }
+        ],
+        "knowledge_bases": []
+      }
+    },
+    {
+      "knowledge_id": 183811,
+      "title": "G7. Just text/email me/SMS/WA",
+      "kd_type": 0,
+      "intents": [
+        352205
+      ],
+      "multi_round": {
+        "components": [
+          {
+            "uuid": "29107ce8-1a8f-4273-82b4-cc1ac1e65cbc",
+            "name": "Send Info/Text customer",
+            "sort_index": 1,
+            "entry_uuid": "17f03dc2-fd69-44b3-931d-fe5eb282d7cf",
+            "root_uuids": [
+              "17f03dc2-fd69-44b3-931d-fe5eb282d7cf"
+            ],
+            "nodes": {
+              "17f03dc2-fd69-44b3-931d-fe5eb282d7cf": {
+                "uuid": "17f03dc2-fd69-44b3-931d-fe5eb282d7cf",
+                "label": "Negative",
+                "node_type": "exit",
+                "text": "Baik kak, kami juga akan memberikan detail nya di seller center kakak secara berkala, bisa di bantu cek untuk notifikasi yang masuk ya kak. Terimakasih",
+                "referenced_vars": [],
+                "allowed_kbs": [
+                  183795,
+                  183798,
+                  183802,
+                  183793,
+                  183801,
+                  183803,
+                  183804,
+                  183800,
+                  183797,
+                  183794,
+                  183796,
+                  183799
+                ],
+                "branches": [
+                  {
+                    "label": "hang up",
+                    "kind": "exit",
+                    "target_uuid": null,
+                    "target_component": null,
+                    "target_kb": null,
+                    "terminal": "hangup"
+                  }
+                ]
+              }
+            }
+          }
+        ],
+        "knowledge_bases": []
+      }
+    },
+    {
+      "knowledge_id": 183812,
+      "title": "G8. How long is this call",
+      "kd_type": 0,
+      "intents": [
+        352220
+      ],
+      "multi_round": null
+    },
+    {
+      "knowledge_id": 183813,
+      "title": "B1. What is this regarding",
+      "kd_type": 1,
+      "intents": [
+        352224
+      ],
+      "multi_round": null
+    },
+    {
+      "knowledge_id": 183814,
+      "title": "B2. What is TSP matchmaking",
+      "kd_type": 1,
+      "intents": [
+        352341
+      ],
+      "multi_round": null
+    },
+    {
+      "knowledge_id": 183815,
+      "title": "B3. Will all sellers eligible",
+      "kd_type": 1,
+      "intents": [
+        352229
+      ],
+      "multi_round": null
+    },
+    {
+      "knowledge_id": 183816,
+      "title": "B4. Will Close my shop",
+      "kd_type": 1,
+      "intents": [
+        352227,
+        352198
+      ],
+      "multi_round": {
+        "components": [
+          {
+            "uuid": "3012bb57-c647-4d66-9c3e-9510f6e3faf7",
+            "name": "Will close shop",
+            "sort_index": 2,
+            "entry_uuid": "a82a4d82-40ac-4958-8e13-ce3610424824",
+            "root_uuids": [
+              "a82a4d82-40ac-4958-8e13-ce3610424824"
+            ],
+            "nodes": {
+              "3d21434f-2dfa-4de8-8d1b-47c5ce08686a": {
+                "uuid": "3d21434f-2dfa-4de8-8d1b-47c5ce08686a",
+                "label": "Negative",
+                "node_type": "exit",
+                "text": "Baik jika begitu kak, terima kasih ya Kak atas konfirmasinya. Semoga sehat dan sukses selalu Kak. Selamat melanjutkan aktivitas.",
+                "referenced_vars": [],
+                "allowed_kbs": [
+                  183795,
+                  183798,
+                  183802,
+                  183793,
+                  183801,
+                  183803,
+                  183804,
+                  183800,
+                  183797,
+                  183794,
+                  183796,
+                  183799
+                ],
+                "branches": [
+                  {
+                    "label": "hang up",
+                    "kind": "exit",
+                    "target_uuid": null,
+                    "target_component": null,
+                    "target_kb": null,
+                    "terminal": "hangup"
+                  }
+                ]
+              },
+              "d9d72558-cde9-4e9d-8684-2f93a1a53239": {
+                "uuid": "d9d72558-cde9-4e9d-8684-2f93a1a53239",
+                "label": "Will Close Shop",
+                "node_type": "talk",
+                "text": "Wah sangat disayangkan ya kak, apakah memungkinkan untuk lanjut berjualan di Tiktok Shop nya?",
+                "referenced_vars": [
+                  "Hit Will Close Shop"
+                ],
+                "allowed_kbs": [
+                  183813,
+                  183815,
+                  183817,
+                  183816,
+                  183818,
+                  183806,
+                  183807,
+                  183808,
+                  183809,
+                  183810,
+                  183805,
+                  183811,
+                  183795,
+                  183798,
+                  183802,
+                  183793,
+                  183801,
+                  183803,
+                  183804,
+                  183800,
+                  183797,
+                  183794,
+                  183796,
+                  183799
+                ],
+                "branches": [
+                  {
+                    "label": "Unclassified",
+                    "kind": "intent",
+                    "target_uuid": "66e5565b-82f3-41af-8046-e5fe32adc840",
+                    "target_component": null,
+                    "target_kb": null,
+                    "terminal": null
+                  },
+                  {
+                    "label": "No",
+                    "kind": "intent",
+                    "target_uuid": "3d21434f-2dfa-4de8-8d1b-47c5ce08686a",
+                    "target_component": null,
+                    "target_kb": null,
+                    "terminal": null
+                  },
+                  {
+                    "label": "Yes",
+                    "kind": "intent",
+                    "target_uuid": "cd489d9f-2877-4041-9eee-79ed3c9a2623",
+                    "target_component": null,
+                    "target_kb": null,
+                    "terminal": null
+                  }
+                ]
+              },
+              "1705ce58-faa5-402b-98d0-4137ba5b36f2": {
+                "uuid": "1705ce58-faa5-402b-98d0-4137ba5b36f2",
+                "label": "Go to Pitching",
+                "node_type": "goto_component",
+                "text": "",
+                "referenced_vars": [],
+                "allowed_kbs": [
+                  183795,
+                  183798,
+                  183802,
+                  183793,
+                  183801,
+                  183803,
+                  183804,
+                  183800,
+                  183797,
+                  183794,
+                  183796,
+                  183799
+                ],
+                "branches": [
+                  {
+                    "label": "2. Pitch",
+                    "kind": "exit",
+                    "target_uuid": null,
+                    "target_component": "eb658c8c-dd71-41b2-b9f6-696280a460d4",
+                    "target_kb": null,
+                    "terminal": null
+                  }
+                ]
+              },
+              "cd489d9f-2877-4041-9eee-79ed3c9a2623": {
+                "uuid": "cd489d9f-2877-4041-9eee-79ed3c9a2623",
+                "label": "Conditional Judgment Node",
+                "node_type": "conditional",
+                "text": "",
+                "referenced_vars": [
+                  "pitch status"
+                ],
+                "allowed_kbs": [],
+                "branches": [
+                  {
+                    "label": "Go to pitching",
+                    "kind": "condition",
+                    "target_uuid": "1705ce58-faa5-402b-98d0-4137ba5b36f2",
+                    "target_component": null,
+                    "target_kb": null,
+                    "terminal": null
+                  },
+                  {
+                    "label": "Default",
+                    "kind": "default",
+                    "target_uuid": "f02c1a23-6eed-4d17-a192-196554007ab1",
+                    "target_component": null,
+                    "target_kb": null,
+                    "terminal": null
+                  }
+                ]
+              },
+              "66e5565b-82f3-41af-8046-e5fe32adc840": {
+                "uuid": "66e5565b-82f3-41af-8046-e5fe32adc840",
+                "label": "Go to Unclassified",
+                "node_type": "goto_component",
+                "text": "",
+                "referenced_vars": [],
+                "allowed_kbs": [
+                  183795,
+                  183798,
+                  183802,
+                  183793,
+                  183801,
+                  183803,
+                  183804,
+                  183800,
+                  183797,
+                  183794,
+                  183796,
+                  183799
+                ],
+                "branches": [
+                  {
+                    "label": "9. Unclassified Closing",
+                    "kind": "exit",
+                    "target_uuid": null,
+                    "target_component": "8dc9787f-aa1b-4f91-b677-d3ac845e83ca",
+                    "target_kb": null,
+                    "terminal": null
+                  }
+                ]
+              },
+              "a82a4d82-40ac-4958-8e13-ce3610424824": {
+                "uuid": "a82a4d82-40ac-4958-8e13-ce3610424824",
+                "label": "Conditional Judgment Node",
+                "node_type": "conditional",
+                "text": "",
+                "referenced_vars": [
+                  "Hit Will Close Shop"
+                ],
+                "allowed_kbs": [],
+                "branches": [
+                  {
+                    "label": "Triggered",
+                    "kind": "condition",
+                    "target_uuid": "3d21434f-2dfa-4de8-8d1b-47c5ce08686a",
+                    "target_component": null,
+                    "target_kb": null,
+                    "terminal": null
+                  },
+                  {
+                    "label": "Default",
+                    "kind": "default",
+                    "target_uuid": "d9d72558-cde9-4e9d-8684-2f93a1a53239",
+                    "target_component": null,
+                    "target_kb": null,
+                    "terminal": null
+                  }
+                ]
+              },
+              "f02c1a23-6eed-4d17-a192-196554007ab1": {
+                "uuid": "f02c1a23-6eed-4d17-a192-196554007ab1",
+                "label": "Continue the call",
+                "node_type": "talk_continue",
+                "text": "Baik kak saya izin lanjutkan sebentar ya,",
+                "referenced_vars": [],
+                "allowed_kbs": [],
+                "branches": []
+              }
+            }
+          }
+        ],
+        "knowledge_bases": []
+      }
+    },
+    {
+      "knowledge_id": 183817,
+      "title": "B5. Other Issues (technical issue:cant login, apps not work,etc)",
+      "kd_type": 1,
+      "intents": [
+        352228
+      ],
+      "multi_round": null
+    },
+    {
+      "knowledge_id": 183818,
+      "title": "B6. Already complete",
+      "kd_type": 1,
+      "intents": [
+        352225
+      ],
+      "multi_round": null
+    },
+    {
+      "knowledge_id": 183819,
+      "title": "B7. Benefit/Possible results",
+      "kd_type": 0,
+      "intents": [
+        352226
+      ],
+      "multi_round": null
+    },
+    {
+      "knowledge_id": 183820,
+      "title": "B8. What are the requirements to activate?/How long is the submission process?",
+      "kd_type": 0,
+      "intents": [
+        352231,
+        353115
+      ],
+      "multi_round": null
+    },
+    {
+      "knowledge_id": 183821,
+      "title": "B9. Will there be any cost?",
+      "kd_type": 0,
+      "intents": [
+        352338
+      ],
+      "multi_round": null
+    },
+    {
+      "knowledge_id": 224365,
+      "title": "AM - Provider Issue",
+      "kd_type": 0,
+      "intents": [
+        427491
+      ],
+      "multi_round": null
+    }
+  ]
+}
