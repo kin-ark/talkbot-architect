@@ -23,3 +23,8 @@ def add_skill_paths() -> None:
 
 def repo_root() -> Path:
     return _REPO_ROOT
+
+
+def skills_dir() -> Path:
+    """Return the root of the .claude/skills directory."""
+    return _SKILLS
