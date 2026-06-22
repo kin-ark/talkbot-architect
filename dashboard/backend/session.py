@@ -12,12 +12,22 @@ class Session:
         self._idx: int = -1
         self.transcript: list[Message] = []
         self.pending: dict | None = None
+        self.speech_name: str = "speech_export.json"
+        self.wavs: dict[str, bytes] = {}
 
-    def load(self, data: dict) -> None:
+    def load(
+        self,
+        data: dict,
+        *,
+        speech_name: str = "speech_export.json",
+        wavs: dict[str, bytes] | None = None,
+    ) -> None:
         self._stack = [copy.deepcopy(data)]
         self._idx = 0
         self.transcript = []
         self.pending = None
+        self.speech_name = speech_name
+        self.wavs = wavs if wavs is not None else {}
 
     def current(self) -> dict:
         return self._stack[self._idx]

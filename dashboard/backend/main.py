@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import json
 import os
+import tempfile
+from pathlib import Path
 
-from fastapi import Depends, FastAPI, File, HTTPException, UploadFile
+from fastapi import Depends, FastAPI, File, HTTPException, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -12,6 +14,7 @@ from llm.base import LLMClient
 from llm.factory import LLMConfigError, make_client
 from orchestrator import run_turn
 from session import Session
+from wizmodifier.io import InputBundle
 
 app = FastAPI(title="Talkbot Architect API")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
@@ -69,10 +72,40 @@ async def health():
     return {"status": "ok"}
 
 
+@app.get("/export")
+async def export_current(_: None = Depends(_require_session)):
+    payload = json.dumps(SESSION.current(), ensure_ascii=False, separators=(",", ":"))
+    return Response(
+        content=payload,
+        media_type="application/json",
+        headers={"Content-Disposition": f"attachment; filename={SESSION.speech_name}"},
+    )
+
+
 @app.post("/session")
 async def create_session(file: UploadFile = File(...)):
-    data = _parse_or_400(await file.read())
-    SESSION.load(data)
+    raw = await file.read()
+    filename = file.filename or ""
+
+    # Detect ZIP by filename or magic bytes (PK = 0x50 0x4B).
+    is_zip = filename.lower().endswith(".zip") or raw[:2] == b"PK"
+
+    if is_zip:
+        with tempfile.NamedTemporaryFile(suffix=".zip", delete=False) as tmp:
+            tmp.write(raw)
+            tmp_path = Path(tmp.name)
+        try:
+            bundle = InputBundle.load(tmp_path)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Invalid ZIP export: {e}")
+        finally:
+            tmp_path.unlink(missing_ok=True)
+        data = bundle.data
+        SESSION.load(data, speech_name=bundle.speech_name, wavs=bundle.wavs)
+    else:
+        data = _parse_or_400(raw)
+        SESSION.load(data)
+
     # Validate only once; reuse the result for the response.
     findings = agents.validate(data)
     return {"summary": agents.summarize(data), "findings": findings}
