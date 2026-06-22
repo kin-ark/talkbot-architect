@@ -28,6 +28,7 @@ function layout(nodes, edges) {
 
 export default function FlowCanvas({ summary, onSelectNode }) {
   const { nodes, edges } = useMemo(() => {
+    if (!summary) return { nodes: [], edges: [] };
     const { nodes: rawNodes, edges: rawEdges } = buildGraph(summary);
 
     // Strip group (component) nodes — xyflow v12 uses parentId not parentNode,
@@ -39,9 +40,9 @@ export default function FlowCanvas({ summary, onSelectNode }) {
         ...n,
         style: {
           ...n.style,
-          borderLeft: `4px solid ${TYPE_COLOR[n.data?.node_type] || '#94a3b8'}`,
           background: '#fff',
           border: '1px solid #e2e8f0',
+          borderLeft: `4px solid ${TYPE_COLOR[n.data?.node_type] || '#94a3b8'}`,
           borderRadius: 8,
           padding: 8,
           fontSize: 12,
