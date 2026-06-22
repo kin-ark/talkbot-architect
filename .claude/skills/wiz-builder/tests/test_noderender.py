@@ -37,3 +37,29 @@ def test_single_node_matches_reference_shape():
     nid = next(iter(r.details))
     assert r.routes[nid] == {}
     assert r.inbound_ports == [{"name": "Talk Node", "type": 1, "uuid": nid, "is_default": True}]
+
+
+def test_edge_wires_routes_and_entry_detection():
+    from wizbuilder.noderender import NodeSpec, EdgeSpec, render_component_nodes
+    from wizbuilder.ids import IdMinter
+    r = render_component_nodes(
+        [NodeSpec("a","AAA"), NodeSpec("b","BBB")],
+        [EdgeSpec(src="a", branch="Unclassified", dst="b")],
+        canvas_index=0, comp_uuid="c", speech_id=8309,
+        branch_intent_ids={"Positive":1,"Negative":2,"Reject":3,"Unclassified":4,"No answer":5},
+        kb_ids=[], node_language="3", minter=IdMinter("h"),
+    )
+    ids = list(r.details)
+    a_uuid = next(k for k,v in r.details.items() if v["data"]["dialog_list"][0]["text"]=="AAA")
+    b_uuid = next(k for k,v in r.details.items() if v["data"]["dialog_list"][0]["text"]=="BBB")
+    # entry detection: a is entry (is_default true, in inbound), b is not
+    assert r.details[a_uuid]["is_default"] is True
+    assert r.details[b_uuid]["is_default"] is False
+    assert [p["uuid"] for p in r.inbound_ports] == [a_uuid]
+    # edge in routes under a's Unclassified port -> b
+    a_unclass_port = next(p["id"] for p in r.details[a_uuid]["canvas"]["ports"]["items"]
+                          if p["name"]=="Unclassified")
+    edge = r.routes[a_uuid][a_unclass_port]
+    assert edge["source"]["uuid"] == a_unclass_port
+    assert edge["target"]["uuid"] == b_uuid
+    assert r.routes[b_uuid] == {}

@@ -114,12 +114,15 @@ def render_component_nodes(
     inbound_ports: list = []
     sentence_cut_speech: list = []
 
-    # For Task 1 there are no edges, so every node is an entry node.
-    # Task 2 will compute entry nodes from the edge graph instead.
+    # Compute entry nodes: nodes not targeted by any edge.
     nodes_with_no_incoming: set[str] = {n.id for n in nodes}
     if edges:
         dst_ids = {e.dst for e in edges}
         nodes_with_no_incoming -= dst_ids
+
+    # Build node_id -> node_uuid and node_id -> port_uuid maps (filled during loop).
+    _node_id_to_uuid: dict[str, str] = {}
+    _node_id_to_port_uuids: dict[str, dict[str, str]] = {}
 
     for sort_index, spec in enumerate(nodes, start=1):
         nid_str = spec.id
@@ -133,6 +136,10 @@ def render_component_nodes(
         port_uuids: dict[str, str] = {
             b: str(minter.uuid(f"port:{ci}:{nid_str}:{b}")) for b in _CHECKED
         }
+
+        # Track mappings for edge wiring after the loop.
+        _node_id_to_uuid[nid_str] = node_uuid
+        _node_id_to_port_uuids[nid_str] = port_uuids
 
         # --- canvas.ports.items (one per checked branch) ---
         items = [
@@ -296,6 +303,18 @@ def render_component_nodes(
             inbound_ports.append(
                 {"name": "Talk Node", "type": 1, "uuid": node_uuid, "is_default": True}
             )
+
+    # --- Wire edges into routes ---
+    for e in edges:
+        src_node_uuid = _node_id_to_uuid[e.src]
+        dst_node_uuid = _node_id_to_uuid[e.dst]
+        src_port_uuid = _node_id_to_port_uuids[e.src][e.branch]
+        edge_uuid = str(minter.uuid(f"edge:{canvas_index}:{e.src}:{e.branch}"))
+        routes[src_node_uuid][src_port_uuid] = {
+            "source": {"type": 1, "uuid": src_port_uuid},
+            "target": {"type": 1, "uuid": dst_node_uuid},
+            "portDetail": {"id": edge_uuid, "zIndex": 3},
+        }
 
     return RenderedNodes(
         details=details,
