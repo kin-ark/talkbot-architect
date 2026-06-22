@@ -24,6 +24,9 @@ _SPECS = [
               "required": ["path", "value"]}),
     ToolSpec("delete_path", "Escape-hatch edit: delete the value at a path. Proposes only.",
              {"type": "object", "properties": {"path": {"type": "string"}}, "required": ["path"]}),
+    ToolSpec("build", "Scaffold a brand-new dialogue from a manifest YAML. Proposes a full new doc.",
+             {"type": "object", "properties": {"manifest_yaml": {"type": "string"}},
+              "required": ["manifest_yaml"]}),
 ]
 
 
@@ -51,6 +54,12 @@ def dispatch(name: str, args: dict, data: dict) -> dict:
         import yaml
         mods = yaml.safe_dump([{"op": "delete-path", "path": args["path"]}])
         return _as_proposal(agents.propose_mods(data, mods))
+    if name == "build":
+        p = agents.propose_build(args["manifest_yaml"])
+        if not p["ok"]:
+            return {"result": {"ok": False, "error": p["error"]}, "proposal": None}
+        return {"result": {"ok": True}, "proposal": {"proposed_data": p["proposed_data"],
+                "diff": "(new dialogue scaffolded)", "checker_delta": None}}
     return {"result": {"error": f"unknown tool {name!r}"}, "proposal": None}
 
 

@@ -33,10 +33,10 @@ def test_specs_returns_list_of_tool_spec():
     assert all(isinstance(s, ToolSpec) for s in specs)
 
 
-def test_specs_have_all_seven_tools():
+def test_specs_have_all_eight_tools():
     names = {t.name for t in registry.tool_specs()}
     expected = {"validate", "summarize", "read_node", "get_facts",
-                "apply_mods", "set_path", "delete_path"}
+                "apply_mods", "set_path", "delete_path", "build"}
     assert names == expected
 
 

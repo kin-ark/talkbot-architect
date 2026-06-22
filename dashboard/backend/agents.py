@@ -10,6 +10,9 @@ from __future__ import annotations
 
 import copy
 import hashlib
+import json
+import tempfile
+from pathlib import Path
 
 from paths import add_skill_paths, skills_dir
 
@@ -20,6 +23,9 @@ from wizcheck.checks import run_all_checks      # noqa: E402
 from flowmodel import build_flow_model, flow_model_to_dict, unwrap  # noqa: E402
 
 import yaml  # noqa: E402  (stdlib-adjacent; available in env)
+
+from wizbuilder.compile import compile_manifest, CompileError   # noqa: E402
+from wizbuilder.manifest import ManifestError                    # noqa: E402
 
 from wizmodifier.io import InputBundle           # noqa: E402
 from wizmodifier.apply import run_mods           # noqa: E402
@@ -166,3 +172,23 @@ def propose_mods(data: dict, mods_yaml: str) -> dict:
         }
     except (ValueError, KeyError, yaml.YAMLError) as e:
         return {"ok": False, "error": str(e), "known_ops": sorted(OP_REGISTRY)}
+
+
+def propose_build(manifest_yaml: str) -> dict:
+    """Write *manifest_yaml* to a temp file, compile via wiz-builder, read JSON back.
+
+    Returns a dict with keys:
+      ok             – True on success, False on any error
+      proposed_data  – the produced speech*.json as a dict (present only when ok=True)
+      error          – error message string (present only when ok=False)
+    """
+    try:
+        with tempfile.TemporaryDirectory() as tmp:
+            mpath = Path(tmp) / "manifest.yaml"
+            opath = Path(tmp) / "speech_build.json"
+            mpath.write_text(manifest_yaml, encoding="utf-8")
+            compile_manifest(mpath, opath)
+            data = json.loads(opath.read_text(encoding="utf-8"))
+        return {"ok": True, "proposed_data": data, "error": None}
+    except (ManifestError, CompileError, ValueError) as e:
+        return {"ok": False, "proposed_data": None, "error": str(e)}
