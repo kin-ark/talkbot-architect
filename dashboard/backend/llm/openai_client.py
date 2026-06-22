@@ -6,9 +6,12 @@ from llm.base import LLMClient, LLMResponse, Message, ToolCall, ToolSpec
 
 
 class OpenAIClient(LLMClient):
-    def __init__(self, api_key: str, model: str):
+    def __init__(self, api_key: str, model: str, base_url: str | None = None):
         from openai import OpenAI
-        self._client = OpenAI(api_key=api_key)
+        kwargs: dict = {"api_key": api_key}
+        if base_url:
+            kwargs["base_url"] = base_url
+        self._client = OpenAI(**kwargs)
         self._model = model
 
     def chat(self, messages: list[Message], tools: list[ToolSpec]) -> LLMResponse:

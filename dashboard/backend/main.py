@@ -1,15 +1,23 @@
 from __future__ import annotations
 
+# Load .env before anything reads os.environ — python-dotenv no-ops when
+# no .env is present, so this is safe in production too.
+from dotenv import load_dotenv
+load_dotenv()
+
 import json
 import os
 import tempfile
 from pathlib import Path
+from typing import Optional
 
 from fastapi import Depends, FastAPI, File, HTTPException, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 import agents
+import config_store
+from config_store import CONFIG, any_override, effective_key_set
 from llm.base import LLMClient
 from llm.factory import LLMConfigError, make_client
 from orchestrator import run_turn
@@ -23,11 +31,18 @@ SESSION = Session()
 
 
 # ---------------------------------------------------------------------------
-# Request models
+# Request / response models
 # ---------------------------------------------------------------------------
 
 class ChatRequest(BaseModel):
     message: str
+
+
+class ConfigUpdate(BaseModel):
+    provider: Optional[str] = None
+    model: Optional[str] = None
+    base_url: Optional[str] = None
+    api_key: Optional[str] = None
 
 
 # ---------------------------------------------------------------------------
@@ -53,14 +68,31 @@ def _parse_or_400(content: bytes) -> dict:
 
 
 def get_client() -> LLMClient:
+    """Build an LLMClient from CONFIG overrides + env fallbacks."""
+    provider = CONFIG.provider or os.environ.get("LLM_PROVIDER")
+    model = CONFIG.model or os.environ.get("LLM_MODEL")
+    base_url = CONFIG.base_url  # factory also falls back to *_BASE_URL env vars
+    api_key = CONFIG.api_key    # factory falls back to provider env key when None
     try:
-        return make_client(
-            provider=os.environ.get("LLM_PROVIDER"),
-            api_key=None,
-            model=os.environ.get("LLM_MODEL"),
-        )
+        return make_client(provider=provider, api_key=api_key, model=model, base_url=base_url)
     except LLMConfigError as e:
         raise HTTPException(status_code=503, detail=str(e))
+
+
+def _config_response() -> dict:
+    """Build the /config response body. NEVER includes the api_key value."""
+    provider = CONFIG.provider or os.environ.get("LLM_PROVIDER")
+    model = CONFIG.model or os.environ.get("LLM_MODEL")
+    base_url = CONFIG.base_url or os.environ.get(
+        "ANTHROPIC_BASE_URL" if (provider or "anthropic").lower() == "anthropic" else "OPENAI_BASE_URL"
+    )
+    return {
+        "provider": provider,
+        "model": model,
+        "base_url": base_url,
+        "key_set": effective_key_set(provider),
+        "source": "override" if any_override() else "env",
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -70,6 +102,41 @@ def get_client() -> LLMClient:
 @app.get("/health")
 async def health():
     return {"status": "ok"}
+
+
+@app.get("/config")
+async def get_config():
+    """Return current effective LLM config. api_key value is NEVER included."""
+    return _config_response()
+
+
+@app.put("/config")
+async def put_config(update: ConfigUpdate):
+    """Override any subset of provider/model/base_url/api_key in memory.
+
+    An empty-string api_key is treated as 'leave unchanged' (not a clear).
+    Returns the same shape as GET /config.
+    """
+    if update.provider is not None:
+        CONFIG.provider = update.provider
+    if update.model is not None:
+        CONFIG.model = update.model
+    if update.base_url is not None:
+        CONFIG.base_url = update.base_url
+    # Empty string means "leave unchanged"; only update when truthy
+    if update.api_key:
+        CONFIG.api_key = update.api_key
+    return _config_response()
+
+
+@app.post("/config/clear")
+async def clear_config():
+    """Reset all CONFIG overrides — effective config reverts to env vars."""
+    CONFIG.provider = None
+    CONFIG.model = None
+    CONFIG.base_url = None
+    CONFIG.api_key = None
+    return _config_response()
 
 
 @app.get("/export")

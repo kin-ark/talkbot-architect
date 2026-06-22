@@ -1,6 +1,11 @@
 __pycache__/
 *.wav
 
+# Environment variable files — never commit API keys
+.env
+.env.*
+!.env.example
+
 # WIZ manuals and decoded extraction scratch — never committed
 docs/personal/*.pdf
 *_dec.txt
