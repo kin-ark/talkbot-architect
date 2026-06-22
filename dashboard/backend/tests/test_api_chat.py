@@ -1,4 +1,5 @@
 import json
+import pytest
 from pathlib import Path
 from fastapi.testclient import TestClient
 import main
@@ -9,8 +10,15 @@ _REAL = Path(__file__).resolve().parents[3] / "speech2572824560161596380.unpacke
 client = TestClient(app)
 
 
-def setup_function():
+@pytest.fixture(autouse=True)
+def _reset_session():
+    main.SESSION._stack = []
+    main.SESSION._idx = -1
+    main.SESSION.pending = None
+    main.SESSION.transcript = []
     main.SESSION.load(json.loads(_REAL.read_text(encoding="utf-8")))
+    yield
+    main.app.dependency_overrides.clear()
 
 
 def test_chat_apply_undo(monkeypatch):
@@ -24,12 +32,10 @@ def test_chat_apply_undo(monkeypatch):
     assert r.status_code == 200 and r.json()["proposal"] is not None
     assert client.post("/apply").json()["applied"] is True
     assert client.post("/undo").json()["ok"] is True
-    app.dependency_overrides.clear()
 
 
 def test_apply_without_pending_returns_409():
     """After undo clears pending, /apply should return 409."""
-    app.dependency_overrides.clear()
     main.SESSION.pending = None
     r = client.post("/apply")
     assert r.status_code == 409
