@@ -164,5 +164,5 @@ def propose_mods(data: dict, mods_yaml: str) -> dict:
             "checker_delta": diffing.checker_delta(packed, proposed),
             "error": None,
         }
-    except (ValueError, KeyError) as e:
+    except (ValueError, KeyError, yaml.YAMLError) as e:
         return {"ok": False, "error": str(e), "known_ops": sorted(OP_REGISTRY)}
