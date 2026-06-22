@@ -23,7 +23,7 @@ export default function UploadZone({ onUpload }) {
         accept=".json,.zip"
       />
       <Upload className="mx-auto h-12 w-12 text-gray-400" />
-      <p className="mt-2 text-sm text-gray-600">Drag speech*.json here, or click to select</p>
+      <p className="mt-2 text-sm text-gray-600">Drag speech*.json or export .zip here, or click to select</p>
     </div>
   );
 }

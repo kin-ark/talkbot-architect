@@ -204,7 +204,12 @@ def _build_branches(
             intent_lookup[port_id] = entry.get("name", "")
 
     for port_uuid, edge in edge_map.items():
-        target_uuid = edge["target"]["uuid"]
+        target = edge.get("target") if isinstance(edge, dict) else None
+        if not isinstance(target, dict):
+            continue
+        target_uuid = target.get("uuid")
+        if not target_uuid:
+            continue
         label = intent_lookup.get(port_uuid, "")
 
         if node_type == "conditional":

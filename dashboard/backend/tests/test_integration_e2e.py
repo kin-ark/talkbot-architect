@@ -41,5 +41,16 @@ def test_e2e_upload_edit_apply_export():
     err_after = sum(f["severity"] == "error" for f in applied["findings"])
     assert err_after <= err_before  # no new errors introduced
     export = client.get("/export")
-    assert json.loads(export.content)  # valid JSON round-trips
+    exported = json.loads(export.content)  # valid JSON round-trips
+    assert exported
+    # Assert the mod took effect: BizSpeechComponent is a JSON-encoded string
+    # in wire format; decode it and verify every component carries speechId=424242.
+    bsc_raw = exported.get("BizSpeechComponent")
+    assert bsc_raw is not None, "BizSpeechComponent missing from export"
+    bsc = json.loads(bsc_raw) if isinstance(bsc_raw, str) else bsc_raw
+    assert isinstance(bsc, list) and len(bsc) > 0, "BizSpeechComponent is empty"
+    for comp in bsc:
+        assert comp.get("speechId") == 424242, (
+            f"expected speechId=424242 in component, got {comp.get('speechId')!r}"
+        )
     app.dependency_overrides.clear()

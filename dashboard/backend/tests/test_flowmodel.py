@@ -529,3 +529,72 @@ class TestBuildFlowModel:
         assert "components" in d
         assert "knowledge_bases" in d
         assert d["components"][0]["uuid"] == "comp-smoke"
+
+
+# ---------------------------------------------------------------------------
+# Fix 3: malformed route entries are skipped silently (no KeyError)
+# ---------------------------------------------------------------------------
+
+class TestMalformedRouteHandling:
+    """_build_branches must skip edges with missing/malformed target gracefully."""
+
+    def _make_comp_with_bad_route(self):
+        """Talk node whose routes contain one good edge and several bad ones."""
+        return {
+            "componentUuid": "comp-malformed",
+            "name": "Malformed Route Component",
+            "sortIndex": 1,
+            "details": {
+                "talk1": {
+                    "type": 1,
+                    "name": "Talk Node",
+                    "is_default": True,
+                    "data": {
+                        "list": [{"text": "Hi"}],
+                        "all_client_intent": [
+                            {"name": "Good", "id": "port-good"},
+                            {"name": "BadNoTarget", "id": "port-bad1"},
+                            {"name": "BadNullTarget", "id": "port-bad2"},
+                            {"name": "BadNoUuid", "id": "port-bad3"},
+                        ],
+                        "node_variables": [],
+                        "allow_jump_knowledges": [],
+                    },
+                },
+                "dest": {
+                    "type": 2,
+                    "name": "Exit",
+                    "is_default": False,
+                    "data": {"list": [], "is_transfer": 0, "node_variables": [], "allow_jump_knowledges": []},
+                },
+            },
+            "routes": {
+                "talk1": {
+                    # Good edge
+                    "port-good": {"source": {"uuid": "port-good"}, "target": {"uuid": "dest"}},
+                    # Missing "target" key entirely
+                    "port-bad1": {"source": {"uuid": "port-bad1"}},
+                    # target is None
+                    "port-bad2": {"source": {"uuid": "port-bad2"}, "target": None},
+                    # target is a dict but missing "uuid"
+                    "port-bad3": {"source": {"uuid": "port-bad3"}, "target": {}},
+                },
+                "dest": {},
+            },
+        }
+
+    def test_malformed_route_does_not_raise(self):
+        """build_components must not raise KeyError on malformed route entries."""
+        comp_dict = self._make_comp_with_bad_route()
+        # Must not raise
+        components = build_components({"BizSpeechComponent": [comp_dict]})
+        assert len(components) == 1
+
+    def test_malformed_route_skips_bad_entries_keeps_good(self):
+        """Only the well-formed edge should produce a branch; bad ones are dropped."""
+        comp_dict = self._make_comp_with_bad_route()
+        components = build_components({"BizSpeechComponent": [comp_dict]})
+        node = components[0].nodes["talk1"]
+        # Only the good edge produces a branch
+        assert len(node.branches) == 1
+        assert node.branches[0].target_uuid == "dest"

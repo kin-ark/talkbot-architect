@@ -27,6 +27,7 @@ export default function NodePropertiesPanel({ node, summary }) {
                 <span className="text-slate-400"> · {b.kind}</span>
                 {b.terminal && <span className="text-sky-600"> → {b.terminal}</span>}
                 {b.target_component && <span className="text-sky-600"> → component</span>}
+                {b.target_kb != null && <span className="text-sky-600"> → KB {kbTitle(b.target_kb)}</span>}
               </li>
             ))}
           </ul>
