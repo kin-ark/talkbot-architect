@@ -45,7 +45,7 @@ _LANGUAGE_CODE_MAP = {0: "3"}  # WIZ language int 0 → node_language "3" (IDN)
 _DEFAULT_NODE_LANGUAGE = "3"
 
 
-def _resolve_context(bundle: InputBundle, canvas_index: int) -> tuple[int, dict, list, str]:
+def _resolve_context(bundle: InputBundle) -> tuple[int, dict[str, int], list[str], str]:
     """Extract speech_id, branch_intent_ids, kb_ids, and node_language from bundle.data.
 
     Returns (speech_id, branch_intent_ids, kb_ids, node_language).
@@ -58,7 +58,11 @@ def _resolve_context(bundle: InputBundle, canvas_index: int) -> tuple[int, dict,
 
     # branch_intent_ids from SpeechIntent
     speech_intents_raw = bundle.data.get("SpeechIntent", "[]")
-    speech_intents = json.loads(speech_intents_raw) if isinstance(speech_intents_raw, str) else speech_intents_raw
+    speech_intents = (
+        json.loads(speech_intents_raw)
+        if isinstance(speech_intents_raw, str)
+        else speech_intents_raw
+    )
     branch_intent_ids: dict[str, int] = {
         i["intentName"]: i["intentId"]
         for i in speech_intents
@@ -98,7 +102,7 @@ def _render_nodes(
     raw_edges = params.get("edges") or []
     edge_specs = [EdgeSpec(src=e["from"], branch=e["branch"], dst=e["to"]) for e in raw_edges]
 
-    speech_id, branch_intent_ids, kb_ids, node_language = _resolve_context(bundle, canvas_index)
+    speech_id, branch_intent_ids, kb_ids, node_language = _resolve_context(bundle)
 
     return render_component_nodes(
         node_specs,

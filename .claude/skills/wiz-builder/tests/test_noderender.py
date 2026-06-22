@@ -3,7 +3,7 @@ import re
 from pathlib import Path
 
 from wizbuilder.ids import IdMinter
-from wizbuilder.noderender import EdgeSpec, NodeSpec, render_component_nodes  # noqa: F401
+from wizbuilder.noderender import EdgeSpec, NodeSpec, render_component_nodes
 
 FIX = Path(__file__).parent / "fixtures"
 UUID_RE = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
@@ -40,8 +40,6 @@ def test_single_node_matches_reference_shape():
 
 
 def test_edge_wires_routes_and_entry_detection():
-    from wizbuilder.noderender import NodeSpec, EdgeSpec, render_component_nodes
-    from wizbuilder.ids import IdMinter
     r = render_component_nodes(
         [NodeSpec("a","AAA"), NodeSpec("b","BBB")],
         [EdgeSpec(src="a", branch="Unclassified", dst="b")],
@@ -49,7 +47,6 @@ def test_edge_wires_routes_and_entry_detection():
         branch_intent_ids={"Positive":1,"Negative":2,"Reject":3,"Unclassified":4,"No answer":5},
         kb_ids=[], node_language="3", minter=IdMinter("h"),
     )
-    ids = list(r.details)
     a_uuid = next(k for k,v in r.details.items() if v["data"]["dialog_list"][0]["text"]=="AAA")
     b_uuid = next(k for k,v in r.details.items() if v["data"]["dialog_list"][0]["text"]=="BBB")
     # entry detection: a is entry (is_default true, in inbound), b is not

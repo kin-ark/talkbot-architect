@@ -218,9 +218,9 @@ def test_parse_failure_raises_manifest_error(tmp_path):
 
 def test_manifest_schema_language_enum_matches_facts():
     """The static schema enum must stay in sync with facts lang.supported."""
-    import yaml as _yaml
     from pathlib import Path as _Path
 
+    import yaml as _yaml
     from wizfacts import load_facts
 
     schema_path = (

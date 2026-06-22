@@ -46,7 +46,7 @@ def test_apply_canvases_details_has_real_node_shape(template_dict, fixture_path)
     # New shape: keyed by node_uuid, not envelope_uuid
     # Greeting canvas has 2 nodes
     assert len(details) == 2
-    for node_uuid, node_obj in details.items():
+    for _node_uuid, node_obj in details.items():
         assert "canvas" in node_obj
         assert "data" in node_obj
         assert "name" in node_obj
@@ -176,7 +176,7 @@ def test_apply_canvases_sentence_cut_speech_populated(template_dict, fixture_pat
 
 
 def test_apply_canvases_component_has_real_export_keys(template_dict, fixture_path):
-    """Each BizSpeechComponent entry must include the structural keys present in real WIZ exports."""
+    """Each BizSpeechComponent entry must include the structural keys present in real WIZ exports."""  # noqa: E501
     m = load_manifest(fixture_path("manifest_multi_canvas.yaml"))
     minter = IdMinter(manifest_hash=manifest_hash_of(m.raw_text))
     apply_canvases(template_dict, m, minter)

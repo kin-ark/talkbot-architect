@@ -7,8 +7,6 @@ import json
 import sys
 from pathlib import Path
 
-import pytest
-
 # wiz-builder's scripts dir must be on sys.path for wizbuilder imports.
 _SKILL_ROOT = Path(__file__).resolve().parents[3]  # .claude/
 _WB_SCRIPTS = _SKILL_ROOT / "skills" / "wiz-builder" / "scripts"
@@ -16,10 +14,10 @@ if str(_WB_SCRIPTS) not in sys.path:
     sys.path.insert(0, str(_WB_SCRIPTS))
 
 from wizbuilder.ids import IdMinter  # noqa: E402
-from wizmodifier import codec  # noqa: E402
 from wizmodifier.io import InputBundle  # noqa: E402
 from wizmodifier.ops import structure  # noqa: E402
 from wizmodifier.ops._bsc import get_components  # noqa: E402
+from wizmodifier.ops.structure import populate_details  # noqa: E402
 
 BASE = _SKILL_ROOT / "skills" / "wiz-builder" / "templates" / "empty_dialogue.json"
 
@@ -115,6 +113,3 @@ def test_add_component_without_nodes_keeps_null():
     comps = get_components(bundle)
     assert comps[-1]["details"] == "null"
 
-
-# Re-import here so the RED run clearly fails on the import guard in the first test.
-from wizmodifier.ops.structure import populate_details  # noqa: E402 (bottom import intentional)

@@ -50,7 +50,11 @@ def apply_canvases(
     # Resolve branch_intent_ids from template SpeechIntent
     _system_branch_names = {"Positive", "Negative", "Reject", "Unclassified", "No answer"}
     speech_intents_raw = template.get("SpeechIntent", "[]")
-    speech_intents = json.loads(speech_intents_raw) if isinstance(speech_intents_raw, str) else speech_intents_raw
+    speech_intents = (
+        json.loads(speech_intents_raw)
+        if isinstance(speech_intents_raw, str)
+        else speech_intents_raw
+    )
     branch_intent_ids: dict[str, int] = {
         i["intentName"]: i["intentId"]
         for i in speech_intents
@@ -87,8 +91,12 @@ def apply_canvases(
         new_components.append(comp)
         all_sentence_cut_rows.extend(scs_rows)
 
-    template["BizSpeechComponent"] = json.dumps(new_components, ensure_ascii=False, separators=(",", ":"))
-    template["SentenceCutSpeech"] = json.dumps(all_sentence_cut_rows, ensure_ascii=False, separators=(",", ":"))
+    template["BizSpeechComponent"] = json.dumps(
+        new_components, ensure_ascii=False, separators=(",", ":")
+    )
+    template["SentenceCutSpeech"] = json.dumps(
+        all_sentence_cut_rows, ensure_ascii=False, separators=(",", ":")
+    )
     return template
 
 
