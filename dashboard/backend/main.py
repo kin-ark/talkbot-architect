@@ -1,72 +1,56 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException
-from pydantic import BaseModel
-import json
-import sys
-from pathlib import Path
-from dataclasses import asdict
+from __future__ import annotations
 
+import json
+
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
+import agents
+from session import Session
+
 app = FastAPI(title="Talkbot Architect API")
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+SESSION = Session()
 
-class ChatRequest(BaseModel):
-    message: str
-    context: dict | None = None
-
-@app.post("/chat")
-async def chat(req: ChatRequest):
-    # This is a stub for the 9-hour MVP. 
-    # Real implementation would call OpenAI/Gemini with the findings context.
-    context = req.context or {}
-    return {"response": f"I see you have {context.get('errors', 0)} errors. How can I help?"}
-
-# Add project root to path to import wizcheck
-# Project root is ../../ relative to dashboard/backend/main.py
-sys.path.append(str(Path(__file__).parent.parent.parent / ".claude/skills/wiz-checker/scripts"))
-from wizcheck.parser import parse_dict, ParseError
-from wizcheck.checks import run_all_checks
-from wizcheck.summarizer import build_summary_tree
 
 @app.get("/health")
 async def health():
     return {"status": "ok"}
 
-async def parse_upload_file(file: UploadFile):
-    content = await file.read()
+
+def _parse_or_400(content: bytes) -> dict:
     try:
-        raw_data = json.loads(content)
-        return parse_dict(raw_data)
+        data = json.loads(content)
     except json.JSONDecodeError as e:
-        raise HTTPException(status_code=400, detail=f"Invalid JSON: {str(e)}")
-    except ParseError as e:
-        raise HTTPException(status_code=400, detail=f"Invalid Talkbot Export: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Invalid JSON: {e}")
+    try:
+        agents.validate(data)  # also forces a parse; raises on bad structure
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid Talkbot export: {e}")
+    return data
 
-@app.post("/analyze")
-async def analyze(file: UploadFile = File(...)):
-    bot = await parse_upload_file(file)
-        
-    findings = run_all_checks(bot)
-    
-    # Simple summary calculation
-    errors = len([f for f in findings if f.severity == "error"])
-    warnings = len([f for f in findings if f.severity == "warning"])
-    
-    return {
-        "summary": {"errors": errors, "warnings": warnings},
-        "findings": [asdict(f) for f in findings]
-    }
 
-@app.post("/summarize")
-async def summarize_file(file: UploadFile = File(...)):
-    bot = await parse_upload_file(file)
-        
-    summary_tree = build_summary_tree(bot)
-    return summary_tree
+@app.post("/session")
+async def create_session(file: UploadFile = File(...)):
+    data = _parse_or_400(await file.read())
+    SESSION.load(data)
+    return {"summary": agents.summarize(data), "findings": agents.validate(data)}
+
+
+@app.get("/summary")
+async def get_summary():
+    return agents.summarize(SESSION.current())
+
+
+@app.get("/findings")
+async def get_findings():
+    return agents.validate(SESSION.current())
+
+
+@app.get("/node/{uuid}")
+async def get_node(uuid: str):
+    node = agents.read_node(SESSION.current(), uuid)
+    if node is None:
+        raise HTTPException(status_code=404, detail="node not found")
+    return node
