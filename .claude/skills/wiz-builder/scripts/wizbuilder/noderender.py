@@ -92,7 +92,7 @@ def render_component_nodes(
     nodes:
         Ordered list of nodes to render.
     edges:
-        Outgoing edges (unused in Task 1; reserved for Task 2).
+        Outgoing edges between nodes. Drives entry-node detection and route wiring.
     canvas_index:
         The component's position index within BizSpeechComponent, used to scope
         minted UUIDs so two components on the same manifest never clash.
@@ -295,7 +295,7 @@ def render_component_nodes(
 
         # --- accumulate ---
         details[node_uuid] = node_obj
-        routes[node_uuid] = {}  # Task 2 will fill edges into this
+        routes[node_uuid] = {}  # leaf nodes keep empty {}; outgoing edges fill in below
 
         sentence_cut_speech.append(scs_row)
 
@@ -308,6 +308,10 @@ def render_component_nodes(
     for e in edges:
         src_node_uuid = _node_id_to_uuid[e.src]
         dst_node_uuid = _node_id_to_uuid[e.dst]
+        if e.branch not in _node_id_to_port_uuids.get(e.src, {}):
+            raise ValueError(
+                f"EdgeSpec branch {e.branch!r} not found in ports for node {e.src!r}"
+            )
         src_port_uuid = _node_id_to_port_uuids[e.src][e.branch]
         edge_uuid = str(minter.uuid(f"edge:{canvas_index}:{e.src}:{e.branch}"))
         routes[src_node_uuid][src_port_uuid] = {
