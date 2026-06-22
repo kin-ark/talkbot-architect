@@ -86,3 +86,59 @@ def test_compile_is_idempotent_for_uuids(fixture_path, tmp_path):
     uuids1 = sorted(c["componentUuid"] for c in bsc1)
     uuids2 = sorted(c["componentUuid"] for c in bsc2)
     assert uuids1 == uuids2
+
+
+def test_builder_output_has_real_node_shape(fixture_path, tmp_path):
+    """Compiled output must use the real node shape (not the old skeletal label/parentId shape).
+
+    Concretely:
+    - details is a dict keyed by node_uuid (not envelope_uuid)
+    - each value has 'canvas', 'data', 'name', 'type', 'is_default', 'data_extra'
+    - routes is a dict (not the string "[]")
+    - inboundPorts is a non-empty JSON list (at least one entry node per canvas)
+    - SentenceCutSpeech is a JSON list with rows (one per node)
+    """
+    out = tmp_path / "speech.json"
+    compile_manifest(fixture_path("manifest_multi_canvas.yaml"), out)
+    data = json.loads(out.read_text(encoding="utf-8"))
+
+    bsc = json.loads(data["BizSpeechComponent"])
+    assert len(bsc) == 2
+
+    for comp in bsc:
+        # details must be a dict keyed by node uuids
+        details = json.loads(comp["details"])
+        assert isinstance(details, dict), "details must be a dict"
+        assert len(details) > 0, "details must be non-empty"
+
+        for node_uuid, node_obj in details.items():
+            assert "canvas" in node_obj, f"node {node_uuid} missing 'canvas'"
+            assert "data" in node_obj, f"node {node_uuid} missing 'data'"
+            assert "name" in node_obj, f"node {node_uuid} missing 'name'"
+            assert node_obj["name"] == "Talk Node"
+            assert "type" in node_obj
+            assert "is_default" in node_obj
+            assert "data_extra" in node_obj
+
+        # routes must be a dict (keyed by node_uuid)
+        routes = json.loads(comp["routes"])
+        assert isinstance(routes, dict), "routes must be a dict"
+
+        # inboundPorts must be a non-empty list with at least one entry node
+        inbound = json.loads(comp["inboundPorts"])
+        assert isinstance(inbound, list), "inboundPorts must be a list"
+        assert len(inbound) > 0, "inboundPorts must have at least one entry"
+        for port in inbound:
+            assert "uuid" in port
+            assert "name" in port
+            assert port["is_default"] is True
+
+    # SentenceCutSpeech must have one row per node across all canvases
+    scs = json.loads(data["SentenceCutSpeech"])
+    assert isinstance(scs, list)
+    # multi_canvas manifest has 3 nodes total (2 in Greeting, 1 in Closing)
+    assert len(scs) == 3, f"expected 3 SentenceCutSpeech rows, got {len(scs)}"
+    for row in scs:
+        assert "sentenceText" in row
+        assert "componentUuid" in row
+        assert "speechId" in row
