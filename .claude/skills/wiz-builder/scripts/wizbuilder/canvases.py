@@ -147,7 +147,10 @@ def _build_component(
         "routes": json.dumps(r.routes, ensure_ascii=False, separators=(",", ":")),
         "nluConf": "{}",
         "sourceUuid": "",
-        "topFloorDetails": "{}",
+        # topFloorDetails is a JSON-encoded LIST (wiz-checker schema fields.md);
+        # WIZ import parses it as an array, so "{}" => "expect [, actual {" once a
+        # component carries real nodes. Empty list is valid for both empty + populated.
+        "topFloorDetails": "[]",
         "details": json.dumps(r.details, ensure_ascii=False, separators=(",", ":")),
     }
 

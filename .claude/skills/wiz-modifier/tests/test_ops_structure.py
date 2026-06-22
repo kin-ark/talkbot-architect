@@ -23,7 +23,7 @@ def test_add_bsc_keys_defaults(baseline_dict):
     comp = get_components(b)[0]
     for k, v in {
         "inboundPorts": "[]", "outboundPorts": "[]", "routes": "[]",
-        "nluConf": "{}", "sourceUuid": "", "topFloorDetails": "{}",
+        "nluConf": "{}", "sourceUuid": "", "topFloorDetails": "[]",
     }.items():
         assert comp[k] == v
 

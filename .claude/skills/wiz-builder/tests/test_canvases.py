@@ -189,7 +189,8 @@ def test_apply_canvases_component_has_real_export_keys(template_dict, fixture_pa
         routes = json.loads(comp["routes"])
         assert isinstance(routes, dict)
         assert comp["sourceUuid"] == ""
-        assert comp["topFloorDetails"] == "{}"
+        # topFloorDetails is a JSON-encoded list; "{}" fails WIZ import once nodes exist
+        assert comp["topFloorDetails"] == "[]"
     # outboundPorts and nluConf are only on component[0] in real WIZ exports
     assert bsc[0]["outboundPorts"] == "[]"
     assert bsc[0]["nluConf"] == "{}"

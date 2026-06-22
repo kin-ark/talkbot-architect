@@ -19,7 +19,9 @@ DEFAULT_BSC_KEYS = {
     "routes": "[]",
     "nluConf": "{}",
     "sourceUuid": "",
-    "topFloorDetails": "{}",
+    # topFloorDetails is a JSON-encoded LIST (wiz-checker schema fields.md); WIZ import
+    # parses it as an array, so "{}" => "expect [, actual {" once a component has nodes.
+    "topFloorDetails": "[]",
 }
 
 # Keys from the Empty+Dialogue template that must not appear on secondary components.
