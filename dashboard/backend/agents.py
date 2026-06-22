@@ -1,4 +1,4 @@
-"""Read-only agent wrappers (Task 7).
+"""Read-only agent wrappers (Task 7) + mutating dry-run wrapper (Task 9).
 
 Exposes validate / summarize / read_node / get_facts as plain Python functions
 that the LLM will call as tools in a later phase.
@@ -7,6 +7,9 @@ Import order is critical: add_skill_paths() must run before any wizcheck import
 so that the checker's packages are on sys.path.
 """
 from __future__ import annotations
+
+import copy
+import hashlib
 
 from paths import add_skill_paths, skills_dir
 
@@ -17,6 +20,30 @@ from wizcheck.checks import run_all_checks      # noqa: E402
 from flowmodel import build_flow_model, flow_model_to_dict, unwrap  # noqa: E402
 
 import yaml  # noqa: E402  (stdlib-adjacent; available in env)
+
+from wizmodifier.io import InputBundle           # noqa: E402
+from wizmodifier.apply import run_mods           # noqa: E402
+from wizmodifier.registry import OP_REGISTRY     # noqa: E402
+from wizmodifier import codec as _wm_codec       # noqa: E402
+import diffing                                    # noqa: E402
+
+
+# ---------------------------------------------------------------------------
+# Internal helpers
+# ---------------------------------------------------------------------------
+
+def _ensure_packed(data: dict) -> dict:
+    """Return a version of *data* where every top-level list/dict value has been
+    re-encoded as a compact JSON string (the WIZ modifier wire format).
+
+    If a value is already a string it is left untouched.  This lets
+    ``propose_mods`` accept both the raw export format (packed) and the
+    pre-decoded variant (*.unpacked.json) used in tests/dev.
+    """
+    result: dict = {}
+    for k, v in data.items():
+        result[k] = _wm_codec.encode(v) if isinstance(v, (list, dict)) else v
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -108,3 +135,34 @@ def get_facts(query: str) -> list[dict]:
                 matches.append(fact)
 
     return matches
+
+
+def propose_mods(data: dict, mods_yaml: str) -> dict:
+    """Deep-copy *data*, apply *mods_yaml* ops as a dry-run, return diff + delta.
+
+    Returns a dict with keys:
+      ok             – True on success, False on any error
+      proposed_data  – mutated deep copy (present only when ok=True)
+      diff           – unified-diff string (present only when ok=True)
+      checker_delta  – error/warning count delta (present only when ok=True)
+      error          – error message string (present only when ok=False)
+      known_ops      – sorted list of valid op names (present only when ok=False)
+    """
+    try:
+        mods = yaml.safe_load(mods_yaml)
+        if not isinstance(mods, list):
+            return {"ok": False, "error": "mods must be a YAML list of {op: ...} entries"}
+        packed = _ensure_packed(data)
+        bundle = InputBundle(data=copy.deepcopy(packed), speech_name="speech.json")
+        h = hashlib.sha256(mods_yaml.encode("utf-8")).hexdigest()
+        run_mods(bundle, mods, manifest_hash=h)
+        proposed = bundle.data
+        return {
+            "ok": True,
+            "proposed_data": proposed,
+            "diff": diffing.unified_diff_of(packed, proposed),
+            "checker_delta": diffing.checker_delta(data, proposed),
+            "error": None,
+        }
+    except (ValueError, KeyError) as e:
+        return {"ok": False, "error": str(e), "known_ops": sorted(OP_REGISTRY)}
