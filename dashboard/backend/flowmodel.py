@@ -121,7 +121,9 @@ def _extract_text(data: dict) -> str:
     Handles both dict form (``{"text": "..."}`` — spec shape) and plain
     string form (bare string — observed in the real export).
     """
-    items = data.get("list", [])
+    items = data.get("list")
+    if not isinstance(items, list):
+        items = []
     parts: list[str] = []
     for item in items:
         if isinstance(item, dict):
@@ -138,10 +140,12 @@ def _extract_text(data: dict) -> str:
 def _extract_referenced_vars(data: dict, text: str) -> list[str]:
     """Collect variable names from data.node_variables[] plus {Name} refs in text."""
     seen: dict[str, None] = {}  # ordered set
-    for v in data.get("node_variables", []):
-        name = v.get("name")
-        if name:
-            seen[name] = None
+    node_vars = data.get("node_variables")
+    if isinstance(node_vars, list):
+        for v in node_vars:
+            name = v.get("name") if isinstance(v, dict) else None
+            if name:
+                seen[name] = None
     for match in _VAR_REF_RE.finditer(text):
         name = match.group(1)
         if name not in seen:
@@ -172,10 +176,14 @@ def _build_branches(
     if node_type == "goto_kb":
         # type 8: ONE KB exit edge
         raw_kb_id = data.get("appoint_knowledge_id")
+        try:
+            target_kb = int(raw_kb_id) if raw_kb_id not in (None, "") else None
+        except (ValueError, TypeError):
+            target_kb = None
         branches.append(BranchEdge(
             label="go to KB",
             kind="exit",
-            target_kb=int(raw_kb_id) if raw_kb_id is not None else None,
+            target_kb=target_kb,
         ))
         return branches
 
@@ -193,15 +201,19 @@ def _build_branches(
 
     # types 1, 5, 7, 10 — derive edges from routes + all_client_intent
     edge_map = routes.get(node_uuid, {})
-    if not edge_map:
+    if not isinstance(edge_map, dict) or not edge_map:
         return branches
 
     # Build port-uuid → intent-name lookup from all_client_intent
     intent_lookup: dict[str, str] = {}
-    for entry in data.get("all_client_intent", []):
-        port_id = entry.get("id")
-        if port_id:
-            intent_lookup[port_id] = entry.get("name", "")
+    aci = data.get("all_client_intent")
+    if isinstance(aci, list):
+        for entry in aci:
+            if not isinstance(entry, dict):
+                continue
+            port_id = entry.get("id")
+            if port_id:
+                intent_lookup[port_id] = entry.get("name", "")
 
     for port_uuid, edge in edge_map.items():
         target = edge.get("target") if isinstance(edge, dict) else None
@@ -236,18 +248,29 @@ def _build_node(
     routes: dict,
 ) -> FlowModelNode:
     """Build a FlowModelNode from a details envelope."""
+    if not isinstance(envelope, dict):
+        envelope = {}
     node_type = node_type_of(envelope)
-    data = envelope.get("data", {})
+    data = envelope.get("data")
+    if not isinstance(data, dict):
+        data = {}
 
     label = (
         envelope.get("name")
-        or (data.get("name") if isinstance(data, dict) else None)
+        or data.get("name")
         or node_uuid
     )
 
     text = _extract_text(data)
     referenced_vars = _extract_referenced_vars(data, text)
-    allowed_kbs = [int(k) for k in data.get("allow_jump_knowledges", [])]
+    allowed_kbs = []
+    akj = data.get("allow_jump_knowledges")
+    if isinstance(akj, list):
+        for k in akj:
+            try:
+                allowed_kbs.append(int(k))
+            except (ValueError, TypeError):
+                pass
 
     branches = _build_branches(node_uuid, node_type, data, routes)
 
@@ -275,7 +298,12 @@ def _build_multiround(kb: dict, data: dict) -> "FlowModel | None":
     Does NOT recurse into nested multi-round (one level only).
     """
     multi_uuid: str | None = None
-    for item in kb.get("kdInfo", []):
+    kd_info = unwrap(kb.get("kdInfo"))
+    if not isinstance(kd_info, list):
+        kd_info = []
+    for item in kd_info:
+        if not isinstance(item, dict):
+            continue
         candidate = item.get("multipleAppointId")
         if candidate:
             multi_uuid = candidate
@@ -295,19 +323,33 @@ def _build_multiround(kb: dict, data: dict) -> "FlowModel | None":
 def _build_kbs(data: dict) -> "list[KBView]":
     """Build KBView list from BizKnowledgeInfo in the raw export dict."""
     kbs_raw = unwrap(data.get("BizKnowledgeInfo"))
+    if not isinstance(kbs_raw, list):
+        kbs_raw = []
     result: list[KBView] = []
     for kb in kbs_raw:
+        if not isinstance(kb, dict):
+            continue
         kb_id = kb.get("knowledgeId")
         if kb_id is None:
             continue
-        knowledge_id = int(kb_id)
-        title = kb.get("kdTitle", "")
-        kd_type = int(kb.get("kdType", 0))
-        intents = [
-            int(i["intentId"])
-            for i in kb.get("intents", [])
-            if isinstance(i, dict) and "intentId" in i
-        ]
+        try:
+            knowledge_id = int(kb_id)
+        except (ValueError, TypeError):
+            continue
+        title = kb.get("kdTitle", "") or ""
+        try:
+            kd_type = int(kb.get("kdType", 0) or 0)
+        except (ValueError, TypeError):
+            kd_type = 0
+        intents_raw = unwrap(kb.get("intents"))
+        intents = []
+        if isinstance(intents_raw, list):
+            for i in intents_raw:
+                if isinstance(i, dict) and "intentId" in i:
+                    try:
+                        intents.append(int(i["intentId"]))
+                    except (ValueError, TypeError):
+                        pass
         multi_round = _build_multiround(kb, data)
         result.append(KBView(
             knowledge_id=knowledge_id,
@@ -355,7 +397,7 @@ def build_components(data: dict) -> list[FlowComponent]:
         for node_uuid, envelope in details.items():
             node = _build_node(node_uuid, envelope, routes)
             nodes[node_uuid] = node
-            if envelope.get("is_default"):
+            if isinstance(envelope, dict) and envelope.get("is_default"):
                 entry_uuid = node_uuid
 
         root_uuids = [entry_uuid] if entry_uuid else []
