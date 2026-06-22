@@ -5,5 +5,4 @@ canvases:
   - name: "1. Greeting"
     nodes:
       - id: root
-        label: Greeting
-        parent: null
+        prompt: Greeting

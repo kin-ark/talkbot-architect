@@ -19,7 +19,7 @@ def _manifest(name="My Bot", branch="dev", language="IDN") -> Manifest:
         custom_variables=(),
         custom_intents=(),
         canvases=(
-            Canvas(name="c", nodes=(Node(id="r", label="Greeting", parent=None),)),
+            Canvas(name="c", nodes=(Node(id="r", prompt="Greeting"),), edges=()),
         ),
         raw_text=raw,
     )

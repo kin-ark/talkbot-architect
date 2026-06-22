@@ -58,16 +58,28 @@ properties:
           minItems: 1
           items:
             type: object
-            required: [label, parent]
+            required: [id, prompt]
             additionalProperties: false
             properties:
               id:
                 type: string
                 minLength: 1
-                # Optional. If omitted, the loader synthesizes "_auto_<index>" (position in
-                # the nodes list). Other nodes can reference the synthesized id via `parent`.
-              label:
+              prompt:
                 type: string
                 minLength: 1
-              parent:
-                type: [string, "null"]
+        edges:
+          type: array
+          items:
+            type: object
+            required: [from, branch, to]
+            additionalProperties: false
+            properties:
+              from:
+                type: string
+                minLength: 1
+              to:
+                type: string
+                minLength: 1
+              branch:
+                type: string
+                enum: [Positive, Negative, Reject, Unclassified, "No answer"]

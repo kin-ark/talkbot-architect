@@ -17,7 +17,7 @@ def _manifest(custom_vars: tuple[CustomVariable, ...]) -> Manifest:
         language="IDN",
         custom_variables=custom_vars,
         custom_intents=(),
-        canvases=(Canvas(name="c", nodes=(Node(id="r", label="Greeting", parent=None),)),),
+        canvases=(Canvas(name="c", nodes=(Node(id="r", prompt="Greeting"),), edges=()),),
         raw_text=raw,
     )
 

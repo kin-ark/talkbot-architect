@@ -20,6 +20,10 @@ WIZ.AI's BizSpeechComponent.details is a JSON-encoded string with the shape:
 The envelope UUID is a top-level key; production exports may carry multiple
 envelopes per component, but this MVP emits exactly one per canvas. Nodes
 live at canvas.component.props.list.
+
+NOTE: This module uses the legacy label/parentId node structure. It will be
+replaced by noderender.py in Task 4. For now it adapts to the new Node/Edge
+model (Node.prompt replaces Node.label; parentId derived from edges).
 """
 
 from __future__ import annotations
@@ -81,15 +85,24 @@ def _build_component(
         seed = f"node:{canvas_index}:{node.id}"
         node_uuids[node.id] = str(minter.uuid(seed))
 
+    # Derive parentId from edges: dst node's parentId = src node's uuid.
+    # If a node has multiple incoming edges, use the first edge's src uuid.
+    # The entry node (no incoming edge) gets parentId = "".
+    parent_of: dict[str, str] = {}  # node_id -> parent_node_id
+    for edge in canvas.edges:
+        if edge.dst not in parent_of:
+            parent_of[edge.dst] = edge.src
+
     node_dicts = []
     for ni, node in enumerate(canvas.nodes):
         uid = node_uuids[node.id]
-        parent_uid = node_uuids[node.parent] if node.parent is not None else ""
+        parent_id_str = parent_of.get(node.id)
+        parent_uid = node_uuids[parent_id_str] if parent_id_str is not None else ""
         node_dicts.append({
             "uuid": uid,
             "value": uid,  # WIZ format duplicates uuid as value on every FlowNode
             "parentId": parent_uid,
-            "label": node.label,
+            "label": node.prompt,  # prompt is the script text, used as the display label
             "sortIndex": ni,
             "sortIndexABS": ni,
             "editStatus": 1,
