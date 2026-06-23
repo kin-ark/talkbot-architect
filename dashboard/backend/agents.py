@@ -197,7 +197,7 @@ def propose_mods(data: dict, mods_yaml: str) -> dict:
         return {"ok": False, "error": str(e), "known_ops": sorted(OP_REGISTRY)}
 
 
-_LANGUAGES = {"ENG", "IDN", "ZHO", "THA"}
+_LANGUAGES = {"ENG", "IDN"}
 _BRANCHES = {"dev", "prod"}
 
 

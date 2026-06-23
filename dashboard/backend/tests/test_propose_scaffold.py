@@ -48,3 +48,9 @@ def test_scaffold_rejects_bad_branch():
     out = agents.propose_scaffold({**_minimal_params(), "branch": "staging"})
     assert out["ok"] is False
     assert "branch" in out["error"].lower()
+
+
+def test_scaffold_rejects_unverified_language():
+    out = agents.propose_scaffold({**_minimal_params(), "language": "ZHO"})
+    assert out["ok"] is False
+    assert "language" in out["error"].lower()

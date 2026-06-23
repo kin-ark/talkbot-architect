@@ -33,11 +33,12 @@ _SPECS = [
              {"type": "object", "properties": {}}),
     ToolSpec("scaffold_bot",
              "Create a brand-new dialogue from typed parameters (NOT raw YAML). "
-             "Proposes a full new doc (dry-run). Use after the user confirms an outline.",
+             "Proposes a full new doc (dry-run). Use after the user confirms an outline. "
+             "languages: ENG, IDN (ZHO/THA pending verified language codes).",
              {"type": "object",
               "properties": {
                   "name": {"type": "string"},
-                  "language": {"type": "string", "enum": ["ENG", "IDN", "ZHO", "THA"]},
+                  "language": {"type": "string", "enum": ["ENG", "IDN"]},
                   "branch": {"type": "string", "enum": ["dev", "prod"]},
                   "custom_variables": {"type": "array", "items": {
                       "type": "object", "properties": {"name": {"type": "string"}},
@@ -45,7 +46,7 @@ _SPECS = [
                   "custom_intents": {"type": "array", "items": {
                       "type": "object", "properties": {
                           "name": {"type": "string"},
-                          "language": {"type": "string", "enum": ["ENG", "IDN", "ZHO", "THA"]},
+                          "language": {"type": "string", "enum": ["ENG", "IDN"]},
                           "keywords": {"type": "array", "items": {"type": "string"}},
                           "user_responses": {"type": "array", "items": {"type": "string"}}},
                       "required": ["name", "language"]}},
