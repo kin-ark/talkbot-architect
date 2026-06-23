@@ -144,6 +144,9 @@ def parse_dict(raw: dict[str, Any]) -> WizFile:
     )
     flow = _build_flow_graph(components)
 
+    from wizcheck.flowmodel import build_flow_model
+    flow_model = build_flow_model(raw)
+
     return WizFile(
         raw=raw,
         components=components,
@@ -153,6 +156,7 @@ def parse_dict(raw: dict[str, Any]) -> WizFile:
         audios=audios,
         knowledge_bases=knowledge_bases,
         flow=flow,
+        flow_model=flow_model,
     )
 
 

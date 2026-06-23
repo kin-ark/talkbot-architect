@@ -296,6 +296,20 @@ def test_parser_variable_source_defaults_to_zero(tmp_path):
     assert wf.variables[1].variable_source == 0
 
 
+def test_parse_dict_attaches_flow_model(tmp_path):
+    from wizcheck.parser import parse_dict
+    data = {
+        "BizSpeechComponent": [
+            {"componentUuid": "cccccccc-cccc-4ccc-8ccc-cccccccccccc", "name": "x", "details": "null"}
+        ],
+        "SpeechVariable": "[]",
+        "SpeechIntent": "[]",
+    }
+    wf = parse_dict(data)
+    assert hasattr(wf, "flow_model")
+    assert wf.flow_model.components[0].name == "x"
+
+
 def test_parse_knowledge_bases(tmp_path):
     import json as _json
     payload = {

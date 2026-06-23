@@ -7,10 +7,13 @@ unmodified source dict. The FlowGraph (added in Task 3) lives on WizFile.flow.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 import networkx as nx
+
+if TYPE_CHECKING:
+    from wizcheck.flowmodel import FlowModel
 
 
 @dataclass(frozen=True)
@@ -113,6 +116,7 @@ class WizFile:
     audios: dict[int, Audio]
     knowledge_bases: dict[int, KnowledgeBase]
     flow: FlowGraph
+    flow_model: "FlowModel | None" = field(default=None, kw_only=True)
     raw: dict[str, Any] = field(repr=False)
 
 
