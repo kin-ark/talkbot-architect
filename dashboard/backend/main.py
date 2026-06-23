@@ -13,6 +13,8 @@ from typing import Optional
 
 from fastapi import Depends, FastAPI, File, HTTPException, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.requests import Request
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 import agents
@@ -27,6 +29,24 @@ from wizmodifier.io import InputBundle
 
 app = FastAPI(title="Talkbot Architect API")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
+
+def _error_body(exc: Exception) -> dict:
+    return {"error": {"type": type(exc).__name__, "message": str(exc)}}
+
+
+class LLMProviderError(Exception):
+    """Wraps an upstream LLM/provider failure so the handler can return 502."""
+
+
+@app.exception_handler(LLMProviderError)
+async def _provider_error(request: Request, exc: LLMProviderError):
+    return JSONResponse(status_code=502, content=_error_body(exc))
+
+
+@app.exception_handler(Exception)
+async def _unhandled(request: Request, exc: Exception):
+    return JSONResponse(status_code=500, content=_error_body(exc))
 
 SESSION = Session()
 
@@ -210,8 +230,13 @@ def chat(req: ChatRequest, client: LLMClient = Depends(get_client)):
     # Sync def → runs in the threadpool, so the event loop stays free for
     # /chat/cancel while this turn holds the lock.
     _require_session()
-    with SESSION._lock:
-        result = run_turn(client, SESSION, req.message)
+    try:
+        with SESSION._lock:
+            result = run_turn(client, SESSION, req.message)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise LLMProviderError(f"LLM provider error: {e}") from e
     SESSION._autosave()
     return result
 
