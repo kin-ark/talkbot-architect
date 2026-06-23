@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 from wizcheck.checks import REGISTRY, get_check, run_all_checks
-from wizcheck.ir import FlowGraph, WizFile
+from wizcheck.ir import WizFile
 
 
 @pytest.fixture
@@ -16,7 +16,6 @@ def empty_wizfile() -> WizFile:
         intents={},
         utterances=(),
         audios={}, knowledge_bases={},
-        flow=FlowGraph(),
     )
 
 

@@ -13,13 +13,13 @@ Task 3 will populate KBView.multi_round; this task leaves it None.
 """
 from __future__ import annotations
 
+import contextlib
 import json
 import re
 from dataclasses import dataclass, field
 from typing import Any
 
-from flow_constants import NODE_TYPE_MAP, UNKNOWN_NODE_TYPE
-
+from wizcheck.flow_constants import NODE_TYPE_MAP, UNKNOWN_NODE_TYPE
 
 # ---------------------------------------------------------------------------
 # Public helpers
@@ -80,6 +80,8 @@ class FlowModelNode:
     text: str                            # first data.list[].text (joined by " / " if multiple)
     referenced_vars: list[str]           # names from data.node_variables[].name + {var} refs
     allowed_kbs: list[int]               # data.allow_jump_knowledges cast to int
+    # raw envelope data dict (branch conditions, sentenceText, etc.)
+    data: dict = field(default_factory=dict)
     branches: list[BranchEdge] = field(default_factory=list)
 
 
@@ -99,7 +101,7 @@ class KBView:
     title: str
     kd_type: int
     intents: list[int]
-    multi_round: "FlowModel | None" = None  # set in Task 3; leave None here
+    multi_round: FlowModel | None = None  # set in Task 3; leave None here
 
 
 @dataclass
@@ -267,10 +269,8 @@ def _build_node(
     akj = data.get("allow_jump_knowledges")
     if isinstance(akj, list):
         for k in akj:
-            try:
+            with contextlib.suppress(ValueError, TypeError):
                 allowed_kbs.append(int(k))
-            except (ValueError, TypeError):
-                pass
 
     branches = _build_branches(node_uuid, node_type, data, routes)
 
@@ -281,6 +281,7 @@ def _build_node(
         text=text,
         referenced_vars=referenced_vars,
         allowed_kbs=allowed_kbs,
+        data=data,
         branches=branches,
     )
 
@@ -289,7 +290,7 @@ def _build_node(
 # KB-plane helpers
 # ---------------------------------------------------------------------------
 
-def _build_multiround(kb: dict, data: dict) -> "FlowModel | None":
+def _build_multiround(kb: dict, data: dict) -> FlowModel | None:
     """Return a shallow FlowModel containing the multi-round component, or None.
 
     Scans kb.kdInfo for an entry with a non-empty multipleAppointId.  If found,
@@ -320,7 +321,7 @@ def _build_multiround(kb: dict, data: dict) -> "FlowModel | None":
     return FlowModel(components=[target], knowledge_bases=[])
 
 
-def _build_kbs(data: dict) -> "list[KBView]":
+def _build_kbs(data: dict) -> list[KBView]:
     """Build KBView list from BizKnowledgeInfo in the raw export dict."""
     kbs_raw = unwrap(data.get("BizKnowledgeInfo"))
     if not isinstance(kbs_raw, list):
@@ -346,10 +347,8 @@ def _build_kbs(data: dict) -> "list[KBView]":
         if isinstance(intents_raw, list):
             for i in intents_raw:
                 if isinstance(i, dict) and "intentId" in i:
-                    try:
+                    with contextlib.suppress(ValueError, TypeError):
                         intents.append(int(i["intentId"]))
-                    except (ValueError, TypeError):
-                        pass
         multi_round = _build_multiround(kb, data)
         result.append(KBView(
             knowledge_id=knowledge_id,
@@ -447,6 +446,7 @@ def _node_to_dict(n: FlowModelNode) -> dict:
         "text": n.text,
         "referenced_vars": n.referenced_vars,
         "allowed_kbs": n.allowed_kbs,
+        "data": n.data,
         "branches": [_branch_to_dict(b) for b in n.branches],
     }
 

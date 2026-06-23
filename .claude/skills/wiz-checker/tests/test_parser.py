@@ -61,24 +61,10 @@ def test_parse_dict_rejects_non_dict_top_level():
         parse_dict("not a dict")  # type: ignore[arg-type]
 
 
-def test_parse_unwraps_nested_details(fixture_path):
+def test_parse_nested_details_fixture_parses_cleanly(fixture_path):
+    """nested_details.json fixture parses without error and yields one component."""
     wf = parse_file(fixture_path("nested_details.json"))
-    comp = next(iter(wf.components.values()))
-    assert len(comp.details.flow_nodes) == 2
-    root_uuid = UUID("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa")
-    child_uuid = UUID("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb")
-    assert root_uuid in comp.details.flow_nodes
-    assert child_uuid in comp.details.flow_nodes
-    assert comp.details.root_uuids == (root_uuid,)
-
-
-def test_parse_flownode_parent_link(fixture_path):
-    wf = parse_file(fixture_path("nested_details.json"))
-    comp = next(iter(wf.components.values()))
-    child = comp.details.flow_nodes[UUID("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb")]
-    assert child.parent_uuid == UUID("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa")
-    assert child.label == "Pitch"
-    assert child.sort_index == 1
+    assert len(wf.components) == 1
 
 
 def test_parse_extracts_variable_refs(fixture_path):
@@ -135,19 +121,6 @@ def test_parse_missing_variable_id_raises_parse_error(tmp_path):
     assert "id" in str(excinfo.value)
 
 
-def test_parse_populates_flow_graph(fixture_path):
-    wf = parse_file(fixture_path("nested_details.json"))
-    root_uuid = UUID("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa")
-    child_uuid = UUID("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb")
-    assert root_uuid in wf.flow.all_nodes()
-    assert child_uuid in wf.flow.all_nodes()
-    assert wf.flow.reachable_from(root_uuid) == {root_uuid, child_uuid}
-
-
-def test_parse_detects_orphan_parent(fixture_path):
-    wf = parse_file(fixture_path("flow_with_orphans.json"))
-    orphan = UUID("dddddddd-dddd-4ddd-8ddd-dddddddddddd")
-    assert orphan in wf.flow.orphan_refs()
 
 
 def test_parse_unwrap_list_handles_json_string_blob(tmp_path):
@@ -168,28 +141,24 @@ def test_parse_unwrap_list_handles_json_string_blob(tmp_path):
 
 
 def test_parse_real_format_details_uuid_keyed():
-    """Real BizSpeechComponent.details uses UUID-keyed envelopes with nested canvas."""
+    """Real BizSpeechComponent.details uses UUID-keyed envelopes — parses into flow_model."""
+    import json as _json
+
     from wizcheck.parser import parse_dict
     real_format_details = {
         "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa": {
-            "canvas": {
-                "component": {
-                    "props": {
-                        "list": [
-                            {"uuid": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
-                             "parentId": "", "label": "Real Root", "sortIndex": 0}
-                        ]
-                    }
-                }
-            }
+            "type": 1,
+            "name": "Real Root",
+            "is_default": True,
+            "data": {"list": []},
         }
     }
-    import json as _json
     payload = {
         "BizSpeechComponent": [{
             "componentUuid": "11111111-1111-4111-8111-111111111111",
             "speechId": 1, "category": 1, "branch": "dev",
             "details": _json.dumps(real_format_details),
+            "routes": _json.dumps({}),
         }],
         "SpeechVariable": [],
         "SpeechIntent": [],
@@ -197,25 +166,10 @@ def test_parse_real_format_details_uuid_keyed():
         "SpeechAudio": [],
     }
     wf = parse_dict(payload)
-    comp = next(iter(wf.components.values()))
-    real_root = UUID("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb")
-    assert real_root in comp.details.flow_nodes
-    # parentId "" should be treated as root
-    assert real_root in comp.details.root_uuids
-
-
-def test_parse_parent_id_empty_string_treated_as_root():
-    """parentId='' is treated as 'no parent' like None."""
-    from wizcheck.parser import _parse_component_details
-
-    legacy_with_empty_parent = (
-        '{"list":[{"uuid":"cccccccc-cccc-4ccc-8ccc-cccccccccccc",'
-        '"parentId":"","label":"Root","sortIndex":0}]}'
-    )
-    details = _parse_component_details(legacy_with_empty_parent)
-    root_uuid = UUID("cccccccc-cccc-4ccc-8ccc-cccccccccccc")
-    assert root_uuid in details.root_uuids
-    assert details.flow_nodes[root_uuid].parent_uuid is None
+    assert wf.flow_model is not None
+    assert len(wf.flow_model.components) == 1
+    fc = wf.flow_model.components[0]
+    assert "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa" in fc.nodes
 
 
 def test_parse_unwrap_list_malformed_string_raises_parse_error():
@@ -233,29 +187,15 @@ def test_parse_unwrap_list_malformed_string_raises_parse_error():
         parse_file(path)
 
 
-def test_parser_handles_null_details_string():
-    """details: "null" (decodes to None) is treated as empty canvas, not parse error."""
-    from wizcheck.parser import _parse_component_details
-    details = _parse_component_details("null")
-    assert details.flow_nodes == {}
-    assert details.root_uuids == ()
-
-
-def test_parser_handles_actual_null_details():
-    """details: None (Python None) also yields empty ComponentDetails."""
-    from wizcheck.parser import _parse_component_details
-    details = _parse_component_details(None)
-    assert details.flow_nodes == {}
-    assert details.root_uuids == ()
-
 
 def test_parser_loads_empty_canvas_fixture(fixture_path):
     """End-to-end: empty_canvas.json parses cleanly and yields a zero-node component."""
     wf = parse_file(fixture_path("empty_canvas.json"))
     assert len(wf.components) == 1
-    comp = next(iter(wf.components.values()))
-    assert comp.details.flow_nodes == {}
-    assert comp.details.root_uuids == ()
+    # flow_model should have one component with no nodes (details="null")
+    assert wf.flow_model is not None
+    assert len(wf.flow_model.components) == 1
+    assert wf.flow_model.components[0].nodes == {}
 
 
 def test_parser_populates_variable_source(tmp_path):
@@ -294,6 +234,23 @@ def test_parser_variable_source_defaults_to_zero(tmp_path):
     p.write_text(_json.dumps(payload), encoding="utf-8")
     wf = parse_file(p)
     assert wf.variables[1].variable_source == 0
+
+
+def test_parse_dict_attaches_flow_model(tmp_path):
+    from wizcheck.parser import parse_dict
+    data = {
+        "BizSpeechComponent": [
+            {
+                "componentUuid": "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+                "name": "x", "details": "null",
+            }
+        ],
+        "SpeechVariable": "[]",
+        "SpeechIntent": "[]",
+    }
+    wf = parse_dict(data)
+    assert hasattr(wf, "flow_model")
+    assert wf.flow_model.components[0].name == "x"
 
 
 def test_parse_knowledge_bases(tmp_path):

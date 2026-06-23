@@ -2,14 +2,14 @@
 from __future__ import annotations
 
 from wizcheck.checks.platform import check_platform
-from wizcheck.ir import FlowGraph, Intent, WizFile
+from wizcheck.ir import Intent, WizFile
 from wizcheck.report import Severity
 
 
 def _wf(intents: dict | None = None) -> WizFile:
     return WizFile(
         raw={}, components={}, variables={},
-        intents=intents or {}, utterances=(), audios={}, knowledge_bases={}, flow=FlowGraph(),
+        intents=intents or {}, utterances=(), audios={}, knowledge_bases={},
     )
 
 

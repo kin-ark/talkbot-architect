@@ -11,9 +11,6 @@ from uuid import UUID
 from wizcheck.ir import (
     Audio,
     Component,
-    ComponentDetails,
-    FlowGraph,
-    FlowNode,
     Intent,
     KnowledgeBase,
     Utterance,
@@ -142,7 +139,9 @@ def parse_dict(raw: dict[str, Any]) -> WizFile:
     knowledge_bases = _parse_knowledge_bases(
         _unwrap_list(raw.get("BizKnowledgeInfo"), "BizKnowledgeInfo")
     )
-    flow = _build_flow_graph(components)
+
+    from wizcheck.flowmodel import build_flow_model
+    flow_model = build_flow_model(raw)
 
     return WizFile(
         raw=raw,
@@ -152,27 +151,9 @@ def parse_dict(raw: dict[str, Any]) -> WizFile:
         utterances=utterances,
         audios=audios,
         knowledge_bases=knowledge_bases,
-        flow=flow,
+        flow_model=flow_model,
     )
 
-
-def _build_flow_graph(components: dict[UUID, Component]) -> FlowGraph:
-    """Build a FlowGraph from all components' FlowNodes.
-
-    Two-pass: first register every known node as present, then add parent->child
-    edges. add_edge will mark unknown endpoints as orphan refs (present=False).
-    """
-    g = FlowGraph()
-    # First pass: register all known nodes.
-    for comp in components.values():
-        for node_uuid in comp.details.flow_nodes:
-            g.add_node(node_uuid)
-    # Second pass: add edges. add_edge marks unknown endpoints as orphans.
-    for comp in components.values():
-        for node in comp.details.flow_nodes.values():
-            if node.parent_uuid is not None:
-                g.add_edge(node.parent_uuid, node.uuid)
-    return g
 
 
 def _parse_variables(entries: list[dict[str, Any]]) -> dict[int, Variable]:
@@ -255,10 +236,14 @@ def _parse_knowledge_bases(entries: list[dict[str, Any]]) -> dict[int, Knowledge
         intents_list = []
         for intent in intents_raw:
             if isinstance(intent, dict) and "intentId" in intent:
-                intents_list.append(_parse_int(intent["intentId"], "BizKnowledgeInfo.intents.intentId"))
-                
+                intents_list.append(
+                    _parse_int(intent["intentId"], "BizKnowledgeInfo.intents.intentId")
+                )
+
         kb = KnowledgeBase(
-            knowledge_id=_parse_int(_require(e, "knowledgeId", "BizKnowledgeInfo"), "BizKnowledgeInfo.knowledgeId"),
+            knowledge_id=_parse_int(
+                _require(e, "knowledgeId", "BizKnowledgeInfo"), "BizKnowledgeInfo.knowledgeId"
+            ),
             title=str(e.get("title", "")),
             kd_type=_parse_int(e.get("kdType", 0), "BizKnowledgeInfo.kdType"),
             intents=tuple(intents_list),
@@ -276,124 +261,12 @@ def _parse_components(entries: list[dict[str, Any]]) -> dict[UUID, Component]:
             _require(e, "componentUuid", "BizSpeechComponent"),
             "BizSpeechComponent.componentUuid",
         )
-        details = _parse_component_details(e.get("details", ""))
         c = Component(
             uuid=comp_uuid,
             speech_id=int(e.get("speechId", 0)),  # optional, no _parse_int needed
             category=int(e.get("category", 0)),
             branch=str(e.get("branch", "")),
-            details=details,
             raw=e,
         )
         out[comp_uuid] = c
     return out
-
-
-def _is_legacy_details(data: dict) -> bool:
-    """Legacy fixture format: {'list': [...]} with no UUID-shaped keys."""
-    if not isinstance(data.get("list"), list):
-        return False
-    # Real-format envelopes have UUID-shaped keys at the top level alongside any "list"
-    for key in data:
-        if key == "list":
-            continue
-        try:
-            UUID(str(key))
-            return False  # found a UUID key -> real format
-        except (ValueError, TypeError):
-            pass
-    return True
-
-
-def _parse_component_details(raw_details: str | dict[str, Any] | None) -> ComponentDetails:
-    """Parse the ``details`` field of a BizSpeechComponent into a ComponentDetails.
-
-    Two formats are accepted:
-
-    *Legacy / fixture format* — the JSON string decodes to a dict with a
-    ``"list"`` key whose value is a flat list of FlowNode dicts::
-
-        {"list": [{"uuid": "...", "parentId": null, ...}, ...]}
-
-    *Real WIZ export format* — the JSON string decodes to a dict keyed by node
-    UUID, where each value is a node envelope with the flow-node list nested at
-    ``canvas.component.props.list``.  ``parentId`` is ``""`` (empty string) for
-    root nodes instead of ``null``::
-
-        {"<uuid>": {"canvas": {"component": {"props": {"list": [...]}}}}, ...}
-
-    Both formats are normalised into the same ``ComponentDetails``.
-    Accepts an already-parsed dict (e.g. from unit tests), an empty/None value
-    (returns empty ComponentDetails), or a raw JSON string.
-    """
-    if not raw_details:
-        return ComponentDetails(flow_nodes={}, root_uuids=())
-    if isinstance(raw_details, str):
-        try:
-            data = json.loads(raw_details)
-        except json.JSONDecodeError as e:
-            raise ParseError(f"BizSpeechComponent.details is not valid JSON: {e}") from e
-    else:
-        data = raw_details
-
-    if data is None:
-        # Real WIZ exports emit `details: "null"` for empty/template dialogues.
-        # Treat as zero-node canvas; WIZ006 surfaces this state to the user.
-        return ComponentDetails(flow_nodes={}, root_uuids=())
-    if not isinstance(data, dict):
-        raise ParseError(
-            f"BizSpeechComponent.details parsed to {type(data).__name__}, expected object or null"
-        )
-    # Detect format: legacy uses {"list": [...]}, real WIZ uses {uuid: {...}}
-    if _is_legacy_details(data):
-        # Legacy / fixture format: flat list at top level.
-        top_level_entries = data["list"]
-    else:
-        # Real WIZ export format: dict keyed by node UUID; flow nodes are nested
-        # inside canvas.component.props.list of each envelope.
-        top_level_entries = []
-        for _node_key, envelope in data.items():
-            if not isinstance(envelope, dict):
-                continue
-            props = (
-                envelope.get("canvas", {})
-                .get("component", {})
-                .get("props", {})
-            )
-            top_level_entries.extend(props.get("list", []))
-
-    nodes: dict[UUID, FlowNode] = {}
-    roots: list[UUID] = []
-    seen_uuids: set[UUID] = set()
-
-    def _process_entries(entry_list: list[dict[str, Any]]) -> None:
-        for entry in entry_list:
-            if not isinstance(entry, dict):
-                continue
-            uuid = _parse_uuid(_require(entry, "uuid", "FlowNode"), "FlowNode.uuid")
-            if uuid in seen_uuids:
-                continue
-            seen_uuids.add(uuid)
-            parent_raw = entry.get("parentId")
-            # Real WIZ uses "" for no-parent; legacy uses null/None.
-            if parent_raw is None or parent_raw == "":
-                parent_uuid = None
-            else:
-                parent_uuid = _parse_uuid(parent_raw, "FlowNode.parentId")
-            node = FlowNode(
-                uuid=uuid,
-                parent_uuid=parent_uuid,
-                label=str(entry.get("label", "")),
-                sort_index=int(entry.get("sortIndex", 0)),
-                raw=entry,
-            )
-            nodes[uuid] = node
-            if parent_uuid is None:
-                roots.append(uuid)
-            # Process nested children (real WIZ format embeds them inline)
-            children = entry.get("children", [])
-            if children:
-                _process_entries(children)
-
-    _process_entries(top_level_entries)
-    return ComponentDetails(flow_nodes=nodes, root_uuids=tuple(roots))
