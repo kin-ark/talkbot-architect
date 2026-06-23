@@ -286,10 +286,10 @@ def _check_library_refs_rollup(wf: WizFile) -> list[Finding]:
 # ---------------------------------------------------------------------------
 
 def _eval_null_branches_for_node(node_uuid: str, branches: list, wf: WizFile) -> list[Finding]:
-    """Core WIZ105 logic, shared by both the new and legacy sources.
+    """WIZ105 null-branch evaluator for a single node.
 
-    Accepts the node UUID (str), the branch list (from either source), and the
-    WizFile (for variable lookup). Returns a list of findings (0 or 1 per node).
+    Accepts the node UUID (str), the branch list, and the WizFile (for variable
+    lookup). Returns a list of findings (0 or 1 per node).
     """
     out: list[Finding] = []
 
