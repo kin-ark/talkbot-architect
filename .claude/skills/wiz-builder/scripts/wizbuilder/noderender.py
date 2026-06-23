@@ -283,7 +283,9 @@ def render_component_nodes(
             "id": node_uuid,
             "isDelete": 0,
             "senRecName": "",
-            "sentenceCutId": _wide_int(f"scid:{ci}:{nid_str}"),
+            "sentenceCutId": _wide_int(
+                f"{getattr(minter, 'manifest_hash', '')}:scid:{ci}:{nid_str}"
+            ),
             "sentenceText": text,
             "sentenceTextUrl": "",
             "showType": 0,

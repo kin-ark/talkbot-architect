@@ -146,7 +146,12 @@ def populate_details(bundle: InputBundle, params: dict, minter) -> None:
     comps = get_components(bundle)
     index = params["component"]
     comp = require_component(comps, index)
-    comp_uuid = comp.get("componentUuid", "")
+    comp_uuid = comp.get("componentUuid") or ""
+    if not comp_uuid:
+        raise ValueError(
+            f"populate-details: component {index} has no componentUuid; "
+            "cannot wire node/SentenceCutSpeech rows to it"
+        )
 
     r = _render_nodes(params, bundle, canvas_index=index, comp_uuid=comp_uuid, minter=minter)
 

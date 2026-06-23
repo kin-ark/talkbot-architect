@@ -113,3 +113,16 @@ def test_add_component_without_nodes_keeps_null():
     comps = get_components(bundle)
     assert comps[-1]["details"] == "null"
 
+
+
+def test_populate_details_raises_on_missing_component_uuid():
+    """A component without componentUuid cannot have nodes wired to it — raise, not write ''."""
+    import pytest
+    data = json.loads(BASE.read_text(encoding="utf-8"))
+    comps = json.loads(data["BizSpeechComponent"])
+    comps[0].pop("componentUuid", None)
+    data["BizSpeechComponent"] = json.dumps(comps)
+    bundle = InputBundle(data=data, speech_name="s.json")
+    with pytest.raises(ValueError, match="componentUuid"):
+        populate_details(bundle, {"component": 0, "nodes": [{"id": "a", "prompt": "AAA"}]},
+                         IdMinter("h"))

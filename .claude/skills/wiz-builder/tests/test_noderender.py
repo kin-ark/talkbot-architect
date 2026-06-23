@@ -60,3 +60,21 @@ def test_edge_wires_routes_and_entry_detection():
     assert edge["source"]["uuid"] == a_unclass_port
     assert edge["target"]["uuid"] == b_uuid
     assert r.routes[b_uuid] == {}
+
+
+def test_sentence_cut_id_seeded_by_manifest_hash():
+    """sentenceCutId must vary by manifest_hash (cross-build uniqueness) yet stay
+    deterministic for the same manifest_hash + node seed."""
+    common = dict(
+        canvas_index=0, comp_uuid="c", speech_id=8309,
+        branch_intent_ids={"Positive": 1, "Negative": 2, "Reject": 3,
+                           "Unclassified": 4, "No answer": 5},
+        kb_ids=[], node_language="3",
+    )
+    scid = lambda mh: render_component_nodes(  # noqa: E731
+        [NodeSpec(id="a", prompt="AAA")], [], minter=IdMinter(mh), **common
+    ).sentence_cut_speech[0]["sentenceCutId"]
+    a1, a2, a1b = scid("hash-1"), scid("hash-2"), scid("hash-1")
+    assert a1 != a2, "different manifest_hash must yield different sentenceCutId"
+    assert a1 == a1b, "same manifest_hash must be deterministic"
+    assert 0 < a1 < 2 ** 63
