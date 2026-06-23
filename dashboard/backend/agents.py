@@ -20,7 +20,7 @@ add_skill_paths()
 
 from wizcheck.parser import parse_dict          # noqa: E402
 from wizcheck.checks import run_all_checks      # noqa: E402
-from flowmodel import build_flow_model, flow_model_to_dict, unwrap  # noqa: E402
+from wizcheck.flowmodel import build_flow_model, flow_model_to_dict, unwrap  # noqa: E402
 
 import yaml  # noqa: E402  (stdlib-adjacent; available in env)
 
