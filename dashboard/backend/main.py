@@ -204,6 +204,13 @@ async def create_session(file: UploadFile = File(...)):
     return {"summary": agents.summarize(data), "findings": findings}
 
 
+@app.post("/session/blank")
+def create_blank_session():
+    SESSION.load({"BizSpeechComponent": []})
+    data = SESSION.current()
+    return {"summary": agents.summarize(data), "findings": agents.validate(data)}
+
+
 @app.get("/summary")
 async def get_summary():
     _require_session()
