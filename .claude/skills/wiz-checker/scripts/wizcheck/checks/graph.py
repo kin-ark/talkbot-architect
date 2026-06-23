@@ -325,7 +325,9 @@ def _eval_null_branches_for_node(node_uuid: str, branches: list, wf: WizFile) ->
                 if match and int(match.group(1)) == var_id:
                     op = str(cond.get("operator", "")).lower()
                     rval = str(cond.get("right_value", "")).lower()
-                    if op in ("is empty", "is_empty", "isnull", "is_null") or rval in ("null", "empty", ""):
+                    null_op = op in ("is empty", "is_empty", "isnull", "is_null")
+                    null_rval = rval in ("null", "empty", "")
+                    if null_op or null_rval:
                         has_null_branch = True
                         break
             if has_null_branch:

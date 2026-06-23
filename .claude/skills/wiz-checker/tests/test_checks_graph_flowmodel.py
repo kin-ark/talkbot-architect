@@ -14,12 +14,9 @@ from __future__ import annotations
 
 import json
 
-import pytest
-
 from wizcheck.checks.graph import check_graph
 from wizcheck.parser import parse_dict
 from wizcheck.report import Severity
-
 
 # ---------------------------------------------------------------------------
 # Fixture helpers
@@ -131,8 +128,9 @@ def _goto_kb_envelope(kb_id: int, name: str = "Go To KB") -> dict:
 class TestFlowModelNoneGuard:
     def test_returns_empty_when_flow_model_is_none(self):
         """check_graph returns [] when wf.flow_model is None (direct WizFile construction)."""
-        from wizcheck.ir import Component, WizFile
         from uuid import UUID
+
+        from wizcheck.ir import Component, WizFile
         comp = Component(
             uuid=UUID(int=1), speech_id=1, category=1, branch="dev",
             raw={},

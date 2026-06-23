@@ -236,10 +236,14 @@ def _parse_knowledge_bases(entries: list[dict[str, Any]]) -> dict[int, Knowledge
         intents_list = []
         for intent in intents_raw:
             if isinstance(intent, dict) and "intentId" in intent:
-                intents_list.append(_parse_int(intent["intentId"], "BizKnowledgeInfo.intents.intentId"))
-                
+                intents_list.append(
+                    _parse_int(intent["intentId"], "BizKnowledgeInfo.intents.intentId")
+                )
+
         kb = KnowledgeBase(
-            knowledge_id=_parse_int(_require(e, "knowledgeId", "BizKnowledgeInfo"), "BizKnowledgeInfo.knowledgeId"),
+            knowledge_id=_parse_int(
+                _require(e, "knowledgeId", "BizKnowledgeInfo"), "BizKnowledgeInfo.knowledgeId"
+            ),
             title=str(e.get("title", "")),
             kd_type=_parse_int(e.get("kdType", 0), "BizKnowledgeInfo.kdType"),
             intents=tuple(intents_list),

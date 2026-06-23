@@ -10,9 +10,9 @@ Multi-round case (in this export): 6 KBs have multi_round populated; the other
 24 have multi_round == None. The test documents which case it found.
 """
 import json
-import pytest
 from pathlib import Path
 
+import pytest
 from wizcheck.flowmodel import build_flow_model, flow_model_to_dict
 
 # ---------------------------------------------------------------------------

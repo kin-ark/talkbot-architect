@@ -47,7 +47,7 @@ def check_schema(wf: WizFile) -> list[Finding]:
 
 
 def check_empty_wait_scripts(wf: WizFile) -> list[Finding]:
-    """WIZ106: warn when a Wait or Exit node explicitly has the sentence text 'blank' or empty string.
+    """WIZ106: warn when a Wait or Exit node has the sentence text 'blank' or empty string.
 
     Reads from wf.flow_model (FlowModelNode.label + FlowModelNode.data['sentenceText']).
     Returns [] when wf.flow_model is None.

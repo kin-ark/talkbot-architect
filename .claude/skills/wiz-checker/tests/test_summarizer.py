@@ -1,5 +1,5 @@
 import json
-import pytest
+
 from wizcheck.parser import parse_dict
 from wizcheck.summarizer import build_summary_tree
 

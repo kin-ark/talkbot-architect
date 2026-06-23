@@ -12,22 +12,16 @@ Tests are ordered to match the brief's required coverage list:
   9. build_components on minimal two-node component → correct FlowComponent
 """
 import json
-import pytest
 
+from wizcheck.flow_constants import NODE_TYPE_MAP
 from wizcheck.flowmodel import (
-    BranchEdge,
-    FlowComponent,
     FlowModel,
-    FlowModelNode,
-    KBView,
     build_components,
     build_flow_model,
     flow_model_to_dict,
     node_type_of,
     unwrap,
 )
-from wizcheck.flow_constants import NODE_TYPE_MAP
-
 
 # ---------------------------------------------------------------------------
 # 1. node_type_of
@@ -203,19 +197,29 @@ def _make_component_with_conditional_node():
                 "type": 2,
                 "name": "Exit Default",
                 "is_default": False,
-                "data": {"list": [], "is_transfer": 0, "node_variables": [], "allow_jump_knowledges": []},
+                "data": {
+                    "list": [], "is_transfer": 0, "node_variables": [], "allow_jump_knowledges": [],
+                },
             },
             "exit-pos": {
                 "type": 2,
                 "name": "Exit Positive",
                 "is_default": False,
-                "data": {"list": [], "is_transfer": 0, "node_variables": [], "allow_jump_knowledges": []},
+                "data": {
+                    "list": [], "is_transfer": 0, "node_variables": [], "allow_jump_knowledges": [],
+                },
             },
         },
         "routes": {
             "cond1": {
-                "port-def": {"source": {"type": 1, "uuid": "port-def"}, "target": {"type": 1, "uuid": "exit-def"}},
-                "port-pos": {"source": {"type": 1, "uuid": "port-pos"}, "target": {"type": 1, "uuid": "exit-pos"}},
+                "port-def": {
+                    "source": {"type": 1, "uuid": "port-def"},
+                    "target": {"type": 1, "uuid": "exit-def"},
+                },
+                "port-pos": {
+                    "source": {"type": 1, "uuid": "port-pos"},
+                    "target": {"type": 1, "uuid": "exit-pos"},
+                },
             },
             "exit-def": {},
             "exit-pos": {},
@@ -440,7 +444,10 @@ class TestBuildComponents:
                     },
                     "routes": {
                         "node-a": {
-                            "port-u": {"source": {"type": 1, "uuid": "port-u"}, "target": {"type": 1, "uuid": "node-b"}},
+                            "port-u": {
+                                "source": {"type": 1, "uuid": "port-u"},
+                                "target": {"type": 1, "uuid": "node-b"},
+                            },
                         },
                         "node-b": {},
                     },
@@ -565,7 +572,10 @@ class TestMalformedRouteHandling:
                     "type": 2,
                     "name": "Exit",
                     "is_default": False,
-                    "data": {"list": [], "is_transfer": 0, "node_variables": [], "allow_jump_knowledges": []},
+                    "data": {
+                        "list": [], "is_transfer": 0,
+                        "node_variables": [], "allow_jump_knowledges": [],
+                    },
                 },
             },
             "routes": {

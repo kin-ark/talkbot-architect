@@ -97,4 +97,4 @@ class WizFile:
     audios: dict[int, Audio]
     knowledge_bases: dict[int, KnowledgeBase]
     raw: dict[str, Any] = field(repr=False)
-    flow_model: "FlowModel | None" = field(default=None, kw_only=True)
+    flow_model: FlowModel | None = field(default=None, kw_only=True)

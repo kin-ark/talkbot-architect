@@ -203,7 +203,8 @@ def test_wiz101_genuinely_disconnected_node():
     wf = parse_dict(data)
     findings = check_graph(wf)
     f = next((x for x in findings if x.code == "WIZ101"), None)
-    assert f is not None, f"Expected WIZ101 for disconnected node, got: {[x.code for x in findings]}"
+    codes = [x.code for x in findings]
+    assert f is not None, f"Expected WIZ101 for disconnected node, got: {codes}"
     assert f.severity is Severity.WARNING
     assert "node-b" in f.message
 
@@ -490,7 +491,9 @@ def test_wiz105_flowmodel_has_default_branch_no_fire():
 
 
 def test_wiz105_flowmodel_has_is_empty_branch_no_fire():
-    """WIZ105 (new source): conditional-judgment with an is_empty branch on the date var → no WIZ105."""
+    """WIZ105 (new source): conditional-judgment with an is_empty branch on the date var.
+
+    Expects no WIZ105 finding."""
     branch_list = [
         {
             "name": "Is Today",

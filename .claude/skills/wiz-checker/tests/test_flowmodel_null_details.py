@@ -1,7 +1,7 @@
 """Regression: a component whose details/routes is the JSON string "null"
 (real WIZ exports emit `details: "null"` for empty/template components) must
 not crash build_components — it should yield a component with zero nodes."""
-from wizcheck.flowmodel import build_components, _build_kbs
+from wizcheck.flowmodel import _build_kbs, build_components
 
 
 def test_null_string_details_yields_empty_component():
@@ -38,8 +38,11 @@ def test_messy_node_data_does_not_crash():
             "componentUuid": "c1", "name": "Messy",
             "details": {
                 "n1": {"type": 1, "name": "NullData", "data": None},
-                "n2": {"type": 1, "name": "StrList", "data": {"list": "oops", "node_variables": "x",
-                                                              "allow_jump_knowledges": ["7", "bad", 9]}},
+                "n2": {
+                    "type": 1, "name": "StrList",
+                    "data": {"list": "oops", "node_variables": "x",
+                             "allow_jump_knowledges": ["7", "bad", 9]},
+                },
                 "n3": "not-a-dict-envelope",
             },
             "routes": "null",

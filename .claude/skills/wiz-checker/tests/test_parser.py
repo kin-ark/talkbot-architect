@@ -142,8 +142,9 @@ def test_parse_unwrap_list_handles_json_string_blob(tmp_path):
 
 def test_parse_real_format_details_uuid_keyed():
     """Real BizSpeechComponent.details uses UUID-keyed envelopes — parses into flow_model."""
-    from wizcheck.parser import parse_dict
     import json as _json
+
+    from wizcheck.parser import parse_dict
     real_format_details = {
         "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa": {
             "type": 1,
@@ -239,7 +240,10 @@ def test_parse_dict_attaches_flow_model(tmp_path):
     from wizcheck.parser import parse_dict
     data = {
         "BizSpeechComponent": [
-            {"componentUuid": "cccccccc-cccc-4ccc-8ccc-cccccccccccc", "name": "x", "details": "null"}
+            {
+                "componentUuid": "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+                "name": "x", "details": "null",
+            }
         ],
         "SpeechVariable": "[]",
         "SpeechIntent": "[]",
