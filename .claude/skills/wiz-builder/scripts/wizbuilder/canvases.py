@@ -33,6 +33,7 @@ _SECONDARY_STRIP_KEYS = frozenset({
 _LANGUAGE_MAP = {
     "IDN": "3",
     "ENG": "3",
+    # TODO(lang-codes): verify ZHO/THA (and ENG) numeric codes from non-IDN reference exports — "3" is an empirical placeholder and may mislabel NLU/TTS routing for these languages.
     "ZHO": "3",
     "THA": "3",
 }

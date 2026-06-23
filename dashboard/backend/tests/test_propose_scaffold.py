@@ -36,3 +36,15 @@ def test_scaffold_rejects_missing_canvases():
     out = agents.propose_scaffold(p)
     assert out["ok"] is False
     assert "canvas" in out["error"].lower()
+
+
+def test_scaffold_rejects_empty_canvases():
+    out = agents.propose_scaffold({**_minimal_params(), "canvases": []})
+    assert out["ok"] is False
+    assert "canvas" in out["error"].lower()
+
+
+def test_scaffold_rejects_bad_branch():
+    out = agents.propose_scaffold({**_minimal_params(), "branch": "staging"})
+    assert out["ok"] is False
+    assert "branch" in out["error"].lower()
