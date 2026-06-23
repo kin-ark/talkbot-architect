@@ -14,6 +14,7 @@ from wizcheck.ir import (
     Utterance,
     WizFile,
 )
+from wizcheck.parser import parse_dict
 from wizcheck.report import Severity
 
 
@@ -133,16 +134,12 @@ def test_wiz004_none_language_does_not_fire():
 
 
 def test_wiz006_empty_canvas_is_warning():
-    """A component with zero FlowNodes (empty canvas / template) fires WIZ006."""
-    comp = Component(
-        uuid=UUID(int=1),
-        speech_id=1,
-        category=1,
-        branch="dev",
-        details=ComponentDetails(flow_nodes={}, root_uuids=()),
-        raw={"createTime": 1700000000000, "updateTime": 1700000000000, "name": "Empty"},
-    )
-    wf = _wf(components={comp.uuid: comp})
+    """A component with details='null' (empty canvas) fires WIZ006.
+
+    Uses parse_dict so that wf.flow_model is populated — the check now reads
+    flow_model.components[i].nodes instead of the old IR flow_nodes.
+    """
+    wf = parse_dict(_export_with_comp("null"))
     findings = check_schema(wf)
     f = next((x for x in findings if x.code == "WIZ006"), None)
     assert f is not None
@@ -151,19 +148,20 @@ def test_wiz006_empty_canvas_is_warning():
 
 
 def test_wiz006_skipped_when_canvas_has_nodes():
-    """A component with at least one FlowNode does not fire WIZ006."""
-    node = FlowNode(
-        uuid=UUID(int=99), parent_uuid=None, label="Greeting", sort_index=0, raw={},
-    )
-    comp = Component(
-        uuid=UUID(int=2),
-        speech_id=1,
-        category=1,
-        branch="dev",
-        details=ComponentDetails(flow_nodes={UUID(int=99): node}, root_uuids=(UUID(int=99),)),
-        raw={"createTime": 1700000000000, "updateTime": 1700000000000, "name": "NonEmpty"},
-    )
-    wf = _wf(components={comp.uuid: comp})
+    """A component with >=1 node in flow_model does not fire WIZ006.
+
+    Uses parse_dict with a new-format details dict (UUID-keyed envelope) so that
+    wf.flow_model.components[i].nodes is non-empty.
+    """
+    new_format_details = {
+        _NODE_UUID: {
+            "type": 1,
+            "name": "Greeting",
+            "is_default": True,
+            "data": {"list": [{"text": "Hello!"}]},
+        }
+    }
+    wf = parse_dict(_export_with_comp(new_format_details))
     findings = check_schema(wf)
     assert not any(f.code == "WIZ006" for f in findings)
 
@@ -203,7 +201,77 @@ def test_wiz107_truncated_script_is_warning():
     )
     wf = _wf(utterances=(u,))
     findings = check_schema(wf)
-    
+
     f = next((x for x in findings if x.code == "WIZ107"), None)
     assert f is not None
+    assert f.severity is Severity.WARNING
+
+
+# ---------------------------------------------------------------------------
+# WIZ006 FlowModel-based tests — must use parse_dict so flow_model is populated
+# ---------------------------------------------------------------------------
+
+_COMP_UUID = "11111111-1111-4111-8111-111111111111"
+_NODE_UUID = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+
+_MINIMAL_EXPORT = {
+    "BizSpeechComponent": [],
+    "SpeechVariable": [],
+    "SpeechIntent": [],
+    "SentenceCutSpeech": [],
+    "SpeechAudio": [],
+}
+
+
+def _export_with_comp(details) -> dict:
+    """Minimal export dict with one component whose details= is the given value."""
+    return {
+        **_MINIMAL_EXPORT,
+        "BizSpeechComponent": [
+            {
+                "componentUuid": _COMP_UUID,
+                "speechId": 1,
+                "category": 1,
+                "branch": "dev",
+                "createTime": 1700000000000,
+                "updateTime": 1700000000000,
+                "name": "TestComp",
+                "details": details,
+            }
+        ],
+    }
+
+
+def test_wiz006_not_raised_for_populated_component():
+    """A component with >=1 node in flow_model must NOT fire WIZ006.
+
+    Real WIZ exports use a new-format details: a dict keyed by node UUID
+    (no canvas.component.props.list nesting), so the old IR flow_nodes check
+    would falsely fire WIZ006.  The FlowModel-based check must not.
+    """
+    # New-format details: top-level UUID key -> envelope with type/name/data.
+    # build_flow_model iterates these keys as nodes → comp.nodes is non-empty.
+    new_format_details = {
+        _NODE_UUID: {
+            "type": 1,
+            "name": "Greeting",
+            "is_default": True,
+            "data": {"list": [{"text": "Hello!"}]},
+        }
+    }
+    wf = parse_dict(_export_with_comp(new_format_details))
+    findings = check_schema(wf)
+    assert not any(f.code == "WIZ006" for f in findings), (
+        f"WIZ006 falsely fired for a populated component: "
+        f"{[f for f in findings if f.code == 'WIZ006']}"
+    )
+
+
+def test_wiz006_raised_for_empty_component():
+    """A component with details='null' (empty canvas) must fire WIZ006."""
+    # Real WIZ exports emit details: "null" for empty/template components.
+    wf = parse_dict(_export_with_comp("null"))
+    findings = check_schema(wf)
+    f = next((x for x in findings if x.code == "WIZ006"), None)
+    assert f is not None, "WIZ006 must fire for a component with details='null'"
     assert f.severity is Severity.WARNING

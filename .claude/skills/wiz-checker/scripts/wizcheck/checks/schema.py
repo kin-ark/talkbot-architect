@@ -152,15 +152,26 @@ def _check_component_timestamps(wf: WizFile) -> list[Finding]:
 
 
 def _check_empty_canvases(wf: WizFile) -> list[Finding]:
-    """WIZ006: warn when a component has zero FlowNodes (empty canvas / template)."""
+    """WIZ006: warn when a component has zero nodes in its FlowModel (empty canvas / template).
+
+    Uses wf.flow_model (populated by parse_dict via build_flow_model) so that the
+    new-format details shape (UUID-keyed envelope dict) is read correctly.
+    Falls back gracefully when flow_model is None (e.g. WizFile built directly
+    by test helpers without parse_dict) — returns no findings rather than crashing.
+    """
+    if wf.flow_model is None:
+        return []
     out: list[Finding] = []
-    for comp in wf.components.values():
-        if not comp.details.flow_nodes:
-            name = comp.raw.get("name", str(comp.uuid))
+    # Build a lookup from component UUID string → Component raw for the name field.
+    comp_raw_by_uuid = {str(c.uuid): c.raw for c in wf.components.values()}
+    for fc in wf.flow_model.components:
+        if not fc.nodes:
+            raw = comp_raw_by_uuid.get(fc.uuid, {})
+            name = raw.get("name", fc.uuid)
             out.append(Finding(
                 code="WIZ006",
                 severity=Severity.WARNING,
-                location=Location(entity="Component", id=str(comp.uuid), field="details"),
+                location=Location(entity="Component", id=fc.uuid, field="details"),
                 message=(
                     f"Component {name!r} has no canvas content "
                     f"(empty/template dialogue)."
