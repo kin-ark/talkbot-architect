@@ -3,8 +3,8 @@
 Golden file: tests/golden/flowmodel_real.json (generated, then frozen).
 
 Real export: speech2572824560161596380.unpacked.json (repo root).
-Path derivation: this file lives at dashboard/backend/tests/test_flowmodel_build.py
-  parents[3] == repo root  (tests/ -> backend/ -> dashboard/ -> repo-root/)
+Path derivation: this file lives at .claude/skills/wiz-checker/tests/test_flowmodel_build.py
+  parents[4] == repo root  (tests/ -> wiz-checker/ -> skills/ -> .claude/ -> repo-root/)
 
 Multi-round case (in this export): 6 KBs have multi_round populated; the other
 24 have multi_round == None. The test documents which case it found.
@@ -13,16 +13,18 @@ import json
 import pytest
 from pathlib import Path
 
-# Add backend/ to sys.path so imports work when running via pytest from backend/
-import sys
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-
-from flowmodel import build_flow_model, flow_model_to_dict
+from wizcheck.flowmodel import build_flow_model, flow_model_to_dict
 
 # ---------------------------------------------------------------------------
 # Paths
 # ---------------------------------------------------------------------------
-_REPO_ROOT = Path(__file__).resolve().parents[3]
+# File now lives at .claude/skills/wiz-checker/tests/test_flowmodel_build.py
+#   parents[0] = tests/
+#   parents[1] = wiz-checker/
+#   parents[2] = skills/
+#   parents[3] = .claude/
+#   parents[4] = repo-root/
+_REPO_ROOT = Path(__file__).resolve().parents[4]
 _REAL_EXPORT = _REPO_ROOT / "speech2572824560161596380.unpacked.json"
 _GOLDEN = Path(__file__).resolve().parent / "golden" / "flowmodel_real.json"
 
