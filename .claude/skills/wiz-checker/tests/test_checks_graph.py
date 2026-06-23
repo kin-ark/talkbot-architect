@@ -225,15 +225,11 @@ def test_wiz100_absent_when_all_targets_present():
 
 
 # ---------------------------------------------------------------------------
-# WIZ101: unreachable — no longer emitted (FlowModel path dropped WIZ101)
-# WIZ101 was a FlowGraph-based check; the FlowModel rewrite did not reimplement
-# it. These tests are kept as documentation that WIZ101 is no longer generated.
+# WIZ101: unreachable — reinstated on FlowModel (BFS from root_uuids)
 # ---------------------------------------------------------------------------
 
 def test_wiz101_descendants_of_library_ref_are_not_unreachable():
-    """Descendant nodes reachable via library-ref should not be flagged WIZ101.
-    (WIZ101 is no longer emitted by the FlowModel-based check_graph.)
-    """
+    """Node-b is reachable from the entry node via a branch — no WIZ101."""
     data = _make_export(
         nodes={
             "node-a": _talk_envelope("Greeting", is_default=True, ports=["port-1"]),
@@ -247,10 +243,7 @@ def test_wiz101_descendants_of_library_ref_are_not_unreachable():
 
 
 def test_wiz101_genuinely_disconnected_node():
-    """WIZ101 is not emitted by the FlowModel-based check_graph.
-
-    This documents the behavior change: disconnected nodes are not flagged.
-    """
+    """WIZ101 fires for node-b which has no incoming edge from the entry node."""
     data = _make_export(
         nodes={
             "node-a": _talk_envelope("Greeting", is_default=True),
@@ -260,7 +253,10 @@ def test_wiz101_genuinely_disconnected_node():
     )
     wf = parse_dict(data)
     findings = check_graph(wf)
-    assert not any(f.code == "WIZ101" for f in findings)
+    f = next((x for x in findings if x.code == "WIZ101"), None)
+    assert f is not None, f"Expected WIZ101 for disconnected node, got: {[x.code for x in findings]}"
+    assert f.severity is Severity.WARNING
+    assert "node-b" in f.message
 
 
 # ---------------------------------------------------------------------------

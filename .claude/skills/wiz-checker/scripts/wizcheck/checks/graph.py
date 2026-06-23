@@ -41,6 +41,7 @@ def check_graph(wf: WizFile) -> list[Finding]:
     findings: list[Finding] = []
     if wf.flow_model is not None:
         findings.extend(_check_orphan_refs(wf))
+        findings.extend(_check_unreachable(wf))
         findings.extend(_check_dead_ends(wf))
         findings.extend(_check_cycles(wf))
         findings.extend(_check_library_refs_rollup(wf))
@@ -84,6 +85,63 @@ def _check_orphan_refs(wf: WizFile) -> list[Finding]:
                             f"or a structural defect — verify in the WIZ.AI UI."
                         ),
                     ))
+    return out
+
+
+# ---------------------------------------------------------------------------
+# WIZ101: unreachable — nodes not reachable from the component's entry node(s)
+# ---------------------------------------------------------------------------
+
+def _check_unreachable(wf: WizFile) -> list[Finding]:
+    """WIZ101: nodes that cannot be reached from any root within their component.
+
+    For each FlowComponent the reachable set is computed by BFS/DFS from the
+    component's entry node(s):
+    - Use comp.root_uuids if non-empty (= [entry_uuid] when is_default node exists).
+    - If root_uuids is empty (no entry node declared) skip the component — cannot
+      determine reachability without a starting point.
+
+    Only same-component edges (branch.target_uuid present in comp.nodes) are
+    followed. Cross-component jumps and KB jumps are intentional exits, not
+    intra-component edges.
+    """
+    fm = wf.flow_model
+    assert fm is not None
+    out: list[Finding] = []
+    for comp in fm.components:
+        if not comp.root_uuids:
+            # No entry point declared — cannot compute reachability; skip.
+            continue
+        node_uuids: set[str] = set(comp.nodes.keys())
+        # BFS from each root, following same-component edges only.
+        reachable: set[str] = set()
+        queue: list[str] = list(comp.root_uuids)
+        for seed in queue:
+            if seed in node_uuids:
+                reachable.add(seed)
+        i = 0
+        while i < len(queue):
+            current_uuid = queue[i]
+            i += 1
+            node = comp.nodes.get(current_uuid)
+            if node is None:
+                continue
+            for branch in node.branches:
+                if (
+                    branch.target_uuid is not None
+                    and branch.target_uuid in node_uuids
+                    and branch.target_uuid not in reachable
+                ):
+                    reachable.add(branch.target_uuid)
+                    queue.append(branch.target_uuid)
+        for node_uuid in node_uuids:
+            if node_uuid not in reachable:
+                out.append(Finding(
+                    code="WIZ101",
+                    severity=Severity.WARNING,
+                    location=Location(entity="FlowNode", id=node_uuid, field=None),
+                    message=f"FlowNode {node_uuid!r} is unreachable from any component root.",
+                ))
     return out
 
 

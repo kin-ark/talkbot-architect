@@ -226,6 +226,75 @@ class TestWIZ100OrphanRefs:
 
 
 # ---------------------------------------------------------------------------
+# WIZ101: unreachable nodes
+# ---------------------------------------------------------------------------
+
+class TestWIZ101Unreachable:
+    def test_wiz101_fires_for_disconnected_node(self):
+        """WIZ101 fires when node-b has no incoming edge from the entry node."""
+        data = _make_export(
+            nodes={
+                "node-a": _talk_envelope("Greeting", is_default=True),
+                "node-b": _talk_envelope("Disconnected"),
+            },
+            routes={},  # no edge from node-a to node-b
+        )
+        wf = parse_dict(data)
+        findings = check_graph(wf)
+        f = next((x for x in findings if x.code == "WIZ101"), None)
+        assert f is not None, f"Expected WIZ101, got: {[x.code for x in findings]}"
+        assert f.severity is Severity.WARNING
+        assert "node-b" in f.message
+
+    def test_wiz101_absent_when_node_reachable(self):
+        """No WIZ101 when entry->node-b via a branch (node-b is reachable)."""
+        data = _make_export(
+            nodes={
+                "node-a": _talk_envelope("Greeting", is_default=True, ports=["port-1"]),
+                "node-b": _talk_envelope("Pitch"),
+            },
+            routes={
+                "node-a": {"port-1": {"target": {"uuid": "node-b"}}},
+            },
+        )
+        wf = parse_dict(data)
+        findings = check_graph(wf)
+        assert not any(f.code == "WIZ101" for f in findings)
+
+    def test_wiz101_skipped_when_no_entry_node(self):
+        """When no node has is_default=True, root_uuids is empty — skip reachability check."""
+        data = _make_export(
+            nodes={
+                "node-a": _talk_envelope("A"),
+                "node-b": _talk_envelope("B"),
+            },
+            routes={},
+        )
+        wf = parse_dict(data)
+        findings = check_graph(wf)
+        # No root_uuids means we cannot determine reachability — WIZ101 must NOT fire.
+        assert not any(f.code == "WIZ101" for f in findings)
+
+    def test_wiz101_only_flags_unreachable_not_entry(self):
+        """WIZ101 flags node-c but not node-a (entry) or node-b (reachable from entry)."""
+        data = _make_export(
+            nodes={
+                "node-a": _talk_envelope("Greeting", is_default=True, ports=["port-1"]),
+                "node-b": _talk_envelope("Pitch"),
+                "node-c": _talk_envelope("Orphan"),
+            },
+            routes={
+                "node-a": {"port-1": {"target": {"uuid": "node-b"}}},
+            },
+        )
+        wf = parse_dict(data)
+        findings = check_graph(wf)
+        wiz101 = [f for f in findings if f.code == "WIZ101"]
+        assert len(wiz101) == 1
+        assert "node-c" in wiz101[0].message
+
+
+# ---------------------------------------------------------------------------
 # WIZ102: dead-ends
 # ---------------------------------------------------------------------------
 
