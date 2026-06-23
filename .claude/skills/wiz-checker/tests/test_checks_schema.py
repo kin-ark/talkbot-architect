@@ -275,3 +275,87 @@ def test_wiz006_raised_for_empty_component():
     f = next((x for x in findings if x.code == "WIZ006"), None)
     assert f is not None, "WIZ006 must fire for a component with details='null'"
     assert f.severity is Severity.WARNING
+
+
+# ---------------------------------------------------------------------------
+# WIZ106: new-format (FlowModel) source — parse_dict-based tests
+# These verify WIZ106 fires correctly when reading from FlowModelNode.data
+# rather than the legacy FlowNode.raw.
+# ---------------------------------------------------------------------------
+
+import json as _json
+
+
+def _export_with_node(node_name: str, node_type: int, sentence_text: str | None) -> dict:
+    """Build a minimal export with one node whose sentenceText is given."""
+    node_uuid = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"
+    data_dict: dict = {
+        "list": [{"text": sentence_text}] if sentence_text is not None else [],
+        "all_client_intent": [],
+        "node_variables": [],
+        "allow_jump_knowledges": [],
+    }
+    if sentence_text is not None:
+        data_dict["sentenceText"] = sentence_text
+    details = {
+        node_uuid: {
+            "type": node_type,
+            "name": node_name,
+            "is_default": True,
+            "data": data_dict,
+        }
+    }
+    return {
+        "BizSpeechComponent": [
+            {
+                "componentUuid": _COMP_UUID,
+                "speechId": 1,
+                "category": 1,
+                "branch": "dev",
+                "createTime": 1700000000000,
+                "updateTime": 1700000000000,
+                "name": "TestComp",
+                "details": details,
+                "routes": _json.dumps({}),
+            }
+        ],
+        "BizKnowledgeInfo": [],
+        "SpeechVariable": [],
+        "SpeechIntent": [],
+        "SentenceCutSpeech": [],
+        "SpeechAudio": [],
+    }
+
+
+def test_wiz106_flowmodel_wait_blank_fires():
+    """WIZ106 (new source): Wait node with sentenceText='blank' → WIZ106."""
+    wf = parse_dict(_export_with_node("Wait", 1, "blank"))
+    findings = check_schema(wf)
+    f = next((x for x in findings if x.code == "WIZ106"), None)
+    assert f is not None, f"Expected WIZ106 but got: {[x.code for x in findings]}"
+    assert f.severity is Severity.WARNING
+    assert "Wait" in f.message
+
+
+def test_wiz106_flowmodel_exit_empty_fires():
+    """WIZ106 (new source): Exit node with sentenceText='' → WIZ106."""
+    wf = parse_dict(_export_with_node("Exit", 2, ""))
+    findings = check_schema(wf)
+    f = next((x for x in findings if x.code == "WIZ106"), None)
+    assert f is not None, f"Expected WIZ106 but got: {[x.code for x in findings]}"
+    assert f.severity is Severity.WARNING
+    assert "Exit" in f.message
+
+
+def test_wiz106_flowmodel_wait_with_real_script_no_fire():
+    """WIZ106 (new source): Wait node with a real script → no WIZ106."""
+    wf = parse_dict(_export_with_node("Wait", 1, "Please hold on."))
+    findings = check_schema(wf)
+    assert not any(x.code == "WIZ106" for x in findings)
+
+
+def test_wiz106_flowmodel_other_node_name_no_fire():
+    """WIZ106 (new source): node with sentenceText='blank' but not named Wait/Exit → no WIZ106."""
+    wf = parse_dict(_export_with_node("Greeting", 1, "blank"))
+    findings = check_schema(wf)
+    assert not any(x.code == "WIZ106" for x in findings)

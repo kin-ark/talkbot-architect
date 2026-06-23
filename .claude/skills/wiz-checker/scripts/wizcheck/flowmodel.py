@@ -80,6 +80,7 @@ class FlowModelNode:
     text: str                            # first data.list[].text (joined by " / " if multiple)
     referenced_vars: list[str]           # names from data.node_variables[].name + {var} refs
     allowed_kbs: list[int]               # data.allow_jump_knowledges cast to int
+    data: dict = field(default_factory=dict)  # raw envelope data dict (branch conditions, sentenceText, etc.)
     branches: list[BranchEdge] = field(default_factory=list)
 
 
@@ -281,6 +282,7 @@ def _build_node(
         text=text,
         referenced_vars=referenced_vars,
         allowed_kbs=allowed_kbs,
+        data=data,
         branches=branches,
     )
 
@@ -447,6 +449,7 @@ def _node_to_dict(n: FlowModelNode) -> dict:
         "text": n.text,
         "referenced_vars": n.referenced_vars,
         "allowed_kbs": n.allowed_kbs,
+        "data": n.data,
         "branches": [_branch_to_dict(b) for b in n.branches],
     }
 

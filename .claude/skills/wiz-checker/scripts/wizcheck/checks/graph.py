@@ -5,10 +5,10 @@ wf.flow_model is None the FlowModel checks return an empty list — test helpers
 that construct WizFile directly do not populate flow_model; use parse_dict()
 to get a populated WizFile.
 
-WIZ105 (Conditional Judgment missing Null branch on date field) uses the
-legacy IR (wf.components / FlowNode.raw) because FlowModelNode does not carry
-branch_judgement_condition data. It runs unconditionally — wf.components is
-always populated by parse_dict().
+WIZ105 (Conditional Judgment missing Null branch on date field) reads from
+FlowModelNode.data['branch'] (new source). When wf.flow_model is None it falls
+back to the legacy IR (wf.components / FlowNode.raw) so tests that construct
+WizFile directly still work.
 """
 
 from __future__ import annotations
@@ -45,7 +45,9 @@ def check_graph(wf: WizFile) -> list[Finding]:
         findings.extend(_check_dead_ends(wf))
         findings.extend(_check_cycles(wf))
         findings.extend(_check_library_refs_rollup(wf))
-    findings.extend(_check_null_branches(wf))
+        findings.extend(_check_null_branches(wf))
+    else:
+        findings.extend(_check_null_branches_legacy(wf))
     return findings
 
 
@@ -284,64 +286,96 @@ def _check_library_refs_rollup(wf: WizFile) -> list[Finding]:
 
 # ---------------------------------------------------------------------------
 # WIZ105: Conditional Judgment missing Null branch on a date field
-# Uses legacy IR (wf.components / FlowNode.raw) because FlowModelNode does
-# not carry branch_judgement_condition data.
+# Primary: reads FlowModelNode.data['branch'] (new source, via flow_model).
+# Fallback (_check_null_branches_legacy): reads FlowNode.raw (legacy IR) when
+# wf.flow_model is None (e.g. WizFile built directly by test helpers).
 # ---------------------------------------------------------------------------
 
+def _eval_null_branches_for_node(node_uuid: str, branches: list, wf: WizFile) -> list[Finding]:
+    """Core WIZ105 logic, shared by both the new and legacy sources.
+
+    Accepts the node UUID (str), the branch list (from either source), and the
+    WizFile (for variable lookup). Returns a list of findings (0 or 1 per node).
+    """
+    out: list[Finding] = []
+
+    # Find which date variables are being evaluated in this node
+    date_var_ids_evaluated: set[int] = set()
+    for branch in branches:
+        for cond in (branch.get("branch_judgement_condition") or []):
+            left_val = str(cond.get("left_value", ""))
+            match = _VAR_ID_RE.search(left_val)
+            if match:
+                var_id = int(match.group(1))
+                v = wf.variables.get(var_id)
+                if v and v.text_type == "DATE":
+                    date_var_ids_evaluated.add(var_id)
+
+    if not date_var_ids_evaluated:
+        return out
+
+    # For each date variable evaluated, ensure there is a branch handling Null or empty
+    for var_id in date_var_ids_evaluated:
+        has_null_branch = False
+        for branch in branches:
+            conditions = branch.get("branch_judgement_condition")
+            # A branch with no conditions acts as a fallback/default
+            if not conditions:
+                has_null_branch = True
+                break
+
+            # Look for an explicit empty check on *this specific date variable*
+            for cond in conditions:
+                cond_left_val = str(cond.get("left_value", ""))
+                match = _VAR_ID_RE.search(cond_left_val)
+                if match and int(match.group(1)) == var_id:
+                    op = str(cond.get("operator", "")).lower()
+                    rval = str(cond.get("right_value", "")).lower()
+                    if op in ("is empty", "is_empty", "isnull", "is_null") or rval in ("null", "empty", ""):
+                        has_null_branch = True
+                        break
+            if has_null_branch:
+                break
+
+        if not has_null_branch:
+            out.append(Finding(
+                code="WIZ105",
+                severity=Severity.ERROR,
+                location=Location(entity="FlowNode", id=node_uuid, field=None),
+                message="Missing fallback/null branch on Date variable",
+            ))
+            # Only emit once per node even if multiple date variables are missing checks
+            break
+    return out
+
+
 def _check_null_branches(wf: WizFile) -> list[Finding]:
-    """WIZ105: Conditional judgment on date field MUST have a default or Null branch."""
+    """WIZ105: Conditional judgment on date field MUST have a default or Null branch.
+
+    Reads from wf.flow_model (FlowModelNode.data['branch']). Called only when
+    wf.flow_model is not None.
+    """
+    assert wf.flow_model is not None
+    out: list[Finding] = []
+    for fc in wf.flow_model.components:
+        for node in fc.nodes.values():
+            if node.node_type != "conditional":
+                continue
+            branches = node.data.get("branch") or []
+            out.extend(_eval_null_branches_for_node(node.uuid, branches, wf))
+    return out
+
+
+def _check_null_branches_legacy(wf: WizFile) -> list[Finding]:
+    """WIZ105 fallback: reads from legacy FlowNode.raw when wf.flow_model is None.
+
+    Used only when WizFile is constructed directly by test helpers (no parse_dict).
+    """
     out: list[Finding] = []
     for comp in wf.components.values():
         for node in comp.details.flow_nodes.values():
             if node.raw.get("type") != NODE_TYPE_CONDITIONAL_JUDGMENT:
                 continue
-
-            # Find which date variables are being evaluated in this node
-            date_var_ids_evaluated: set[int] = set()
             branches = node.raw.get("branch", [])
-            for branch in branches:
-                for cond in (branch.get("branch_judgement_condition") or []):
-                    left_val = str(cond.get("left_value", ""))
-                    match = _VAR_ID_RE.search(left_val)
-                    if match:
-                        var_id = int(match.group(1))
-                        v = wf.variables.get(var_id)
-                        if v and v.text_type == "DATE":
-                            date_var_ids_evaluated.add(var_id)
-
-            if not date_var_ids_evaluated:
-                continue
-
-            # For each date variable evaluated, ensure there is a branch handling Null or empty
-            for var_id in date_var_ids_evaluated:
-                has_null_branch = False
-                for branch in branches:
-                    conditions = branch.get("branch_judgement_condition")
-                    # A branch with no conditions acts as a fallback/default
-                    if not conditions:
-                        has_null_branch = True
-                        break
-
-                    # Look for an explicit empty check on *this specific date variable*
-                    for cond in conditions:
-                        cond_left_val = str(cond.get("left_value", ""))
-                        match = _VAR_ID_RE.search(cond_left_val)
-                        if match and int(match.group(1)) == var_id:
-                            op = str(cond.get("operator", "")).lower()
-                            rval = str(cond.get("right_value", "")).lower()
-                            if op in ("is empty", "is_empty", "isnull", "is_null") or rval in ("null", "empty", ""):
-                                has_null_branch = True
-                                break
-                    if has_null_branch:
-                        break
-
-                if not has_null_branch:
-                    out.append(Finding(
-                        code="WIZ105",
-                        severity=Severity.ERROR,
-                        location=Location(entity="FlowNode", id=str(node.uuid), field=None),
-                        message="Missing fallback/null branch on Date variable",
-                    ))
-                    # Only emit once per node even if multiple date variables are missing checks
-                    break
+            out.extend(_eval_null_branches_for_node(str(node.uuid), branches, wf))
     return out

@@ -541,3 +541,146 @@ def test_wiz105_has_default_branch_on_date_variable():
     wf = _wf_from_nodes([n], variables=variables)
     findings = check_graph(wf)
     assert not any(x.code == "WIZ105" for x in findings)
+
+
+# ---------------------------------------------------------------------------
+# WIZ105: new-format (FlowModel) source — parse_dict-based tests
+# These verify WIZ105 fires correctly when reading from FlowModelNode.data
+# rather than the legacy FlowNode.raw.
+# ---------------------------------------------------------------------------
+
+def _make_export_with_variables(nodes: dict, routes: dict, variables: list[dict]) -> dict:
+    """Build a minimal export dict with one component and given SpeechVariable list."""
+    return {
+        "BizSpeechComponent": [
+            {
+                "componentUuid": "aaaa0000-0000-4000-8000-000000000001",
+                "speechId": 1,
+                "category": 1,
+                "branch": "dev",
+                "createTime": 1700000000000,
+                "updateTime": 1700000000000,
+                "name": "TestComp",
+                "details": json.dumps(nodes),
+                "routes": json.dumps(routes),
+            }
+        ],
+        "BizKnowledgeInfo": [],
+        "SpeechVariable": variables,
+        "SpeechIntent": [],
+        "SentenceCutSpeech": [],
+        "SpeechAudio": [],
+    }
+
+
+def _conditional_envelope_with_branch(branch_list: list, *, is_default: bool = True) -> dict:
+    """Build a type-7 (conditional judgment) envelope with the given branch list."""
+    return {
+        "type": 7,
+        "name": "Check Date",
+        "is_default": is_default,
+        "data": {
+            "list": [],
+            "branch": branch_list,
+            "all_client_intent": [],
+            "node_variables": [],
+            "allow_jump_knowledges": [],
+        },
+    }
+
+
+def test_wiz105_flowmodel_missing_null_branch_fires():
+    """WIZ105 (new source): conditional-judgment on date var with no null branch → WIZ105."""
+    branch_list = [
+        {
+            "name": "Is Today",
+            "branch_judgement_condition": [
+                {"left_value": "[{201}]", "operator": "=", "right_value": "Today"}
+            ],
+        }
+    ]
+    variables = [{"id": 201, "name": "CallDate", "textType": "DATE", "variableSource": 0}]
+    data = _make_export_with_variables(
+        nodes={"cond-node": _conditional_envelope_with_branch(branch_list)},
+        routes={"cond-node": {}},
+        variables=variables,
+    )
+    wf = parse_dict(data)
+    findings = check_graph(wf)
+    f = next((x for x in findings if x.code == "WIZ105"), None)
+    assert f is not None, f"Expected WIZ105 but got: {[x.code for x in findings]}"
+    assert f.severity is Severity.ERROR
+    assert "Missing fallback/null branch" in f.message
+
+
+def test_wiz105_flowmodel_has_default_branch_no_fire():
+    """WIZ105 (new source): conditional-judgment with a no-condition default branch → no WIZ105."""
+    branch_list = [
+        {
+            "name": "Is Today",
+            "branch_judgement_condition": [
+                {"left_value": "[{202}]", "operator": "=", "right_value": "Today"}
+            ],
+        },
+        {
+            "name": "Default",
+            "branch_judgement_condition": [],
+        },
+    ]
+    variables = [{"id": 202, "name": "CallDate", "textType": "DATE", "variableSource": 0}]
+    data = _make_export_with_variables(
+        nodes={"cond-node": _conditional_envelope_with_branch(branch_list)},
+        routes={"cond-node": {}},
+        variables=variables,
+    )
+    wf = parse_dict(data)
+    findings = check_graph(wf)
+    assert not any(x.code == "WIZ105" for x in findings)
+
+
+def test_wiz105_flowmodel_has_is_empty_branch_no_fire():
+    """WIZ105 (new source): conditional-judgment with an is_empty branch on the date var → no WIZ105."""
+    branch_list = [
+        {
+            "name": "Is Today",
+            "branch_judgement_condition": [
+                {"left_value": "[{203}]", "operator": "=", "right_value": "Today"}
+            ],
+        },
+        {
+            "name": "Null Check",
+            "branch_judgement_condition": [
+                {"left_value": "[{203}]", "operator": "is_empty", "right_value": ""}
+            ],
+        },
+    ]
+    variables = [{"id": 203, "name": "CallDate", "textType": "DATE", "variableSource": 0}]
+    data = _make_export_with_variables(
+        nodes={"cond-node": _conditional_envelope_with_branch(branch_list)},
+        routes={"cond-node": {}},
+        variables=variables,
+    )
+    wf = parse_dict(data)
+    findings = check_graph(wf)
+    assert not any(x.code == "WIZ105" for x in findings)
+
+
+def test_wiz105_flowmodel_non_date_variable_no_fire():
+    """WIZ105 (new source): conditional-judgment on a non-DATE variable → no WIZ105."""
+    branch_list = [
+        {
+            "name": "Is True",
+            "branch_judgement_condition": [
+                {"left_value": "[{204}]", "operator": "=", "right_value": "true"}
+            ],
+        }
+    ]
+    variables = [{"id": 204, "name": "SomeFlag", "textType": "DEFAULT", "variableSource": 0}]
+    data = _make_export_with_variables(
+        nodes={"cond-node": _conditional_envelope_with_branch(branch_list)},
+        routes={"cond-node": {}},
+        variables=variables,
+    )
+    wf = parse_dict(data)
+    findings = check_graph(wf)
+    assert not any(x.code == "WIZ105" for x in findings)

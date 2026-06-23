@@ -598,3 +598,109 @@ class TestMalformedRouteHandling:
         # Only the good edge produces a branch
         assert len(node.branches) == 1
         assert node.branches[0].target_uuid == "dest"
+
+
+# ---------------------------------------------------------------------------
+# FlowModelNode.data field — populated from envelope's data dict
+# ---------------------------------------------------------------------------
+
+class TestFlowModelNodeData:
+    """FlowModelNode.data must carry the raw envelope data dict for checks that
+    need fields not promoted to first-class attributes (e.g. branch conditions,
+    sentenceText).
+    """
+
+    def _make_comp_with_conditional(self, branch_list):
+        """Conditional-judgment node (type 7) with given branch list in data."""
+        return {
+            "componentUuid": "comp-data-test",
+            "name": "Data Test",
+            "sortIndex": 1,
+            "details": {
+                "cond-node": {
+                    "type": 7,
+                    "name": "Check Date",
+                    "is_default": True,
+                    "data": {
+                        "list": [],
+                        "branch": branch_list,
+                        "all_client_intent": [],
+                        "node_variables": [],
+                        "allow_jump_knowledges": [],
+                    },
+                },
+            },
+            "routes": {"cond-node": {}},
+        }
+
+    def _make_comp_with_talk(self, sentence_text: str, node_label: str = "Wait"):
+        """Talk/exit node with a specific sentence text list entry."""
+        return {
+            "componentUuid": "comp-text-test",
+            "name": "Text Test",
+            "sortIndex": 1,
+            "details": {
+                "text-node": {
+                    "type": 1,
+                    "name": node_label,
+                    "is_default": True,
+                    "data": {
+                        "list": [{"text": sentence_text}] if sentence_text is not None else [],
+                        "all_client_intent": [],
+                        "node_variables": [],
+                        "allow_jump_knowledges": [],
+                        "sentenceText": sentence_text,
+                    },
+                },
+            },
+            "routes": {"text-node": {}},
+        }
+
+    def test_data_field_is_dict(self):
+        """FlowModelNode.data is a dict (never None)."""
+        comp = self._make_comp_with_conditional([])
+        components = build_components({"BizSpeechComponent": [comp]})
+        node = components[0].nodes["cond-node"]
+        assert isinstance(node.data, dict)
+
+    def test_data_contains_branch_list(self):
+        """For a type-7 node, node.data['branch'] holds the condition branches."""
+        branch_list = [
+            {
+                "name": "Is Today",
+                "branch_judgement_condition": [
+                    {"left_value": "[{101}]", "operator": "=", "right_value": "Today"}
+                ],
+            }
+        ]
+        comp = self._make_comp_with_conditional(branch_list)
+        components = build_components({"BizSpeechComponent": [comp]})
+        node = components[0].nodes["cond-node"]
+        assert node.data.get("branch") == branch_list
+
+    def test_data_contains_sentence_text(self):
+        """For a node with sentenceText in data, node.data['sentenceText'] is accessible."""
+        comp = self._make_comp_with_talk("blank", "Wait")
+        components = build_components({"BizSpeechComponent": [comp]})
+        node = components[0].nodes["text-node"]
+        assert node.data.get("sentenceText") == "blank"
+
+    def test_data_empty_dict_when_no_data_envelope(self):
+        """When the envelope has no 'data' key, node.data is an empty dict."""
+        comp_dict = {
+            "componentUuid": "comp-nodata",
+            "name": "No Data",
+            "sortIndex": 1,
+            "details": {
+                "nd-node": {
+                    "type": 2,
+                    "name": "Exit",
+                    "is_default": True,
+                    # No 'data' key at all
+                },
+            },
+            "routes": {"nd-node": {}},
+        }
+        components = build_components({"BizSpeechComponent": [comp_dict]})
+        node = components[0].nodes["nd-node"]
+        assert node.data == {}
