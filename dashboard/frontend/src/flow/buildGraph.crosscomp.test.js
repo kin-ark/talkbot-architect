@@ -43,16 +43,16 @@ const kbSummary = {
 };
 
 describe('buildGraph cross-component', () => {
-  it('retargets cross-component edge to destination entry node (not component id)', () => {
+  it('cross-component edge targets the destination component node', () => {
     const { edges } = buildGraph(summary);
-    // Edge must land on n2-entry, NOT c2
-    expect(edges.some((e) => e.source === 'n1' && e.target === 'n2-entry')).toBe(true);
-    expect(edges.some((e) => e.target === 'c2')).toBe(false);
+    // New shape: edge lands on the component container (c2), not the entry child node
+    expect(edges.some((e) => e.source === 'n1' && e.target === 'c2')).toBe(true);
+    expect(edges.some((e) => e.target === 'n2-entry')).toBe(false);
   });
 
   it('cross-component edge has dashed exit style', () => {
     const { edges } = buildGraph(summary);
-    const e = edges.find((x) => x.source === 'n1' && x.target === 'n2-entry');
+    const e = edges.find((x) => x.source === 'n1' && x.target === 'c2');
     expect(e.style.strokeDasharray).toBeTruthy();
   });
 
