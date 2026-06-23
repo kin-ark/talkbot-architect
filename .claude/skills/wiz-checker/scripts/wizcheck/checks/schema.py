@@ -47,17 +47,23 @@ def check_schema(wf: WizFile) -> list[Finding]:
 
 
 def check_empty_wait_scripts(wf: WizFile) -> list[Finding]:
-    """WIZ106: warn when a Wait or Exit node explicitly has the sentence text 'blank' or empty string."""
+    """WIZ106: warn when a Wait or Exit node has the sentence text 'blank' or empty string.
+
+    Reads from wf.flow_model (FlowModelNode.label + FlowModelNode.data['sentenceText']).
+    Returns [] when wf.flow_model is None.
+    """
+    if wf.flow_model is None:
+        return []
     out: list[Finding] = []
-    for comp in wf.components.values():
-        for node in comp.details.flow_nodes.values():
+    for fc in wf.flow_model.components:
+        for node in fc.nodes.values():
             if node.label in ("Wait", "Exit"):
-                text = node.raw.get("sentenceText")
+                text = node.data.get("sentenceText")
                 if text == "blank" or text == "":
                     out.append(Finding(
                         code="WIZ106",
                         severity=Severity.WARNING,
-                        location=Location(entity="FlowNode", id=str(node.uuid), field="sentenceText"),
+                        location=Location(entity="FlowNode", id=node.uuid, field="sentenceText"),
                         message=f"{node.label} node has explicit 'blank' or empty script.",
                     ))
     return out
@@ -152,15 +158,26 @@ def _check_component_timestamps(wf: WizFile) -> list[Finding]:
 
 
 def _check_empty_canvases(wf: WizFile) -> list[Finding]:
-    """WIZ006: warn when a component has zero FlowNodes (empty canvas / template)."""
+    """WIZ006: warn when a component has zero nodes in its FlowModel (empty canvas / template).
+
+    Uses wf.flow_model (populated by parse_dict via build_flow_model) so that the
+    new-format details shape (UUID-keyed envelope dict) is read correctly.
+    Falls back gracefully when flow_model is None (e.g. WizFile built directly
+    by test helpers without parse_dict) — returns no findings rather than crashing.
+    """
+    if wf.flow_model is None:
+        return []
     out: list[Finding] = []
-    for comp in wf.components.values():
-        if not comp.details.flow_nodes:
-            name = comp.raw.get("name", str(comp.uuid))
+    # Build a lookup from component UUID string → Component raw for the name field.
+    comp_raw_by_uuid = {str(c.uuid): c.raw for c in wf.components.values()}
+    for fc in wf.flow_model.components:
+        if not fc.nodes:
+            raw = comp_raw_by_uuid.get(fc.uuid, {})
+            name = raw.get("name", fc.uuid)
             out.append(Finding(
                 code="WIZ006",
                 severity=Severity.WARNING,
-                location=Location(entity="Component", id=str(comp.uuid), field="details"),
+                location=Location(entity="Component", id=fc.uuid, field="details"),
                 message=(
                     f"Component {name!r} has no canvas content "
                     f"(empty/template dialogue)."
