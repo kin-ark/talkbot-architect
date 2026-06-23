@@ -27,6 +27,42 @@ _SPECS = [
     ToolSpec("build", "Scaffold a brand-new dialogue from a manifest YAML. Proposes a full new doc.",
              {"type": "object", "properties": {"manifest_yaml": {"type": "string"}},
               "required": ["manifest_yaml"]}),
+    ToolSpec("scaffold_bot",
+             "Create a brand-new dialogue from typed parameters (NOT raw YAML). "
+             "Proposes a full new doc (dry-run). Use after the user confirms an outline.",
+             {"type": "object",
+              "properties": {
+                  "name": {"type": "string"},
+                  "language": {"type": "string", "enum": ["ENG", "IDN", "ZHO", "THA"]},
+                  "branch": {"type": "string", "enum": ["dev", "prod"]},
+                  "custom_variables": {"type": "array", "items": {
+                      "type": "object", "properties": {"name": {"type": "string"}},
+                      "required": ["name"]}},
+                  "custom_intents": {"type": "array", "items": {
+                      "type": "object", "properties": {
+                          "name": {"type": "string"},
+                          "language": {"type": "string", "enum": ["ENG", "IDN", "ZHO", "THA"]},
+                          "keywords": {"type": "array", "items": {"type": "string"}},
+                          "user_responses": {"type": "array", "items": {"type": "string"}}},
+                      "required": ["name", "language"]}},
+                  "canvases": {"type": "array", "items": {
+                      "type": "object", "properties": {
+                          "name": {"type": "string"},
+                          "nodes": {"type": "array", "items": {
+                              "type": "object", "properties": {
+                                  "id": {"type": "string"}, "prompt": {"type": "string"}},
+                              "required": ["id", "prompt"]}},
+                          "edges": {"type": "array", "items": {
+                              "type": "object", "properties": {
+                                  "from": {"type": "string"},
+                                  "branch": {"type": "string",
+                                             "enum": ["Positive", "Negative", "Reject",
+                                                      "Unclassified", "No answer"]},
+                                  "to": {"type": "string"}},
+                              "required": ["from", "branch", "to"]}}},
+                      "required": ["name", "nodes"]}},
+              },
+              "required": ["name", "language", "branch", "canvases"]}),
 ]
 
 
@@ -60,6 +96,13 @@ def dispatch(name: str, args: dict, data: dict) -> dict:
             return {"result": {"ok": False, "error": p["error"]}, "proposal": None}
         return {"result": {"ok": True}, "proposal": {"proposed_data": p["proposed_data"],
                 "diff": "(new dialogue scaffolded)", "checker_delta": None}}
+    if name == "scaffold_bot":
+        p = agents.propose_scaffold(args)
+        if not p["ok"]:
+            return {"result": {"ok": False, "error": p["error"]}, "proposal": None}
+        return {"result": {"ok": True, "diff": p["diff"], "checker_delta": p["checker_delta"]},
+                "proposal": {"proposed_data": p["proposed_data"],
+                             "diff": p["diff"], "checker_delta": p["checker_delta"]}}
     return {"result": {"error": f"unknown tool {name!r}"}, "proposal": None}
 
 
