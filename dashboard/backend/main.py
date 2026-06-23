@@ -200,9 +200,19 @@ async def get_node(uuid: str):
 
 
 @app.post("/chat")
-async def chat(req: ChatRequest, client: LLMClient = Depends(get_client)):
+def chat(req: ChatRequest, client: LLMClient = Depends(get_client)):
+    # Sync def → runs in the threadpool, so the event loop stays free for
+    # /chat/cancel while this turn holds the lock.
     _require_session()
-    return run_turn(client, SESSION, req.message)
+    with SESSION._lock:
+        return run_turn(client, SESSION, req.message)
+
+
+@app.post("/chat/cancel")
+def chat_cancel():
+    # Must NOT take the lock — it runs while a turn holds it.
+    SESSION.cancel_requested = True
+    return {"canceling": True}
 
 
 @app.post("/apply")
