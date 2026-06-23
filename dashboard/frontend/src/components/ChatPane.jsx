@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import ToolChip from './ToolChip';
 import DiffCard from './DiffCard';
 
@@ -19,7 +21,11 @@ export default function ChatPane({ transcript, proposal, sending, onSend, onAppl
             {m.tool_trace?.length > 0 && (
               <div className="mb-1">{m.tool_trace.map((t, j) => <ToolChip key={j} name={t.name} args={t.arguments} />)}</div>
             )}
-            <div className={`inline-block max-w-[80%] p-3 rounded-2xl text-sm whitespace-pre-wrap ${bubbleClass(m.role)}`}>{m.text}</div>
+            <div className={`inline-block max-w-[80%] p-3 rounded-2xl text-sm ${bubbleClass(m.role)} ${m.role === 'user' || m.role === 'error' ? 'whitespace-pre-wrap' : 'prose prose-sm max-w-none prose-pre:bg-slate-100 prose-pre:text-slate-800'}`}>
+              {m.role === 'user' || m.role === 'error'
+                ? m.text
+                : <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.text || ''}</ReactMarkdown>}
+            </div>
           </div>
         ))}
         {sending && (
