@@ -36,7 +36,8 @@ export default function App() {
       <TopBar canUndo={s.canUndo} canRedo={s.canRedo} onUndo={s.undo} onRedo={s.redo} onExport={onExport} onNew={onNew} />
       <div className="flex-1 flex overflow-hidden">
         <div className="flex-1 min-w-0">
-          <ChatPane transcript={s.transcript} proposal={s.proposal} onSend={s.send} onApply={s.apply} onReject={s.reject} />
+          <ChatPane transcript={s.transcript} proposal={s.proposal} sending={s.sending}
+            onSend={s.send} onApply={s.apply} onReject={s.reject} onCancel={s.cancel} />
         </div>
         <SidePanel summary={s.summary} findings={s.findings} selectedNode={selectedNode} onSelectNode={setSelectedNode} />
       </div>
