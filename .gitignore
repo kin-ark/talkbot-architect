@@ -16,3 +16,9 @@ docs/personal/*.pdf
 
 # Python build artifacts
 *.egg-info/
+
+# Docs, specs, design notes, manuals — never committed (kept on disk only)
+docs/
+
+# Dashboard session persistence — local runtime state
+dashboard/backend/.session/
