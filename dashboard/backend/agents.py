@@ -143,6 +143,29 @@ def get_facts(query: str) -> list[dict]:
     return matches
 
 
+def get_schema() -> dict:
+    """Return the builder manifest schema, known node labels, and modifier op
+    names so the LLM can author valid scaffold_bot params and ops."""
+    schema_dir = skills_dir() / "wiz-builder" / "schema"
+    manifest_schema: dict = {}
+    node_labels: list[str] = []
+    try:
+        manifest_schema = yaml.safe_load(
+            (schema_dir / "manifest.schema.yaml").read_text("utf-8")) or {}
+    except Exception:
+        manifest_schema = {}
+    try:
+        doc = yaml.safe_load((schema_dir / "known_node_labels.yaml").read_text("utf-8")) or {}
+        node_labels = list(doc.get("labels", []))
+    except Exception:
+        node_labels = []
+    return {
+        "manifest_schema": manifest_schema,
+        "node_labels": node_labels,
+        "modifier_ops": sorted(OP_REGISTRY),
+    }
+
+
 def propose_mods(data: dict, mods_yaml: str) -> dict:
     """Deep-copy *data*, apply *mods_yaml* ops as a dry-run, return diff + delta.
 
@@ -172,6 +195,49 @@ def propose_mods(data: dict, mods_yaml: str) -> dict:
         }
     except (ValueError, KeyError, yaml.YAMLError) as e:
         return {"ok": False, "error": str(e), "known_ops": sorted(OP_REGISTRY)}
+
+
+_LANGUAGES = {"ENG", "IDN"}
+_BRANCHES = {"dev", "prod"}
+
+
+def propose_scaffold(params: dict) -> dict:
+    """Validate typed bot params, assemble a wiz-builder manifest, dry-run build.
+
+    params mirrors the manifest: name, language, branch, canvases[], plus
+    optional custom_variables[] and custom_intents[]. Returns the propose_build
+    shape augmented with diff/checker_delta for a brand-new document.
+    """
+    if not isinstance(params, dict):
+        return {"ok": False, "proposed_data": None, "error": "params must be an object"}
+    name = params.get("name")
+    language = params.get("language")
+    branch = params.get("branch")
+    canvases = params.get("canvases")
+    if not name or not isinstance(name, str):
+        return {"ok": False, "proposed_data": None, "error": "name is required"}
+    if language not in _LANGUAGES:
+        return {"ok": False, "proposed_data": None,
+                "error": f"language must be one of {sorted(_LANGUAGES)}"}
+    if branch not in _BRANCHES:
+        return {"ok": False, "proposed_data": None,
+                "error": f"branch must be one of {sorted(_BRANCHES)}"}
+    if not isinstance(canvases, list) or not canvases:
+        return {"ok": False, "proposed_data": None, "error": "canvases must be a non-empty list"}
+
+    manifest: dict = {"name": name, "branch": branch, "language": language}
+    if params.get("custom_variables"):
+        manifest["custom_variables"] = params["custom_variables"]
+    if params.get("custom_intents"):
+        manifest["custom_intents"] = params["custom_intents"]
+    manifest["canvases"] = canvases
+
+    manifest_yaml = yaml.safe_dump(manifest, sort_keys=False, allow_unicode=True)
+    built = propose_build(manifest_yaml)
+    if not built["ok"]:
+        return {"ok": False, "proposed_data": None, "error": built["error"]}
+    return {"ok": True, "proposed_data": built["proposed_data"],
+            "diff": "(new dialogue scaffolded)", "checker_delta": None, "error": None}
 
 
 def propose_build(manifest_yaml: str) -> dict:

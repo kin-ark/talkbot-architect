@@ -26,9 +26,16 @@ _SECONDARY_STRIP_KEYS = frozenset({
 })
 
 # Map manifest language codes to WIZ.AI node_language strings.
-# Only IDN is confirmed; other codes are out of scope for this MVP.
+# "3" is confirmed for IDN from reference exports.  All sampled exports (including
+# an ENG-intent bot) also carry languageItem="3" in BizSpeechScene, so "3" is a
+# safe placeholder for the remaining documented languages until per-language reference
+# exports are decoded.
 _LANGUAGE_MAP = {
     "IDN": "3",
+    "ENG": "3",
+    # TODO(lang-codes): verify ZHO/THA (and ENG) numeric codes from non-IDN reference exports — "3" is an empirical placeholder and may mislabel NLU/TTS routing for these languages.
+    "ZHO": "3",
+    "THA": "3",
 }
 
 
