@@ -18,6 +18,13 @@ class Session:
         self.cancel_requested: bool = False
         self._lock = threading.Lock()
 
+    def _autosave(self) -> None:
+        try:
+            import persistence
+            persistence.save_session(self)
+        except Exception:
+            pass        # best-effort; never break an API call on a write error
+
     def load(
         self,
         data: dict,
@@ -31,6 +38,7 @@ class Session:
         self.pending = None
         self.speech_name = speech_name
         self.wavs = wavs if wavs is not None else {}
+        self._autosave()
 
     def current(self) -> dict:
         return self._stack[self._idx]
@@ -41,6 +49,7 @@ class Session:
         self._stack.append(copy.deepcopy(proposed))
         self._idx = len(self._stack) - 1
         self.pending = None
+        self._autosave()
 
     def can_undo(self) -> bool:
         return self._idx > 0
@@ -52,10 +61,12 @@ class Session:
         if not self.can_undo():
             return False
         self._idx -= 1
+        self._autosave()
         return True
 
     def redo(self) -> bool:
         if not self.can_redo():
             return False
         self._idx += 1
+        self._autosave()
         return True

@@ -17,6 +17,7 @@ from pydantic import BaseModel
 
 import agents
 import config_store
+import persistence
 from config_store import CONFIG, any_override, effective_key_set
 from llm.base import LLMClient
 from llm.factory import LLMConfigError, make_client
@@ -28,6 +29,11 @@ app = FastAPI(title="Talkbot Architect API")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 SESSION = Session()
+
+
+@app.on_event("startup")
+def _load_persisted_session() -> None:
+    persistence.load_session(SESSION)
 
 
 # ---------------------------------------------------------------------------
@@ -205,7 +211,9 @@ def chat(req: ChatRequest, client: LLMClient = Depends(get_client)):
     # /chat/cancel while this turn holds the lock.
     _require_session()
     with SESSION._lock:
-        return run_turn(client, SESSION, req.message)
+        result = run_turn(client, SESSION, req.message)
+    SESSION._autosave()
+    return result
 
 
 @app.post("/chat/cancel")
