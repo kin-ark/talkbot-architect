@@ -19,18 +19,29 @@ _MAX_TOOL_ITERS = 8
 
 
 def run_turn(client: LLMClient, session: Session, user_message: str) -> dict:
+    mark = len(session.transcript)                      # pre-turn snapshot
     session.transcript.append(Message(role="user", content=user_message))
     messages = [Message(role="system", content=_SYSTEM), *session.transcript]
     tool_trace: list[dict] = []
     proposal: dict | None = None
 
+    def _rollback_canceled():
+        del session.transcript[mark:]                   # discard partial turn
+        session.cancel_requested = False
+        return {"text": "(canceled)", "tool_trace": tool_trace,
+                "proposal": None, "canceled": True}
+
     for _ in range(_MAX_TOOL_ITERS):
+        if session.cancel_requested:
+            return _rollback_canceled()
         resp = client.chat(messages, registry.tool_specs())
         assistant = Message(role="assistant", content=resp.text, tool_calls=resp.tool_calls)
         messages.append(assistant)
         session.transcript.append(assistant)
         if not resp.tool_calls:
-            return {"text": resp.text or "", "tool_trace": tool_trace, "proposal": proposal}
+            session.cancel_requested = False
+            return {"text": resp.text or "", "tool_trace": tool_trace,
+                    "proposal": proposal, "canceled": False}
         for call in resp.tool_calls:
             out = registry.dispatch(call.name, call.arguments, session.current())
             tool_trace.append({"name": call.name, "arguments": call.arguments,
@@ -42,5 +53,6 @@ def run_turn(client: LLMClient, session: Session, user_message: str) -> dict:
                                content=json.dumps(out["result"], ensure_ascii=False, default=str))
             messages.append(tool_msg)
             session.transcript.append(tool_msg)
+    session.cancel_requested = False
     return {"text": "(stopped after tool-iteration limit)", "tool_trace": tool_trace,
-            "proposal": proposal}
+            "proposal": proposal, "canceled": False}

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import copy
+import threading
 
 from llm.base import Message
 
@@ -14,6 +15,8 @@ class Session:
         self.pending: dict | None = None
         self.speech_name: str = "speech_export.json"
         self.wavs: dict[str, bytes] = {}
+        self.cancel_requested: bool = False
+        self._lock = threading.Lock()
 
     def load(
         self,
