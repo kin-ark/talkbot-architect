@@ -33,15 +33,39 @@ class AnthropicClient(LLMClient):
     @staticmethod
     def _to_anthropic_messages(messages: list[Message]) -> list[dict]:
         out: list[dict] = []
-        for m in messages:
+        i = 0
+        n = len(messages)
+        while i < n:
+            m = messages[i]
             if m.role == "tool":
-                out.append({"role": "user", "content": [
-                    {"type": "tool_result", "tool_use_id": m.tool_call_id, "content": m.content or ""}]})
-            elif m.role == "assistant" and m.tool_calls:
-                content = ([{"type": "text", "text": m.content}] if m.content else []) + [
-                    {"type": "tool_use", "id": c.id, "name": c.name, "input": c.arguments}
-                    for c in m.tool_calls]
+                # Anthropic requires the tool_results that answer ONE assistant
+                # turn to live in a SINGLE user message — one tool_result block
+                # per tool_use, never duplicated. Coalesce the run of consecutive
+                # tool messages and dedupe by tool_use_id (defends against a model
+                # that reissues the same tool_use id).
+                results: list[dict] = []
+                seen: set[str | None] = set()
+                while i < n and messages[i].role == "tool":
+                    tm = messages[i]
+                    if tm.tool_call_id not in seen:
+                        seen.add(tm.tool_call_id)
+                        results.append({"type": "tool_result",
+                                        "tool_use_id": tm.tool_call_id,
+                                        "content": tm.content or ""})
+                    i += 1
+                out.append({"role": "user", "content": results})
+                continue
+            if m.role == "assistant" and m.tool_calls:
+                seen_ids: set[str] = set()
+                tool_use: list[dict] = []
+                for c in m.tool_calls:
+                    if c.id in seen_ids:
+                        continue
+                    seen_ids.add(c.id)
+                    tool_use.append({"type": "tool_use", "id": c.id, "name": c.name, "input": c.arguments})
+                content = ([{"type": "text", "text": m.content}] if m.content else []) + tool_use
                 out.append({"role": "assistant", "content": content})
             else:
                 out.append({"role": m.role, "content": m.content or ""})
+            i += 1
         return out

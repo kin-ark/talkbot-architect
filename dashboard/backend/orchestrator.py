@@ -42,7 +42,11 @@ def run_turn(client: LLMClient, session: Session, user_message: str) -> dict:
             session.cancel_requested = False
             return {"text": resp.text or "", "tool_trace": tool_trace,
                     "proposal": proposal, "canceled": False}
+        seen_call_ids: set[str] = set()
         for call in resp.tool_calls:
+            if call.id in seen_call_ids:
+                continue  # a model may echo a tool_use id twice; one result per id
+            seen_call_ids.add(call.id)
             out = registry.dispatch(call.name, call.arguments, session.current())
             tool_trace.append({"name": call.name, "arguments": call.arguments,
                                "result": out["result"]})
