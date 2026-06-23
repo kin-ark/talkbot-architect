@@ -14,7 +14,7 @@ Tests are ordered to match the brief's required coverage list:
 import json
 import pytest
 
-from flowmodel import (
+from wizcheck.flowmodel import (
     BranchEdge,
     FlowComponent,
     FlowModel,
@@ -26,7 +26,7 @@ from flowmodel import (
     node_type_of,
     unwrap,
 )
-from flow_constants import NODE_TYPE_MAP
+from wizcheck.flow_constants import NODE_TYPE_MAP
 
 
 # ---------------------------------------------------------------------------

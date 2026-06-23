@@ -1,7 +1,7 @@
 """Regression: a component whose details/routes is the JSON string "null"
 (real WIZ exports emit `details: "null"` for empty/template components) must
 not crash build_components — it should yield a component with zero nodes."""
-from flowmodel import build_components, _build_kbs
+from wizcheck.flowmodel import build_components, _build_kbs
 
 
 def test_null_string_details_yields_empty_component():

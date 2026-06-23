@@ -1,11 +1,22 @@
-"""Flow-graph integrity checks (WIZ100..WIZ199)."""
+"""Flow-graph integrity checks (WIZ100..WIZ199).
+
+WIZ100-WIZ104 are rewritten onto FlowModel (Tasks 1-2 output). When
+wf.flow_model is None the FlowModel checks return an empty list — test helpers
+that construct WizFile directly do not populate flow_model; use parse_dict()
+to get a populated WizFile.
+
+WIZ105 (Conditional Judgment missing Null branch on date field) uses the
+legacy IR (wf.components / FlowNode.raw) because FlowModelNode does not carry
+branch_judgement_condition data. It runs unconditionally — wf.components is
+always populated by parse_dict().
+"""
 
 from __future__ import annotations
 
-from pathlib import Path
 import re
-from uuid import UUID
+from pathlib import Path
 
+import networkx as nx
 import yaml
 
 from wizcheck.ir import WizFile
@@ -28,169 +39,205 @@ _RULES = _load_rules()
 
 def check_graph(wf: WizFile) -> list[Finding]:
     findings: list[Finding] = []
-    findings.extend(_check_orphan_refs(wf))
-    findings.extend(_check_unreachable(wf))
-    findings.extend(_check_dead_ends(wf))
-    findings.extend(_check_cycles(wf))
-    findings.extend(_check_library_refs_rollup(wf))
+    if wf.flow_model is not None:
+        findings.extend(_check_orphan_refs(wf))
+        findings.extend(_check_dead_ends(wf))
+        findings.extend(_check_cycles(wf))
+        findings.extend(_check_library_refs_rollup(wf))
     findings.extend(_check_null_branches(wf))
     return findings
 
 
-def _build_label_lookup(wf: WizFile) -> dict[UUID, str]:
-    out: dict[UUID, str] = {}
-    for comp in wf.components.values():
-        for node in comp.details.flow_nodes.values():
-            out[node.uuid] = node.label
-    return out
-
+# ---------------------------------------------------------------------------
+# WIZ100: orphan refs — branch.target_uuid not present in same-component nodes
+# ---------------------------------------------------------------------------
 
 def _check_orphan_refs(wf: WizFile) -> list[Finding]:
-    """WIZ100: a node's parentId points to a UUID not present in the export.
+    """WIZ100: a same-component branch.target_uuid that is absent from the component's nodes.
 
-    v3: demoted from ERROR to WARNING. Typically a reference to a WIZ.AI
-    Component Library entry whose definition lives outside this export, but
-    can also signal a structural defect. The user must verify in the WIZ.AI UI.
+    Only applies to target_uuid (same-component edges). Cross-component jumps
+    (target_component), KB jumps (target_kb), and terminal branches are intentional
+    exits and are NOT orphans.
     """
-    label_by_uuid = _build_label_lookup(wf)
+    fm = wf.flow_model
+    assert fm is not None
     out: list[Finding] = []
-    for orphan in wf.flow.orphan_refs():
-        children = list(wf.flow.graph.successors(orphan))
-        child_labels = sorted({label_by_uuid.get(c, "") for c in children if label_by_uuid.get(c)})
-        label_hint = (
-            f" (referenced by node(s) labelled {', '.join(repr(lbl) for lbl in child_labels)})"
-            if child_labels else ""
-        )
-        out.append(Finding(
-            code="WIZ100",
-            severity=Severity.WARNING,
-            location=Location(entity="FlowNode", id=str(orphan), field="parent_uuid"),
-            message=(
-                f"FlowNode {orphan} is referenced as a parent but is not present in this "
-                f"export{label_hint}. May be a Component Library reference or a structural "
-                f"defect — verify in the WIZ.AI UI."
-            ),
-        ))
+    for comp in fm.components:
+        node_uuids: set[str] = set(comp.nodes.keys())
+        for node in comp.nodes.values():
+            for branch in node.branches:
+                if (
+                    branch.target_uuid is not None
+                    and branch.target_component is None
+                    and branch.target_kb is None
+                    and branch.terminal is None
+                    and branch.target_uuid not in node_uuids
+                ):
+                    out.append(Finding(
+                        code="WIZ100",
+                        severity=Severity.WARNING,
+                        location=Location(entity="FlowNode", id=node.uuid, field="branch"),
+                        message=(
+                            f"FlowNode {node.uuid!r} (label={node.label!r}) has a branch "
+                            f"targeting {branch.target_uuid!r} which is not present in "
+                            f"component {comp.uuid!r}. May be a Component Library reference "
+                            f"or a structural defect — verify in the WIZ.AI UI."
+                        ),
+                    ))
     return out
 
 
-def _check_unreachable(wf: WizFile) -> list[Finding]:
-    """WIZ101: nodes that cannot be reached from any root.
-
-    v3: the root set includes (a) declared component roots AND (b) library-ref
-    orphan parents. A node whose only path to a real root goes through an
-    external library reference is reachable via that import, not unreachable.
-    """
-    roots: set[UUID] = set()
-    for comp in wf.components.values():
-        roots.update(comp.details.root_uuids)
-    # Treat library-ref parents as additional external roots.
-    roots.update(wf.flow.orphan_refs())
-    reachable: set[UUID] = set()
-    for r in roots:
-        reachable.update(wf.flow.reachable_from(r))
-    out: list[Finding] = []
-    for node_uuid in wf.flow.all_nodes():
-        if node_uuid not in reachable:
-            out.append(Finding(
-                code="WIZ101",
-                severity=Severity.WARNING,
-                location=Location(entity="FlowNode", id=str(node_uuid), field=None),
-                message=f"FlowNode {node_uuid} is unreachable from any component root.",
-            ))
-    return out
-
+# ---------------------------------------------------------------------------
+# WIZ102: dead-ends — nodes with no target branch and not terminal
+# ---------------------------------------------------------------------------
 
 def _check_dead_ends(wf: WizFile) -> list[Finding]:
-    """WIZ102: leaf nodes with labels that are configured to require children."""
-    expected_labels = set(_RULES.get("labels_requiring_children", []))
-    label_by_uuid = _build_label_lookup(wf)
-    has_visual_children: set[UUID] = set()
-    for comp in wf.components.values():
-        for node in comp.details.flow_nodes.values():
-            if node.raw.get("children"):
-                has_visual_children.add(node.uuid)
+    """WIZ102: nodes with labels configured to require children that have no outgoing branch.
+
+    Dead-end = no branch has any target (target_uuid/target_component/target_kb)
+    AND no branch is terminal.
+
+    Label allowlist from schema/dead_end_rules.yaml. FlowModelNode.label carries
+    the node's display name (envelope['name']), which matches the step labels in
+    the YAML (e.g. 'Greeting', 'Pitch'). Nodes whose label is not in the allowlist
+    are not flagged — a leaf with an unlisted label is treated as an intentional
+    closing node.
+    """
+    fm = wf.flow_model
+    assert fm is not None
+    expected_labels: set[str] = set(_RULES.get("labels_requiring_children", []))
     out: list[Finding] = []
-    for leaf in wf.flow.dead_ends():
-        if leaf in has_visual_children:
-            continue
-        label = label_by_uuid.get(leaf)
-        if label and label in expected_labels:
+    for comp in fm.components:
+        for node in comp.nodes.values():
+            # Determine whether any branch carries a target or is terminal
+            has_exit = any(
+                b.target_uuid is not None
+                or b.target_component is not None
+                or b.target_kb is not None
+                or b.terminal is not None
+                for b in node.branches
+            )
+            if has_exit:
+                continue
+            # Node has no outgoing target or terminal — check label allowlist
+            if node.label in expected_labels:
+                out.append(Finding(
+                    code="WIZ102",
+                    severity=Severity.WARNING,
+                    location=Location(entity="FlowNode", id=node.uuid, field=None),
+                    message=(
+                        f"FlowNode {node.uuid!r} (label={node.label!r}) has no outgoing "
+                        f"transitions; this label is configured to require children."
+                    ),
+                ))
+    return out
+
+
+# ---------------------------------------------------------------------------
+# WIZ103: cycles — per-component same-component directed cycle detection
+# ---------------------------------------------------------------------------
+
+def _check_cycles(wf: WizFile) -> list[Finding]:
+    """WIZ103: directed cycle through same-component target_uuid edges.
+
+    Cross-component and KB jumps are excluded — they don't form intra-component cycles.
+    """
+    fm = wf.flow_model
+    assert fm is not None
+    out: list[Finding] = []
+    for comp in fm.components:
+        node_uuids: set[str] = set(comp.nodes.keys())
+        g: nx.DiGraph = nx.DiGraph()
+        for node in comp.nodes.values():
+            g.add_node(node.uuid)
+            for branch in node.branches:
+                if (
+                    branch.target_uuid is not None
+                    and branch.target_uuid in node_uuids
+                ):
+                    g.add_edge(node.uuid, branch.target_uuid)
+        for cycle in nx.simple_cycles(g):
             out.append(Finding(
-                code="WIZ102",
+                code="WIZ103",
                 severity=Severity.WARNING,
-                location=Location(entity="FlowNode", id=str(leaf), field=None),
+                location=Location(entity="FlowNode", id=cycle[0], field=None),
                 message=(
-                    f"FlowNode {leaf} (label={label!r}) has no outgoing transitions; "
-                    f"this label is configured to require children."
+                    f"Cycle detected through FlowNodes: "
+                    f"{' -> '.join(str(n) for n in cycle)}."
                 ),
             ))
     return out
 
 
-def _check_cycles(wf: WizFile) -> list[Finding]:
-    out: list[Finding] = []
-    for cycle in wf.flow.cycles():
-        out.append(Finding(
-            code="WIZ103",
-            severity=Severity.WARNING,
-            location=Location(entity="FlowNode", id=str(cycle[0]), field=None),
-            message=f"Cycle detected through FlowNodes: {' -> '.join(str(n) for n in cycle)}.",
-        ))
-    return out
-
+# ---------------------------------------------------------------------------
+# WIZ104: library refs rollup — cross-component/KB targets not in the model
+# ---------------------------------------------------------------------------
 
 def _check_library_refs_rollup(wf: WizFile) -> list[Finding]:
     """WIZ104: per-file rollup of external/library references.
 
-    Emitted once when one or more orphan parent UUIDs exist. Lists the unique
-    set of child labels so the user can audit which Component Library entries
-    this export depends on.
+    External component ref: branch.target_component not matching any component uuid.
+    External KB ref: branch.target_kb not in the FlowModel's knowledge_bases.
+
+    Emitted at most once per file, listing the distinct external targets.
     """
-    refs = wf.flow.library_refs()
-    if not refs:
+    fm = wf.flow_model
+    assert fm is not None
+    known_comp_uuids: set[str] = {c.uuid for c in fm.components}
+    known_kb_ids: set[int] = {kb.knowledge_id for kb in fm.knowledge_bases}
+
+    external_comps: set[str] = set()
+    external_kbs: set[int] = set()
+
+    for comp in fm.components:
+        for node in comp.nodes.values():
+            for branch in node.branches:
+                if (
+                    branch.target_component is not None
+                    and branch.target_component not in known_comp_uuids
+                ):
+                    external_comps.add(branch.target_component)
+                if (
+                    branch.target_kb is not None
+                    and branch.target_kb not in known_kb_ids
+                ):
+                    external_kbs.add(branch.target_kb)
+
+    if not external_comps and not external_kbs:
         return []
-    label_by_uuid = _build_label_lookup(wf)
-    seen_labels: list[str] = []
-    for _orphan, children in refs.items():
-        for child in children:
-            label = label_by_uuid.get(child, "")
-            if label and label not in seen_labels:
-                seen_labels.append(label)
-    labels_str = (
-        ": " + ", ".join(repr(lbl) for lbl in seen_labels)
-        if seen_labels else ""
-    )
-    ref_count = len(refs)
-    label_count = len(seen_labels)
-    # ref_count: distinct orphan parent UUIDs (each represents one external link)
-    # label_count: distinct component labels (fewer when one library entry has
-    #              multiple instances referenced from different places)
-    if label_count and label_count != ref_count:
-        count_str = (
-            f"{ref_count} external/library reference(s) to {label_count} distinct component(s)"
-        )
-    else:
-        count_str = f"{ref_count} external/library reference(s)"
+
+    parts: list[str] = []
+    if external_comps:
+        parts.append(f"{len(external_comps)} external component reference(s)")
+    if external_kbs:
+        parts.append(f"{len(external_kbs)} external KB reference(s)")
+    ref_str = " and ".join(parts)
+
     return [Finding(
         code="WIZ104",
         severity=Severity.WARNING,
         location=Location(entity="WizFile", id="", field=None),
         message=(
-            f"Export contains {count_str}{labels_str}. "
+            f"Export contains {ref_str}. "
             f"Confirm each is an intentional Component Library import."
         ),
     )]
 
 
+# ---------------------------------------------------------------------------
+# WIZ105: Conditional Judgment missing Null branch on a date field
+# Uses legacy IR (wf.components / FlowNode.raw) because FlowModelNode does
+# not carry branch_judgement_condition data.
+# ---------------------------------------------------------------------------
+
 def _check_null_branches(wf: WizFile) -> list[Finding]:
-    """WIZ105: Conditional Judgment missing Null branch on a date field."""
+    """WIZ105: Conditional judgment on date field MUST have a default or Null branch."""
     out: list[Finding] = []
     for comp in wf.components.values():
         for node in comp.details.flow_nodes.values():
             if node.raw.get("type") != NODE_TYPE_CONDITIONAL_JUDGMENT:
                 continue
-            
+
             # Find which date variables are being evaluated in this node
             date_var_ids_evaluated: set[int] = set()
             branches = node.raw.get("branch", [])
@@ -203,10 +250,10 @@ def _check_null_branches(wf: WizFile) -> list[Finding]:
                         v = wf.variables.get(var_id)
                         if v and v.text_type == "DATE":
                             date_var_ids_evaluated.add(var_id)
-            
+
             if not date_var_ids_evaluated:
                 continue
-            
+
             # For each date variable evaluated, ensure there is a branch handling Null or empty
             for var_id in date_var_ids_evaluated:
                 has_null_branch = False
@@ -216,7 +263,7 @@ def _check_null_branches(wf: WizFile) -> list[Finding]:
                     if not conditions:
                         has_null_branch = True
                         break
-                    
+
                     # Look for an explicit empty check on *this specific date variable*
                     for cond in conditions:
                         cond_left_val = str(cond.get("left_value", ""))
@@ -229,15 +276,14 @@ def _check_null_branches(wf: WizFile) -> list[Finding]:
                                 break
                     if has_null_branch:
                         break
-                
+
                 if not has_null_branch:
                     out.append(Finding(
                         code="WIZ105",
                         severity=Severity.ERROR,
                         location=Location(entity="FlowNode", id=str(node.uuid), field=None),
-                        message="Missing fallback/null branch on Date variable"
+                        message="Missing fallback/null branch on Date variable",
                     ))
                     # Only emit once per node even if multiple date variables are missing checks
                     break
     return out
-

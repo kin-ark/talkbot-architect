@@ -18,7 +18,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Any
 
-from flow_constants import NODE_TYPE_MAP, UNKNOWN_NODE_TYPE
+from wizcheck.flow_constants import NODE_TYPE_MAP, UNKNOWN_NODE_TYPE
 
 
 # ---------------------------------------------------------------------------
