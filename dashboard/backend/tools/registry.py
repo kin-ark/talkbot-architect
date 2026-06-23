@@ -27,6 +27,10 @@ _SPECS = [
     ToolSpec("build", "Scaffold a brand-new dialogue from a manifest YAML. Proposes a full new doc.",
              {"type": "object", "properties": {"manifest_yaml": {"type": "string"}},
               "required": ["manifest_yaml"]}),
+    ToolSpec("get_schema",
+             "Return the manifest schema, known node labels, and modifier op names. "
+             "Call this before authoring scaffold_bot params or ops.",
+             {"type": "object", "properties": {}}),
     ToolSpec("scaffold_bot",
              "Create a brand-new dialogue from typed parameters (NOT raw YAML). "
              "Proposes a full new doc (dry-run). Use after the user confirms an outline.",
@@ -103,6 +107,8 @@ def dispatch(name: str, args: dict, data: dict) -> dict:
         return {"result": {"ok": True, "diff": p["diff"], "checker_delta": p["checker_delta"]},
                 "proposal": {"proposed_data": p["proposed_data"],
                              "diff": p["diff"], "checker_delta": p["checker_delta"]}}
+    if name == "get_schema":
+        return {"result": agents.get_schema(), "proposal": None}
     return {"result": {"error": f"unknown tool {name!r}"}, "proposal": None}
 
 

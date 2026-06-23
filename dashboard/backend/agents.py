@@ -143,6 +143,29 @@ def get_facts(query: str) -> list[dict]:
     return matches
 
 
+def get_schema() -> dict:
+    """Return the builder manifest schema, known node labels, and modifier op
+    names so the LLM can author valid scaffold_bot params and ops."""
+    schema_dir = skills_dir() / "wiz-builder" / "schema"
+    manifest_schema: dict = {}
+    node_labels: list[str] = []
+    try:
+        manifest_schema = yaml.safe_load(
+            (schema_dir / "manifest.schema.yaml").read_text("utf-8")) or {}
+    except Exception:
+        manifest_schema = {}
+    try:
+        doc = yaml.safe_load((schema_dir / "known_node_labels.yaml").read_text("utf-8")) or {}
+        node_labels = list(doc.get("labels", []))
+    except Exception:
+        node_labels = []
+    return {
+        "manifest_schema": manifest_schema,
+        "node_labels": node_labels,
+        "modifier_ops": sorted(OP_REGISTRY),
+    }
+
+
 def propose_mods(data: dict, mods_yaml: str) -> dict:
     """Deep-copy *data*, apply *mods_yaml* ops as a dry-run, return diff + delta.
 
