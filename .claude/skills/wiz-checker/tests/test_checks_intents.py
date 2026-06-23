@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from wizcheck.checks.intents import check_intents
-from wizcheck.ir import FlowGraph, Intent, WizFile
+from wizcheck.ir import Intent, WizFile
 from wizcheck.report import Severity
 
 
@@ -17,7 +17,7 @@ def _intent(intent_id: int, name: str) -> Intent:
 def _wf(intents: dict) -> WizFile:
     return WizFile(
         raw={}, components={}, variables={},
-        intents=intents, utterances=(), audios={}, knowledge_bases={}, flow=FlowGraph(),
+        intents=intents, utterances=(), audios={}, knowledge_bases={},
     )
 
 

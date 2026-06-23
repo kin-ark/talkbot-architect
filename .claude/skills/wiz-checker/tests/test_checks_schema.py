@@ -2,14 +2,12 @@
 
 from __future__ import annotations
 
+import json as _json
 from uuid import UUID
 
 from wizcheck.checks.schema import check_schema
 from wizcheck.ir import (
     Component,
-    ComponentDetails,
-    FlowGraph,
-    FlowNode,
     Intent,
     Utterance,
     WizFile,
@@ -27,7 +25,6 @@ def _wf(**overrides) -> WizFile:
         intents={},
         utterances=(),
         audios={}, knowledge_bases={},
-        flow=FlowGraph(),
     )
     defaults.update(overrides)
     return WizFile(**defaults)
@@ -39,7 +36,6 @@ def _comp(category=1, branch="dev", raw=None) -> Component:
         speech_id=1,
         category=category,
         branch=branch,
-        details=ComponentDetails(flow_nodes={}, root_uuids=()),
         raw=raw if raw is not None else {"createTime": 1700000000000, "updateTime": 1700000000000},
     )
 
@@ -53,7 +49,6 @@ def test_wiz001_required_top_level_missing():
         intents={},
         utterances=(),
         audios={}, knowledge_bases={},
-        flow=FlowGraph(),
     )
     findings = check_schema(wf)
     codes = {f.code for f in findings}
@@ -166,32 +161,6 @@ def test_wiz006_skipped_when_canvas_has_nodes():
     assert not any(f.code == "WIZ006" for f in findings)
 
 
-def test_wiz106_empty_wait_script_is_warning():
-    """WIZ106 warns if Wait or Exit node has sentenceText 'blank' or ''."""
-    node = FlowNode(
-        uuid=UUID(int=106), parent_uuid=None, label="Wait", sort_index=0,
-        raw={"sentenceText": "blank"}
-    )
-    node2 = FlowNode(
-        uuid=UUID(int=107), parent_uuid=None, label="Exit", sort_index=1,
-        raw={"sentenceText": ""}
-    )
-    comp = Component(
-        uuid=UUID(int=3), speech_id=1, category=1, branch="dev",
-        details=ComponentDetails(flow_nodes={node.uuid: node, node2.uuid: node2}, root_uuids=(node.uuid,)),
-        raw={"createTime": 1700000000000, "updateTime": 1700000000000},
-    )
-    wf = _wf(components={comp.uuid: comp})
-    findings = check_schema(wf)
-    
-    f_wait = next((x for x in findings if x.code == "WIZ106" and x.location.id == str(node.uuid)), None)
-    assert f_wait is not None
-    assert f_wait.severity is Severity.WARNING
-
-    f_exit = next((x for x in findings if x.code == "WIZ106" and x.location.id == str(node2.uuid)), None)
-    assert f_exit is not None
-    assert f_exit.severity is Severity.WARNING
-
 
 def test_wiz107_truncated_script_is_warning():
     """WIZ107 warns if Utterance text ends with '...'"""
@@ -278,12 +247,9 @@ def test_wiz006_raised_for_empty_component():
 
 
 # ---------------------------------------------------------------------------
-# WIZ106: new-format (FlowModel) source — parse_dict-based tests
-# These verify WIZ106 fires correctly when reading from FlowModelNode.data
-# rather than the legacy FlowNode.raw.
+# WIZ106: FlowModel-based tests — parse_dict so flow_model is populated.
+# Verify WIZ106 fires correctly when reading from FlowModelNode.data.
 # ---------------------------------------------------------------------------
-
-import json as _json
 
 
 def _export_with_node(node_name: str, node_type: int, sentence_text: str | None) -> dict:

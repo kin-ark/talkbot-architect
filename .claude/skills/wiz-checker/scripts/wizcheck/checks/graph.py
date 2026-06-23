@@ -1,14 +1,10 @@
 """Flow-graph integrity checks (WIZ100..WIZ199).
 
-WIZ100-WIZ104 are rewritten onto FlowModel (Tasks 1-2 output). When
-wf.flow_model is None the FlowModel checks return an empty list — test helpers
-that construct WizFile directly do not populate flow_model; use parse_dict()
-to get a populated WizFile.
+WIZ100-WIZ104 run against wf.flow_model. When wf.flow_model is None all
+checks return an empty list — use parse_dict() to get a populated WizFile.
 
 WIZ105 (Conditional Judgment missing Null branch on date field) reads from
-FlowModelNode.data['branch'] (new source). When wf.flow_model is None it falls
-back to the legacy IR (wf.components / FlowNode.raw) so tests that construct
-WizFile directly still work.
+FlowModelNode.data['branch'] via wf.flow_model.
 """
 
 from __future__ import annotations
@@ -38,16 +34,15 @@ _RULES = _load_rules()
 
 
 def check_graph(wf: WizFile) -> list[Finding]:
+    if wf.flow_model is None:
+        return []
     findings: list[Finding] = []
-    if wf.flow_model is not None:
-        findings.extend(_check_orphan_refs(wf))
-        findings.extend(_check_unreachable(wf))
-        findings.extend(_check_dead_ends(wf))
-        findings.extend(_check_cycles(wf))
-        findings.extend(_check_library_refs_rollup(wf))
-        findings.extend(_check_null_branches(wf))
-    else:
-        findings.extend(_check_null_branches_legacy(wf))
+    findings.extend(_check_orphan_refs(wf))
+    findings.extend(_check_unreachable(wf))
+    findings.extend(_check_dead_ends(wf))
+    findings.extend(_check_cycles(wf))
+    findings.extend(_check_library_refs_rollup(wf))
+    findings.extend(_check_null_branches(wf))
     return findings
 
 
@@ -286,9 +281,8 @@ def _check_library_refs_rollup(wf: WizFile) -> list[Finding]:
 
 # ---------------------------------------------------------------------------
 # WIZ105: Conditional Judgment missing Null branch on a date field
-# Primary: reads FlowModelNode.data['branch'] (new source, via flow_model).
-# Fallback (_check_null_branches_legacy): reads FlowNode.raw (legacy IR) when
-# wf.flow_model is None (e.g. WizFile built directly by test helpers).
+# Reads FlowModelNode.data['branch'] via wf.flow_model.
+# Returns [] when wf.flow_model is None (guarded at check_graph entry).
 # ---------------------------------------------------------------------------
 
 def _eval_null_branches_for_node(node_uuid: str, branches: list, wf: WizFile) -> list[Finding]:
@@ -366,16 +360,3 @@ def _check_null_branches(wf: WizFile) -> list[Finding]:
     return out
 
 
-def _check_null_branches_legacy(wf: WizFile) -> list[Finding]:
-    """WIZ105 fallback: reads from legacy FlowNode.raw when wf.flow_model is None.
-
-    Used only when WizFile is constructed directly by test helpers (no parse_dict).
-    """
-    out: list[Finding] = []
-    for comp in wf.components.values():
-        for node in comp.details.flow_nodes.values():
-            if node.raw.get("type") != NODE_TYPE_CONDITIONAL_JUDGMENT:
-                continue
-            branches = node.raw.get("branch", [])
-            out.extend(_eval_null_branches_for_node(str(node.uuid), branches, wf))
-    return out

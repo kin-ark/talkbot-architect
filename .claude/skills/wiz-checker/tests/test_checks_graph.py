@@ -1,66 +1,15 @@
 """Tests for checks.graph — flow-integrity findings WIZ100..WIZ199.
 
-Rewritten for Task 3: all tests that exercise WIZ100-WIZ104 now build WizFile
-via parse_dict() so wf.flow_model is populated.
-
-WIZ105 tests retain direct FlowNode construction because WIZ105 reads
-FlowNode.raw (legacy IR) and does not depend on flow_model.
+All tests build WizFile via parse_dict() so wf.flow_model is populated.
 """
 
 from __future__ import annotations
 
 import json
-from uuid import UUID
 
 from wizcheck.checks.graph import check_graph
-from wizcheck.ir import (
-    Component,
-    ComponentDetails,
-    FlowGraph,
-    FlowNode,
-    Variable,
-    WizFile,
-)
 from wizcheck.parser import parse_dict
 from wizcheck.report import Severity
-
-
-# ---------------------------------------------------------------------------
-# Helpers for legacy-IR tests (WIZ105 only)
-# ---------------------------------------------------------------------------
-
-def _node(uid, parent=None, label="Other", raw_children=None) -> FlowNode:
-    raw = {"children": raw_children} if raw_children is not None else {}
-    return FlowNode(uuid=uid, parent_uuid=parent, label=label, sort_index=0, raw=raw)
-
-
-def _wf_from_nodes(nodes: list[FlowNode], variables: dict | None = None) -> WizFile:
-    by_uuid = {n.uuid: n for n in nodes}
-    roots = tuple(n.uuid for n in nodes if n.parent_uuid is None)
-    comp = Component(
-        uuid=UUID(int=1),
-        speech_id=1,
-        category=1,
-        branch="dev",
-        details=ComponentDetails(flow_nodes=by_uuid, root_uuids=roots),
-        raw={},
-    )
-    g = FlowGraph()
-    for n in nodes:
-        g.add_node(n.uuid)
-    for n in nodes:
-        if n.parent_uuid is not None:
-            g.add_edge(n.parent_uuid, n.uuid)
-    return WizFile(
-        raw={},
-        components={comp.uuid: comp},
-        variables=variables or {},
-        intents={},
-        utterances=(),
-        audios={}, knowledge_bases={},
-        flow=g,
-    )
-
 
 # ---------------------------------------------------------------------------
 # Helpers for FlowModel-based tests (WIZ100-WIZ104)
@@ -447,106 +396,8 @@ def test_library_ref_fixture_emits_warnings_not_errors(fixture_path):
 
 
 # ---------------------------------------------------------------------------
-# WIZ105: missing null branch on date variable
-# (uses legacy IR — FlowNode.raw — independent of flow_model)
-# ---------------------------------------------------------------------------
-
-def test_wiz105_missing_null_branch_on_date_variable():
-    """WIZ105: Conditional judgment on date field MUST have a default or Null branch."""
-    uid = UUID(int=200)
-    raw = {
-        "type": 7,
-        "branch": [
-            {
-                "name": "Is today",
-                "branch_judgement_condition": [
-                    {
-                        "left_value": "[{101}]",
-                        "operator": "=",
-                        "right_value": "Today"
-                    }
-                ]
-            }
-        ]
-    }
-    n = FlowNode(uuid=uid, parent_uuid=None, label="Check Date", sort_index=0, raw=raw)
-    variables = {101: Variable(id=101, name="Date Collected", text_type="DATE", raw={}, variable_source=0)}
-    wf = _wf_from_nodes([n], variables=variables)
-    findings = check_graph(wf)
-    f = next((x for x in findings if x.code == "WIZ105"), None)
-    assert f is not None
-    assert f.severity is Severity.ERROR
-    assert "Missing fallback/null branch" in f.message
-
-
-def test_wiz105_has_null_branch_on_date_variable():
-    """WIZ105 passes if there is a branch checking for Null or empty."""
-    uid = UUID(int=201)
-    raw = {
-        "type": 7,
-        "branch": [
-            {
-                "name": "Is today",
-                "branch_judgement_condition": [
-                    {
-                        "left_value": "{102}",
-                        "operator": "=",
-                        "right_value": "Today"
-                    }
-                ]
-            },
-            {
-                "name": "Fallback",
-                "branch_judgement_condition": [
-                    {
-                        "left_value": "{102}",
-                        "operator": "is_empty",
-                        "right_value": ""
-                    }
-                ]
-            }
-        ]
-    }
-    n = FlowNode(uuid=uid, parent_uuid=None, label="Check Date", sort_index=0, raw=raw)
-    variables = {102: Variable(id=102, name="date_collected", text_type="DATE", raw={}, variable_source=0)}
-    wf = _wf_from_nodes([n], variables=variables)
-    findings = check_graph(wf)
-    assert not any(x.code == "WIZ105" for x in findings)
-
-
-def test_wiz105_has_default_branch_on_date_variable():
-    """WIZ105 passes if there is a branch with no conditions (default)."""
-    uid = UUID(int=202)
-    raw = {
-        "type": 7,
-        "branch": [
-            {
-                "name": "Is today",
-                "branch_judgement_condition": [
-                    {
-                        "left_value": "103",
-                        "operator": "=",
-                        "right_value": "Today"
-                    }
-                ]
-            },
-            {
-                "name": "Default",
-                "branch_judgement_condition": []
-            }
-        ]
-    }
-    n = FlowNode(uuid=uid, parent_uuid=None, label="Check Date", sort_index=0, raw=raw)
-    variables = {103: Variable(id=103, name="Date", text_type="DATE", raw={}, variable_source=0)}
-    wf = _wf_from_nodes([n], variables=variables)
-    findings = check_graph(wf)
-    assert not any(x.code == "WIZ105" for x in findings)
-
-
-# ---------------------------------------------------------------------------
-# WIZ105: new-format (FlowModel) source — parse_dict-based tests
-# These verify WIZ105 fires correctly when reading from FlowModelNode.data
-# rather than the legacy FlowNode.raw.
+# WIZ105: FlowModel-based tests — parse_dict so flow_model is populated.
+# Verify WIZ105 fires correctly when reading from FlowModelNode.data.
 # ---------------------------------------------------------------------------
 
 def _make_export_with_variables(nodes: dict, routes: dict, variables: list[dict]) -> dict:

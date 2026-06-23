@@ -131,20 +131,16 @@ def _goto_kb_envelope(kb_id: int, name: str = "Go To KB") -> dict:
 class TestFlowModelNoneGuard:
     def test_returns_empty_when_flow_model_is_none(self):
         """check_graph returns [] when wf.flow_model is None (direct WizFile construction)."""
-        from wizcheck.ir import (
-            Component, ComponentDetails, FlowGraph, WizFile,
-        )
+        from wizcheck.ir import Component, WizFile
         from uuid import UUID
         comp = Component(
             uuid=UUID(int=1), speech_id=1, category=1, branch="dev",
-            details=ComponentDetails(flow_nodes={}, root_uuids=()),
             raw={},
         )
         wf = WizFile(
             raw={},
             components={comp.uuid: comp},
             variables={}, intents={}, utterances=(), audios={}, knowledge_bases={},
-            flow=FlowGraph(),
             flow_model=None,
         )
         assert check_graph(wf) == []

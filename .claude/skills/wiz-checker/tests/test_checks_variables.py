@@ -5,7 +5,7 @@ from __future__ import annotations
 from uuid import UUID
 
 from wizcheck.checks.variables import check_variables
-from wizcheck.ir import FlowGraph, Utterance, Variable, WizFile
+from wizcheck.ir import Utterance, Variable, WizFile
 from wizcheck.report import Severity
 
 
@@ -17,7 +17,6 @@ def _wf(variables: dict | None = None, utterances: tuple = ()) -> WizFile:
         intents={},
         utterances=utterances,
         audios={}, knowledge_bases={},
-        flow=FlowGraph(),
     )
 
 
