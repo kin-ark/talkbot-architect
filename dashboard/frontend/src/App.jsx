@@ -24,6 +24,10 @@ export default function App() {
             <h2 className="text-2xl font-semibold mb-4 text-center text-slate-800">Talkbot Architect</h2>
             <p className="text-center text-slate-500 mb-6 text-sm">Upload a WIZ dialogue JSON or ZIP to begin.</p>
             <UploadZone onUpload={s.upload} />
+            <button onClick={s.startBlank}
+              className="mt-4 w-full border border-slate-300 rounded-xl py-2 text-sm text-slate-600 hover:bg-slate-100">
+              Start from scratch — describe a new bot
+            </button>
             {s.loading && <p className="text-center mt-4 text-slate-400">Analyzing…</p>}
             <p className="text-center mt-6 text-xs text-slate-400">Set your AI provider/key via ⚙ (top-right) or a backend <code>.env</code>.</p>
           </div>

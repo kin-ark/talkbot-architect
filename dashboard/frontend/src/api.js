@@ -22,3 +22,4 @@ export function exportUrl() { return `${BASE}/export`; }
 export async function getConfig() { return (await axios.get(`${BASE}/config`)).data; }
 export async function updateConfig(body) { return (await axios.put(`${BASE}/config`, body)).data; }
 export async function clearConfig() { return (await axios.post(`${BASE}/config/clear`)).data; }
+export async function startBlank() { return (await axios.post(`${BASE}/session/blank`)).data; }

@@ -24,6 +24,15 @@ export function useSession() {
     } finally { setLoading(false); }
   }, []);
 
+  const startBlank = useCallback(async () => {
+    setLoading(true);
+    try {
+      const r = await api.startBlank();
+      setSummary(r.summary); setFindings(r.findings);
+      setTranscript([{ role: 'agent', text: "Blank canvas. Describe the bot you want — e.g. \"make me a Debt Collector talkbot\"." }]);
+    } finally { setLoading(false); }
+  }, []);
+
   const errText = (e) =>
     e?.response?.data?.detail
     || e?.response?.data?.error?.message
@@ -78,5 +87,5 @@ export function useSession() {
   const redo = useCallback(async () => refresh(await api.redo()), []);
 
   return { summary, findings, transcript, proposal, canUndo, canRedo, loading, sending,
-           upload, send, apply, reject, undo, redo, cancel };
+           upload, startBlank, send, apply, reject, undo, redo, cancel };
 }
