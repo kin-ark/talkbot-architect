@@ -20,6 +20,7 @@ export default function SettingsPopover() {
   // Fetch config whenever the popover opens
   useEffect(() => {
     if (!open) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- legitimate async-fetch loader pattern; setLoading/setNotice reset before an async call, not as a derived-state sync
     setLoading(true);
     setNotice(null);
     getConfig()
