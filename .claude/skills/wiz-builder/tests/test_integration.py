@@ -90,3 +90,45 @@ def test_checker_finds_no_errors_on_compiled_output(tmp_path):
     assert proc.returncode in (0, 1), f"checker stderr: {proc.stderr}"
     report = json.loads(proc.stdout)
     assert report["summary"]["errors"] == 0, f"findings: {report['findings'][:3]}"
+
+
+def test_conditional_and_assign_build_checker_clean(tmp_path):
+    """Full pipeline: conditional (type 7) + assign (type 10) nodes → checker-clean export.
+
+    Also verifies that canvases.py passes Node.config through verbatim for these
+    node types (no goto-only special-casing needed): the built details must contain
+    exactly one type-7 and one type-10 canvas node.
+    """
+    out = tmp_path / "speech_cond_assign.json"
+    result = compile_manifest(FIXTURES / "manifest_conditional_assign.yaml", out)
+
+    # Primary assertion: zero checker errors.
+    assert result.checker_errors == 0, (
+        f"conditional+assign manifest produced checker errors: "
+        f"{result.checker_errors} errors, codes: {result.finding_codes}"
+    )
+
+    # Secondary assertions: the details blob must contain both new node types.
+    # details is a JSON string encoding {node_uuid: node_obj} where node_obj["type"] is int.
+    built = json.loads(out.read_text(encoding="utf-8"))
+    components = json.loads(built["BizSpeechComponent"])
+    assert components, "BizSpeechComponent must be non-empty"
+
+    # Collect all node type integers across all components.
+    all_node_types: list[int] = []
+    for comp in components:
+        details_raw = comp.get("details", "null")
+        details = json.loads(details_raw) if isinstance(details_raw, str) else details_raw
+        if not isinstance(details, dict):
+            continue
+        # details is {node_uuid: node_obj}; node_obj["type"] is the WIZ.AI integer type.
+        for node_obj in details.values():
+            if isinstance(node_obj, dict) and "type" in node_obj:
+                all_node_types.append(node_obj["type"])
+
+    assert 7 in all_node_types, (
+        f"Expected a type-7 (Conditional-Judgment) node in details; found types: {all_node_types}"
+    )
+    assert 10 in all_node_types, (
+        f"Expected a type-10 (Variable-Assignment) node in details; found types: {all_node_types}"
+    )

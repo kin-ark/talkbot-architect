@@ -1,0 +1,47 @@
+name: "Conditional Assign Test Bot"
+branch: dev
+language: IDN
+
+custom_variables:
+  - name: PAYMENT_STATUS
+  - name: DUE_AMOUNT
+
+canvases:
+  - name: "1. Main"
+    nodes:
+      - id: greet
+        type: talk
+        prompt: "Greeting prompt"
+
+      - id: check_status
+        type: conditional
+        prompt: "(conditional)"
+        config:
+          variable: PAYMENT_STATUS
+          branches:
+            - name: Paid
+              op: "="
+              value: "paid"
+              to: assign_amt
+            - name: Default
+              to: greet_unpaid
+
+      - id: assign_amt
+        type: assign
+        prompt: "(assign)"
+        config:
+          variable: DUE_AMOUNT
+          value: "0"
+
+      - id: greet_unpaid
+        type: talk
+        prompt: "Unpaid greeting"
+
+      - id: done
+        type: exit
+        prompt: "(exit)"
+
+    edges:
+      - {from: greet, branch: Positive, to: check_status}
+      - {from: assign_amt, branch: Default, to: done}
+      - {from: greet_unpaid, branch: Positive, to: done}
