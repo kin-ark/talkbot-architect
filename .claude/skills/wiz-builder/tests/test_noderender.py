@@ -466,3 +466,172 @@ def test_goto_canvas_component_props_type():
     r = _render_goto()
     goto_uuid = next(k for k, v in r.details.items() if v["type"] == 4)
     assert r.details[goto_uuid]["canvas"]["component"]["props"]["type"] == 2
+
+
+# ---------------------------------------------------------------------------
+# Task 4 (noderender): conditional (type 7) + assign (type 10) builders
+# ---------------------------------------------------------------------------
+
+from wizbuilder.noderender import NODE_BUILDERS  # noqa: E402
+
+
+def _minter():
+    return IdMinter(manifest_hash="testhash")
+
+
+_CTX = dict(
+    canvas_index=0, comp_uuid="comp-uuid", speech_id=1,
+    branch_intent_ids={"Positive": 1, "Negative": 2, "Reject": 3,
+                       "Unclassified": 4, "No answer": 5},
+    kb_ids=[], node_language="3",
+)
+
+
+def test_registry_has_conditional_and_assign():
+    assert "conditional" in NODE_BUILDERS and "assign" in NODE_BUILDERS
+
+
+def test_assign_node_shape_and_single_port():
+    nodes = [
+        NodeSpec(id="cond", prompt="", type="conditional", config={
+            "variable": "Gender",
+            "branches": [
+                {"name": "Bapak", "op": "=", "value": "Male", "to": "set_b"},
+                {"name": "Default", "to": "set_b"},
+            ]}),
+        NodeSpec(id="set_b", prompt="", type="assign",
+                 config={"variable": "Salutation", "value": "Bapak"}),
+    ]
+    r = render_component_nodes(nodes, [], minter=_minter(), **_CTX)
+    # find the assign node_obj
+    assign = next(o for o in r.details.values() if o["type"] == 10)
+    d = assign["data"]
+    assert d["type"] == 10
+    va = d["value_assignment"][0]
+    assert va["variable"]["name"] == "Salutation"
+    assert va["variable"]["speMark"] == "~@##Salutation##@~"
+    assert va["assign"]["func_code"] == "OPT_VALUE_ASSIGNMENT"
+    assert va["assign"]["params"][0]["value"] == "Bapak"
+    assert d["sentence"] == [] and d["textarea_list"] == []
+    # single out-port named Default
+    items = assign["canvas"]["ports"]["items"]
+    assert len(items) == 1 and items[0]["name"] == "Default"
+    # node_variables source 0 (write)
+    assert d["node_variables"] == [{"name": "Salutation", "variableSource": 0}]
+
+
+def test_conditional_ports_branch_rules_and_routing():
+    nodes = [
+        NodeSpec(id="cond", prompt="", type="conditional", config={
+            "variable": "Gender",
+            "branches": [
+                {"name": "Bapak", "op": "=", "value": "Male", "to": "set_b"},
+                {"name": "Bapak", "op": "=", "value": "M", "to": "set_b"},
+                {"name": "Ibu", "op": "In", "value": "F,Female", "to": "set_i"},
+                {"name": "Default", "to": "set_b"},
+            ]}),
+        NodeSpec(id="set_b", prompt="", type="assign",
+                 config={"variable": "Salutation", "value": "Bapak"}),
+        NodeSpec(id="set_i", prompt="", type="assign",
+                 config={"variable": "Salutation", "value": "Ibu"}),
+    ]
+    r = render_component_nodes(nodes, [], minter=_minter(), **_CTX)
+    cond_uuid, cond = next((u, o) for u, o in r.details.items() if o["type"] == 7)
+    d = cond["data"]
+    # distinct ports = 3 (Bapak, Ibu, Default), order preserved first-seen
+    assert d["branchList"] == ["Bapak", "Ibu", "Default"]
+    items = cond["canvas"]["ports"]["items"]
+    assert [it["name"] for it in items] == ["Bapak", "Ibu", "Default"]
+    # all_client_intent ids match the port item ids
+    aci = {a["name"]: a["id"] for a in d["all_client_intent"]}
+    assert aci == {it["name"]: it["id"] for it in items}
+    # branch rules: 3 (Default has none); OR via duplicate name preserved
+    rules = d["branch"]
+    assert len(rules) == 3
+    bapak_rules = [b for b in rules if b["name"] == "Bapak"]
+    assert {b["branch_judgement_condition"][0]["right_value"] for b in bapak_rules} == {"Male", "M"}
+    ibu = next(b for b in rules if b["name"] == "Ibu")
+    assert ibu["branch_judgement_condition"][0]["operator"] == "In"
+    assert ibu["branch_judgement_condition"][0]["type"] == "const"
+    # node_variables one per rule (3)
+    assert d["node_variables"] == [{"name": "Gender", "variableSource": 1}] * 3
+    # routes: one port per distinct branch, keyed by all_client_intent id
+    cond_routes = r.routes[cond_uuid]
+    assert set(cond_routes.keys()) == set(aci.values())
+
+
+def test_conditional_value_var_emits_variable_type():
+    nodes = [
+        NodeSpec(id="cond", prompt="", type="conditional", config={
+            "variable": "Gender",
+            "branches": [
+                {"name": "Match", "op": "=", "value_var": "Expected", "to": "t"},
+                {"name": "Default", "to": "t"},
+            ]}),
+        NodeSpec(id="t", prompt="", type="assign",
+                 config={"variable": "Salutation", "value": "x"}),
+    ]
+    r = render_component_nodes(nodes, [], minter=_minter(), **_CTX)
+    cond = next(o for o in r.details.values() if o["type"] == 7)
+    rule = next(b for b in cond["data"]["branch"] if b["name"] == "Match")
+    cnd = rule["branch_judgement_condition"][0]
+    assert cnd["type"] == "variable" and cnd["right_value"] == "Expected"
+
+
+def test_conditional_unary_op_no_right_value():
+    nodes = [
+        NodeSpec(id="cond", prompt="", type="conditional", config={
+            "variable": "Gender",
+            "branches": [
+                {"name": "Empty", "op": "IsNull", "to": "t"},
+                {"name": "Default", "to": "t"},
+            ]}),
+        NodeSpec(id="t", prompt="", type="assign",
+                 config={"variable": "Salutation", "value": "x"}),
+    ]
+    r = render_component_nodes(nodes, [], minter=_minter(), **_CTX)
+    cond = next(o for o in r.details.values() if o["type"] == 7)
+    rule = next(b for b in cond["data"]["branch"] if b["name"] == "Empty")
+    cnd = rule["branch_judgement_condition"][0]
+    assert cnd["operator"] == "IsNull"
+    assert "right_value" not in cnd or cnd["right_value"] == ""
+
+
+def test_conditional_no_scs_no_topfloor():
+    nodes = [
+        NodeSpec(id="cond", prompt="", type="conditional", config={
+            "variable": "Gender",
+            "branches": [{"name": "A", "op": "=", "value": "x", "to": "t"},
+                         {"name": "Default", "to": "t"}]}),
+        NodeSpec(id="t", prompt="", type="assign",
+                 config={"variable": "Salutation", "value": "x"}),
+    ]
+    r = render_component_nodes(nodes, [], minter=_minter(), **_CTX)
+    assert r.sentence_cut_speech == []
+    assert r.top_floor_details == []
+
+
+def test_conditional_entry_inbound_port_type_7():
+    nodes = [
+        NodeSpec(id="cond", prompt="", type="conditional", config={
+            "variable": "Gender",
+            "branches": [{"name": "A", "op": "=", "value": "x", "to": "t"},
+                         {"name": "Default", "to": "t"}]}),
+        NodeSpec(id="t", prompt="", type="assign",
+                 config={"variable": "Salutation", "value": "x"}),
+    ]
+    r = render_component_nodes(nodes, [], minter=_minter(), **_CTX)
+    # cond is the entry (nothing targets it); inbound port carries type 7
+    assert any(p["type"] == 7 for p in r.inbound_ports)
+    # the assign target is NOT an entry (conditional routes into it)
+    assert all(p["type"] != 10 for p in r.inbound_ports)
+
+
+def test_talk_golden_unchanged():
+    # talk-only render must be byte-identical to before (regression guard).
+    nodes = [NodeSpec(id="greet", prompt="Halo", type="talk")]
+    r = render_component_nodes(nodes, [], minter=_minter(), **_CTX)
+    talk = next(iter(r.details.values()))
+    assert talk["type"] == 1
+    assert [it["name"] for it in talk["canvas"]["ports"]["items"]] == \
+        ["Positive", "Negative", "Unclassified"]

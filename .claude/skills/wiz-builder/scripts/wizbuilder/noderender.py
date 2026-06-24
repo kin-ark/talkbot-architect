@@ -71,6 +71,37 @@ def _wide_int(seed: str) -> int:
     return (raw & 0x7FFFFFFFFFFFFFFF) or 1
 
 
+_PORT_MARKUP = [
+    {
+        "children": [
+            {
+                "ns": "http://www.w3.org/1999/xhtml",
+                "children": [
+                    {
+                        "style": {"width": "100%", "height": "100%"},
+                        "selector": "foContent",
+                        "tagName": "div",
+                    }
+                ],
+                "style": {"background": "transparent", "width": "100%", "height": "100%"},
+                "selector": "foBody",
+                "tagName": "body",
+                "attrs": {"xmlns": "http://www.w3.org/1999/xhtml"},
+            }
+        ],
+        "selector": "fo",
+        "tagName": "foreignObject",
+    }
+]
+
+_TYPE_INT = {"talk": 1, "exit": 2, "goto": 4, "conditional": 7, "assign": 10, "transfer": 13}
+_TYPE_NODE_NAME = {
+    "talk": "Talk Node",
+    "conditional": "Conditional Judgment Node",
+    "assign": "Variable Assignment Node",
+}
+
+
 # ---------------------------------------------------------------------------
 # Per-type node builders
 # ---------------------------------------------------------------------------
@@ -155,32 +186,7 @@ def _build_talk_node(
             },
             "items": items,
         },
-        "portMarkup": [
-            {
-                "children": [
-                    {
-                        "ns": "http://www.w3.org/1999/xhtml",
-                        "children": [
-                            {
-                                "style": {"width": "100%", "height": "100%"},
-                                "selector": "foContent",
-                                "tagName": "div",
-                            }
-                        ],
-                        "style": {
-                            "background": "transparent",
-                            "width": "100%",
-                            "height": "100%",
-                        },
-                        "selector": "foBody",
-                        "tagName": "body",
-                        "attrs": {"xmlns": "http://www.w3.org/1999/xhtml"},
-                    }
-                ],
-                "selector": "fo",
-                "tagName": "foreignObject",
-            }
-        ],
+        "portMarkup": _PORT_MARKUP,
         "zIndex": 1,
     }
 
@@ -613,6 +619,225 @@ def _build_transfer_node(
     return node_obj, scs_row
 
 
+def _build_conditional_node(
+    spec: NodeSpec,
+    *,
+    canvas_index: int,
+    comp_uuid: str,
+    speech_id: int,
+    branch_intent_ids: dict[str, int],
+    kb_ids: list[str],
+    node_language: str,
+    minter: Any,
+    sort_index: int,
+    port_uuids: dict[str, str],
+    node_uuid: str,
+    reccut_uuid: str,
+    is_default: bool,
+    component_nav: list[dict] | None = None,
+) -> tuple[dict, None]:
+    """Build one Conditional-Judgment node (type 7). Router: one out-port per distinct
+    branch name. No SentenceCutSpeech row, no topFloorDetails. Returns (node_obj, None).
+
+    port_uuids maps branch-name -> port uuid (== all_client_intent id == routes key);
+    render_component_nodes computes it from the distinct branch names in config.branches.
+    """
+    variable = spec.config.get("variable", "")
+    branches = spec.config.get("branches", []) or []
+
+    # distinct branch names, first-seen order (matches port_uuids ordering)
+    port_names: list[str] = list(port_uuids.keys())
+
+    items = [
+        {"name": name, "id": port_uuids[name], "attrs": _fo(-37.67, 70), "group": "out"}
+        for name in port_names
+    ]
+    canvas = {
+        "view": "react-shape-view",
+        "component": {"props": {
+            "text": "Conditional Judgment Node",
+            "list": list(component_nav) if component_nav else [],
+            "type": 7,
+        }},
+        "size": {"width": 330, "height": 106},
+        "shape": "react-shape",
+        "id": node_uuid,
+        "position": {"x": -658.47, "y": 90.37},
+        "ports": {
+            "groups": {
+                "in": {"position": {"name": "top"}, "attrs": _fo(-30, 140)},
+                "out": {
+                    "position": {"left": 200, "name": "bottom"},
+                    "attrs": {"fo": {"magnet": "true", "height": 24}},
+                },
+            },
+            "items": items,
+        },
+        "portMarkup": _PORT_MARKUP,
+        "zIndex": 1,
+    }
+
+    # rules: one entry per non-Default branch row; Default has no rule.
+    rule_list: list[dict] = []
+    node_vars: list[dict] = []
+    for b in branches:
+        if b.get("name") == "Default":
+            continue
+        cond: dict = {
+            "variable_source": "1",
+            "left_value": variable,
+            "operator": b["op"],
+        }
+        if b["op"] not in ("IsNull", "NotNull"):
+            if "value_var" in b:
+                cond["right_value"] = b["value_var"]
+                cond["type"] = "variable"
+            else:
+                cond["right_value"] = b["value"]
+                cond["type"] = "const"
+        rule_list.append({
+            "name": b["name"],
+            "branch_judgement_condition": [cond],
+        })
+        node_vars.append({"name": variable, "variableSource": 1})
+
+    all_client_intent = [
+        {"name": name, "checked": True, "id": port_uuids[name]} for name in port_names
+    ]
+
+    data: dict = {
+        "branchList": port_names,
+        "client_intent": port_names,
+        "node_variables": node_vars,
+        "all_client_intent": all_client_intent,
+        "hitKnowledgeRate": [],
+        "type": 7,
+        "is_default": is_default,
+        "branch": rule_list,
+        "node_language": node_language,
+        "hot_words_list": [],
+        "hangupRate": "0.0%",
+        "name": "Conditional Judgment Node",
+        "id": node_uuid,
+        "position": {"x": -658.47, "y": 90.37},
+        "selected": False,
+        "hitKnowledgeCountsRate": "0.0%",
+    }
+
+    node_obj: dict = {
+        "canvas": canvas,
+        "data": data,
+        "name": "Conditional Judgment Node",
+        "type": 7,
+        "is_default": is_default,
+        "data_extra": {
+            "hot_words_list": [], "intents": [], "variables": [],
+            "serviceCall": [], "sentence_cut": [],
+        },
+    }
+    return node_obj, None
+
+
+def _build_assign_node(
+    spec: NodeSpec,
+    *,
+    canvas_index: int,
+    comp_uuid: str,
+    speech_id: int,
+    branch_intent_ids: dict[str, int],
+    kb_ids: list[str],
+    node_language: str,
+    minter: Any,
+    sort_index: int,
+    port_uuids: dict[str, str],
+    node_uuid: str,
+    reccut_uuid: str,
+    is_default: bool,
+    component_nav: list[dict] | None = None,
+) -> tuple[dict, None]:
+    """Build one Variable-Assignment node (type 10). Silent pass-through with a single
+    out-port named "Default". No SCS row, no topFloorDetails. Returns (node_obj, None)."""
+    variable = spec.config.get("variable", "")
+    value = spec.config.get("value", "")
+    default_port = port_uuids["Default"]
+
+    items = [{"name": "Default", "id": default_port, "attrs": _fo(-37.67, 70), "group": "out"}]
+    canvas = {
+        "view": "react-shape-view",
+        "component": {"props": {
+            "text": "Variable Assignment Node",
+            "list": list(component_nav) if component_nav else [],
+            "type": 10,
+        }},
+        "size": {"width": 244, "height": 106},
+        "shape": "react-shape",
+        "id": node_uuid,
+        "position": {"x": -293.05, "y": 112.54},
+        "ports": {
+            "groups": {
+                "in": {"position": {"name": "top"}, "attrs": _fo(-30, 140)},
+                "out": {
+                    "position": {"left": 200, "name": "bottom"},
+                    "attrs": {"fo": {"magnet": "true", "height": 24}},
+                },
+            },
+            "items": items,
+        },
+        "portMarkup": _PORT_MARKUP,
+        "zIndex": 1,
+    }
+
+    data: dict = {
+        "sentence": [],
+        "node_function": "",
+        "node_variables": [{"name": variable, "variableSource": 0}],
+        "all_client_intent": [{"name": "Default", "checked": True, "id": default_port}],
+        "allow_jump_knowledges": list(kb_ids),
+        "hitKnowledgeRate": [],
+        "value_assignment": [{
+            "variable": {"name": variable, "speMark": f"~@##{variable}##@~"},
+            "assign": {
+                "func_output": {"type": "STRING"},
+                "tag": "",
+                "params": [{
+                    "name": "value_to_assign", "label": "Assigned Value",
+                    "type": "const", "value": value,
+                }],
+                "func_code": "OPT_VALUE_ASSIGNMENT",
+                "func_name": "Set Value as",
+            },
+        }],
+        "appoint_knowledge_id": "",
+        "type": 10,
+        "is_default": is_default,
+        "textarea_list": [],
+        "node_language": node_language,
+        "hot_words_list": [],
+        "tts_language": node_language,
+        "hangupRate": "0.0%",
+        "can_interrupt_percent": 0.8,
+        "name": "Variable Assignment Node",
+        "notices_info": [],
+        "id": node_uuid,
+        "position": {"x": -293.05, "y": 112.54},
+        "selected": False,
+        "hitKnowledgeCountsRate": "0.0%",
+    }
+
+    node_obj: dict = {
+        "canvas": canvas,
+        "data": data,
+        "name": "Variable Assignment Node",
+        "type": 10,
+        "is_default": is_default,
+        "data_extra": {
+            "hot_words_list": [], "intents": [], "variables": [],
+            "serviceCall": [], "sentence_cut": [],
+        },
+    }
+    return node_obj, None
+
+
 # ---------------------------------------------------------------------------
 # Node-type dispatch registry
 # ---------------------------------------------------------------------------
@@ -626,7 +851,25 @@ NODE_BUILDERS: dict[str, Callable] = {
     "exit": _build_exit_node,
     "transfer": _build_transfer_node,
     "goto": _build_goto_node,
+    "conditional": _build_conditional_node,
+    "assign": _build_assign_node,
 }
+
+
+def _out_port_names(spec: NodeSpec) -> list[str]:
+    """Distinct out-port names for a node, in canonical order, by type."""
+    if spec.type == "talk":
+        return list(_CHECKED)
+    if spec.type == "assign":
+        return ["Default"]
+    if spec.type == "conditional":
+        seen: list[str] = []
+        for b in spec.config.get("branches", []) or []:
+            name = b.get("name")
+            if name and name not in seen:
+                seen.append(name)
+        return seen
+    return []  # terminal types: no out-ports
 
 
 # ---------------------------------------------------------------------------
@@ -683,11 +926,23 @@ def render_component_nodes(
     sentence_cut_speech: list = []
     top_floor_details: list = []
 
-    # Compute entry nodes: nodes not targeted by any edge.
+    # Synthesize conditional branch edges from config (Option A: targets live in the
+    # node, not the canvas edges list). One edge per DISTINCT branch name -> its `to`.
+    synth_edges: list[EdgeSpec] = list(edges)
+    for spec in nodes:
+        if spec.type == "conditional":
+            seen: dict[str, str] = {}
+            for b in spec.config.get("branches", []) or []:
+                name, to = b.get("name"), b.get("to")
+                if name and to and name not in seen:
+                    seen[name] = to
+            for name, to in seen.items():
+                synth_edges.append(EdgeSpec(src=spec.id, branch=name, dst=to))
+
+    # Compute entry nodes: nodes not targeted by any edge (using combined edge set).
     nodes_with_no_incoming: set[str] = {n.id for n in nodes}
-    if edges:
-        dst_ids = {e.dst for e in edges}
-        nodes_with_no_incoming -= dst_ids
+    if synth_edges:
+        nodes_with_no_incoming -= {e.dst for e in synth_edges}
 
     # Build node_id -> node_uuid and node_id -> port_uuid maps (filled during loop).
     _node_id_to_uuid: dict[str, str] = {}
@@ -702,9 +957,10 @@ def render_component_nodes(
         reccut_uuid = str(minter.uuid(f"reccut:{ci}:{nid_str}"))
         is_default = nid_str in nodes_with_no_incoming
 
-        # --- port UUIDs for checked branches (Talk only; terminal nodes ignore these) ---
+        # --- port UUIDs: type-dependent out-port names ---
+        port_names = _out_port_names(spec)
         port_uuids: dict[str, str] = {
-            b: str(minter.uuid(f"port:{ci}:{nid_str}:{b}")) for b in _CHECKED
+            name: str(minter.uuid(f"port:{ci}:{nid_str}:{name}")) for name in port_names
         }
 
         # Track mappings for edge wiring after the loop.
@@ -744,17 +1000,20 @@ def render_component_nodes(
 
         # Only non-terminal entry nodes go into inbound_ports.
         if is_default and not is_terminal:
-            inbound_ports.append(
-                {"name": "Talk Node", "type": 1, "uuid": node_uuid, "is_default": True}
-            )
+            inbound_ports.append({
+                "name": _TYPE_NODE_NAME.get(spec.type, "Talk Node"),
+                "type": _TYPE_INT.get(spec.type, 1),
+                "uuid": node_uuid,
+                "is_default": True,
+            })
 
         # Exit (type 2) and goto (type 4) contribute a topFloorDetails row = their data dict.
         # Transfer (type 13) does NOT (confirmed by fixture 26).
         if spec.type in ("exit", "goto"):
             top_floor_details.append(node_obj["data"])
 
-    # --- Wire edges into routes ---
-    for e in edges:
+    # --- Wire edges into routes (user edges + synthesized conditional edges) ---
+    for e in synth_edges:
         src_node_uuid = _node_id_to_uuid[e.src]
         dst_node_uuid = _node_id_to_uuid[e.dst]
         if e.branch not in _node_id_to_port_uuids.get(e.src, {}):
