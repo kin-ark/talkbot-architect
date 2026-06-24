@@ -1,3 +1,12 @@
+import json
+import sys
+from pathlib import Path
+
+import pytest
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+import agents
 from tools import registry
 
 # A minimal in-memory export with one empty component (index 0).
@@ -10,6 +19,21 @@ DATA = {
                      enumerate(["Positive", "Negative", "Reject", "Unclassified", "No answer"], 1)],
     "BizKnowledgeInfo": [],
 }
+
+
+@pytest.fixture(scope="module")
+def two_component_doc():
+    """A 2-component doc built via propose_scaffold (deterministic UUIDs)."""
+    params = {
+        "name": "Test Bot", "language": "IDN", "branch": "dev",
+        "canvases": [
+            {"name": "1. Greeting", "nodes": [{"id": "open", "prompt": "Halo"}]},
+            {"name": "2. Next", "nodes": [{"id": "open2", "prompt": "Lanjut"}]},
+        ],
+    }
+    r = agents.propose_scaffold(params)
+    assert r["ok"], r.get("error")
+    return r["proposed_data"]
 
 
 def test_tools_registered():
@@ -29,3 +53,68 @@ def test_add_component_returns_proposal():
     out = registry.dispatch("add_component", {"name": "Greeting"}, DATA)
     assert out["result"]["ok"] is True
     assert out["proposal"] is not None
+
+
+def _decode(data, key):
+    """Decode a packed JSON string or return list/dict as-is."""
+    v = data.get(key, "[]")
+    if isinstance(v, str):
+        return json.loads(v)
+    return v
+
+
+def test_add_node_goto_with_config(two_component_doc):
+    """add_node with type=goto + config.target resolves to the target component's UUID."""
+    bsc = _decode(two_component_doc, "BizSpeechComponent")
+    comp1_uuid = bsc[1]["componentUuid"]
+    comp1_name = bsc[1]["name"]  # "2. Next"
+
+    # Find the entry node uuid in comp0 (is_default=True)
+    comp0_details = json.loads(bsc[0]["details"]) if isinstance(bsc[0]["details"], str) else {}
+    entry_uuid = next(uid for uid, obj in comp0_details.items()
+                      if (obj.get("data") or {}).get("is_default"))
+
+    res = registry.dispatch("add_node", {
+        "component": 0,
+        "id": "jump",
+        "prompt": "(goto)",
+        "type": "goto",
+        "config": {"target": comp1_name},
+        "edges": [{"from": entry_uuid, "branch": "Unclassified", "to": "jump"}],
+    }, two_component_doc)
+
+    assert res["result"]["ok"] is True, res["result"].get("error")
+    proposed = res["proposal"]["proposed_data"]
+    bsc2 = _decode(proposed, "BizSpeechComponent")
+    details2 = json.loads(bsc2[0]["details"])
+
+    # Find the new goto node (type 4) — raw envelope uses obj["type"], not obj["data"]["node_type"]
+    goto_nodes = [(uid, obj) for uid, obj in details2.items() if obj.get("type") == 4]
+    assert goto_nodes, "No type-4 (goto) node found in proposed comp0"
+    _, goto_obj = goto_nodes[0]
+    assert goto_obj["data"]["appoint_node_id"] == comp1_uuid
+
+
+def test_add_node_exit_no_config(two_component_doc):
+    """add_node with type=exit (no config) produces a type-2 node."""
+    bsc = _decode(two_component_doc, "BizSpeechComponent")
+    comp0_details = json.loads(bsc[0]["details"]) if isinstance(bsc[0]["details"], str) else {}
+    entry_uuid = next(uid for uid, obj in comp0_details.items()
+                      if (obj.get("data") or {}).get("is_default"))
+
+    res = registry.dispatch("add_node", {
+        "component": 0,
+        "id": "bye",
+        "prompt": "Selamat tinggal",
+        "type": "exit",
+        "edges": [{"from": entry_uuid, "branch": "Unclassified", "to": "bye"}],
+    }, two_component_doc)
+
+    assert res["result"]["ok"] is True, res["result"].get("error")
+    proposed = res["proposal"]["proposed_data"]
+    bsc2 = _decode(proposed, "BizSpeechComponent")
+    details2 = json.loads(bsc2[0]["details"])
+
+    # Raw envelope uses obj["type"], not obj["data"]["node_type"]
+    exit_nodes = [obj for obj in details2.values() if obj.get("type") == 2]
+    assert exit_nodes, "No type-2 (exit) node found in proposed comp0"

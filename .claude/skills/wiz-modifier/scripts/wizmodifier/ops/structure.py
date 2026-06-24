@@ -253,10 +253,28 @@ def append_node(bundle: InputBundle, params: dict, minter) -> None:
     node = params["node"]
     new_edges = params.get("edges") or []
 
+    # Resolve goto config.target (component name) → componentUuid.
+    # Mirrors the resolution in _render_nodes so append-node and add-component are consistent.
+    cfg = dict(node.get("config") or {})
+    if node.get("type") == "goto":
+        bsc_raw2 = bundle.data.get("BizSpeechComponent", "[]")
+        bsc2 = json.loads(bsc_raw2) if isinstance(bsc_raw2, str) else bsc_raw2
+        comp_uuid_by_name: dict[str, str] = {
+            c.get("name", ""): c.get("componentUuid", "") for c in bsc2
+        }
+        target_name = cfg.get("target", "")
+        cfg["target_uuid"] = comp_uuid_by_name.get(target_name, "")
+        cfg["target_name"] = target_name
+        if not cfg["target_uuid"]:
+            raise ValueError(
+                f"append-node: goto node {node['id']!r}: config.target {target_name!r} "
+                f"does not match any existing component name"
+            )
+
     # Render the new node ALONE. Namespace its logical id so minted uuids cannot
     # collide with any existing node minted under the same canvas_index.
     spec = NodeSpec(id=f"append:{node['id']}", prompt=node["prompt"],
-                    type=node.get("type", "talk"), config=node.get("config", {}))
+                    type=node.get("type", "talk"), config=cfg)
     speech_id, branch_intent_ids, kb_ids, node_language = _resolve_context(bundle)
     r = render_component_nodes(
         [spec], [], canvas_index=index, comp_uuid=comp_uuid,

@@ -76,24 +76,32 @@ _SPECS = [
               },
               "required": ["name", "language", "branch", "canvases"]}),
     ToolSpec("add_component",
-             "Add a new component (optionally with nodes+edges) to the current dialogue. Proposes a dry-run.",
+             "Add a new component (optionally with nodes+edges) to the current dialogue. Proposes a dry-run. "
+             "Each node may include an optional type (talk/exit/transfer/goto; default: talk). "
+             "goto nodes require config.target set to the name of another component to jump to.",
              {"type": "object", "properties": {
                  "name": {"type": "string"},
                  "nodes": {"type": "array", "items": {"type": "object", "properties": {
-                     "id": {"type": "string"}, "prompt": {"type": "string"}}, "required": ["id", "prompt"]}},
+                     "id": {"type": "string"},
+                     "prompt": {"type": "string"},
+                     "type": {"type": "string", "enum": ["talk", "exit", "transfer", "goto"]},
+                     "config": {"type": "object", "properties": {"target": {"type": "string"}}}},
+                     "required": ["id", "prompt"]}},
                  "edges": {"type": "array", "items": {"type": "object", "properties": {
                      "from": {"type": "string"},
                      "branch": {"type": "string", "enum": ["Positive", "Negative", "Reject", "Unclassified", "No answer"]},
                      "to": {"type": "string"}}, "required": ["from", "branch", "to"]}}},
               "required": ["name"]}),
     ToolSpec("add_node",
-             "Add a talk node to an existing component (by index), optionally wiring edges. "
-             "Edge endpoints: the new node's id, or an existing node's uuid. Proposes a dry-run.",
+             "Add a node (talk/exit/transfer/goto) to an existing component (by index), optionally wiring edges. "
+             "Edge endpoints: the new node's id, or an existing node's uuid. "
+             "goto requires config.target = another component's name. Proposes a dry-run.",
              {"type": "object", "properties": {
                  "component": {"type": "integer"},
                  "id": {"type": "string"},
                  "prompt": {"type": "string"},
-                 "type": {"type": "string"},
+                 "type": {"type": "string", "enum": ["talk", "exit", "transfer", "goto"]},
+                 "config": {"type": "object", "properties": {"target": {"type": "string"}}},
                  "edges": {"type": "array", "items": {"type": "object", "properties": {
                      "from": {"type": "string"},
                      "branch": {"type": "string", "enum": ["Positive", "Negative", "Reject", "Unclassified", "No answer"]},
@@ -164,6 +172,8 @@ def dispatch(name: str, args: dict, data: dict) -> dict:
         node = {"id": args["id"], "prompt": args["prompt"]}
         if args.get("type"):
             node["type"] = args["type"]
+        if args.get("config"):
+            node["config"] = args["config"]
         op = {"op": "append-node", "component": args["component"], "node": node}
         if args.get("edges"):
             op["edges"] = args["edges"]
