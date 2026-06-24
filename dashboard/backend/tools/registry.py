@@ -34,7 +34,9 @@ _SPECS = [
     ToolSpec("scaffold_bot",
              "Create a brand-new dialogue from typed parameters (NOT raw YAML). "
              "Proposes a full new doc (dry-run). Use after the user confirms an outline. "
-             "languages: ENG, IDN (ZHO/THA pending verified language codes).",
+             "languages: ENG, IDN (ZHO/THA pending verified language codes). "
+             "Each node may include an optional type (talk/exit/transfer/goto; default: talk). "
+             "goto nodes require config.target set to the name of another canvas to jump to.",
              {"type": "object",
               "properties": {
                   "name": {"type": "string"},
@@ -55,7 +57,12 @@ _SPECS = [
                           "name": {"type": "string"},
                           "nodes": {"type": "array", "items": {
                               "type": "object", "properties": {
-                                  "id": {"type": "string"}, "prompt": {"type": "string"}},
+                                  "id": {"type": "string"},
+                                  "prompt": {"type": "string"},
+                                  "type": {"type": "string",
+                                           "enum": ["talk", "exit", "transfer", "goto"]},
+                                  "config": {"type": "object", "properties": {
+                                      "target": {"type": "string"}}}},
                               "required": ["id", "prompt"]}},
                           "edges": {"type": "array", "items": {
                               "type": "object", "properties": {
