@@ -1,4 +1,5 @@
 const EDGE_COLOR = { intent: '#f59e0b', condition: '#8b5cf6', default: '#94a3b8', next: '#cbd5e1', exit: '#0ea5e9' };
+const XCOMP_COLOR = '#6366f1';
 
 export function buildGraph(summary) {
   const nodes = [];
@@ -8,6 +9,15 @@ export function buildGraph(summary) {
 
   const kbTitleMap = {};
   for (const kb of summary.knowledge_bases || []) kbTitleMap[kb.knowledge_id] = kb.title;
+
+  // Lookups for cross-component jump resolution.
+  const componentEntry = {};
+  const componentName = {};
+  for (const comp of summary.components || []) {
+    componentEntry[comp.uuid] = comp.entry_uuid || (comp.root_uuids && comp.root_uuids[0]) || null;
+    componentName[comp.uuid] = comp.name;
+  }
+
   const emittedKbNodes = new Set();
 
   for (const comp of summary.components || []) {
@@ -17,9 +27,14 @@ export function buildGraph(summary) {
       data: { label: comp.name, nodeCount: compNodes.length, kind: 'component' },
     });
     for (const node of compNodes) {
+      // If this node jumps to another component, hint the target in its label.
+      const gotoBranch = (node.branches || []).find((b) => b.target_component);
+      const nodeLabel = gotoBranch
+        ? `${node.label} → ${componentName[gotoBranch.target_component] || 'component'}`
+        : node.label;
       nodes.push({
         id: node.uuid, parentId: comp.uuid, extent: 'parent', position: { x: 0, y: 0 },
-        data: { ...node, label: node.label },
+        data: { ...node, label: nodeLabel },
       });
       if (node.allowed_kbs?.length) kbBadges[node.uuid] = node.allowed_kbs;
       for (let i = 0; i < (node.branches || []).length; i++) {
@@ -31,11 +46,16 @@ export function buildGraph(summary) {
             data: { sourceComp: comp.uuid, sourceNode: node.uuid, targetComp: comp.uuid, targetNode: b.target_uuid },
           });
         } else if (b.target_component) {
+          const entryUuid = componentEntry[b.target_component];
+          const tgt = entryUuid || b.target_component;     // entry node, else box fallback
+          const tname = componentName[b.target_component] || 'component';
           edges.push({
-            id: `e-${node.uuid}-xcomp-${b.target_component}-${b.kind}-${i}`, source: node.uuid, target: b.target_component,
-            label: b.label || 'go to component', type: 'smoothstep',
-            style: { stroke: EDGE_COLOR.exit, strokeDasharray: '4 2' },
-            data: { sourceComp: comp.uuid, sourceNode: node.uuid, targetComp: b.target_component, targetNode: b.target_component },
+            id: `e-${node.uuid}-xcomp-${b.target_component}-${b.kind}-${i}`,
+            source: node.uuid, target: tgt,
+            label: `→ ${tname}`, type: 'smoothstep',
+            style: { stroke: XCOMP_COLOR, strokeWidth: 2, strokeDasharray: '4 2' },
+            markerEnd: { type: 'arrowclosed', color: XCOMP_COLOR },
+            data: { sourceComp: comp.uuid, sourceNode: node.uuid, targetComp: b.target_component, targetNode: tgt },
           });
         } else if (b.target_kb != null) {
           const kbNodeId = `kb-${b.target_kb}`;

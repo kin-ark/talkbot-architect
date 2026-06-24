@@ -43,17 +43,19 @@ const kbSummary = {
 };
 
 describe('buildGraph cross-component', () => {
-  it('cross-component edge targets the destination component node', () => {
+  it('cross-component edge targets the destination entry node, not the component box', () => {
     const { edges } = buildGraph(summary);
-    // New shape: edge lands on the component container (c2), not the entry child node
-    expect(edges.some((e) => e.source === 'n1' && e.target === 'c2')).toBe(true);
-    expect(edges.some((e) => e.target === 'n2-entry')).toBe(false);
+    // Edge must land on the entry child node (n2-entry), not the container box (c2).
+    expect(edges.some((e) => e.source === 'n1' && e.target === 'n2-entry')).toBe(true);
+    expect(edges.some((e) => e.source === 'n1' && e.target === 'c2')).toBe(false);
   });
 
-  it('cross-component edge has dashed exit style', () => {
+  it('cross-component edge has indigo dashed style + arrowhead', () => {
     const { edges } = buildGraph(summary);
-    const e = edges.find((x) => x.source === 'n1' && x.target === 'c2');
+    const e = edges.find((x) => x.source === 'n1' && x.target === 'n2-entry');
     expect(e.style.strokeDasharray).toBeTruthy();
+    expect(e.style.stroke).toBe('#6366f1');
+    expect(e.markerEnd).toBeTruthy();
   });
 
   it('reports KB badges per node', () => {
