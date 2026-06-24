@@ -7,7 +7,7 @@ Tests are ordered to match the brief's required coverage list:
   4. conditional node (type 7) with "Default" → kind == "default"
   5. type-4 node → exit branch with target_component == appoint_node_id
   6. type-8 node → exit branch with target_kb == int(appoint_knowledge_id)
-  7. type-2 node with is_transfer:0 → terminal=="hangup"; is_transfer:1 → "transfer"
+  7. type-2 node → terminal=="hangup" always (is_transfer ignored); type-13 → terminal=="transfer"
   8. talk node with allow_jump_knowledges → allowed_kbs cast to int
   9. build_components on minimal two-node component → correct FlowComponent
 """
@@ -365,10 +365,13 @@ class TestType2ExitNode:
         assert node.branches[0].terminal == "hangup"
         assert node.branches[0].kind == "exit"
 
-    def test_is_transfer_1_yields_transfer(self):
+    def test_is_transfer_1_still_yields_hangup(self):
+        # type-2 is always a hang-up exit regardless of is_transfer flag.
+        # Transfer-to-human is a distinct node type (13); is_transfer on type-2
+        # is a legacy field that does NOT change the node's terminal semantics.
         components = build_components({"BizSpeechComponent": [self._make_comp(1)]})
         node = components[0].nodes["exit1"]
-        assert node.branches[0].terminal == "transfer"
+        assert node.branches[0].terminal == "hangup"
 
 
 # ---------------------------------------------------------------------------

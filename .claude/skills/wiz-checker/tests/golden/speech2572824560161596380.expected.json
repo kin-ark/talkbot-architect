@@ -2,7 +2,7 @@
   "file": "speech2572824560161596380.json",
   "summary": {
     "errors": 0,
-    "warnings": 18,
+    "warnings": 12,
     "checks_run": [
       "schema",
       "graph",
@@ -12,66 +12,6 @@
     ]
   },
   "findings": [
-    {
-      "code": "WIZ100",
-      "severity": "warning",
-      "location": {
-        "entity": "FlowNode",
-        "id": "a1528c51-3e2a-4a3f-9158-83bbe7e8e06f",
-        "field": "parent_uuid"
-      },
-      "message": "FlowNode a1528c51-3e2a-4a3f-9158-83bbe7e8e06f is referenced as a parent but is not present in this export (referenced by node(s) labelled 'ASR Corpus Collection'). May be a Component Library reference or a structural defect — verify in the WIZ.AI UI."
-    },
-    {
-      "code": "WIZ100",
-      "severity": "warning",
-      "location": {
-        "entity": "FlowNode",
-        "id": "fa3cdb6b-d7b2-4f2b-b23c-70bf78c852c8",
-        "field": "parent_uuid"
-      },
-      "message": "FlowNode fa3cdb6b-d7b2-4f2b-b23c-70bf78c852c8 is referenced as a parent but is not present in this export (referenced by node(s) labelled 'Re-ask Limit'). May be a Component Library reference or a structural defect — verify in the WIZ.AI UI."
-    },
-    {
-      "code": "WIZ100",
-      "severity": "warning",
-      "location": {
-        "entity": "FlowNode",
-        "id": "da92ff1e-1261-48f4-8ee3-3bd5c9d0be76",
-        "field": "parent_uuid"
-      },
-      "message": "FlowNode da92ff1e-1261-48f4-8ee3-3bd5c9d0be76 is referenced as a parent but is not present in this export (referenced by node(s) labelled 'Re-ask Tenor'). May be a Component Library reference or a structural defect — verify in the WIZ.AI UI."
-    },
-    {
-      "code": "WIZ100",
-      "severity": "warning",
-      "location": {
-        "entity": "FlowNode",
-        "id": "160e1ead-a4c4-4e0a-852b-a851a9535ac0",
-        "field": "parent_uuid"
-      },
-      "message": "FlowNode 160e1ead-a4c4-4e0a-852b-a851a9535ac0 is referenced as a parent but is not present in this export (referenced by node(s) labelled 'Judgement (Greeting Time)'). May be a Component Library reference or a structural defect — verify in the WIZ.AI UI."
-    },
-    {
-      "code": "WIZ100",
-      "severity": "warning",
-      "location": {
-        "entity": "FlowNode",
-        "id": "8417b772-94ee-4a17-b302-34859739d7db",
-        "field": "parent_uuid"
-      },
-      "message": "FlowNode 8417b772-94ee-4a17-b302-34859739d7db is referenced as a parent but is not present in this export (referenced by node(s) labelled 'Judgement (Greeting Time)'). May be a Component Library reference or a structural defect — verify in the WIZ.AI UI."
-    },
-    {
-      "code": "WIZ104",
-      "severity": "warning",
-      "location": {
-        "entity": "WizFile",
-        "id": "",
-        "field": null
-      },
-      "message": "Export contains 5 external/library reference(s) to 4 distinct component(s): 'ASR Corpus Collection', 'Re-ask Limit', 'Re-ask Tenor', 'Judgement (Greeting Time)'. Confirm each is an intentional Component Library import."
-    },
     {
       "code": "WIZ202",
       "severity": "warning",

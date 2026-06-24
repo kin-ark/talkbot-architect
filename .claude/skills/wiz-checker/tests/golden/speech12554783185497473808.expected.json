@@ -2,7 +2,7 @@
   "file": "speech12554783185497473808.json",
   "summary": {
     "errors": 0,
-    "warnings": 22,
+    "warnings": 21,
     "checks_run": [
       "schema",
       "graph",
@@ -13,16 +13,6 @@
   },
   "findings": [
     {
-      "code": "WIZ100",
-      "severity": "warning",
-      "location": {
-        "entity": "FlowNode",
-        "id": "43bb1a9f-52dc-4a4e-8908-953fe11474b2",
-        "field": "parent_uuid"
-      },
-      "message": "FlowNode 43bb1a9f-52dc-4a4e-8908-953fe11474b2 is referenced as a parent but is not present in this export (referenced by node(s) labelled 'Greeting - Bahasa'). May be a Component Library reference or a structural defect — verify in the WIZ.AI UI."
-    },
-    {
       "code": "WIZ104",
       "severity": "warning",
       "location": {
@@ -30,7 +20,7 @@
         "id": "",
         "field": null
       },
-      "message": "Export contains 1 external/library reference(s): 'Greeting - Bahasa'. Confirm each is an intentional Component Library import."
+      "message": "Export contains 1 external component reference(s). Confirm each is an intentional Component Library import."
     },
     {
       "code": "WIZ202",

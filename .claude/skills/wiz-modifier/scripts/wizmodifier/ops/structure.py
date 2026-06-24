@@ -84,6 +84,28 @@ def _resolve_context(bundle: InputBundle) -> tuple[int, dict[str, int], list[str
     return speech_id, branch_intent_ids, kb_ids, node_language
 
 
+def _build_component_nav(bsc: list[dict]) -> list[dict]:
+    """Build a component-nav list from BizSpeechComponent entries (mirrors canvases.py logic)."""
+    return [
+        {
+            "sortIndexABS": i + 1,
+            "sortIndex": i + 1,
+            "editStatus": 1,
+            "hangUpRate": "0.0%",
+            "label": comp.get("name", ""),
+            "title": comp.get("name", ""),
+            "uuid": comp.get("componentUuid", ""),
+            "hitRate": "0.0%",
+            "parentId": "",
+            "componentUuid": comp.get("componentUuid", ""),
+            "useStatus": 2 if i == 0 else 1,
+            "children": [],
+            "value": comp.get("componentUuid", ""),
+        }
+        for i, comp in enumerate(bsc)
+    ]
+
+
 def _render_nodes(
     params: dict,
     bundle: InputBundle,
@@ -96,15 +118,37 @@ def _render_nodes(
     params["nodes"] is a list of {id, prompt}.
     params.get("edges") is an optional list of {from, branch, to} (from/to map to src/dst).
 
+    For goto nodes, resolves config["target"] (a canvas name) to the target componentUuid
+    by looking up existing components' name→componentUuid mapping.
+
     Returns a RenderedNodes instance.
     """
-    node_specs = [
-        NodeSpec(
-            id=n["id"], prompt=n["prompt"],
-            type=n.get("type", "talk"), config=n.get("config", {}),
+    # Build name→uuid map from existing components for goto target resolution.
+    bsc_raw = bundle.data.get("BizSpeechComponent", "[]")
+    bsc = json.loads(bsc_raw) if isinstance(bsc_raw, str) else bsc_raw
+    comp_uuid_by_name: dict[str, str] = {
+        c.get("name", ""): c.get("componentUuid", "") for c in bsc
+    }
+    component_nav = _build_component_nav(bsc)
+
+    node_specs = []
+    for n in params["nodes"]:
+        cfg = dict(n.get("config") or {})
+        if n.get("type") == "goto":
+            target_name = cfg.get("target", "")
+            cfg["target_uuid"] = comp_uuid_by_name.get(target_name, "")
+            cfg["target_name"] = target_name
+            if not cfg["target_uuid"]:
+                raise ValueError(
+                    f"goto node {n['id']!r}: config.target {target_name!r} "
+                    f"does not match any existing component name"
+                )
+        node_specs.append(
+            NodeSpec(
+                id=n["id"], prompt=n["prompt"],
+                type=n.get("type", "talk"), config=cfg,
+            )
         )
-        for n in params["nodes"]
-    ]
     raw_edges = params.get("edges") or []
     edge_specs = [EdgeSpec(src=e["from"], branch=e["branch"], dst=e["to"]) for e in raw_edges]
 
@@ -120,6 +164,7 @@ def _render_nodes(
         kb_ids=kb_ids,
         node_language=node_language,
         minter=minter,
+        component_nav=component_nav,
     )
 
 

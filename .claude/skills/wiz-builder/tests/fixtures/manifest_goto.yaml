@@ -1,0 +1,24 @@
+name: "Goto Test"
+branch: dev
+language: IDN
+canvases:
+  - name: "1. A Canvas"
+    nodes:
+      - id: talk-root
+        prompt: Hello from A
+      - id: go
+        prompt: "(goto)"
+        type: goto
+        config:
+          target: "2. B Canvas"
+    edges:
+      - {from: talk-root, branch: Unclassified, to: go}
+  - name: "2. B Canvas"
+    nodes:
+      - id: talk-b
+        prompt: Hello from B
+      - id: hangup
+        prompt: Goodbye
+        type: exit
+    edges:
+      - {from: talk-b, branch: Unclassified, to: hangup}

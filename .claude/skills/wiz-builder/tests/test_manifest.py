@@ -355,9 +355,9 @@ language: IDN
 canvases:
   - name: "1. Greeting"
     nodes:
-      - {id: greet, prompt: "Halo", type: exit}
+      - {id: greet, prompt: "Halo", type: bogus}
 """
-    with pytest.raises(ManifestError, match="exit"):
+    with pytest.raises(ManifestError):
         load_manifest(_write(tmp_path, txt))
 
 
@@ -377,3 +377,212 @@ canvases:
 """
     m = load_manifest(_write(tmp_path, txt))
     assert m.canvases[0].nodes[0].config == {"foo": "bar"}
+
+
+# ---------------------------------------------------------------------------
+# Task-1 (exit/goto plan): exit, transfer, goto node-type tests
+# ---------------------------------------------------------------------------
+
+
+def test_exit_node_accepted_valid(tmp_path):
+    """A canvas with a Talk entry → exit node (connected by edge) loads OK; type preserved."""
+    txt = """
+name: T
+branch: dev
+language: IDN
+canvases:
+  - name: "1. Main"
+    nodes:
+      - {id: greet, prompt: "Halo", type: talk}
+      - {id: bye, prompt: "Sampai jumpa", type: exit}
+    edges:
+      - {from: greet, branch: Unclassified, to: bye}
+"""
+    m = load_manifest(_write(tmp_path, txt))
+    nodes = {n.id: n for n in m.canvases[0].nodes}
+    assert nodes["greet"].type == "talk"
+    assert nodes["bye"].type == "exit"
+
+
+def test_transfer_node_accepted_valid(tmp_path):
+    """A transfer node is accepted and its type round-trips."""
+    txt = """
+name: T
+branch: dev
+language: IDN
+canvases:
+  - name: "1. Main"
+    nodes:
+      - {id: greet, prompt: "Halo"}
+      - {id: transfer, prompt: "Connecting you", type: transfer}
+    edges:
+      - {from: greet, branch: Unclassified, to: transfer}
+"""
+    m = load_manifest(_write(tmp_path, txt))
+    nodes = {n.id: n for n in m.canvases[0].nodes}
+    assert nodes["transfer"].type == "transfer"
+
+
+def test_goto_node_accepted_valid(tmp_path):
+    """2-canvas manifest: canvas A goto node with config.target = canvas B name — loads OK."""
+    txt = """
+name: T
+branch: dev
+language: IDN
+canvases:
+  - name: "1. Main"
+    nodes:
+      - {id: greet, prompt: "Halo"}
+      - id: jump
+        prompt: "Redirecting"
+        type: goto
+        config:
+          target: "2. Follow-up"
+    edges:
+      - {from: greet, branch: Unclassified, to: jump}
+  - name: "2. Follow-up"
+    nodes:
+      - {id: followup, prompt: "Follow-up response"}
+"""
+    m = load_manifest(_write(tmp_path, txt))
+    nodes_a = {n.id: n for n in m.canvases[0].nodes}
+    assert nodes_a["jump"].type == "goto"
+    assert nodes_a["jump"].config["target"] == "2. Follow-up"
+
+
+def test_goto_missing_config_target_rejected(tmp_path):
+    """A goto node with no config.target is rejected."""
+    txt = """
+name: T
+branch: dev
+language: IDN
+canvases:
+  - name: "1. Main"
+    nodes:
+      - {id: greet, prompt: "Halo"}
+      - {id: jump, prompt: "Redirecting", type: goto}
+    edges:
+      - {from: greet, branch: Unclassified, to: jump}
+  - name: "2. Follow-up"
+    nodes:
+      - {id: followup, prompt: "Follow-up"}
+"""
+    with pytest.raises(ManifestError, match="config.target"):
+        load_manifest(_write(tmp_path, txt))
+
+
+def test_goto_unknown_target_rejected(tmp_path):
+    """A goto node whose config.target names a non-existent canvas is rejected."""
+    txt = """
+name: T
+branch: dev
+language: IDN
+canvases:
+  - name: "1. Main"
+    nodes:
+      - {id: greet, prompt: "Halo"}
+      - id: jump
+        prompt: "Redirecting"
+        type: goto
+        config:
+          target: "3. NonExistent"
+    edges:
+      - {from: greet, branch: Unclassified, to: jump}
+  - name: "2. Follow-up"
+    nodes:
+      - {id: followup, prompt: "Follow-up"}
+"""
+    with pytest.raises(ManifestError, match="config.target"):
+        load_manifest(_write(tmp_path, txt))
+
+
+def test_exit_node_with_outgoing_edge_rejected(tmp_path):
+    """An exit node with an outgoing edge is rejected (terminal rule)."""
+    txt = """
+name: T
+branch: dev
+language: IDN
+canvases:
+  - name: "1. Main"
+    nodes:
+      - {id: greet, prompt: "Halo"}
+      - {id: bye, prompt: "Bye", type: exit}
+      - {id: extra, prompt: "Extra"}
+    edges:
+      - {from: greet, branch: Unclassified, to: bye}
+      - {from: bye, branch: Positive, to: extra}
+"""
+    with pytest.raises(ManifestError, match="terminal"):
+        load_manifest(_write(tmp_path, txt))
+
+
+def test_transfer_node_with_outgoing_edge_rejected(tmp_path):
+    """A transfer node with an outgoing edge is rejected (terminal rule)."""
+    txt = """
+name: T
+branch: dev
+language: IDN
+canvases:
+  - name: "1. Main"
+    nodes:
+      - {id: greet, prompt: "Halo"}
+      - {id: tx, prompt: "Transfer", type: transfer}
+      - {id: extra, prompt: "Extra"}
+    edges:
+      - {from: greet, branch: Unclassified, to: tx}
+      - {from: tx, branch: Positive, to: extra}
+"""
+    with pytest.raises(ManifestError, match="terminal"):
+        load_manifest(_write(tmp_path, txt))
+
+
+def test_goto_node_with_outgoing_edge_rejected(tmp_path):
+    """A goto node with an outgoing edge is rejected (terminal rule)."""
+    txt = """
+name: T
+branch: dev
+language: IDN
+canvases:
+  - name: "1. Main"
+    nodes:
+      - {id: greet, prompt: "Halo"}
+      - id: jump
+        prompt: "Redirect"
+        type: goto
+        config:
+          target: "2. Follow-up"
+      - {id: extra, prompt: "Extra"}
+    edges:
+      - {from: greet, branch: Unclassified, to: jump}
+      - {from: jump, branch: Positive, to: extra}
+  - name: "2. Follow-up"
+    nodes:
+      - {id: followup, prompt: "Follow-up"}
+"""
+    with pytest.raises(ManifestError, match="terminal"):
+        load_manifest(_write(tmp_path, txt))
+
+
+def test_goto_self_targeting_rejected(tmp_path):
+    """A goto node whose config.target names its OWN canvas is rejected (must be another)."""
+    txt = """
+name: T
+branch: dev
+language: IDN
+canvases:
+  - name: "1. Main"
+    nodes:
+      - {id: greet, prompt: "Halo"}
+      - id: jump
+        prompt: "Loop"
+        type: goto
+        config:
+          target: "1. Main"
+    edges:
+      - {from: greet, branch: Unclassified, to: jump}
+  - name: "2. Other"
+    nodes:
+      - {id: other, prompt: "Other"}
+"""
+    with pytest.raises(ManifestError, match="does not match any other canvas"):
+        load_manifest(_write(tmp_path, txt))

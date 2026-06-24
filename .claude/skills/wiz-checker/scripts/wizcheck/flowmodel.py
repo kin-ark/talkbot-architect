@@ -69,7 +69,7 @@ class BranchEdge:
     target_uuid: str | None = None      # destination node in SAME component
     target_component: str | None = None # type-4 cross-component jump (componentUuid)
     target_kb: int | None = None        # type-8 KB jump (knowledgeId as int)
-    terminal: str | None = None         # "hangup" | "transfer" (type-2 exit)
+    terminal: str | None = None         # "hangup" (type-2 exit) | "transfer" (type-13 transfer)
 
 
 @dataclass
@@ -190,14 +190,21 @@ def _build_branches(
         return branches
 
     if node_type == "exit":
-        # type 2: ONE terminal edge
-        is_transfer = data.get("is_transfer", 0)
-        terminal = "transfer" if is_transfer else "hangup"
-        label = "transfer" if is_transfer else "hang up"
+        # type 2: ONE terminal hang-up edge (is_transfer flag is NOT authoritative;
+        # transfer-to-human is a distinct node type 13 — see NODE_TYPE_MAP).
         branches.append(BranchEdge(
-            label=label,
+            label="hang up",
             kind="exit",
-            terminal=terminal,
+            terminal="hangup",
+        ))
+        return branches
+
+    if node_type == "transfer":
+        # type 13: ONE terminal transfer-to-human edge
+        branches.append(BranchEdge(
+            label="transfer",
+            kind="exit",
+            terminal="transfer",
         ))
         return branches
 

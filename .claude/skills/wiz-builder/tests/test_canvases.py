@@ -212,3 +212,174 @@ def test_apply_canvases_secondary_strips_template_keys(template_dict, fixture_pa
     assert not leaked, (
         f"secondary BSC entry should not have template-only keys, but found: {leaked}"
     )
+
+
+# ---------------------------------------------------------------------------
+# Task 2: exit + transfer node integration through apply_canvases
+# ---------------------------------------------------------------------------
+
+
+def test_apply_canvases_exit_node_topfloordetails(template_dict, fixture_path):
+    """A canvas with an exit node must have one row in topFloorDetails (type 2)."""
+    m = load_manifest(fixture_path("manifest_exit_transfer.yaml"))
+    minter = IdMinter(manifest_hash=manifest_hash_of(m.raw_text))
+    apply_canvases(template_dict, m, minter)
+    bsc = json.loads(template_dict["BizSpeechComponent"])
+
+    greeting = next(c for c in bsc if c["name"] == "1. Greeting")
+    tfd = json.loads(greeting["topFloorDetails"])
+    assert isinstance(tfd, list)
+    assert len(tfd) == 1, "exit canvas must have exactly one topFloorDetails row"
+    row = tfd[0]
+    assert row["type"] == 2
+    assert row["is_transfer"] == 0
+    assert row["dialog_list"][0]["text"] == "Goodbye and thanks"
+
+
+def test_apply_canvases_transfer_node_topfloordetails_empty(template_dict, fixture_path):
+    """A canvas with only a transfer node must have topFloorDetails=[] (type 13 excluded)."""
+    m = load_manifest(fixture_path("manifest_exit_transfer.yaml"))
+    minter = IdMinter(manifest_hash=manifest_hash_of(m.raw_text))
+    apply_canvases(template_dict, m, minter)
+    bsc = json.loads(template_dict["BizSpeechComponent"])
+
+    xfer_canvas = next(c for c in bsc if c["name"] == "2. Transfer Canvas")
+    tfd = json.loads(xfer_canvas["topFloorDetails"])
+    assert tfd == [], "transfer canvas topFloorDetails must be []"
+
+
+def test_apply_canvases_exit_node_props_list_contains_all_canvases(template_dict, fixture_path):
+    """The exit node canvas.component.props.list must list all canvases (component nav)."""
+    m = load_manifest(fixture_path("manifest_exit_transfer.yaml"))
+    minter = IdMinter(manifest_hash=manifest_hash_of(m.raw_text))
+    apply_canvases(template_dict, m, minter)
+    bsc = json.loads(template_dict["BizSpeechComponent"])
+
+    greeting = next(c for c in bsc if c["name"] == "1. Greeting")
+    details = json.loads(greeting["details"])
+    exit_node = next(v for v in details.values() if v["type"] == 2)
+    props_list = exit_node["canvas"]["component"]["props"]["list"]
+
+    # Must list all 2 canvases by name
+    labels = [item["label"] for item in props_list]
+    assert set(labels) == {"1. Greeting", "2. Transfer Canvas"}
+    # UUIDs must be valid and match component UUIDs
+    comp_uuids = {c["componentUuid"] for c in bsc}
+    for item in props_list:
+        assert item["componentUuid"] in comp_uuids
+        assert item["uuid"] == item["componentUuid"]
+
+
+def test_apply_canvases_exit_node_no_ports(template_dict, fixture_path):
+    """Exit node canvas must have no 'ports' key (terminal)."""
+    m = load_manifest(fixture_path("manifest_exit_transfer.yaml"))
+    minter = IdMinter(manifest_hash=manifest_hash_of(m.raw_text))
+    apply_canvases(template_dict, m, minter)
+    bsc = json.loads(template_dict["BizSpeechComponent"])
+
+    greeting = next(c for c in bsc if c["name"] == "1. Greeting")
+    details = json.loads(greeting["details"])
+    exit_node = next(v for v in details.values() if v["type"] == 2)
+    assert "ports" not in exit_node["canvas"]
+
+
+def test_apply_canvases_exit_not_in_inbound_ports(template_dict, fixture_path):
+    """Exit node must NOT appear in inboundPorts; only the Talk entry node does."""
+    m = load_manifest(fixture_path("manifest_exit_transfer.yaml"))
+    minter = IdMinter(manifest_hash=manifest_hash_of(m.raw_text))
+    apply_canvases(template_dict, m, minter)
+    bsc = json.loads(template_dict["BizSpeechComponent"])
+
+    greeting = next(c for c in bsc if c["name"] == "1. Greeting")
+    details = json.loads(greeting["details"])
+    exit_uuid = next(k for k, v in details.items() if v["type"] == 2)
+
+    inbound = json.loads(greeting["inboundPorts"])
+    inbound_uuids = [p["uuid"] for p in inbound]
+    assert exit_uuid not in inbound_uuids
+    assert len(inbound) == 1  # only the Talk entry node
+
+
+# ---------------------------------------------------------------------------
+# Task 3: goto_component (type 4) integration through apply_canvases
+# ---------------------------------------------------------------------------
+
+
+def test_apply_canvases_goto_appoint_node_id_resolves_to_target_uuid(template_dict, fixture_path):
+    """The goto node's data.appoint_node_id must equal canvas B's pre-minted componentUuid."""
+    m = load_manifest(fixture_path("manifest_goto.yaml"))
+    minter = IdMinter(manifest_hash=manifest_hash_of(m.raw_text))
+    apply_canvases(template_dict, m, minter)
+    bsc = json.loads(template_dict["BizSpeechComponent"])
+
+    # canvas A is the one with the goto node
+    canvas_a = next(c for c in bsc if c["name"] == "1. A Canvas")
+    canvas_b = next(c for c in bsc if c["name"] == "2. B Canvas")
+    target_uuid = canvas_b["componentUuid"]
+
+    details = json.loads(canvas_a["details"])
+    goto_node = next(v for v in details.values() if v["type"] == 4)
+    assert goto_node["data"]["appoint_node_id"] == target_uuid
+    assert goto_node["data"]["specificComponentName"] == "2. B Canvas"
+
+
+def test_apply_canvases_goto_envelope_type_4(template_dict, fixture_path):
+    """The goto node envelope type must be 4."""
+    m = load_manifest(fixture_path("manifest_goto.yaml"))
+    minter = IdMinter(manifest_hash=manifest_hash_of(m.raw_text))
+    apply_canvases(template_dict, m, minter)
+    bsc = json.loads(template_dict["BizSpeechComponent"])
+    canvas_a = next(c for c in bsc if c["name"] == "1. A Canvas")
+    details = json.loads(canvas_a["details"])
+    goto_node = next(v for v in details.values() if v["type"] == 4)
+    assert goto_node["data"]["type"] == 4
+
+
+def test_apply_canvases_goto_is_terminal(template_dict, fixture_path):
+    """The goto node canvas has no 'ports' key and routes[goto_uuid]={}."""
+    m = load_manifest(fixture_path("manifest_goto.yaml"))
+    minter = IdMinter(manifest_hash=manifest_hash_of(m.raw_text))
+    apply_canvases(template_dict, m, minter)
+    bsc = json.loads(template_dict["BizSpeechComponent"])
+    canvas_a = next(c for c in bsc if c["name"] == "1. A Canvas")
+    details = json.loads(canvas_a["details"])
+    routes = json.loads(canvas_a["routes"])
+    goto_uuid = next(k for k, v in details.items() if v["type"] == 4)
+    assert "ports" not in details[goto_uuid]["canvas"]
+    assert routes[goto_uuid] == {}
+
+
+def test_apply_canvases_goto_top_floor_details(template_dict, fixture_path):
+    """Canvas A (with goto node) must have one topFloorDetails row of type 4."""
+    m = load_manifest(fixture_path("manifest_goto.yaml"))
+    minter = IdMinter(manifest_hash=manifest_hash_of(m.raw_text))
+    apply_canvases(template_dict, m, minter)
+    bsc = json.loads(template_dict["BizSpeechComponent"])
+    canvas_a = next(c for c in bsc if c["name"] == "1. A Canvas")
+    tfd = json.loads(canvas_a["topFloorDetails"])
+    assert len(tfd) == 1
+    assert tfd[0]["type"] == 4
+    assert tfd[0]["appoint_node_id"] != ""
+
+
+def test_apply_canvases_goto_no_scs_row(template_dict, fixture_path):
+    """Goto node must NOT produce a SentenceCutSpeech row.
+
+    manifest_goto has:
+      - Canvas A: Talk(entry) + goto → 1 SCS row (Talk only; goto emits none)
+      - Canvas B: Talk(entry) + exit → 2 SCS rows (Talk + exit both emit SCS)
+    Total = 3 SCS rows.  The goto node's uuid must not appear in any SCS row.
+    """
+    m = load_manifest(fixture_path("manifest_goto.yaml"))
+    minter = IdMinter(manifest_hash=manifest_hash_of(m.raw_text))
+    apply_canvases(template_dict, m, minter)
+    bsc = json.loads(template_dict["BizSpeechComponent"])
+    canvas_a = next(c for c in bsc if c["name"] == "1. A Canvas")
+    details = json.loads(canvas_a["details"])
+    goto_uuid = next(k for k, v in details.items() if v["type"] == 4)
+
+    scs = json.loads(template_dict["SentenceCutSpeech"])
+    # 3 total: Talk-A + Talk-B + Exit-B; goto produces none
+    assert len(scs) == 3
+    scs_ids = {row["id"] for row in scs}
+    assert goto_uuid not in scs_ids
