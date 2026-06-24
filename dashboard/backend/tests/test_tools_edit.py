@@ -131,14 +131,41 @@ def test_connect_components(two_component_doc):
     assert goto_obj["data"]["appoint_node_id"] == comp1_uuid
 
 
+_EXPECTED_NODE_TYPES = {"talk", "exit", "transfer", "goto", "conditional", "assign"}
+_EXPECTED_BRANCHES = {"Positive", "Negative", "Reject", "Unclassified", "No answer", "Default"}
+
+
 def test_node_type_enum_includes_conditional_and_assign():
     specs = {s.name: s for s in registry.tool_specs()}
+
+    # --- add_node ---
     props = specs["add_node"].parameters["properties"]
-    assert set(props["type"]["enum"]) == {"talk", "exit", "transfer", "goto",
-                                          "conditional", "assign"}
+    assert set(props["type"]["enum"]) == _EXPECTED_NODE_TYPES
     # config advertises branches for conditional authoring
     cfg = props["config"]["properties"]
     assert "branches" in cfg and "variable" in cfg and "value" in cfg
+    # edge branch enum includes Default for assign continue-edges
+    edge_branch_enum = props["edges"]["items"]["properties"]["branch"]["enum"]
+    assert set(edge_branch_enum) == _EXPECTED_BRANCHES, f"add_node edge branch enum: {edge_branch_enum}"
+
+    # --- add_component ---
+    ac_props = specs["add_component"].parameters["properties"]
+    assert set(ac_props["nodes"]["items"]["properties"]["type"]["enum"]) == _EXPECTED_NODE_TYPES
+    ac_edge_branch_enum = ac_props["edges"]["items"]["properties"]["branch"]["enum"]
+    assert set(ac_edge_branch_enum) == _EXPECTED_BRANCHES, (
+        f"add_component edge branch enum: {ac_edge_branch_enum}"
+    )
+
+    # --- scaffold_bot (nodes+edges nested under canvases.items.properties) ---
+    sb_canvas_item_props = specs["scaffold_bot"].parameters["properties"]["canvases"]["items"]["properties"]
+    sb_node_type_enum = sb_canvas_item_props["nodes"]["items"]["properties"]["type"]["enum"]
+    assert set(sb_node_type_enum) == _EXPECTED_NODE_TYPES, (
+        f"scaffold_bot node type enum: {sb_node_type_enum}"
+    )
+    sb_edge_branch_enum = sb_canvas_item_props["edges"]["items"]["properties"]["branch"]["enum"]
+    assert set(sb_edge_branch_enum) == _EXPECTED_BRANCHES, (
+        f"scaffold_bot edge branch enum: {sb_edge_branch_enum}"
+    )
 
 
 def test_add_node_exit_no_config(two_component_doc):
