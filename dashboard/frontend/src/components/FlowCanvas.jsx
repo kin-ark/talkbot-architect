@@ -1,5 +1,5 @@
 import { useMemo, useState, useCallback, useEffect } from 'react';
-import { ReactFlow, Background, Controls, MiniMap } from '@xyflow/react';
+import { ReactFlow, Background, Controls, MiniMap, Handle, Position } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { buildGraph } from '../flow/buildGraph';
 import { layoutComponents } from '../flow/componentLayout';
@@ -18,6 +18,11 @@ function ComponentNode({ data }) {
       style={{ width: '100%', height: '100%', border: '2px dashed #cbd5e1',
                borderRadius: 12, background: '#f8fafc', cursor: 'pointer' }}
     >
+      {/* Invisible anchors so ReactFlow can draw cross-component edges to/from a
+          collapsed component box. Without handles no edge path is computed.
+          opacity:0 (not display:none, which would also drop the edge endpoint). */}
+      <Handle type="target" position={Position.Top} style={{ opacity: 0 }} />
+      <Handle type="source" position={Position.Bottom} style={{ opacity: 0 }} />
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 10px',
                     fontSize: 13, fontWeight: 600, color: '#334155' }}>
         <span>{data.expanded ? '▾' : '▸'}</span>
