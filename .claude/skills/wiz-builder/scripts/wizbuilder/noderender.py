@@ -76,6 +76,38 @@ def _wide_int(seed: str) -> int:
 # ---------------------------------------------------------------------------
 
 
+def _build_scs_row(
+    *,
+    comp_uuid: str,
+    node_uuid: str,
+    reccut_uuid: str,
+    minter: Any,
+    canvas_index: int,
+    nid_str: str,
+    sort_index: int,
+    speech_id: int,
+    text: str,
+) -> dict:
+    """Build a SentenceCutSpeech row — shared by talk, exit, and transfer builders."""
+    return {
+        "branch": "dev",
+        "componentUuid": comp_uuid,
+        "id": node_uuid,
+        "isDelete": 0,
+        "senRecName": "",
+        "sentenceCutId": _wide_int(
+            f"{getattr(minter, 'manifest_hash', '')}:scid:{canvas_index}:{nid_str}"
+        ),
+        "sentenceText": text,
+        "sentenceTextUrl": "",
+        "showType": 0,
+        "sortIndex": sort_index,
+        "speechId": speech_id,
+        "speechRecCutId": reccut_uuid,
+        "type": "record",
+    }
+
+
 def _build_talk_node(
     spec: NodeSpec,
     *,
@@ -236,23 +268,17 @@ def _build_talk_node(
     }
 
     # --- SentenceCutSpeech row ---
-    scs_row: dict = {
-        "branch": "dev",
-        "componentUuid": comp_uuid,
-        "id": node_uuid,
-        "isDelete": 0,
-        "senRecName": "",
-        "sentenceCutId": _wide_int(
-            f"{getattr(minter, 'manifest_hash', '')}:scid:{ci}:{nid_str}"
-        ),
-        "sentenceText": text,
-        "sentenceTextUrl": "",
-        "showType": 0,
-        "sortIndex": sort_index,
-        "speechId": speech_id,
-        "speechRecCutId": reccut_uuid,
-        "type": "record",
-    }
+    scs_row: dict = _build_scs_row(
+        comp_uuid=comp_uuid,
+        node_uuid=node_uuid,
+        reccut_uuid=reccut_uuid,
+        minter=minter,
+        canvas_index=ci,
+        nid_str=nid_str,
+        sort_index=sort_index,
+        speech_id=speech_id,
+        text=text,
+    )
 
     return node_obj, scs_row
 
@@ -273,10 +299,10 @@ def _build_exit_node(
     reccut_uuid: str,
     is_default: bool,
     component_nav: list[dict] | None = None,
-) -> tuple[dict, None]:
-    """Build one Exit-node (type 2) ``node_obj``.
+) -> tuple[dict, dict]:
+    """Build one Exit-node (type 2) ``node_obj`` and ``scs_row``.
 
-    Terminal: no ports, no SentenceCutSpeech row.  Returns (node_obj, None).
+    Terminal: no ports.  Returns (node_obj, scs_row).
     """
     text = spec.prompt
     xml = (
@@ -355,7 +381,19 @@ def _build_exit_node(
         },
     }
 
-    return node_obj, None
+    scs_row: dict = _build_scs_row(
+        comp_uuid=comp_uuid,
+        node_uuid=node_uuid,
+        reccut_uuid=reccut_uuid,
+        minter=minter,
+        canvas_index=canvas_index,
+        nid_str=spec.id,
+        sort_index=sort_index,
+        speech_id=speech_id,
+        text=text,
+    )
+
+    return node_obj, scs_row
 
 
 def _build_transfer_node(
@@ -374,10 +412,10 @@ def _build_transfer_node(
     reccut_uuid: str,
     is_default: bool,
     component_nav: list[dict] | None = None,
-) -> tuple[dict, None]:
-    """Build one Transfer-node (type 13) ``node_obj``.
+) -> tuple[dict, dict]:
+    """Build one Transfer-node (type 13) ``node_obj`` and ``scs_row``.
 
-    Terminal: no ports, no SentenceCutSpeech row.  Returns (node_obj, None).
+    Terminal: no ports.  Returns (node_obj, scs_row).
     Transfer nodes do NOT contribute a topFloorDetails row (confirmed by fixture 26).
     """
     text = spec.prompt
@@ -458,7 +496,19 @@ def _build_transfer_node(
         },
     }
 
-    return node_obj, None
+    scs_row: dict = _build_scs_row(
+        comp_uuid=comp_uuid,
+        node_uuid=node_uuid,
+        reccut_uuid=reccut_uuid,
+        minter=minter,
+        canvas_index=canvas_index,
+        nid_str=spec.id,
+        sort_index=sort_index,
+        speech_id=speech_id,
+        text=text,
+    )
+
+    return node_obj, scs_row
 
 
 # ---------------------------------------------------------------------------
@@ -468,7 +518,7 @@ def _build_transfer_node(
 #: Maps node-type string → builder callable.
 #: Each builder must accept the same keyword signature as ``_build_talk_node``
 #: and return ``(node_obj, scs_row | None)``.
-#: Terminal builders (exit, transfer) return scs_row=None (no SentenceCutSpeech row).
+#: Goto returns scs_row=None (no SentenceCutSpeech row); exit/transfer return a real row.
 NODE_BUILDERS: dict[str, Callable] = {
     "talk": _build_talk_node,
     "exit": _build_exit_node,
@@ -521,7 +571,7 @@ def render_component_nodes(
         populate ``canvas.component.props.list`` on exit/transfer nodes.  When
         ``None`` (e.g. in unit tests), the list is left empty.
     """
-    # Terminal node types: no out-ports, not in inbound_ports, no SentenceCutSpeech row.
+    # Terminal node types: no out-ports, not in inbound_ports.
     _TERMINAL_TYPES = frozenset({"exit", "transfer", "goto"})
 
     details: dict = {}

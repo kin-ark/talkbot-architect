@@ -231,7 +231,7 @@ def test_transfer_node_routes_empty():
     """Transfer node has routes[uuid]={} — no outgoing edges."""
     r = _render_exit("transfer")
     tr_uuid = next(k for k, v in r.details.items() if v["type"] == 13)
-    assert r.details[tr_uuid]["routes"] if False else r.routes[tr_uuid] == {}
+    assert r.routes[tr_uuid] == {}
 
 
 def test_transfer_node_top_floor_details_empty():
@@ -282,3 +282,27 @@ def test_no_exit_nodes_top_floor_details_empty():
         branch_intent_ids=_BRANCH_IDS, kb_ids=[], node_language="3", minter=IdMinter("h"),
     )
     assert r.top_floor_details == []
+
+
+def test_exit_node_emits_scs_row():
+    """Talk→exit render produces 2 SCS rows; exit row has correct sentenceText and id."""
+    r = _render_exit("exit")
+    assert len(r.sentence_cut_speech) == 2
+    ex_uuid = next(k for k, v in r.details.items() if v["type"] == 2)
+    ex_scs = next(row for row in r.sentence_cut_speech if row["id"] == ex_uuid)
+    assert ex_scs["sentenceText"] == "Goodbye"
+    assert ex_scs["id"] == ex_uuid
+    assert ex_scs["type"] == "record"
+    assert UUID_RE.fullmatch(ex_scs["speechRecCutId"])
+
+
+def test_transfer_node_emits_scs_row():
+    """Talk→transfer render produces 2 SCS rows; transfer row has correct sentenceText and id."""
+    r = _render_exit("transfer")
+    assert len(r.sentence_cut_speech) == 2
+    tr_uuid = next(k for k, v in r.details.items() if v["type"] == 13)
+    tr_scs = next(row for row in r.sentence_cut_speech if row["id"] == tr_uuid)
+    assert tr_scs["sentenceText"] == "Goodbye"
+    assert tr_scs["id"] == tr_uuid
+    assert tr_scs["type"] == "record"
+    assert UUID_RE.fullmatch(tr_scs["speechRecCutId"])
