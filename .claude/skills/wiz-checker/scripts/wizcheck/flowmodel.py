@@ -69,7 +69,7 @@ class BranchEdge:
     target_uuid: str | None = None      # destination node in SAME component
     target_component: str | None = None # type-4 cross-component jump (componentUuid)
     target_kb: int | None = None        # type-8 KB jump (knowledgeId as int)
-    terminal: str | None = None         # "hangup" | "transfer" (type-2 exit)
+    terminal: str | None = None         # "hangup" (type-2 exit) | "transfer" (type-13 transfer)
 
 
 @dataclass
