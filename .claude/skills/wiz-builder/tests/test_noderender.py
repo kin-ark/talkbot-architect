@@ -306,3 +306,163 @@ def test_transfer_node_emits_scs_row():
     assert tr_scs["id"] == tr_uuid
     assert tr_scs["type"] == "record"
     assert UUID_RE.fullmatch(tr_scs["speechRecCutId"])
+
+
+# ---------------------------------------------------------------------------
+# Task 3: goto_component (type 4) node builder
+# ---------------------------------------------------------------------------
+
+_TARGET_UUID = "37d91736-c70f-453b-a9f4-bbfe4a48f1a8"
+_TARGET_NAME = "2. Second Canvas"
+
+
+def _render_goto(**kw):
+    """Helper: render Talk(entry) -Unclassified-> goto node pair.
+
+    The goto NodeSpec carries resolved target info in config:
+    config["target_uuid"] = the pre-minted componentUuid of the target canvas
+    config["target_name"] = the canonical canvas name (e.g. "2. Second Canvas")
+    component_nav is passed as the full list of component nav entries (needed for
+    canvas.component.props.list on the goto canvas).
+    """
+    comp_nav = [
+        {
+            "sortIndexABS": 1, "sortIndex": 1, "editStatus": 1, "hangUpRate": "0.0%",
+            "label": "1. Greeting", "title": "1. Greeting", "uuid": "comp-uuid-0",
+            "hitRate": "0.0%", "parentId": "", "componentUuid": "comp-uuid-0",
+            "useStatus": 2, "children": [], "value": "comp-uuid-0",
+        },
+        {
+            "sortIndexABS": 2, "sortIndex": 2, "editStatus": 1, "hangUpRate": "0.0%",
+            "label": _TARGET_NAME, "title": _TARGET_NAME, "uuid": _TARGET_UUID,
+            "hitRate": "0.0%", "parentId": "", "componentUuid": _TARGET_UUID,
+            "useStatus": 1, "children": [], "value": _TARGET_UUID,
+        },
+    ]
+    goto_spec = NodeSpec(
+        id="go",
+        prompt="(goto)",
+        type="goto",
+        config={"target": _TARGET_NAME, "target_uuid": _TARGET_UUID, "target_name": _TARGET_NAME},
+    )
+    return render_component_nodes(
+        [NodeSpec(id="entry", prompt="Hello"), goto_spec],
+        [EdgeSpec(src="entry", branch="Unclassified", dst="go")],
+        canvas_index=0,
+        comp_uuid="comp-uuid-0",
+        speech_id=8309,
+        branch_intent_ids=_BRANCH_IDS,
+        kb_ids=["kb1", "kb2"],
+        node_language="3",
+        minter=IdMinter("h"),
+        component_nav=comp_nav,
+        **kw,
+    )
+
+
+def test_goto_node_type_4_envelope():
+    """Goto node has envelope type=4 and data.type=4."""
+    r = _render_goto()
+    goto_uuid = next(k for k, v in r.details.items() if v["type"] == 4)
+    node = r.details[goto_uuid]
+    assert node["type"] == 4
+    assert node["data"]["type"] == 4
+    assert node["data"]["is_transfer"] == 0
+
+
+def test_goto_node_resolves_target_uuid():
+    """data.appoint_node_id == target componentUuid passed via config.target_uuid."""
+    r = _render_goto()
+    goto_uuid = next(k for k, v in r.details.items() if v["type"] == 4)
+    assert r.details[goto_uuid]["data"]["appoint_node_id"] == _TARGET_UUID
+
+
+def test_goto_node_resolves_target_name():
+    """data.specificComponentName == target canvas name passed via config.target_name."""
+    r = _render_goto()
+    goto_uuid = next(k for k, v in r.details.items() if v["type"] == 4)
+    assert r.details[goto_uuid]["data"]["specificComponentName"] == _TARGET_NAME
+
+
+def test_goto_node_is_terminal_no_ports():
+    """Goto node canvas has NO 'ports' key (terminal)."""
+    r = _render_goto()
+    goto_uuid = next(k for k, v in r.details.items() if v["type"] == 4)
+    assert "ports" not in r.details[goto_uuid]["canvas"]
+
+
+def test_goto_node_routes_empty():
+    """Goto node has routes[uuid]={} — no outgoing edges."""
+    r = _render_goto()
+    goto_uuid = next(k for k, v in r.details.items() if v["type"] == 4)
+    assert r.routes[goto_uuid] == {}
+
+
+def test_goto_node_not_in_inbound_ports():
+    """Goto node must NOT appear in inbound_ports."""
+    r = _render_goto()
+    goto_uuid = next(k for k, v in r.details.items() if v["type"] == 4)
+    inbound_uuids = [p["uuid"] for p in r.inbound_ports]
+    assert goto_uuid not in inbound_uuids
+
+
+def test_goto_node_top_floor_details_row():
+    """Goto node emits one topFloorDetails row (type 4) with appoint_node_id set."""
+    r = _render_goto()
+    goto_uuid = next(k for k, v in r.details.items() if v["type"] == 4)
+    assert len(r.top_floor_details) == 1
+    row = r.top_floor_details[0]
+    assert row["id"] == goto_uuid
+    assert row["type"] == 4
+    assert row["appoint_node_id"] == _TARGET_UUID
+    assert row["specificComponentName"] == _TARGET_NAME
+
+
+def test_goto_node_no_scs_row():
+    """Talk→goto renders only 1 SCS row (for Talk); goto has NO SentenceCutSpeech row."""
+    r = _render_goto()
+    assert len(r.sentence_cut_speech) == 1
+    goto_uuid = next(k for k, v in r.details.items() if v["type"] == 4)
+    scs_ids = [row["id"] for row in r.sentence_cut_speech]
+    assert goto_uuid not in scs_ids
+
+
+def test_goto_node_data_keys_match_fixture():
+    """Goto node data keys must match the ground-truth fixture set (ref_exit_multicomp_25)."""
+    fixture_data_keys = {
+        "agent_type", "allow_jump_knowledges", "allow_jump_knowledges_switch",
+        "appoint_knowledge_id", "appoint_node_id", "can_be_interrupted", "can_interrupt_percent",
+        "exclusive_key_words", "hangupRate", "hitKnowledgeCountsRate", "hitKnowledgeRate",
+        "hot_words_list", "id", "intention_judgment_time", "is_default", "is_transfer",
+        "multiple_appoint_id", "name", "nodeLabelArr", "node_language", "node_repetition",
+        "notice_send_type", "notices_info", "openChasingDedayTim", "openUserPauseDuration",
+        "open_pause_duration", "position", "repeat_script_type", "selected", "sms_id",
+        "speakType", "specificComponentName", "textareaList", "type",
+    }
+    r = _render_goto()
+    goto_uuid = next(k for k, v in r.details.items() if v["type"] == 4)
+    assert set(r.details[goto_uuid]["data"]) == fixture_data_keys
+
+
+def test_goto_node_canvas_keys_match_fixture():
+    """Goto node canvas keys must match the fixture set (no 'ports')."""
+    fixture_canvas_keys = {"view", "component", "size", "shape", "id", "position", "zIndex"}
+    r = _render_goto()
+    goto_uuid = next(k for k, v in r.details.items() if v["type"] == 4)
+    assert set(r.details[goto_uuid]["canvas"]) == fixture_canvas_keys
+
+
+def test_goto_canvas_props_list_contains_all_canvases():
+    """canvas.component.props.list in goto node matches the component_nav passed in."""
+    r = _render_goto()
+    goto_uuid = next(k for k, v in r.details.items() if v["type"] == 4)
+    props_list = r.details[goto_uuid]["canvas"]["component"]["props"]["list"]
+    labels = [item["label"] for item in props_list]
+    assert set(labels) == {"1. Greeting", _TARGET_NAME}
+
+
+def test_goto_canvas_component_props_type():
+    """canvas.component.props.type == 2 (matches fixture 25 goto canvas)."""
+    r = _render_goto()
+    goto_uuid = next(k for k, v in r.details.items() if v["type"] == 4)
+    assert r.details[goto_uuid]["canvas"]["component"]["props"]["type"] == 2

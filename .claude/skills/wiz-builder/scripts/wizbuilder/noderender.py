@@ -396,6 +396,108 @@ def _build_exit_node(
     return node_obj, scs_row
 
 
+def _build_goto_node(
+    spec: NodeSpec,
+    *,
+    canvas_index: int,
+    comp_uuid: str,
+    speech_id: int,
+    branch_intent_ids: dict[str, int],
+    kb_ids: list[str],
+    node_language: str,
+    minter: Any,
+    sort_index: int,
+    port_uuids: dict[str, str],
+    node_uuid: str,
+    reccut_uuid: str,
+    is_default: bool,
+    component_nav: list[dict] | None = None,
+) -> tuple[dict, None]:
+    """Build one goto_component node (type 4) ``node_obj``.
+
+    Terminal: no ports, no SentenceCutSpeech row.  Returns (node_obj, None).
+    The caller must supply resolved target info in spec.config:
+      - config["target_uuid"]: pre-minted componentUuid of the target canvas
+      - config["target_name"]: canonical canvas name (e.g. "2. Second Canvas")
+    These are injected by canvases.py's name→uuid map before calling render_component_nodes,
+    or by the modifier's structure.py which resolves against the existing export's components.
+
+    Emits a topFloorDetails row (type 4) identical to the data dict (confirmed by fixture 25).
+    """
+    target_uuid: str = spec.config.get("target_uuid", "")
+    target_name: str = spec.config.get("target_name", spec.config.get("target", ""))
+
+    canvas = {
+        "view": "react-shape-view",
+        "component": {
+            "props": {
+                "text": "Exit Node",
+                "list": list(component_nav) if component_nav else [],
+                "type": 2,
+            }
+        },
+        "size": {"width": 234, "height": 106},
+        "shape": "react-shape",
+        "id": node_uuid,
+        "position": {"x": -450, "y": 390},
+        "zIndex": 2,
+    }
+
+    data: dict = {
+        "appoint_node_id": target_uuid,
+        "speakType": 1,
+        "hitKnowledgeRate": [],
+        "intention_judgment_time": 2,
+        "type": 4,
+        "repeat_script_type": 0,
+        "hot_words_list": [],
+        "specificComponentName": target_name,
+        "hangupRate": "0.0%",
+        "exclusive_key_words": [],
+        "openUserPauseDuration": False,
+        "can_be_interrupted": 0,
+        "id": node_uuid,
+        "node_repetition": 0,
+        "open_pause_duration": False,
+        "selected": False,
+        "hitKnowledgeCountsRate": "0.0%",
+        "multiple_appoint_id": "",
+        "openChasingDedayTim": False,
+        "allow_jump_knowledges_switch": 0,
+        "allow_jump_knowledges": list(kb_ids),
+        "is_transfer": 0,
+        "appoint_knowledge_id": "",
+        "is_default": is_default,
+        "textareaList": [""],
+        "nodeLabelArr": [],
+        "node_language": node_language,
+        "agent_type": "SYSTEM",
+        "sms_id": "",
+        "can_interrupt_percent": 80,
+        "name": "Exit Node",
+        "notices_info": [],
+        "notice_send_type": 0,
+        "position": {"x": -450, "y": 390},
+    }
+
+    node_obj: dict = {
+        "canvas": canvas,
+        "data": data,
+        "name": "Exit Node",
+        "type": 4,
+        "is_default": is_default,
+        "data_extra": {
+            "hot_words_list": [],
+            "intents": [],
+            "variables": [],
+            "serviceCall": [],
+            "sentence_cut": [],
+        },
+    }
+
+    return node_obj, None
+
+
 def _build_transfer_node(
     spec: NodeSpec,
     *,
@@ -523,6 +625,7 @@ NODE_BUILDERS: dict[str, Callable] = {
     "talk": _build_talk_node,
     "exit": _build_exit_node,
     "transfer": _build_transfer_node,
+    "goto": _build_goto_node,
 }
 
 
@@ -645,9 +748,9 @@ def render_component_nodes(
                 {"name": "Talk Node", "type": 1, "uuid": node_uuid, "is_default": True}
             )
 
-        # Exit (type 2) contributes a topFloorDetails row = its data dict.
+        # Exit (type 2) and goto (type 4) contribute a topFloorDetails row = their data dict.
         # Transfer (type 13) does NOT (confirmed by fixture 26).
-        if spec.type == "exit":
+        if spec.type in ("exit", "goto"):
             top_floor_details.append(node_obj["data"])
 
     # --- Wire edges into routes ---

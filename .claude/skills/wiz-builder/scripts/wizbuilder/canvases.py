@@ -110,6 +110,13 @@ def apply_canvases(
         for ci, canvas in enumerate(manifest.canvases)
     ]
 
+    # Build a name→componentUuid map for cross-canvas goto resolution.
+    # canvases.py pre-mints all UUIDs so goto nodes in any canvas can resolve targets
+    # that haven't been rendered yet.
+    canvas_uuid_by_name: dict[str, str] = {
+        canvas.name: canvas_uuids[ci] for ci, canvas in enumerate(manifest.canvases)
+    }
+
     all_sentence_cut_rows: list[dict] = []
     new_components = []
     for ci, canvas in enumerate(manifest.canvases):
@@ -125,6 +132,7 @@ def apply_canvases(
             kb_ids=kb_ids,
             node_language=node_language,
             component_nav=component_nav,
+            canvas_uuid_by_name=canvas_uuid_by_name,
         )
         new_components.append(comp)
         all_sentence_cut_rows.extend(scs_rows)
@@ -150,14 +158,21 @@ def _build_component(
     kb_ids: list[str],
     node_language: str,
     component_nav: list[dict] | None = None,
+    canvas_uuid_by_name: dict[str, str] | None = None,
 ) -> tuple[dict[str, Any], list[dict]]:
     """Build a single BizSpeechComponent entry using render_component_nodes.
 
     Returns (component_dict, sentence_cut_speech_rows).
     """
-    node_specs = [
-        NodeSpec(id=n.id, prompt=n.prompt, type=n.type, config=n.config) for n in canvas.nodes
-    ]
+    node_specs = []
+    for n in canvas.nodes:
+        cfg = dict(n.config)
+        if n.type == "goto" and canvas_uuid_by_name:
+            # Resolve config.target (a canvas name) to the pre-minted componentUuid.
+            target_name = cfg.get("target", "")
+            cfg["target_uuid"] = canvas_uuid_by_name.get(target_name, "")
+            cfg["target_name"] = target_name
+        node_specs.append(NodeSpec(id=n.id, prompt=n.prompt, type=n.type, config=cfg))
     edge_specs = [EdgeSpec(src=e.src, branch=e.branch, dst=e.dst) for e in canvas.edges]
 
     r = render_component_nodes(
