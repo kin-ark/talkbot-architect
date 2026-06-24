@@ -107,6 +107,18 @@ _SPECS = [
                      "branch": {"type": "string", "enum": ["Positive", "Negative", "Reject", "Unclassified", "No answer"]},
                      "to": {"type": "string"}}, "required": ["from", "branch", "to"]}}},
               "required": ["component", "id", "prompt"]}),
+    ToolSpec("connect_components",
+             "Add a goto_component node that jumps from one component to another "
+             "(cross-component link). Proposes a dry-run.",
+             {"type": "object", "properties": {
+                 "component": {"type": "integer"},
+                 "id": {"type": "string"},
+                 "target": {"type": "string"},
+                 "from": {"type": "string"},
+                 "branch": {"type": "string",
+                            "enum": ["Positive", "Negative", "Reject", "Unclassified", "No answer"]},
+                 "prompt": {"type": "string"}},
+              "required": ["component", "id", "target", "from", "branch"]}),
     ToolSpec("add_intent",
              "Add a custom intent to the dialogue. Proposes a dry-run.",
              {"type": "object", "properties": {
@@ -188,6 +200,13 @@ def dispatch(name: str, args: dict, data: dict) -> dict:
         import yaml
         return _as_proposal(agents.propose_mods(data, yaml.safe_dump(
             [{"op": "add-variable", "name": args["name"]}])))
+    if name == "connect_components":
+        import yaml
+        node = {"id": args["id"], "prompt": args.get("prompt", "(goto)"),
+                "type": "goto", "config": {"target": args["target"]}}
+        op = {"op": "append-node", "component": args["component"], "node": node,
+              "edges": [{"from": args["from"], "branch": args["branch"], "to": args["id"]}]}
+        return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
     return {"result": {"error": f"unknown tool {name!r}"}, "proposal": None}
 
 

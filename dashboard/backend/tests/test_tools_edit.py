@@ -99,6 +99,38 @@ def test_add_node_goto_with_config(two_component_doc):
     assert props_list, "goto node canvas.component.props.list is empty (append_node missing component_nav)"
 
 
+def test_connect_components(two_component_doc):
+    """connect_components adds a type-4 goto node wired from a source node to a target component."""
+    bsc = _decode(two_component_doc, "BizSpeechComponent")
+    comp1_uuid = bsc[1]["componentUuid"]
+    comp1_name = bsc[1]["name"]  # "2. Next"
+
+    # Find the entry node uuid in comp0 (is_default=True)
+    comp0_details = json.loads(bsc[0]["details"]) if isinstance(bsc[0]["details"], str) else {}
+    entry_uuid = next(uid for uid, obj in comp0_details.items()
+                      if (obj.get("data") or {}).get("is_default"))
+
+    res = registry.dispatch("connect_components", {
+        "component": 0,
+        "id": "jumpB",
+        "target": comp1_name,
+        "from": entry_uuid,
+        "branch": "Unclassified",
+    }, two_component_doc)
+
+    assert res["result"]["ok"] is True, res["result"].get("error")
+    proposed = res["proposal"]["proposed_data"]
+    bsc2 = _decode(proposed, "BizSpeechComponent")
+    details2 = json.loads(bsc2[0]["details"])
+
+    # Find the new goto node (type 4)
+    goto_nodes = [(uid, obj) for uid, obj in details2.items() if obj.get("type") == 4]
+    assert goto_nodes, "No type-4 (goto) node found in proposed comp0"
+    assert len(goto_nodes) == 1, f"Expected exactly 1 goto node, got {len(goto_nodes)}"
+    _, goto_obj = goto_nodes[0]
+    assert goto_obj["data"]["appoint_node_id"] == comp1_uuid
+
+
 def test_add_node_exit_no_config(two_component_doc):
     """add_node with type=exit (no config) produces a type-2 node."""
     bsc = _decode(two_component_doc, "BizSpeechComponent")
