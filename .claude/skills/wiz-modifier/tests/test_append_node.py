@@ -21,10 +21,10 @@ def _comp0_details(bundle):
 
 def test_append_into_empty_component_adds_one_node():
     b = _load()
+    baseline = len(_comp0_details(b))
     run_mods(b, [{"op": "append-node", "component": 0,
                   "node": {"id": "greet", "prompt": "Greeting"}}], manifest_hash="t")
-    details = _comp0_details(b)
-    assert len(details) == 1
+    assert len(_comp0_details(b)) == baseline + 1
 
 
 def test_append_preserves_existing_node_uuids():
