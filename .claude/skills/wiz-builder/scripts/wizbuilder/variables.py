@@ -39,7 +39,10 @@ def apply_variables(
     template_code = default["templateCode"]
     user_id = default["userId"]
 
+    existing_names = {v["name"] for v in vars_list}
     for cv in manifest.custom_variables:
+        if cv.name in existing_names:
+            continue
         vars_list.append({
             "beInit": 0,
             "branch": manifest.branch,
@@ -49,7 +52,7 @@ def apply_variables(
             "name": cv.name,
             "speechId": speech_id,
             "templateCode": template_code,
-            "textType": "",
+            "textType": "DEFAULT",
             "type": 1,
             "userId": user_id,
             "variableSource": 0,

@@ -60,14 +60,14 @@ def test_apply_variables_assigns_deterministic_ids(template_dict, template_path)
     assert custom["id"] == custom2["id"]
 
 
-def test_apply_variables_sets_text_type_empty_string(template_dict):
-    """Custom variables (user-authored) have textType empty string."""
+def test_apply_variables_sets_text_type_default(template_dict):
+    """Custom variables (user-authored) have textType 'DEFAULT' (deploy-valid text type)."""
     m = _manifest((CustomVariable(name="MY_VAR"),))
     minter = IdMinter(manifest_hash=manifest_hash_of(m.raw_text))
     apply_variables(template_dict, m, minter)
     vars_ = json.loads(template_dict["SpeechVariable"])
     custom = next(v for v in vars_ if v["name"] == "MY_VAR")
-    assert custom["textType"] == ""
+    assert custom["textType"] == "DEFAULT"
 
 
 def test_apply_variables_sets_speech_id_consistent_with_defaults(template_dict):

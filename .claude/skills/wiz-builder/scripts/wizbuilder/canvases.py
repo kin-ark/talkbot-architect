@@ -117,6 +117,16 @@ def apply_canvases(
         canvas.name: canvas_uuids[ci] for ci, canvas in enumerate(manifest.canvases)
     }
 
+    # Build var_source_by_name from the merged SpeechVariable (apply_variables has already run).
+    # variableSource: 0 = custom/user variable, 1 = system/collected variable.
+    speech_vars_raw = template.get("SpeechVariable", "[]")
+    speech_vars = (
+        json.loads(speech_vars_raw) if isinstance(speech_vars_raw, str) else speech_vars_raw
+    )
+    var_source_by_name: dict[str, int] = {
+        v["name"]: v.get("variableSource", 0) for v in speech_vars
+    }
+
     all_sentence_cut_rows: list[dict] = []
     new_components = []
     for ci, canvas in enumerate(manifest.canvases):
@@ -133,6 +143,7 @@ def apply_canvases(
             node_language=node_language,
             component_nav=component_nav,
             canvas_uuid_by_name=canvas_uuid_by_name,
+            var_source_by_name=var_source_by_name,
         )
         new_components.append(comp)
         all_sentence_cut_rows.extend(scs_rows)
@@ -159,6 +170,7 @@ def _build_component(
     node_language: str,
     component_nav: list[dict] | None = None,
     canvas_uuid_by_name: dict[str, str] | None = None,
+    var_source_by_name: dict[str, int] | None = None,
 ) -> tuple[dict[str, Any], list[dict]]:
     """Build a single BizSpeechComponent entry using render_component_nodes.
 
@@ -186,6 +198,7 @@ def _build_component(
         node_language=node_language,
         minter=minter,
         component_nav=component_nav,
+        var_source_by_name=var_source_by_name,
     )
 
     entry = {

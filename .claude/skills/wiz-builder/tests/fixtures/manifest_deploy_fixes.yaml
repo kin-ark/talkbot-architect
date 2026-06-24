@@ -1,0 +1,59 @@
+name: "Deploy Fixes Test Bot"
+branch: dev
+language: IDN
+
+# F1 test: PayStatus is a NEW custom var; Gender is a BASELINE var (must not be duplicated).
+custom_variables:
+  - name: PayStatus
+  - name: Gender
+
+canvases:
+  - name: "1. Main"
+    nodes:
+      - id: greet
+        type: talk
+        prompt: "Hello, how can I help you?"
+
+      - id: set_pay
+        type: assign
+        prompt: "(assign)"
+        config:
+          variable: PayStatus
+          value: "overdue"
+
+      - id: check_pay
+        type: conditional
+        prompt: "(conditional)"
+        config:
+          variable: PayStatus
+          branches:
+            - name: NotInGroup
+              op: "NotIn"
+              value: "paid,settled"
+              to: assign_followup
+            - name: ContainsGroup
+              op: "Contains"
+              value: "over"
+              to: assign_followup
+            - name: ExactMatch
+              op: "="
+              value: "paid"
+              to: done
+            - name: Default
+              to: done
+
+      - id: assign_followup
+        type: assign
+        prompt: "(assign followup)"
+        config:
+          variable: PayStatus
+          value: "followup"
+
+      - id: done
+        type: exit
+        prompt: "Goodbye."
+
+    edges:
+      - {from: greet, branch: Positive, to: set_pay}
+      - {from: set_pay, branch: Default, to: check_pay}
+      - {from: assign_followup, branch: Default, to: done}

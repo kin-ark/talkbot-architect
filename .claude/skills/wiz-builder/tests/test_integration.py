@@ -92,6 +92,87 @@ def test_checker_finds_no_errors_on_compiled_output(tmp_path):
     assert report["summary"]["errors"] == 0, f"findings: {report['findings'][:3]}"
 
 
+def test_deploy_fixes_f1_f2_f3(tmp_path):
+    """Validate F1 (var dedup + textType), F2 (canonical operators), F3 (variable_source).
+
+    Manifest declares both a NEW custom var (PayStatus) and a BASELINE var (Gender).
+    A conditional node branches on PayStatus using ops NotIn, Contains, and =.
+    """
+    out = tmp_path / "speech_deploy_fixes.json"
+    result = compile_manifest(FIXTURES / "manifest_deploy_fixes.yaml", out)
+
+    # Primary: zero checker errors.
+    assert result.checker_errors == 0, (
+        f"deploy-fixes manifest produced checker errors: "
+        f"{result.checker_errors} errors, codes: {result.finding_codes}"
+    )
+
+    built = json.loads(out.read_text(encoding="utf-8"))
+
+    # --- F1: SpeechVariable dedup + textType ---
+    speech_vars = json.loads(built["SpeechVariable"])
+    gender_entries = [v for v in speech_vars if v["name"] == "Gender"]
+    assert len(gender_entries) == 1, (
+        f"F1 dedup failed: expected exactly 1 'Gender' entry, found {len(gender_entries)}"
+    )
+    pay_entries = [v for v in speech_vars if v["name"] == "PayStatus"]
+    assert len(pay_entries) == 1, (
+        f"F1 dedup: expected exactly 1 'PayStatus' entry, found {len(pay_entries)}"
+    )
+    assert pay_entries[0]["textType"] == "DEFAULT", (
+        f"F1 textType: expected 'DEFAULT' for PayStatus, got {pay_entries[0]['textType']!r}"
+    )
+
+    # --- F2 + F3: inspect the conditional node ---
+    components = json.loads(built["BizSpeechComponent"])
+    assert components, "BizSpeechComponent must be non-empty"
+
+    cond_data: dict | None = None
+    for comp in components:
+        details = json.loads(comp.get("details", "null") or "null")
+        if not isinstance(details, dict):
+            continue
+        for node_obj in details.values():
+            if isinstance(node_obj, dict) and node_obj.get("type") == 7:
+                cond_data = node_obj["data"]
+                break
+        if cond_data is not None:
+            break
+
+    assert cond_data is not None, "Expected a type-7 (Conditional-Judgment) node in built export"
+
+    # F2: operator tokens must be canonical (NotIn→"Not in", Contains→"Contain", =→"=")
+    branch_list = cond_data.get("branch", [])
+    op_by_branch = {
+        rule["name"]: rule["branch_judgement_condition"][0]["operator"]
+        for rule in branch_list
+        if rule.get("branch_judgement_condition")
+    }
+    assert op_by_branch.get("NotInGroup") == "Not in", (
+        f"F2: NotIn must map to 'Not in', got {op_by_branch.get('NotInGroup')!r}"
+    )
+    assert op_by_branch.get("ContainsGroup") == "Contain", (
+        f"F2: Contains must map to 'Contain', got {op_by_branch.get('ContainsGroup')!r}"
+    )
+    assert op_by_branch.get("ExactMatch") == "=", (
+        f"F2: '=' must stay '=', got {op_by_branch.get('ExactMatch')!r}"
+    )
+
+    # F3: variable_source for PayStatus must be 0 (int) — custom variable.
+    for rule in branch_list:
+        for cond in rule.get("branch_judgement_condition", []):
+            vsrc = cond.get("variable_source")
+            assert vsrc == 0, (
+                f"F3: branch '{rule['name']}' variable_source must be int 0, got {vsrc!r}"
+            )
+    for nv in cond_data.get("node_variables", []):
+        vsrc = nv.get("variableSource")
+        assert vsrc == 0, (
+            f"F3: node_variables entry for '{nv.get('name')}' variableSource must be int 0, "
+            f"got {vsrc!r}"
+        )
+
+
 def test_conditional_and_assign_build_checker_clean(tmp_path):
     """Full pipeline: conditional (type 7) + assign (type 10) nodes → checker-clean export.
 

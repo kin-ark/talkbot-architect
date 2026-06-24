@@ -553,8 +553,8 @@ def test_conditional_ports_branch_rules_and_routing():
     ibu = next(b for b in rules if b["name"] == "Ibu")
     assert ibu["branch_judgement_condition"][0]["operator"] == "In"
     assert ibu["branch_judgement_condition"][0]["type"] == "const"
-    # node_variables one per rule (3)
-    assert d["node_variables"] == [{"name": "Gender", "variableSource": 1}] * 3
+    # node_variables one per rule (3); no var_source_by_name passed → source defaults to 0 (custom)
+    assert d["node_variables"] == [{"name": "Gender", "variableSource": 0}] * 3
     # routes: one port per distinct branch, keyed by all_client_intent id
     cond_routes = r.routes[cond_uuid]
     assert set(cond_routes.keys()) == set(aci.values())
@@ -593,7 +593,7 @@ def test_conditional_unary_op_no_right_value():
     cond = next(o for o in r.details.values() if o["type"] == 7)
     rule = next(b for b in cond["data"]["branch"] if b["name"] == "Empty")
     cnd = rule["branch_judgement_condition"][0]
-    assert cnd["operator"] == "IsNull"
+    assert cnd["operator"] == "Null"  # canonical: WIZ platform maps IsNull→"Null"
     assert "right_value" not in cnd or cnd["right_value"] == ""
 
 

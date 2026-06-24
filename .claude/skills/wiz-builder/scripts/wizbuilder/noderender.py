@@ -94,6 +94,22 @@ _PORT_MARKUP = [
     }
 ]
 
+# Canonical operator tokens as emitted by the WIZ.AI UI (confirmed from real exports).
+# Friendly authoring tokens (left) map to the platform's canonical strings (right).
+_WIZ_OPERATOR: dict[str, str] = {
+    ">": ">",
+    ">=": ">=",
+    "<": "<",
+    "<=": "<=",
+    "=": "=",
+    "!=": "!=",
+    "In": "In",
+    "NotIn": "Not in",
+    "IsNull": "Null",
+    "NotNull": "Not null",
+    "Contains": "Contain",
+}
+
 _TYPE_INT = {"talk": 1, "exit": 2, "goto": 4, "conditional": 7, "assign": 10, "transfer": 13}
 _TYPE_NODE_NAME = {
     "talk": "Talk Node",
@@ -155,6 +171,7 @@ def _build_talk_node(
     reccut_uuid: str,
     is_default: bool,
     component_nav: list[dict] | None = None,  # unused by Talk; accepted for uniform dispatch
+    var_source_by_name: dict[str, int] | None = None,  # unused; accepted for uniform dispatch
 ) -> tuple[dict, dict]:
     """Build one Talk-node ``node_obj`` and ``scs_row``.
 
@@ -305,6 +322,7 @@ def _build_exit_node(
     reccut_uuid: str,
     is_default: bool,
     component_nav: list[dict] | None = None,
+    var_source_by_name: dict[str, int] | None = None,  # unused; accepted for uniform dispatch
 ) -> tuple[dict, dict]:
     """Build one Exit-node (type 2) ``node_obj`` and ``scs_row``.
 
@@ -418,6 +436,7 @@ def _build_goto_node(
     reccut_uuid: str,
     is_default: bool,
     component_nav: list[dict] | None = None,
+    var_source_by_name: dict[str, int] | None = None,  # unused; accepted for uniform dispatch
 ) -> tuple[dict, None]:
     """Build one goto_component node (type 4) ``node_obj``.
 
@@ -520,6 +539,7 @@ def _build_transfer_node(
     reccut_uuid: str,
     is_default: bool,
     component_nav: list[dict] | None = None,
+    var_source_by_name: dict[str, int] | None = None,  # unused; accepted for uniform dispatch
 ) -> tuple[dict, dict]:
     """Build one Transfer-node (type 13) ``node_obj`` and ``scs_row``.
 
@@ -635,6 +655,7 @@ def _build_conditional_node(
     reccut_uuid: str,
     is_default: bool,
     component_nav: list[dict] | None = None,
+    var_source_by_name: dict[str, int] | None = None,
 ) -> tuple[dict, None]:
     """Build one Conditional-Judgment node (type 7). Router: one out-port per distinct
     branch name. No SentenceCutSpeech row, no topFloorDetails. Returns (node_obj, None).
@@ -677,6 +698,9 @@ def _build_conditional_node(
         "zIndex": 1,
     }
 
+    # Resolve the variable's source: 0 = custom/user variable, 1 = system/collected variable.
+    src: int = (var_source_by_name or {}).get(variable, 0)
+
     # rules: one entry per non-Default branch row; Default has no rule.
     rule_list: list[dict] = []
     node_vars: list[dict] = []
@@ -684,9 +708,9 @@ def _build_conditional_node(
         if b.get("name") == "Default":
             continue
         cond: dict = {
-            "variable_source": "1",
+            "variable_source": src,
             "left_value": variable,
-            "operator": b["op"],
+            "operator": _WIZ_OPERATOR.get(b["op"], b["op"]),
         }
         if b["op"] not in ("IsNull", "NotNull"):
             if "value_var" in b:
@@ -699,7 +723,7 @@ def _build_conditional_node(
             "name": b["name"],
             "branch_judgement_condition": [cond],
         })
-        node_vars.append({"name": variable, "variableSource": 1})
+        node_vars.append({"name": variable, "variableSource": src})
 
     all_client_intent = [
         {"name": name, "checked": True, "id": port_uuids[name]} for name in port_names
@@ -754,12 +778,14 @@ def _build_assign_node(
     reccut_uuid: str,
     is_default: bool,
     component_nav: list[dict] | None = None,
+    var_source_by_name: dict[str, int] | None = None,
 ) -> tuple[dict, None]:
     """Build one Variable-Assignment node (type 10). Silent pass-through with a single
     out-port named "Default". No SCS row, no topFloorDetails. Returns (node_obj, None)."""
     variable = spec.config.get("variable", "")
     value = spec.config.get("value", "")
     default_port = port_uuids["Default"]
+    src: int = (var_source_by_name or {}).get(variable, 0)
 
     items = [{"name": "Default", "id": default_port, "attrs": _fo(-37.67, 70), "group": "out"}]
     canvas = {
@@ -790,7 +816,7 @@ def _build_assign_node(
     data: dict = {
         "sentence": [],
         "node_function": "",
-        "node_variables": [{"name": variable, "variableSource": 0}],
+        "node_variables": [{"name": variable, "variableSource": src}],
         "all_client_intent": [{"name": "Default", "checked": True, "id": default_port}],
         "allow_jump_knowledges": list(kb_ids),
         "hitKnowledgeRate": [],
@@ -888,6 +914,7 @@ def render_component_nodes(
     node_language: str,
     minter: Any,
     component_nav: list[dict] | None = None,
+    var_source_by_name: dict[str, int] | None = None,
 ) -> RenderedNodes:
     """Render a list of NodeSpec objects into WIZ.AI component sub-dicts.
 
@@ -916,6 +943,12 @@ def render_component_nodes(
         Optional list of component-nav dicts (all canvases in the bot) used to
         populate ``canvas.component.props.list`` on exit/transfer nodes.  When
         ``None`` (e.g. in unit tests), the list is left empty.
+    var_source_by_name:
+        Optional mapping of variable name → variableSource integer
+        (0 = custom/user variable, 1 = system/collected variable).
+        Built from the merged ``SpeechVariable`` list in ``apply_canvases`` after
+        ``apply_variables`` has run.  When ``None`` (e.g. in unit tests or modifier
+        calls), all variables default to source 0 (custom).
     """
     # Terminal node types: no out-ports, not in inbound_ports.
     _TERMINAL_TYPES = frozenset({"exit", "transfer", "goto"})
@@ -989,6 +1022,7 @@ def render_component_nodes(
             reccut_uuid=reccut_uuid,
             is_default=is_default,
             component_nav=component_nav,
+            var_source_by_name=var_source_by_name,
         )
 
         # --- accumulate ---
