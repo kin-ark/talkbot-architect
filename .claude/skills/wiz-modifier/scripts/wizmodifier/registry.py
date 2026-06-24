@@ -17,6 +17,7 @@ OP_REGISTRY: dict[str, Callable] = {
     "add-bsc-keys": structure.add_bsc_keys,
     "populate-details": structure.populate_details,
     "add-component": structure.add_component,
+    "append-node": structure.append_node,
     "add-variable": content.add_variable,
     "add-intent": content.add_intent,
     "set-path": generic.set_path,

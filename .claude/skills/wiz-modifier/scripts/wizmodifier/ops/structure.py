@@ -169,6 +169,97 @@ def populate_details(bundle: InputBundle, params: dict, minter) -> None:
     _append_sentence_cut_speech(bundle, r.sentence_cut_speech)
 
 
+def _ports_of(node_obj: dict) -> dict:
+    """Map branch name -> port uuid from a rendered node's canvas.ports.items."""
+    items = (node_obj.get("canvas") or {}).get("ports", {}).get("items", []) or []
+    return {it["name"]: it["id"] for it in items}
+
+
+def append_node(bundle: InputBundle, params: dict, minter) -> None:
+    """Merge ONE node (+optional edges) into an existing component without
+    re-rendering or renaming existing nodes (their uuids are preserved).
+
+    params:
+        component: int — target BizSpeechComponent index
+        node: {id, prompt, type?} — the new node (logical id is local to this call)
+        edges: optional list of {from, branch, to}; endpoints are EITHER the new
+               node's logical id OR an existing node uuid already in details.
+    """
+    comps = get_components(bundle)
+    index = params["component"]
+    comp = require_component(comps, index)
+    comp_uuid = comp.get("componentUuid") or ""
+    if not comp_uuid:
+        raise ValueError(f"append-node: component {index} has no componentUuid")
+
+    raw_details = comp.get("details")
+    details = json.loads(raw_details) if isinstance(raw_details, str) and raw_details not in ("null", "") else {}
+    if not isinstance(details, dict):
+        details = {}
+    raw_routes = comp.get("routes")
+    routes = json.loads(raw_routes) if isinstance(raw_routes, str) and raw_routes not in ("null", "") else {}
+    if not isinstance(routes, dict):
+        routes = {}
+    raw_inbound = comp.get("inboundPorts")
+    inbound = json.loads(raw_inbound) if isinstance(raw_inbound, str) and raw_inbound not in ("null", "") else []
+    if not isinstance(inbound, list):
+        inbound = []
+
+    node = params["node"]
+    new_edges = params.get("edges") or []
+
+    # Render the new node ALONE. Namespace its logical id so minted uuids cannot
+    # collide with any existing node minted under the same canvas_index.
+    spec = NodeSpec(id=f"append:{node['id']}", prompt=node["prompt"],
+                    type=node.get("type", "talk"), config=node.get("config", {}))
+    speech_id, branch_intent_ids, kb_ids, node_language = _resolve_context(bundle)
+    r = render_component_nodes(
+        [spec], [], canvas_index=index, comp_uuid=comp_uuid,
+        speech_id=speech_id, branch_intent_ids=branch_intent_ids,
+        kb_ids=kb_ids, node_language=node_language, minter=minter,
+    )
+    (new_uuid, new_obj), = r.details.items()
+
+    # Resolve edge endpoints: new node by logical id, existing nodes by uuid.
+    def resolve_uuid(ref: str) -> str:
+        if ref == node["id"]:
+            return new_uuid
+        if ref in details:
+            return ref
+        raise ValueError(f"append-node: edge endpoint {ref!r} is neither the new node id nor an existing node uuid")
+
+    # Determine whether the new node is an entry node (no incoming edge).
+    has_incoming = any(resolve_uuid(e["to"]) == new_uuid for e in new_edges)
+    new_obj["is_default"] = not has_incoming
+    new_obj.setdefault("data", {})["is_default"] = not has_incoming
+
+    details[new_uuid] = new_obj
+    routes.setdefault(new_uuid, {})
+    if not has_incoming:
+        inbound.append({"name": "Talk Node", "type": 1, "uuid": new_uuid, "is_default": True})
+
+    # Wire each edge onto its source node's branch port.
+    for e in new_edges:
+        src_uuid = resolve_uuid(e["from"])
+        dst_uuid = resolve_uuid(e["to"])
+        src_ports = _ports_of(details[src_uuid])
+        if e["branch"] not in src_ports:
+            raise ValueError(f"append-node: branch {e['branch']!r} has no port on source node {e['from']!r}")
+        src_port_uuid = src_ports[e["branch"]]
+        edge_uuid = str(minter.uuid(f"append-edge:{index}:{e['from']}:{e['branch']}:{e['to']}"))
+        routes.setdefault(src_uuid, {})[src_port_uuid] = {
+            "source": {"type": 1, "uuid": src_port_uuid},
+            "target": {"type": 1, "uuid": dst_uuid},
+            "portDetail": {"id": edge_uuid, "zIndex": 3},
+        }
+
+    comp["details"] = json.dumps(details, ensure_ascii=False, separators=(",", ":"))
+    comp["routes"] = json.dumps(routes, ensure_ascii=False, separators=(",", ":"))
+    comp["inboundPorts"] = json.dumps(inbound, ensure_ascii=False, separators=(",", ":"))
+    set_components(bundle, comps)
+    _append_sentence_cut_speech(bundle, r.sentence_cut_speech)
+
+
 def add_component(bundle: InputBundle, params: dict, minter) -> None:
     """Append a new BizSpeechComponent, cloning the first entry's shared keys.
 
