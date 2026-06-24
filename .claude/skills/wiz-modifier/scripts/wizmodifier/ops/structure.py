@@ -253,12 +253,14 @@ def append_node(bundle: InputBundle, params: dict, minter) -> None:
     node = params["node"]
     new_edges = params.get("edges") or []
 
+    # Parse BSC for goto resolution and component_nav (needed regardless of node type).
+    bsc_raw2 = bundle.data.get("BizSpeechComponent", "[]")
+    bsc2 = json.loads(bsc_raw2) if isinstance(bsc_raw2, str) else bsc_raw2
+
     # Resolve goto config.target (component name) → componentUuid.
     # Mirrors the resolution in _render_nodes so append-node and add-component are consistent.
     cfg = dict(node.get("config") or {})
     if node.get("type") == "goto":
-        bsc_raw2 = bundle.data.get("BizSpeechComponent", "[]")
-        bsc2 = json.loads(bsc_raw2) if isinstance(bsc_raw2, str) else bsc_raw2
         comp_uuid_by_name: dict[str, str] = {
             c.get("name", ""): c.get("componentUuid", "") for c in bsc2
         }
@@ -276,10 +278,12 @@ def append_node(bundle: InputBundle, params: dict, minter) -> None:
     spec = NodeSpec(id=f"append:{node['id']}", prompt=node["prompt"],
                     type=node.get("type", "talk"), config=cfg)
     speech_id, branch_intent_ids, kb_ids, node_language = _resolve_context(bundle)
+    component_nav = _build_component_nav(bsc2)
     r = render_component_nodes(
         [spec], [], canvas_index=index, comp_uuid=comp_uuid,
         speech_id=speech_id, branch_intent_ids=branch_intent_ids,
         kb_ids=kb_ids, node_language=node_language, minter=minter,
+        component_nav=component_nav,
     )
     (new_uuid, new_obj), = r.details.items()
 

@@ -91,8 +91,12 @@ def test_add_node_goto_with_config(two_component_doc):
     # Find the new goto node (type 4) — raw envelope uses obj["type"], not obj["data"]["node_type"]
     goto_nodes = [(uid, obj) for uid, obj in details2.items() if obj.get("type") == 4]
     assert goto_nodes, "No type-4 (goto) node found in proposed comp0"
+    assert len(goto_nodes) == 1, f"Expected exactly 1 goto node, got {len(goto_nodes)}"
     _, goto_obj = goto_nodes[0]
     assert goto_obj["data"]["appoint_node_id"] == comp1_uuid
+    # Verify component_nav is populated (props.list non-empty proves I-1 fixed)
+    props_list = (goto_obj.get("canvas") or {}).get("component", {}).get("props", {}).get("list", [])
+    assert props_list, "goto node canvas.component.props.list is empty (append_node missing component_nav)"
 
 
 def test_add_node_exit_no_config(two_component_doc):
