@@ -94,3 +94,114 @@ def test_add_component_strips_template_keys_from_secondary(baseline_dict):
     assert not leaked, (
         f"secondary component should not have template-only keys, but found: {leaked}"
     )
+
+
+def test_append_node_assign_wired_via_default_port(baseline_dict):
+    """Append an assign node (type 10) whose 'Default' out-port is wired to an existing talk node.
+
+    The assign builder bakes a single out-port named 'Default'; the normal edges loop (no
+    special handling needed) must wire it to the downstream target.
+    """
+    b = InputBundle(data=baseline_dict, speech_name="s.json")
+
+    # First populate component 0 with a talk node so we have an existing node to wire to.
+    structure.populate_details(
+        b,
+        {"component": 0, "nodes": [{"id": "talk1", "prompt": "How much do you owe?"}]},
+        MINTER,
+    )
+    comp = get_components(b)[0]
+    talk_uuid = next(iter(codec.decode(comp["details"])))
+
+    # Append an assign node as a NEW ENTRY NODE; its 'Default' out-port routes to talk1.
+    # The assign node is the source (logical id "assign1"), talk node is the destination.
+    structure.append_node(
+        b,
+        {
+            "component": 0,
+            "node": {
+                "id": "assign1",
+                "prompt": "",
+                "type": "assign",
+                "config": {"variable": "DEBT_AMT", "value": "500000"},
+            },
+            "edges": [{"from": "assign1", "branch": "Default", "to": talk_uuid}],
+        },
+        MINTER,
+    )
+
+    comp = get_components(b)[0]
+    details = codec.decode(comp["details"])
+    routes = codec.decode(comp["routes"])
+
+    # Locate the new assign node (type 10).
+    assign_objs = {k: v for k, v in details.items() if v.get("type") == 10}
+    assert len(assign_objs) == 1, "expected exactly one assign node"
+    assign_uuid, assign_obj = next(iter(assign_objs.items()))
+    assert assign_obj["data"]["value_assignment"][0]["assign"]["params"][0]["value"] == "500000"
+
+    # The assign node's 'Default' port must be wired to the existing talk node.
+    assign_routes = routes.get(assign_uuid, {})
+    assert any(
+        v["target"]["uuid"] == talk_uuid for v in assign_routes.values()
+    ), "assign node 'Default' port should route to the existing talk node"
+
+
+def test_append_node_conditional_branch_routes(baseline_dict):
+    """Append a conditional node (type 7) whose branches point at an existing talk node uuid.
+
+    routes[cond_uuid] must have one entry per distinct branch name, and every target uuid
+    must be the existing talk node's uuid.
+    """
+    b = InputBundle(data=baseline_dict, speech_name="s.json")
+
+    # Populate component 0 with a talk node; its uuid will be the branch target.
+    structure.populate_details(
+        b,
+        {"component": 0, "nodes": [{"id": "talk1", "prompt": "Collecting debt info"}]},
+        MINTER,
+    )
+    comp = get_components(b)[0]
+    talk_uuid = next(iter(codec.decode(comp["details"])))
+
+    branches = [
+        {"name": "High", "op": "GT", "value": "100000", "to": talk_uuid},
+        {"name": "Low", "op": "LTE", "value": "100000", "to": talk_uuid},
+        {"name": "Default", "to": talk_uuid},
+    ]
+    structure.append_node(
+        b,
+        {
+            "component": 0,
+            "node": {
+                "id": "cond1",
+                "prompt": "",
+                "type": "conditional",
+                "config": {"variable": "DEBT_AMT", "branches": branches},
+            },
+            "edges": [],
+        },
+        MINTER,
+    )
+
+    comp = get_components(b)[0]
+    details = codec.decode(comp["details"])
+    routes = codec.decode(comp["routes"])
+
+    cond_objs = {k: v for k, v in details.items() if v.get("type") == 7}
+    assert len(cond_objs) == 1, "expected exactly one conditional node"
+    cond_uuid = next(iter(cond_objs))
+    cond_obj = cond_objs[cond_uuid]
+
+    # The conditional node's all_client_intent ids are the route keys.
+    aci_ids = {entry["id"] for entry in cond_obj["data"]["all_client_intent"]}
+    cond_routes = routes.get(cond_uuid, {})
+    assert set(cond_routes.keys()) == aci_ids, (
+        f"routes keys {set(cond_routes.keys())} should equal all_client_intent ids {aci_ids}"
+    )
+
+    # Every route target must be the existing talk node.
+    for port_uuid, route in cond_routes.items():
+        assert route["target"]["uuid"] == talk_uuid, (
+            f"port {port_uuid}: expected target {talk_uuid}, got {route['target']['uuid']}"
+        )

@@ -273,6 +273,16 @@ def append_node(bundle: InputBundle, params: dict, minter) -> None:
                 f"does not match any existing component name"
             )
 
+    # For conditional nodes, strip `to` from branches before isolated rendering.
+    # render_component_nodes synthesises edges from config.branches[].to, but in append_node
+    # the targets are existing node uuids (not logical ids in this render batch), which would
+    # cause a KeyError. We wire the routes ourselves after render (using orig_branches below).
+    orig_branches = list(cfg.get("branches") or [])  # preserve `to` for post-render wiring
+    if node.get("type") == "conditional":
+        stripped_branches = [{k: v for k, v in b.items() if k != "to"} for b in orig_branches]
+        cfg = dict(cfg)  # shallow copy so original params are unaffected
+        cfg["branches"] = stripped_branches
+
     # Render the new node ALONE. Namespace its logical id so minted uuids cannot
     # collide with any existing node minted under the same canvas_index.
     spec = NodeSpec(id=f"append:{node['id']}", prompt=node["prompt"],
@@ -302,8 +312,22 @@ def append_node(bundle: InputBundle, params: dict, minter) -> None:
 
     details[new_uuid] = new_obj
     routes.setdefault(new_uuid, {})
+    _NODE_NAME = {
+        "talk": "Talk Node",
+        "conditional": "Conditional Judgment Node",
+        "assign": "Variable Assignment Node",
+    }
+    _NODE_TYPE_INT = {
+        "talk": 1, "exit": 2, "goto": 4, "conditional": 7, "assign": 10, "transfer": 13,
+    }
+    node_type_str = node.get("type", "talk")
     if not has_incoming:
-        inbound.append({"name": "Talk Node", "type": 1, "uuid": new_uuid, "is_default": True})
+        inbound.append({
+            "name": _NODE_NAME.get(node_type_str, "Talk Node"),
+            "type": _NODE_TYPE_INT.get(node_type_str, 1),
+            "uuid": new_uuid,
+            "is_default": True,
+        })
 
     # Wire each edge onto its source node's branch port.
     for e in new_edges:
@@ -319,6 +343,34 @@ def append_node(bundle: InputBundle, params: dict, minter) -> None:
             "target": {"type": 1, "uuid": dst_uuid},
             "portDetail": {"id": edge_uuid, "zIndex": 3},
         }
+
+    # Wire conditional node branch ports from config.branches[].to.
+    # The type-7 builder bakes one port per distinct branch name into canvas.ports.items.
+    # Port uuid == all_client_intent id == routes key. Targets are resolved via resolve_uuid.
+    if node.get("type") == "conditional":
+        new_node_ports = _ports_of(details[new_uuid])  # branch-name → port-uuid
+        seen_branches: dict[str, str] = {}  # distinct branch-name → first-seen `to`
+        for b in orig_branches:
+            name = b.get("name")
+            to = b.get("to")
+            if name and to and name not in seen_branches:
+                seen_branches[name] = to
+        for branch_name, to_ref in seen_branches.items():
+            if branch_name not in new_node_ports:
+                raise ValueError(
+                    f"append-node: conditional branch {branch_name!r} has no port "
+                    f"on node {node['id']!r}"
+                )
+            port_uuid = new_node_ports[branch_name]
+            dst_uuid = resolve_uuid(to_ref)
+            edge_uuid = str(
+                minter.uuid(f"append-edge:{index}:{node['id']}:{branch_name}:{to_ref}")
+            )
+            routes.setdefault(new_uuid, {})[port_uuid] = {
+                "source": {"type": 1, "uuid": port_uuid},
+                "target": {"type": 1, "uuid": dst_uuid},
+                "portDetail": {"id": edge_uuid, "zIndex": 3},
+            }
 
     comp["details"] = json.dumps(details, ensure_ascii=False, separators=(",", ":"))
     comp["routes"] = json.dumps(routes, ensure_ascii=False, separators=(",", ":"))
