@@ -561,3 +561,28 @@ canvases:
 """
     with pytest.raises(ManifestError, match="terminal"):
         load_manifest(_write(tmp_path, txt))
+
+
+def test_goto_self_targeting_rejected(tmp_path):
+    """A goto node whose config.target names its OWN canvas is rejected (must be another)."""
+    txt = """
+name: T
+branch: dev
+language: IDN
+canvases:
+  - name: "1. Main"
+    nodes:
+      - {id: greet, prompt: "Halo"}
+      - id: jump
+        prompt: "Loop"
+        type: goto
+        config:
+          target: "1. Main"
+    edges:
+      - {from: greet, branch: Unclassified, to: jump}
+  - name: "2. Other"
+    nodes:
+      - {id: other, prompt: "Other"}
+"""
+    with pytest.raises(ManifestError, match="does not match any other canvas"):
+        load_manifest(_write(tmp_path, txt))
