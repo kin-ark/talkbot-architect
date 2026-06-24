@@ -586,3 +586,154 @@ canvases:
 """
     with pytest.raises(ManifestError, match="does not match any other canvas"):
         load_manifest(_write(tmp_path, txt))
+
+
+# ---------------------------------------------------------------------------
+# Task 1 (conditional/assign): new node types + silent-node prompt default
+# ---------------------------------------------------------------------------
+
+_OPS = {">", ">=", "<", "<=", "=", "!=", "In", "NotIn", "IsNull", "NotNull", "Contains"}
+
+
+def test_conditional_and_assign_load(tmp_path):
+    m = load_manifest(_write(tmp_path, """
+name: Cond Bot
+branch: dev
+language: IDN
+custom_variables:
+  - {name: Gender}
+  - {name: Salutation}
+canvases:
+  - name: Greet
+    nodes:
+      - {id: cond, type: conditional, config: {variable: Gender, branches: [
+          {name: Bapak, op: "=", value: Male, to: set_b},
+          {name: Bapak, op: "=", value: M, to: set_b},
+          {name: Ibu, op: In, value: "F,Female", to: set_i},
+          {name: Default, to: set_b}]}}
+      - {id: set_b, type: assign, config: {variable: Salutation, value: Bapak}}
+      - {id: set_i, type: assign, config: {variable: Salutation, value: Ibu}}
+    edges:
+      - {from: set_b, branch: Default, to: set_i}
+"""))
+    canvas = m.canvases[0]
+    cond = next(n for n in canvas.nodes if n.id == "cond")
+    assert cond.type == "conditional"
+    assert cond.prompt == ""  # silent node: prompt optional
+    assert len(cond.config["branches"]) == 4
+    set_i = next(n for n in canvas.nodes if n.id == "set_i")
+    assert set_i.type == "assign" and set_i.config["value"] == "Ibu"
+
+
+def test_conditional_undeclared_variable_rejected(tmp_path):
+    with pytest.raises(ManifestError, match="not a declared variable"):
+        load_manifest(_write(tmp_path, """
+name: B
+branch: dev
+language: IDN
+canvases:
+  - name: C
+    nodes:
+      - {id: cond, type: conditional, config: {variable: Ghost, branches: [
+          {name: A, op: "=", value: x, to: t}, {name: Default, to: t}]}}
+      - {id: t, type: assign, config: {variable: Ghost, value: y}}
+"""))
+
+
+def test_conditional_requires_exactly_one_default(tmp_path):
+    with pytest.raises(ManifestError, match="exactly one Default"):
+        load_manifest(_write(tmp_path, """
+name: B
+branch: dev
+language: IDN
+custom_variables: [{name: G}]
+canvases:
+  - name: C
+    nodes:
+      - {id: cond, type: conditional, config: {variable: G, branches: [
+          {name: A, op: "=", value: x, to: t}]}}
+      - {id: t, type: assign, config: {variable: G, value: y}}
+"""))
+
+
+def test_conditional_same_name_conflicting_target_rejected(tmp_path):
+    with pytest.raises(ManifestError, match="conflicting target"):
+        load_manifest(_write(tmp_path, """
+name: B
+branch: dev
+language: IDN
+custom_variables: [{name: G}]
+canvases:
+  - name: C
+    nodes:
+      - {id: cond, type: conditional, config: {variable: G, branches: [
+          {name: A, op: "=", value: x, to: t1},
+          {name: A, op: "=", value: y, to: t2},
+          {name: Default, to: t1}]}}
+      - {id: t1, type: assign, config: {variable: G, value: a}}
+      - {id: t2, type: assign, config: {variable: G, value: b}}
+"""))
+
+
+def test_conditional_bad_operator_rejected(tmp_path):
+    with pytest.raises(ManifestError, match="invalid operator"):
+        load_manifest(_write(tmp_path, """
+name: B
+branch: dev
+language: IDN
+custom_variables: [{name: G}]
+canvases:
+  - name: C
+    nodes:
+      - {id: cond, type: conditional, config: {variable: G, branches: [
+          {name: A, op: "~~", value: x, to: t}, {name: Default, to: t}]}}
+      - {id: t, type: assign, config: {variable: G, value: y}}
+"""))
+
+
+def test_conditional_branch_target_must_exist(tmp_path):
+    with pytest.raises(ManifestError, match="unknown target"):
+        load_manifest(_write(tmp_path, """
+name: B
+branch: dev
+language: IDN
+custom_variables: [{name: G}]
+canvases:
+  - name: C
+    nodes:
+      - {id: cond, type: conditional, config: {variable: G, branches: [
+          {name: A, op: "=", value: x, to: ghost}, {name: Default, to: cond}]}}
+"""))
+
+
+def test_value_and_value_var_mutually_exclusive(tmp_path):
+    with pytest.raises(ManifestError, match="exactly one of value/value_var"):
+        load_manifest(_write(tmp_path, """
+name: B
+branch: dev
+language: IDN
+custom_variables: [{name: G}, {name: H}]
+canvases:
+  - name: C
+    nodes:
+      - {id: cond, type: conditional, config: {variable: G, branches: [
+          {name: A, op: "=", value: x, value_var: H, to: t}, {name: Default, to: t}]}}
+      - {id: t, type: assign, config: {variable: G, value: y}}
+"""))
+
+
+def test_unary_op_takes_no_operand(tmp_path):
+    # IsNull/NotNull are valid with neither value nor value_var
+    m = load_manifest(_write(tmp_path, """
+name: B
+branch: dev
+language: IDN
+custom_variables: [{name: G}]
+canvases:
+  - name: C
+    nodes:
+      - {id: cond, type: conditional, config: {variable: G, branches: [
+          {name: A, op: IsNull, to: t}, {name: Default, to: t}]}}
+      - {id: t, type: assign, config: {variable: G, value: y}}
+"""))
+    assert m.canvases[0].nodes[0].config["branches"][0]["op"] == "IsNull"

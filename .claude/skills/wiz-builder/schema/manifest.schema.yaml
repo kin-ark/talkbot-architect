@@ -58,7 +58,7 @@ properties:
           minItems: 1
           items:
             type: object
-            required: [id, prompt]
+            required: [id]
             additionalProperties: false
             properties:
               id:
@@ -66,12 +66,12 @@ properties:
                 minLength: 1
               prompt:
                 type: string
-                minLength: 1
               type:
                 type: string
-                enum: [talk, exit, transfer, goto]
+                enum: [talk, exit, transfer, goto, conditional, assign]
               config:
                 type: object
+                additionalProperties: true
         edges:
           type: array
           items:
@@ -87,4 +87,4 @@ properties:
                 minLength: 1
               branch:
                 type: string
-                enum: [Positive, Negative, Reject, Unclassified, "No answer"]
+                enum: [Positive, Negative, Reject, Unclassified, "No answer", Default]

@@ -10,8 +10,14 @@ from jsonschema import Draft7Validator
 
 _SCHEMA_PATH = Path(__file__).resolve().parents[2] / "schema" / "manifest.schema.yaml"
 
-_VALID_BRANCHES = frozenset({"Positive", "Negative", "Reject", "Unclassified", "No answer"})
+_VALID_BRANCHES = frozenset(
+    {"Positive", "Negative", "Reject", "Unclassified", "No answer", "Default"}
+)
 _TERMINAL_TYPES = frozenset({"exit", "transfer", "goto"})
+_VALID_OPERATORS = frozenset(
+    {">", ">=", "<", "<=", "=", "!=", "In", "NotIn", "IsNull", "NotNull", "Contains"}
+)
+_UNARY_OPERATORS = frozenset({"IsNull", "NotNull"})
 
 
 class ManifestError(Exception):
@@ -132,6 +138,8 @@ def _validate_cross_field_invariants(data: dict, path: Path) -> None:
     # Collect all canvas names (needed for goto target validation below)
     all_canvas_names: set[str] = set(canvas_names)
 
+    declared_vars = {v["name"] for v in data.get("custom_variables", [])}
+
     # Per-canvas invariants
     for canvas in data["canvases"]:
         cname = canvas["name"]
@@ -184,6 +192,23 @@ def _validate_cross_field_invariants(data: dict, path: Path) -> None:
                     f"which is terminal and must not have outgoing edges"
                 )
 
+        # Validate conditional branch target existence early (before the entry-node check)
+        # so that "unknown target" errors fire before "no entry node" errors.
+        # Also collect valid conditional branch targets as "incoming" for entry-node calc.
+        for node in node_list:
+            if node.get("type") == "conditional":
+                nid = node["id"]
+                for b in (node.get("config") or {}).get("branches") or []:
+                    t = b.get("to")
+                    bname = b.get("name")
+                    if t is not None and t not in ids_in_canvas:
+                        raise ManifestError(
+                            f"{path}: canvas {cname!r}: conditional node {nid!r} branch "
+                            f"{bname!r} has unknown target {t!r}"
+                        )
+                    if t and t in ids_in_canvas:
+                        incoming.add(t)
+
         # Exactly one entry node (node with no incoming edge)
         entry_nodes = [nid for nid in ids_in_canvas if nid not in incoming]
         if len(entry_nodes) != 1:
@@ -209,6 +234,93 @@ def _validate_cross_field_invariants(data: dict, path: Path) -> None:
                         f"does not match any other canvas name in this manifest"
                     )
 
+        for node in node_list:
+            ntype = node.get("type")
+            cfg = node.get("config") or {}
+
+            if ntype == "assign":
+                var = cfg.get("variable")
+                if var not in declared_vars:
+                    raise ManifestError(
+                        f"{path}: canvas {cname!r}: assign node {node['id']!r} "
+                        f"config.variable {var!r} is not a declared variable"
+                    )
+                if "value" not in cfg:
+                    raise ManifestError(
+                        f"{path}: canvas {cname!r}: assign node {node['id']!r} "
+                        f"missing config.value"
+                    )
+
+            elif ntype == "conditional":
+                nid = node["id"]
+                var = cfg.get("variable")
+                if var not in declared_vars:
+                    raise ManifestError(
+                        f"{path}: canvas {cname!r}: conditional node {nid!r} "
+                        f"config.variable {var!r} is not a declared variable"
+                    )
+                branches = cfg.get("branches") or []
+                if not branches:
+                    raise ManifestError(
+                        f"{path}: canvas {cname!r}: conditional node {nid!r} has no branches"
+                    )
+                defaults = [b for b in branches if b.get("name") == "Default"]
+                if len(defaults) != 1:
+                    raise ManifestError(
+                        f"{path}: canvas {cname!r}: conditional node {nid!r} must have "
+                        f"exactly one Default branch, found {len(defaults)}"
+                    )
+                name_to_target: dict[str, str] = {}
+                for b in branches:
+                    bname = b.get("name")
+                    target = b.get("to")
+                    if not bname or not target:
+                        raise ManifestError(
+                            f"{path}: canvas {cname!r}: conditional node {nid!r} branch "
+                            f"missing name or to: {b!r}"
+                        )
+                    if target not in ids_in_canvas:
+                        raise ManifestError(
+                            f"{path}: canvas {cname!r}: conditional node {nid!r} branch "
+                            f"{bname!r} has unknown target {target!r}"
+                        )
+                    # one port = one target (same name must share to)
+                    if bname in name_to_target and name_to_target[bname] != target:
+                        raise ManifestError(
+                            f"{path}: canvas {cname!r}: conditional node {nid!r} branch "
+                            f"{bname!r} has conflicting target {target!r}"
+                        )
+                    name_to_target[bname] = target
+                    # rule validation (Default has no condition)
+                    if bname == "Default":
+                        continue
+                    op = b.get("op")
+                    if op not in _VALID_OPERATORS:
+                        raise ManifestError(
+                            f"{path}: canvas {cname!r}: conditional node {nid!r} branch "
+                            f"{bname!r} has invalid operator {op!r}; "
+                            f"must be one of {sorted(_VALID_OPERATORS)}"
+                        )
+                    has_value = "value" in b
+                    has_value_var = "value_var" in b
+                    if op in _UNARY_OPERATORS:
+                        if has_value or has_value_var:
+                            raise ManifestError(
+                                f"{path}: canvas {cname!r}: conditional node {nid!r} branch "
+                                f"{bname!r} uses unary op {op!r} but supplies an operand"
+                            )
+                    else:
+                        if has_value == has_value_var:
+                            raise ManifestError(
+                                f"{path}: canvas {cname!r}: conditional node {nid!r} branch "
+                                f"{bname!r} must set exactly one of value/value_var"
+                            )
+                        if has_value_var and b["value_var"] not in declared_vars:
+                            raise ManifestError(
+                                f"{path}: canvas {cname!r}: conditional node {nid!r} branch "
+                                f"{bname!r} value_var {b['value_var']!r} is not a declared variable"
+                            )
+
 
 def _build_manifest(data: dict, raw_text: str) -> Manifest:
     custom_variables = [
@@ -230,7 +342,7 @@ def _build_manifest(data: dict, raw_text: str) -> Manifest:
             nodes.append(
                 Node(
                     id=node["id"],
-                    prompt=node["prompt"],
+                    prompt=node.get("prompt", ""),
                     type=node.get("type", "talk"),
                     config=node.get("config", {}),
                 )
