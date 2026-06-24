@@ -39,9 +39,14 @@ def _check_language(value) -> None:
 
 def add_variable(bundle: InputBundle, params: dict, minter) -> None:
     """Append a custom variable in wiz-builder's 12-key shape (variables.py)."""
+    name = params["name"]
     vars_list = codec.decode(bundle.data["SpeechVariable"])
     if not vars_list:
         raise ValueError("SpeechVariable is empty; baseline must carry defaults")
+    # Duplicate name -> WIZ import error SPEECH-0230. Fail loudly (the dashboard surfaces
+    # the ValueError as an error proposal) rather than silently dropping the add.
+    if any(v.get("name") == name for v in vars_list):
+        raise ValueError(f"add-variable: variable {name!r} already exists")
     default = vars_list[0]
     _check_language(params.get("language"))
     vars_list.append({
@@ -49,11 +54,12 @@ def add_variable(bundle: InputBundle, params: dict, minter) -> None:
         "branch": params.get("branch", default["branch"]),
         "createTime": 0,
         "enumVariable": 0,
-        "id": minter.int_id(f"variable:{params['name']}"),
-        "name": params["name"],
+        "id": minter.int_id(f"variable:{name}"),
+        "name": name,
         "speechId": default["speechId"],
         "templateCode": default["templateCode"],
-        "textType": "",
+        # "DEFAULT" is the deploy-valid textType (empty string "" is rejected at deploy).
+        "textType": "DEFAULT",
         "type": 1,
         "userId": default["userId"],
         "variableSource": 0,

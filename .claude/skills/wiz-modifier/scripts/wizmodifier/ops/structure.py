@@ -44,6 +44,133 @@ _SYSTEM_BRANCH_NAMES = {"Positive", "Negative", "Reject", "Unclassified", "No an
 _LANGUAGE_CODE_MAP = {0: "3"}  # WIZ language int 0 → node_language "3" (IDN)
 _DEFAULT_NODE_LANGUAGE = "3"
 
+# Valid conditional-branch operator tokens (authoring form). Mirrors manifest.py's
+# _VALID_OPERATORS — duplicated here rather than imported because manifest.py keeps it
+# private and the modifier must not depend on wiz-builder internals beyond noderender.
+# The 11-op set confirmed from real WIZ.AI exports (see noderender._WIZ_OPERATOR).
+_VALID_OPERATORS = frozenset(
+    {">", ">=", "<", "<=", "=", "!=", "In", "NotIn", "IsNull", "NotNull", "Contains"}
+)
+_UNARY_OPERATORS = frozenset({"IsNull", "NotNull"})
+
+
+def _speech_variables(bundle: InputBundle) -> list[dict]:
+    """Decode the export's current SpeechVariable list (empty list on absence/parse miss)."""
+    raw = bundle.data.get("SpeechVariable", "[]")
+    try:
+        sv = codec.decode(raw) if isinstance(raw, str) else raw
+    except (ValueError, TypeError):
+        return []
+    return sv if isinstance(sv, list) else []
+
+
+def _declared_var_names(bundle: InputBundle) -> set[str]:
+    """Variable names from the bundle's current SpeechVariable (authoritative here)."""
+    return {v.get("name") for v in _speech_variables(bundle) if v.get("name")}
+
+
+def _var_source_map(bundle: InputBundle) -> dict[str, int]:
+    """Map variable name → variableSource int (0=custom, 1=system) for rendering."""
+    return {
+        v.get("name"): v.get("variableSource", 0)
+        for v in _speech_variables(bundle)
+        if v.get("name")
+    }
+
+
+def _validate_special_node(
+    node: dict,
+    declared_vars: set[str],
+    canvas_node_ids: set[str],
+    prefix: str,
+) -> None:
+    """Validate a conditional/assign node's config before rendering.
+
+    Mirrors the manifest.py conditional/assign invariants; branch targets resolve
+    against canvas_node_ids (ids valid in THIS op's context). Raises ValueError on
+    any violation, prefixed with `prefix` ("append-node:" / "add-component:").
+    """
+    ntype = node.get("type")
+    if ntype not in ("conditional", "assign"):
+        return
+    nid = node.get("id", "<no-id>")
+    cfg = node.get("config") or {}
+
+    if ntype == "assign":
+        var = cfg.get("variable")
+        if var not in declared_vars:
+            raise ValueError(
+                f"{prefix} assign node {nid!r} config.variable {var!r} "
+                f"is not a declared variable"
+            )
+        if "value" not in cfg:
+            raise ValueError(f"{prefix} assign node {nid!r} missing config.value")
+        return
+
+    # conditional
+    var = cfg.get("variable")
+    if var not in declared_vars:
+        raise ValueError(
+            f"{prefix} conditional node {nid!r} config.variable {var!r} "
+            f"is not a declared variable"
+        )
+    branches = cfg.get("branches") or []
+    if not branches:
+        raise ValueError(f"{prefix} conditional node {nid!r} has no branches")
+    defaults = [b for b in branches if b.get("name") == "Default"]
+    if len(defaults) != 1:
+        raise ValueError(
+            f"{prefix} conditional node {nid!r} must have exactly one Default branch, "
+            f"found {len(defaults)}"
+        )
+    name_to_target: dict[str, str] = {}
+    for b in branches:
+        bname = b.get("name")
+        target = b.get("to")
+        if not bname or not target:
+            raise ValueError(
+                f"{prefix} conditional node {nid!r} branch missing name or to: {b!r}"
+            )
+        if target not in canvas_node_ids:
+            raise ValueError(
+                f"{prefix} conditional node {nid!r} branch {bname!r} "
+                f"has unknown target {target!r}"
+            )
+        # one port = one target (same branch name must share the same `to`)
+        if bname in name_to_target and name_to_target[bname] != target:
+            raise ValueError(
+                f"{prefix} conditional node {nid!r} branch {bname!r} "
+                f"has conflicting target {target!r}"
+            )
+        name_to_target[bname] = target
+        if bname == "Default":
+            continue
+        op = b.get("op")
+        if op not in _VALID_OPERATORS:
+            raise ValueError(
+                f"{prefix} conditional node {nid!r} branch {bname!r} "
+                f"has invalid operator {op!r}; must be one of {sorted(_VALID_OPERATORS)}"
+            )
+        has_value = "value" in b
+        has_value_var = "value_var" in b
+        if op in _UNARY_OPERATORS:
+            if has_value or has_value_var:
+                raise ValueError(
+                    f"{prefix} conditional node {nid!r} branch {bname!r} uses unary op "
+                    f"{op!r} but supplies an operand"
+                )
+        else:
+            if has_value == has_value_var:
+                raise ValueError(
+                    f"{prefix} conditional node {nid!r} branch {bname!r} must set "
+                    f"exactly one of value/value_var"
+                )
+            if has_value_var and b["value_var"] not in declared_vars:
+                raise ValueError(
+                    f"{prefix} conditional node {nid!r} branch {bname!r} value_var "
+                    f"{b['value_var']!r} is not a declared variable"
+                )
+
 
 def _resolve_context(bundle: InputBundle) -> tuple[int, dict[str, int], list[str], str]:
     """Extract speech_id, branch_intent_ids, kb_ids, and node_language from bundle.data.
@@ -131,6 +258,15 @@ def _render_nodes(
     }
     component_nav = _build_component_nav(bsc)
 
+    # Validate conditional/assign nodes against declared vars and this batch's node ids
+    # before rendering, so a malformed node fails loudly instead of producing a deploy-
+    # breaking export (raw KeyError on missing op, or silently wrong operators/vars).
+    declared_vars = _declared_var_names(bundle)
+    batch_node_ids = {n["id"] for n in params["nodes"]}
+    for n in params["nodes"]:
+        if n.get("type") in ("conditional", "assign"):
+            _validate_special_node(n, declared_vars, batch_node_ids, "add-component:")
+
     node_specs = []
     for n in params["nodes"]:
         cfg = dict(n.get("config") or {})
@@ -165,6 +301,7 @@ def _render_nodes(
         node_language=node_language,
         minter=minter,
         component_nav=component_nav,
+        var_source_by_name=_var_source_map(bundle),
     )
 
 
@@ -283,6 +420,13 @@ def append_node(bundle: InputBundle, params: dict, minter) -> None:
         cfg = dict(cfg)  # shallow copy so original params are unaffected
         cfg["branches"] = stripped_branches
 
+    # Validate conditional/assign nodes BEFORE rendering. A conditional branch `to` may
+    # target the new node's own id or an existing details uuid (same set resolve_uuid uses).
+    if node.get("type") in ("conditional", "assign"):
+        _validate_special_node(
+            node, _declared_var_names(bundle), {node["id"], *details.keys()}, "append-node:"
+        )
+
     # Render the new node ALONE. Namespace its logical id so minted uuids cannot
     # collide with any existing node minted under the same canvas_index.
     spec = NodeSpec(id=f"append:{node['id']}", prompt=node["prompt"],
@@ -294,6 +438,7 @@ def append_node(bundle: InputBundle, params: dict, minter) -> None:
         speech_id=speech_id, branch_intent_ids=branch_intent_ids,
         kb_ids=kb_ids, node_language=node_language, minter=minter,
         component_nav=component_nav,
+        var_source_by_name=_var_source_map(bundle),
     )
     (new_uuid, new_obj), = r.details.items()
 

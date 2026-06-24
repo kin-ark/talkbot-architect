@@ -11,7 +11,7 @@ sys.path.insert(
 from wizbuilder.ids import IdMinter  # noqa: E402
 from wizmodifier import codec  # noqa: E402
 from wizmodifier.io import InputBundle  # noqa: E402
-from wizmodifier.ops import structure  # noqa: E402
+from wizmodifier.ops import content, structure  # noqa: E402
 from wizmodifier.ops._bsc import get_components  # noqa: E402
 
 MINTER = IdMinter(manifest_hash="deadbeef")
@@ -103,6 +103,7 @@ def test_append_node_assign_wired_via_default_port(baseline_dict):
     special handling needed) must wire it to the downstream target.
     """
     b = InputBundle(data=baseline_dict, speech_name="s.json")
+    content.add_variable(b, {"name": "DEBT_AMT", "branch": "dev"}, MINTER)
 
     # First populate component 0 with a talk node so we have an existing node to wire to.
     structure.populate_details(
@@ -154,6 +155,7 @@ def test_append_node_conditional_branch_routes(baseline_dict):
     must be the existing talk node's uuid.
     """
     b = InputBundle(data=baseline_dict, speech_name="s.json")
+    content.add_variable(b, {"name": "DEBT_AMT", "branch": "dev"}, MINTER)
 
     # Populate component 0 with a talk node; its uuid will be the branch target.
     structure.populate_details(
@@ -164,9 +166,10 @@ def test_append_node_conditional_branch_routes(baseline_dict):
     comp = get_components(b)[0]
     talk_uuid = next(iter(codec.decode(comp["details"])))
 
+    # Real operator tokens (">", "<=") — the 11-op set the validator enforces.
     branches = [
-        {"name": "High", "op": "GT", "value": "100000", "to": talk_uuid},
-        {"name": "Low", "op": "LTE", "value": "100000", "to": talk_uuid},
+        {"name": "High", "op": ">", "value": "100000", "to": talk_uuid},
+        {"name": "Low", "op": "<=", "value": "100000", "to": talk_uuid},
         {"name": "Default", "to": talk_uuid},
     ]
     structure.append_node(
@@ -205,3 +208,42 @@ def test_append_node_conditional_branch_routes(baseline_dict):
         assert route["target"]["uuid"] == talk_uuid, (
             f"port {port_uuid}: expected target {talk_uuid}, got {route['target']['uuid']}"
         )
+
+
+def test_append_node_conditional_rejects_invalid_op(baseline_dict):
+    """A conditional branch with an operator not in the 11-op set must raise ValueError."""
+    b = InputBundle(data=baseline_dict, speech_name="s.json")
+    content.add_variable(b, {"name": "DEBT_AMT", "branch": "dev"}, MINTER)
+    structure.populate_details(
+        b,
+        {"component": 0, "nodes": [{"id": "talk1", "prompt": "Collecting debt info"}]},
+        MINTER,
+    )
+    talk_uuid = next(iter(codec.decode(get_components(b)[0]["details"])))
+    branches = [
+        {"name": "High", "op": "GT", "value": "100000", "to": talk_uuid},  # invalid token
+        {"name": "Default", "to": talk_uuid},
+    ]
+    with pytest.raises(ValueError, match="invalid operator"):
+        structure.append_node(
+            b,
+            {
+                "component": 0,
+                "node": {
+                    "id": "cond1",
+                    "prompt": "",
+                    "type": "conditional",
+                    "config": {"variable": "DEBT_AMT", "branches": branches},
+                },
+                "edges": [],
+            },
+            MINTER,
+        )
+
+
+def test_add_variable_rejects_duplicate_name(baseline_dict):
+    """add_variable must raise on a name already present in SpeechVariable (SPEECH-0230)."""
+    b = InputBundle(data=baseline_dict, speech_name="s.json")
+    content.add_variable(b, {"name": "user_name", "branch": "dev"}, MINTER)
+    with pytest.raises(ValueError, match="already exists"):
+        content.add_variable(b, {"name": "user_name", "branch": "dev"}, MINTER)
