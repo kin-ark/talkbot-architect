@@ -11,6 +11,7 @@ from jsonschema import Draft7Validator
 _SCHEMA_PATH = Path(__file__).resolve().parents[2] / "schema" / "manifest.schema.yaml"
 
 _VALID_BRANCHES = frozenset({"Positive", "Negative", "Reject", "Unclassified", "No answer"})
+_TERMINAL_TYPES = frozenset({"exit", "transfer", "goto"})
 
 
 class ManifestError(Exception):
@@ -128,19 +129,24 @@ def _validate_cross_field_invariants(data: dict, path: Path) -> None:
         dupes = [n for n in intent_names if intent_names.count(n) > 1]
         raise ManifestError(f"{path}: duplicate custom intent name: {sorted(set(dupes))}")
 
+    # Collect all canvas names (needed for goto target validation below)
+    all_canvas_names: set[str] = set(canvas_names)
+
     # Per-canvas invariants
     for canvas in data["canvases"]:
         cname = canvas["name"]
         node_list = canvas["nodes"]
         edge_list = canvas.get("edges") or []
 
-        # Unique node ids
+        # Unique node ids; also build a map id → node type for terminal checks
         ids_in_canvas: set[str] = set()
+        node_types: dict[str, str] = {}
         for node in node_list:
             nid = node["id"]
             if nid in ids_in_canvas:
                 raise ManifestError(f"{path}: duplicate node id {nid!r} in canvas {cname!r}")
             ids_in_canvas.add(nid)
+            node_types[nid] = node.get("type", "talk")
 
         # Edge endpoint existence and branch validity
         seen_src_branch: set[tuple[str, str]] = set()
@@ -171,6 +177,13 @@ def _validate_cross_field_invariants(data: dict, path: Path) -> None:
             seen_src_branch.add(key)
             incoming.add(dst)
 
+            # Terminal rule: exit/transfer/goto nodes must not have outgoing edges
+            if node_types.get(src) in _TERMINAL_TYPES:
+                raise ManifestError(
+                    f"{path}: canvas {cname!r}: node {src!r} has type {node_types[src]!r} "
+                    f"which is terminal and must not have outgoing edges"
+                )
+
         # Exactly one entry node (node with no incoming edge)
         entry_nodes = [nid for nid in ids_in_canvas if nid not in incoming]
         if len(entry_nodes) != 1:
@@ -178,6 +191,23 @@ def _validate_cross_field_invariants(data: dict, path: Path) -> None:
                 f"{path}: canvas {cname!r} must have exactly one entry node "
                 f"(a node with no incoming edge), found {len(entry_nodes)}: {sorted(entry_nodes)}"
             )
+
+        # goto config.target validation
+        for node in node_list:
+            if node.get("type") == "goto":
+                nid = node["id"]
+                cfg = node.get("config") or {}
+                target = cfg.get("target")
+                if not target:
+                    raise ManifestError(
+                        f"{path}: canvas {cname!r}: goto node {nid!r} missing config.target "
+                        f"(must name another canvas in this manifest)"
+                    )
+                if target not in all_canvas_names or target == cname:
+                    raise ManifestError(
+                        f"{path}: canvas {cname!r}: goto node {nid!r} config.target {target!r} "
+                        f"does not match any other canvas name in this manifest"
+                    )
 
 
 def _build_manifest(data: dict, raw_text: str) -> Manifest:
