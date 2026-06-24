@@ -68,6 +68,30 @@ _SPECS = [
                       "required": ["name", "nodes"]}},
               },
               "required": ["name", "language", "branch", "canvases"]}),
+    ToolSpec("add_component",
+             "Add a new component (optionally with nodes+edges) to the current dialogue. Proposes a dry-run.",
+             {"type": "object", "properties": {
+                 "name": {"type": "string"},
+                 "nodes": {"type": "array", "items": {"type": "object", "properties": {
+                     "id": {"type": "string"}, "prompt": {"type": "string"}}, "required": ["id", "prompt"]}},
+                 "edges": {"type": "array", "items": {"type": "object", "properties": {
+                     "from": {"type": "string"},
+                     "branch": {"type": "string", "enum": ["Positive", "Negative", "Reject", "Unclassified", "No answer"]},
+                     "to": {"type": "string"}}, "required": ["from", "branch", "to"]}}},
+              "required": ["name"]}),
+    ToolSpec("add_node",
+             "Add a talk node to an existing component (by index), optionally wiring edges. "
+             "Edge endpoints: the new node's id, or an existing node's uuid. Proposes a dry-run.",
+             {"type": "object", "properties": {
+                 "component": {"type": "integer"},
+                 "id": {"type": "string"},
+                 "prompt": {"type": "string"},
+                 "type": {"type": "string"},
+                 "edges": {"type": "array", "items": {"type": "object", "properties": {
+                     "from": {"type": "string"},
+                     "branch": {"type": "string", "enum": ["Positive", "Negative", "Reject", "Unclassified", "No answer"]},
+                     "to": {"type": "string"}}, "required": ["from", "branch", "to"]}}},
+              "required": ["component", "id", "prompt"]}),
 ]
 
 
@@ -110,6 +134,23 @@ def dispatch(name: str, args: dict, data: dict) -> dict:
                              "diff": p["diff"], "checker_delta": p["checker_delta"]}}
     if name == "get_schema":
         return {"result": agents.get_schema(), "proposal": None}
+    if name == "add_component":
+        import yaml
+        op = {"op": "add-component", "name": args["name"]}
+        if args.get("nodes"):
+            op["nodes"] = args["nodes"]
+        if args.get("edges"):
+            op["edges"] = args["edges"]
+        return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
+    if name == "add_node":
+        import yaml
+        node = {"id": args["id"], "prompt": args["prompt"]}
+        if args.get("type"):
+            node["type"] = args["type"]
+        op = {"op": "append-node", "component": args["component"], "node": node}
+        if args.get("edges"):
+            op["edges"] = args["edges"]
+        return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
     return {"result": {"error": f"unknown tool {name!r}"}, "proposal": None}
 
 
