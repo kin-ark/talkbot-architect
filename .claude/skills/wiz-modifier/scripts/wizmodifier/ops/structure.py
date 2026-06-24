@@ -138,6 +138,11 @@ def _render_nodes(
             target_name = cfg.get("target", "")
             cfg["target_uuid"] = comp_uuid_by_name.get(target_name, "")
             cfg["target_name"] = target_name
+            if not cfg["target_uuid"]:
+                raise ValueError(
+                    f"goto node {n['id']!r}: config.target {target_name!r} "
+                    f"does not match any existing component name"
+                )
         node_specs.append(
             NodeSpec(
                 id=n["id"], prompt=n["prompt"],

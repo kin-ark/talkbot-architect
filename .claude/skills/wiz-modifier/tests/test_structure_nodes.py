@@ -189,6 +189,23 @@ def test_goto_node_is_terminal_in_modifier():
     assert routes[goto_uuid] == {}
 
 
+def test_goto_node_unknown_target_raises():
+    """populate_details: goto with a non-existent target name raises ValueError, not silent ''."""
+    import pytest
+    data = _make_two_comp_export()
+    bundle = InputBundle(data=data, speech_name="s.json")
+    with pytest.raises(ValueError, match="does not match any existing component"):
+        populate_details(bundle, {
+            "component": 0,
+            "nodes": [
+                {"id": "talk", "prompt": "Hello"},
+                {"id": "go", "prompt": "(goto)", "type": "goto",
+                 "config": {"target": "Non-Existent Canvas"}},
+            ],
+            "edges": [{"from": "talk", "branch": "Unclassified", "to": "go"}],
+        }, IdMinter("h"))
+
+
 def test_goto_node_no_scs_row_in_modifier():
     """populate_details: goto produces no SentenceCutSpeech row (only Talk does)."""
     data = _make_two_comp_export()
