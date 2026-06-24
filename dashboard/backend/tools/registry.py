@@ -92,6 +92,16 @@ _SPECS = [
                      "branch": {"type": "string", "enum": ["Positive", "Negative", "Reject", "Unclassified", "No answer"]},
                      "to": {"type": "string"}}, "required": ["from", "branch", "to"]}}},
               "required": ["component", "id", "prompt"]}),
+    ToolSpec("add_intent",
+             "Add a custom intent to the dialogue. Proposes a dry-run.",
+             {"type": "object", "properties": {
+                 "name": {"type": "string"},
+                 "language": {"type": "string", "enum": ["ENG", "IDN"]},
+                 "keywords": {"type": "array", "items": {"type": "string"}}},
+              "required": ["name", "language"]}),
+    ToolSpec("add_variable",
+             "Add a custom variable to the dialogue. Proposes a dry-run.",
+             {"type": "object", "properties": {"name": {"type": "string"}}, "required": ["name"]}),
 ]
 
 
@@ -151,6 +161,16 @@ def dispatch(name: str, args: dict, data: dict) -> dict:
         if args.get("edges"):
             op["edges"] = args["edges"]
         return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
+    if name == "add_intent":
+        import yaml
+        op = {"op": "add-intent", "name": args["name"], "language": args["language"]}
+        if args.get("keywords"):
+            op["keywords"] = args["keywords"]
+        return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
+    if name == "add_variable":
+        import yaml
+        return _as_proposal(agents.propose_mods(data, yaml.safe_dump(
+            [{"op": "add-variable", "name": args["name"]}])))
     return {"result": {"error": f"unknown tool {name!r}"}, "proposal": None}
 
 

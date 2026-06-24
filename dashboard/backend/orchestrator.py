@@ -17,6 +17,8 @@ _SYSTEM = (
     "labels, and op names — call it before authoring scaffold_bot params or ops.\n"
     "- scaffold_bot: create a BRAND-NEW dialogue from typed parameters (name, "
     "language, branch, canvases of nodes+edges). Prefer this over raw `build`.\n"
+    "- add_component / add_node / add_intent / add_variable: edit an EXISTING bot "
+    "(typed params; dry-run proposals).\n"
     "- apply_mods / set_path / delete_path / build: lower-level escape hatches "
     "(raw YAML); use only when no typed tool fits.\n\n"
     "All editing tools only PROPOSE changes (a diff + checker delta) — the user must "
