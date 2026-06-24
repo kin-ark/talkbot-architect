@@ -2,8 +2,9 @@ import json
 import re
 from pathlib import Path
 
+import pytest
 from wizbuilder.ids import IdMinter
-from wizbuilder.noderender import EdgeSpec, NodeSpec, render_component_nodes
+from wizbuilder.noderender import EdgeSpec, NodeSpec, render_component_nodes  # noqa: E402
 
 FIX = Path(__file__).parent / "fixtures"
 UUID_RE = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
@@ -78,3 +79,20 @@ def test_sentence_cut_id_seeded_by_manifest_hash():
     assert a1 != a2, "different manifest_hash must yield different sentenceCutId"
     assert a1 == a1b, "same manifest_hash must be deterministic"
     assert 0 < a1 < 2 ** 63
+
+
+def test_unknown_node_type_raises():
+    """render_component_nodes must raise ValueError for an unregistered node type."""
+    with pytest.raises(ValueError, match="unknown node type"):
+        render_component_nodes(
+            [NodeSpec(id="n", prompt="P", type="bogus")],
+            [],
+            canvas_index=0,
+            comp_uuid="c",
+            speech_id=1,
+            branch_intent_ids={"Positive": 1, "Negative": 2, "Reject": 3,
+                               "Unclassified": 4, "No answer": 5},
+            kb_ids=[],
+            node_language="3",
+            minter=IdMinter("h"),
+        )

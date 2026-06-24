@@ -329,3 +329,51 @@ def test_no_answer_branch_accepted(tmp_path):
     txt = GOOD.replace("Unclassified", "No answer")
     m = load_manifest(_write(tmp_path, txt))
     assert m.canvases[0].edges[0].branch == "No answer"
+
+
+def test_node_type_talk_accepted(tmp_path):
+    """Explicit type: talk is accepted and round-trips through the dataclass."""
+    txt = """
+name: T
+branch: dev
+language: IDN
+canvases:
+  - name: "1. Greeting"
+    nodes:
+      - {id: greet, prompt: "Halo", type: talk}
+"""
+    m = load_manifest(_write(tmp_path, txt))
+    assert m.canvases[0].nodes[0].type == "talk"
+
+
+def test_node_unknown_type_rejected(tmp_path):
+    """A node with type not in the schema enum must be rejected."""
+    txt = """
+name: T
+branch: dev
+language: IDN
+canvases:
+  - name: "1. Greeting"
+    nodes:
+      - {id: greet, prompt: "Halo", type: exit}
+"""
+    with pytest.raises(ManifestError, match="exit"):
+        load_manifest(_write(tmp_path, txt))
+
+
+def test_node_config_accepted(tmp_path):
+    """Optional config object is accepted and round-trips."""
+    txt = """
+name: T
+branch: dev
+language: IDN
+canvases:
+  - name: "1. Greeting"
+    nodes:
+      - id: greet
+        prompt: "Halo"
+        config:
+          foo: bar
+"""
+    m = load_manifest(_write(tmp_path, txt))
+    assert m.canvases[0].nodes[0].config == {"foo": "bar"}

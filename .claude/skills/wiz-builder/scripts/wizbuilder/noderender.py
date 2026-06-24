@@ -8,17 +8,21 @@ and validated in Phase 1; see docs/node-serialization-spec.md).
 from __future__ import annotations
 
 import hashlib
-from dataclasses import dataclass
+from collections.abc import Callable
+from dataclasses import dataclass, field
 from typing import Any
 
 # ---------------------------------------------------------------------------
 # Public dataclasses (consumed by Task 2+ callers — do NOT rename fields)
 # ---------------------------------------------------------------------------
 
+
 @dataclass(frozen=True)
 class NodeSpec:
     id: str
     prompt: str
+    type: str = "talk"
+    config: dict = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -64,6 +68,203 @@ def _wide_int(seed: str) -> int:
     """
     raw = int.from_bytes(hashlib.sha256(seed.encode()).digest()[:8], "big")
     return (raw & 0x7FFFFFFFFFFFFFFF) or 1
+
+
+# ---------------------------------------------------------------------------
+# Per-type node builders
+# ---------------------------------------------------------------------------
+
+
+def _build_talk_node(
+    spec: NodeSpec,
+    *,
+    canvas_index: int,
+    comp_uuid: str,
+    speech_id: int,
+    branch_intent_ids: dict[str, int],
+    kb_ids: list[str],
+    node_language: str,
+    minter: Any,
+    sort_index: int,
+    port_uuids: dict[str, str],
+    node_uuid: str,
+    reccut_uuid: str,
+    is_default: bool,
+) -> tuple[dict, dict]:
+    """Build one Talk-node ``node_obj`` and ``scs_row``.
+
+    Returns (node_obj, scs_row) — a (details-entry, SentenceCutSpeech-row) pair.
+    """
+    nid_str = spec.id
+    ci = canvas_index
+
+    # --- canvas.ports.items (one per checked branch) ---
+    items = [
+        {"name": b, "id": port_uuids[b], "attrs": _fo(-37.67, 70), "group": "out"}
+        for b in _CHECKED
+    ]
+
+    canvas = {
+        "view": "react-shape-view",
+        "component": {"props": {"text": "Talk Node", "list": [], "type": 1}},
+        "size": {"width": 346, "height": 106},
+        "shape": "react-shape",
+        "id": node_uuid,
+        "position": {"x": -461.97, "y": 157.23},
+        "ports": {
+            "groups": {
+                "in": {"position": {"name": "top"}, "attrs": _fo(-30, 140)},
+                "out": {
+                    "position": {"left": 200, "name": "bottom"},
+                    "attrs": {"fo": {"magnet": "true", "height": 24}},
+                },
+            },
+            "items": items,
+        },
+        "portMarkup": [
+            {
+                "children": [
+                    {
+                        "ns": "http://www.w3.org/1999/xhtml",
+                        "children": [
+                            {
+                                "style": {"width": "100%", "height": "100%"},
+                                "selector": "foContent",
+                                "tagName": "div",
+                            }
+                        ],
+                        "style": {
+                            "background": "transparent",
+                            "width": "100%",
+                            "height": "100%",
+                        },
+                        "selector": "foBody",
+                        "tagName": "body",
+                        "attrs": {"xmlns": "http://www.w3.org/1999/xhtml"},
+                    }
+                ],
+                "selector": "fo",
+                "tagName": "foreignObject",
+            }
+        ],
+        "zIndex": 1,
+    }
+
+    # --- all_client_intent (5 system branches, checked ones carry port uuid) ---
+    aci = []
+    for b_name, b_checked in _BRANCH:
+        row: dict = {
+            "intents": [{"intentId": str(branch_intent_ids[b_name])}],
+            "name": b_name,
+            "match": False,
+            "checked": b_checked,
+            "language": node_language,
+            "threshold": "",
+        }
+        if b_checked:
+            row["id"] = port_uuids[b_name]
+        aci.append(row)
+
+    text = spec.prompt
+    xml = (
+        '<speak xmlns:wiz="http://www.wiz.ai/develop/xml/tts">'
+        f'<wiz:express-as style="default">{text}</wiz:express-as></speak>'
+    )
+
+    data: dict = {
+        "speakType": 1,
+        "all_client_intent": aci,
+        "node_language_item": node_language,
+        "intention_judgment_time": 2,
+        "type": 1,
+        "repeat_script_type": 0,
+        "hot_words_list": [],
+        "dialog_list": [{"xml": xml, "html": f"<p>{text}</p>", "text": text}],
+        "user_response_mode": "voice",
+        "tag_list": [],
+        "openChasingDedayTime": False,
+        "openUserPauseDuration": False,
+        "can_be_interrupted": 0,
+        "id": node_uuid,
+        "node_repetition": 0,
+        "open_pause_duration": False,
+        "selected": False,
+        "openChasingDedayTim": False,
+        "allow_jump_knowledges_switch": 0,
+        "client_intent": _CHECKED,
+        "intent_rollback_enable": False,
+        "node_variables": [],
+        "allow_jump_knowledges": list(kb_ids),
+        "is_transfer": 0,
+        "value_assignment": [],
+        "global_unclassified_switch": 0,
+        "list": [text],
+        "is_default": is_default,
+        "nodeLabelArr": [],
+        "node_language": node_language,
+        "agent_type": "SYSTEM",
+        "tts_language": node_language,
+        "intent_tag_def": {
+            n: {"tag_list": [], "intent_code": ""}
+            for n in ("No answer", "Reject", "Negative", "Positive", "Unclassified")
+        },
+        "open_talk_finish": False,
+        "can_interrupt_percent": 0.8,
+        "name": "Talk Node",
+        "notices_info": [],
+        "notice_send_type": 0,
+        "position": {"x": -461.97, "y": 157.23},
+    }
+
+    node_obj: dict = {
+        "canvas": canvas,
+        "data": data,
+        "name": "Talk Node",
+        "type": 1,
+        "is_default": is_default,
+        "data_extra": {
+            "hot_words_list": [],
+            "intents": [
+                {"intentId": str(branch_intent_ids[b_name])} for b_name, _ in _BRANCH
+            ],
+            "variables": [],
+            "serviceCall": [],
+            "sentence_cut": [],
+        },
+    }
+
+    # --- SentenceCutSpeech row ---
+    scs_row: dict = {
+        "branch": "dev",
+        "componentUuid": comp_uuid,
+        "id": node_uuid,
+        "isDelete": 0,
+        "senRecName": "",
+        "sentenceCutId": _wide_int(
+            f"{getattr(minter, 'manifest_hash', '')}:scid:{ci}:{nid_str}"
+        ),
+        "sentenceText": text,
+        "sentenceTextUrl": "",
+        "showType": 0,
+        "sortIndex": sort_index,
+        "speechId": speech_id,
+        "speechRecCutId": reccut_uuid,
+        "type": "record",
+    }
+
+    return node_obj, scs_row
+
+
+# ---------------------------------------------------------------------------
+# Node-type dispatch registry
+# ---------------------------------------------------------------------------
+
+#: Maps node-type string → builder callable.
+#: Each builder must accept the same keyword signature as ``_build_talk_node``
+#: and return ``(node_obj, scs_row)``.
+NODE_BUILDERS: dict[str, Callable] = {
+    "talk": _build_talk_node,
+}
 
 
 # ---------------------------------------------------------------------------
@@ -141,159 +342,26 @@ def render_component_nodes(
         _node_id_to_uuid[nid_str] = node_uuid
         _node_id_to_port_uuids[nid_str] = port_uuids
 
-        # --- canvas.ports.items (one per checked branch) ---
-        items = [
-            {"name": b, "id": port_uuids[b], "attrs": _fo(-37.67, 70), "group": "out"}
-            for b in _CHECKED
-        ]
+        # --- dispatch to per-type builder ---
+        builder = NODE_BUILDERS.get(spec.type)
+        if builder is None:
+            raise ValueError(f"unknown node type {spec.type!r}")
 
-        canvas = {
-            "view": "react-shape-view",
-            "component": {"props": {"text": "Talk Node", "list": [], "type": 1}},
-            "size": {"width": 346, "height": 106},
-            "shape": "react-shape",
-            "id": node_uuid,
-            "position": {"x": -461.97, "y": 157.23},
-            "ports": {
-                "groups": {
-                    "in": {"position": {"name": "top"}, "attrs": _fo(-30, 140)},
-                    "out": {
-                        "position": {"left": 200, "name": "bottom"},
-                        "attrs": {"fo": {"magnet": "true", "height": 24}},
-                    },
-                },
-                "items": items,
-            },
-            "portMarkup": [
-                {
-                    "children": [
-                        {
-                            "ns": "http://www.w3.org/1999/xhtml",
-                            "children": [
-                                {
-                                    "style": {"width": "100%", "height": "100%"},
-                                    "selector": "foContent",
-                                    "tagName": "div",
-                                }
-                            ],
-                            "style": {
-                                "background": "transparent",
-                                "width": "100%",
-                                "height": "100%",
-                            },
-                            "selector": "foBody",
-                            "tagName": "body",
-                            "attrs": {"xmlns": "http://www.w3.org/1999/xhtml"},
-                        }
-                    ],
-                    "selector": "fo",
-                    "tagName": "foreignObject",
-                }
-            ],
-            "zIndex": 1,
-        }
-
-        # --- all_client_intent (5 system branches, checked ones carry port uuid) ---
-        aci = []
-        for b_name, b_checked in _BRANCH:
-            row: dict = {
-                "intents": [{"intentId": str(branch_intent_ids[b_name])}],
-                "name": b_name,
-                "match": False,
-                "checked": b_checked,
-                "language": node_language,
-                "threshold": "",
-            }
-            if b_checked:
-                row["id"] = port_uuids[b_name]
-            aci.append(row)
-
-        text = spec.prompt
-        xml = (
-            '<speak xmlns:wiz="http://www.wiz.ai/develop/xml/tts">'
-            f'<wiz:express-as style="default">{text}</wiz:express-as></speak>'
+        node_obj, scs_row = builder(
+            spec,
+            canvas_index=canvas_index,
+            comp_uuid=comp_uuid,
+            speech_id=speech_id,
+            branch_intent_ids=branch_intent_ids,
+            kb_ids=kb_ids,
+            node_language=node_language,
+            minter=minter,
+            sort_index=sort_index,
+            port_uuids=port_uuids,
+            node_uuid=node_uuid,
+            reccut_uuid=reccut_uuid,
+            is_default=is_default,
         )
-
-        data: dict = {
-            "speakType": 1,
-            "all_client_intent": aci,
-            "node_language_item": node_language,
-            "intention_judgment_time": 2,
-            "type": 1,
-            "repeat_script_type": 0,
-            "hot_words_list": [],
-            "dialog_list": [{"xml": xml, "html": f"<p>{text}</p>", "text": text}],
-            "user_response_mode": "voice",
-            "tag_list": [],
-            "openChasingDedayTime": False,
-            "openUserPauseDuration": False,
-            "can_be_interrupted": 0,
-            "id": node_uuid,
-            "node_repetition": 0,
-            "open_pause_duration": False,
-            "selected": False,
-            "openChasingDedayTim": False,
-            "allow_jump_knowledges_switch": 0,
-            "client_intent": _CHECKED,
-            "intent_rollback_enable": False,
-            "node_variables": [],
-            "allow_jump_knowledges": list(kb_ids),
-            "is_transfer": 0,
-            "value_assignment": [],
-            "global_unclassified_switch": 0,
-            "list": [text],
-            "is_default": is_default,
-            "nodeLabelArr": [],
-            "node_language": node_language,
-            "agent_type": "SYSTEM",
-            "tts_language": node_language,
-            "intent_tag_def": {
-                n: {"tag_list": [], "intent_code": ""}
-                for n in ("No answer", "Reject", "Negative", "Positive", "Unclassified")
-            },
-            "open_talk_finish": False,
-            "can_interrupt_percent": 0.8,
-            "name": "Talk Node",
-            "notices_info": [],
-            "notice_send_type": 0,
-            "position": {"x": -461.97, "y": 157.23},
-        }
-
-        node_obj: dict = {
-            "canvas": canvas,
-            "data": data,
-            "name": "Talk Node",
-            "type": 1,
-            "is_default": is_default,
-            "data_extra": {
-                "hot_words_list": [],
-                "intents": [
-                    {"intentId": str(branch_intent_ids[b_name])} for b_name, _ in _BRANCH
-                ],
-                "variables": [],
-                "serviceCall": [],
-                "sentence_cut": [],
-            },
-        }
-
-        # --- SentenceCutSpeech row ---
-        scs_row: dict = {
-            "branch": "dev",
-            "componentUuid": comp_uuid,
-            "id": node_uuid,
-            "isDelete": 0,
-            "senRecName": "",
-            "sentenceCutId": _wide_int(
-                f"{getattr(minter, 'manifest_hash', '')}:scid:{ci}:{nid_str}"
-            ),
-            "sentenceText": text,
-            "sentenceTextUrl": "",
-            "showType": 0,
-            "sortIndex": sort_index,
-            "speechId": speech_id,
-            "speechRecCutId": reccut_uuid,
-            "type": "record",
-        }
 
         # --- accumulate ---
         details[node_uuid] = node_obj

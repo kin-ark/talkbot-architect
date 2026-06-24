@@ -98,7 +98,13 @@ def _render_nodes(
 
     Returns a RenderedNodes instance.
     """
-    node_specs = [NodeSpec(id=n["id"], prompt=n["prompt"]) for n in params["nodes"]]
+    node_specs = [
+        NodeSpec(
+            id=n["id"], prompt=n["prompt"],
+            type=n.get("type", "talk"), config=n.get("config", {}),
+        )
+        for n in params["nodes"]
+    ]
     raw_edges = params.get("edges") or []
     edge_specs = [EdgeSpec(src=e["from"], branch=e["branch"], dst=e["to"]) for e in raw_edges]
 

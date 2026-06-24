@@ -40,6 +40,8 @@ class Node:
 
     id: str
     prompt: str
+    type: str = "talk"
+    config: dict = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -199,6 +201,8 @@ def _build_manifest(data: dict, raw_text: str) -> Manifest:
                 Node(
                     id=node["id"],
                     prompt=node["prompt"],
+                    type=node.get("type", "talk"),
+                    config=node.get("config", {}),
                 )
             )
         edges = []
