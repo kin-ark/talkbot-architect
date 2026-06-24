@@ -131,6 +131,16 @@ def test_connect_components(two_component_doc):
     assert goto_obj["data"]["appoint_node_id"] == comp1_uuid
 
 
+def test_node_type_enum_includes_conditional_and_assign():
+    specs = {s.name: s for s in registry.tool_specs()}
+    props = specs["add_node"].parameters["properties"]
+    assert set(props["type"]["enum"]) == {"talk", "exit", "transfer", "goto",
+                                          "conditional", "assign"}
+    # config advertises branches for conditional authoring
+    cfg = props["config"]["properties"]
+    assert "branches" in cfg and "variable" in cfg and "value" in cfg
+
+
 def test_add_node_exit_no_config(two_component_doc):
     """add_node with type=exit (no config) produces a type-2 node."""
     bsc = _decode(two_component_doc, "BizSpeechComponent")

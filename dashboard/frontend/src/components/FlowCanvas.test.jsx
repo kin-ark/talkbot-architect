@@ -1,5 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import FlowCanvas from './FlowCanvas';
 
 // @xyflow/react uses ResizeObserver internally; jsdom doesn't include it.
@@ -17,5 +20,15 @@ describe('FlowCanvas', () => {
   it('renders the canvas container', () => {
     render(<FlowCanvas summary={summary} onSelectNode={() => {}} />);
     expect(screen.getByTestId('flow-canvas')).toBeInTheDocument();
+  });
+});
+
+describe('TYPE_COLOR node-type contract', () => {
+  it('defines colors for conditional and variable_assignment', () => {
+    const __dirname = path.dirname(fileURLToPath(import.meta.url));
+    const src = fs.readFileSync(
+      path.resolve(__dirname, 'FlowCanvas.jsx'), 'utf-8');
+    expect(src).toMatch(/conditional:\s*'#[0-9a-fA-F]{6}'/);
+    expect(src).toMatch(/variable_assignment:\s*'#[0-9a-fA-F]{6}'/);
   });
 });

@@ -35,8 +35,10 @@ _SPECS = [
              "Create a brand-new dialogue from typed parameters (NOT raw YAML). "
              "Proposes a full new doc (dry-run). Use after the user confirms an outline. "
              "languages: ENG, IDN (ZHO/THA pending verified language codes). "
-             "Each node may include an optional type (talk/exit/transfer/goto; default: talk). "
-             "goto nodes require config.target set to the name of another canvas to jump to.",
+             "Each node may include an optional type (talk/exit/transfer/goto/conditional/assign; "
+             "default: talk). goto nodes require config.target set to the name of another canvas "
+             "to jump to. conditional nodes route by config.variable + config.branches (each "
+             "{name, op, value|value_var, to}); assign nodes set config.variable to config.value.",
              {"type": "object",
               "properties": {
                   "name": {"type": "string"},
@@ -60,9 +62,23 @@ _SPECS = [
                                   "id": {"type": "string"},
                                   "prompt": {"type": "string"},
                                   "type": {"type": "string",
-                                           "enum": ["talk", "exit", "transfer", "goto"]},
+                                           "enum": ["talk", "exit", "transfer", "goto",
+                                                    "conditional", "assign"]},
                                   "config": {"type": "object", "properties": {
-                                      "target": {"type": "string"}}}},
+                                      "target": {"type": "string"},
+                                      "variable": {"type": "string"},
+                                      "value": {"type": "string"},
+                                      "branches": {"type": "array", "items": {
+                                          "type": "object", "properties": {
+                                              "name": {"type": "string"},
+                                              "op": {"type": "string",
+                                                     "enum": [">", ">=", "<", "<=", "=", "!=",
+                                                              "In", "NotIn", "IsNull", "NotNull",
+                                                              "Contains"]},
+                                              "value": {"type": "string"},
+                                              "value_var": {"type": "string"},
+                                              "to": {"type": "string"}},
+                                          "required": ["name", "to"]}}}}},
                               "required": ["id", "prompt"]}},
                           "edges": {"type": "array", "items": {
                               "type": "object", "properties": {
@@ -77,15 +93,31 @@ _SPECS = [
               "required": ["name", "language", "branch", "canvases"]}),
     ToolSpec("add_component",
              "Add a new component (optionally with nodes+edges) to the current dialogue. Proposes a dry-run. "
-             "Each node may include an optional type (talk/exit/transfer/goto; default: talk). "
-             "goto nodes require config.target set to the name of another component to jump to.",
+             "Each node may include an optional type (talk/exit/transfer/goto/conditional/assign; default: talk). "
+             "goto nodes require config.target set to the name of another component to jump to. "
+             "conditional nodes route by config.variable + config.branches (each {name, op, value|value_var, to}); "
+             "assign nodes set config.variable to config.value.",
              {"type": "object", "properties": {
                  "name": {"type": "string"},
                  "nodes": {"type": "array", "items": {"type": "object", "properties": {
                      "id": {"type": "string"},
                      "prompt": {"type": "string"},
-                     "type": {"type": "string", "enum": ["talk", "exit", "transfer", "goto"]},
-                     "config": {"type": "object", "properties": {"target": {"type": "string"}}}},
+                     "type": {"type": "string", "enum": ["talk", "exit", "transfer", "goto",
+                                                         "conditional", "assign"]},
+                     "config": {"type": "object", "properties": {
+                         "target": {"type": "string"},
+                         "variable": {"type": "string"},
+                         "value": {"type": "string"},
+                         "branches": {"type": "array", "items": {
+                             "type": "object", "properties": {
+                                 "name": {"type": "string"},
+                                 "op": {"type": "string",
+                                        "enum": [">", ">=", "<", "<=", "=", "!=",
+                                                 "In", "NotIn", "IsNull", "NotNull", "Contains"]},
+                                 "value": {"type": "string"},
+                                 "value_var": {"type": "string"},
+                                 "to": {"type": "string"}},
+                             "required": ["name", "to"]}}}}},
                      "required": ["id", "prompt"]}},
                  "edges": {"type": "array", "items": {"type": "object", "properties": {
                      "from": {"type": "string"},
@@ -93,15 +125,32 @@ _SPECS = [
                      "to": {"type": "string"}}, "required": ["from", "branch", "to"]}}},
               "required": ["name"]}),
     ToolSpec("add_node",
-             "Add a node (talk/exit/transfer/goto) to an existing component (by index), optionally wiring edges. "
-             "Edge endpoints: the new node's id, or an existing node's uuid. "
-             "goto requires config.target = another component's name. Proposes a dry-run.",
+             "Add a node (talk/exit/transfer/goto/conditional/assign) to an existing component (by index), "
+             "optionally wiring edges. Edge endpoints: the new node's id, or an existing node's uuid. "
+             "goto requires config.target = another component's name. "
+             "conditional nodes route by config.variable + config.branches (each {name, op, value|value_var, to}). "
+             "assign nodes set config.variable to config.value; assign continue-edges use branch: \"Default\". "
+             "Proposes a dry-run.",
              {"type": "object", "properties": {
                  "component": {"type": "integer"},
                  "id": {"type": "string"},
                  "prompt": {"type": "string"},
-                 "type": {"type": "string", "enum": ["talk", "exit", "transfer", "goto"]},
-                 "config": {"type": "object", "properties": {"target": {"type": "string"}}},
+                 "type": {"type": "string", "enum": ["talk", "exit", "transfer", "goto",
+                                                     "conditional", "assign"]},
+                 "config": {"type": "object", "properties": {
+                     "target": {"type": "string"},
+                     "variable": {"type": "string"},
+                     "value": {"type": "string"},
+                     "branches": {"type": "array", "items": {
+                         "type": "object", "properties": {
+                             "name": {"type": "string"},
+                             "op": {"type": "string",
+                                    "enum": [">", ">=", "<", "<=", "=", "!=",
+                                             "In", "NotIn", "IsNull", "NotNull", "Contains"]},
+                             "value": {"type": "string"},
+                             "value_var": {"type": "string"},
+                             "to": {"type": "string"}},
+                         "required": ["name", "to"]}}}},
                  "edges": {"type": "array", "items": {"type": "object", "properties": {
                      "from": {"type": "string"},
                      "branch": {"type": "string", "enum": ["Positive", "Negative", "Reject", "Unclassified", "No answer"]},
