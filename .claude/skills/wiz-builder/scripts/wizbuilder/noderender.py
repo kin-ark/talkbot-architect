@@ -38,6 +38,7 @@ class RenderedNodes:
     routes: dict          # {node_uuid: {port_uuid: edge_obj} | {}}
     inbound_ports: list   # [{name, type, uuid, is_default}]
     sentence_cut_speech: list  # rows
+    top_floor_details: list   # one row per exit-family node (type 2 only; type 13 excluded)
 
 
 # ---------------------------------------------------------------------------
@@ -90,6 +91,7 @@ def _build_talk_node(
     node_uuid: str,
     reccut_uuid: str,
     is_default: bool,
+    component_nav: list[dict] | None = None,  # unused by Talk; accepted for uniform dispatch
 ) -> tuple[dict, dict]:
     """Build one Talk-node ``node_obj`` and ``scs_row``.
 
@@ -255,15 +257,222 @@ def _build_talk_node(
     return node_obj, scs_row
 
 
+def _build_exit_node(
+    spec: NodeSpec,
+    *,
+    canvas_index: int,
+    comp_uuid: str,
+    speech_id: int,
+    branch_intent_ids: dict[str, int],
+    kb_ids: list[str],
+    node_language: str,
+    minter: Any,
+    sort_index: int,
+    port_uuids: dict[str, str],
+    node_uuid: str,
+    reccut_uuid: str,
+    is_default: bool,
+    component_nav: list[dict] | None = None,
+) -> tuple[dict, None]:
+    """Build one Exit-node (type 2) ``node_obj``.
+
+    Terminal: no ports, no SentenceCutSpeech row.  Returns (node_obj, None).
+    """
+    text = spec.prompt
+    xml = (
+        '<speak xmlns:wiz="http://www.wiz.ai/develop/xml/tts">'
+        f'<wiz:express-as style="default">{text}</wiz:express-as></speak>'
+    )
+
+    canvas = {
+        "view": "react-shape-view",
+        "component": {
+            "props": {
+                "text": "Exit Node",
+                "list": list(component_nav) if component_nav else [],
+                "type": 2,
+            }
+        },
+        "size": {"width": 169, "height": 106},
+        "shape": "react-shape",
+        "id": node_uuid,
+        "position": {"x": -370, "y": 390},
+        "zIndex": 2,
+    }
+
+    data: dict = {
+        "appoint_node_id": "",
+        "speakType": 1,
+        "hitKnowledgeRate": [],
+        "intention_judgment_time": 2,
+        "type": 2,
+        "repeat_script_type": 0,
+        "hot_words_list": [],
+        "hangupRate": "0.0%",
+        "exclusive_key_words": [],
+        "dialog_list": [{"xml": xml, "html": f"<p>{text}</p>", "text": text}],
+        "tag_list": [],
+        "openUserPauseDuration": False,
+        "can_be_interrupted": 0,
+        "id": node_uuid,
+        "node_repetition": 0,
+        "open_pause_duration": False,
+        "selected": False,
+        "hitKnowledgeCountsRate": "0.0%",
+        "multiple_appoint_id": "",
+        "openChasingDedayTim": False,
+        "allow_jump_knowledges_switch": 0,
+        "allow_jump_knowledges": list(kb_ids),
+        "is_transfer": 0,
+        "appoint_knowledge_id": "",
+        "list": [text],
+        "is_default": is_default,
+        "textareaList": [""],
+        "nodeLabelArr": [],
+        "node_language": node_language,
+        "agent_type": "SYSTEM",
+        "tts_language": node_language,
+        "sms_id": "",
+        "can_interrupt_percent": 0.8,
+        "name": "Exit Node",
+        "notices_info": [],
+        "notice_send_type": 0,
+        "position": {"x": -750.43, "y": 380.75},
+    }
+
+    node_obj: dict = {
+        "canvas": canvas,
+        "data": data,
+        "name": "Exit Node",
+        "type": 2,
+        "is_default": is_default,
+        "data_extra": {
+            "hot_words_list": [],
+            "intents": [],
+            "variables": [],
+            "serviceCall": [],
+            "sentence_cut": [],
+        },
+    }
+
+    return node_obj, None
+
+
+def _build_transfer_node(
+    spec: NodeSpec,
+    *,
+    canvas_index: int,
+    comp_uuid: str,
+    speech_id: int,
+    branch_intent_ids: dict[str, int],
+    kb_ids: list[str],
+    node_language: str,
+    minter: Any,
+    sort_index: int,
+    port_uuids: dict[str, str],
+    node_uuid: str,
+    reccut_uuid: str,
+    is_default: bool,
+    component_nav: list[dict] | None = None,
+) -> tuple[dict, None]:
+    """Build one Transfer-node (type 13) ``node_obj``.
+
+    Terminal: no ports, no SentenceCutSpeech row.  Returns (node_obj, None).
+    Transfer nodes do NOT contribute a topFloorDetails row (confirmed by fixture 26).
+    """
+    text = spec.prompt
+    xml = (
+        '<speak xmlns:wiz="http://www.wiz.ai/develop/xml/tts">'
+        f'<wiz:express-as style="default">{text}</wiz:express-as></speak>'
+    )
+
+    canvas = {
+        "view": "react-shape-view",
+        "component": {
+            "props": {
+                "text": "Exit Node",
+                "list": list(component_nav) if component_nav else [],
+                "type": 2,
+            }
+        },
+        "size": {"width": 284, "height": 106},
+        "shape": "react-shape",
+        "id": node_uuid,
+        "position": {"x": -510, "y": 390},
+        "zIndex": 2,
+    }
+
+    data: dict = {
+        "agent_group": 1,
+        "appoint_node_id": "",
+        "speakType": 1,
+        "hitKnowledgeRate": [],
+        "intention_judgment_time": 2,
+        "type": 13,
+        "repeat_script_type": 0,
+        "hot_words_list": [],
+        "hangupRate": "0.0%",
+        "exclusive_key_words": [],
+        "dialog_list": [{"xml": xml, "html": f"<p>{text}</p>", "text": text}],
+        "tag_list": [],
+        "openUserPauseDuration": False,
+        "can_be_interrupted": 0,
+        "id": node_uuid,
+        "node_repetition": 0,
+        "open_pause_duration": False,
+        "selected": False,
+        "hitKnowledgeCountsRate": "0.0%",
+        "multiple_appoint_id": "",
+        "openChasingDedayTim": False,
+        "allow_jump_knowledges_switch": 0,
+        "allow_jump_knowledges": list(kb_ids),
+        "is_transfer": 1,
+        "appoint_knowledge_id": "",
+        "list": [text],
+        "is_default": is_default,
+        "textareaList": [""],
+        "nodeLabelArr": [],
+        "node_language": node_language,
+        "agent_type": "SYSTEM",
+        "tts_language": node_language,
+        "sms_id": "",
+        "can_interrupt_percent": 0.8,
+        "name": "Exit Node",
+        "notices_info": [],
+        "notice_send_type": 0,
+        "position": {"x": -698.29, "y": 380.75},
+    }
+
+    node_obj: dict = {
+        "canvas": canvas,
+        "data": data,
+        "name": "Exit Node",
+        "type": 13,
+        "is_default": is_default,
+        "data_extra": {
+            "hot_words_list": [],
+            "intents": [],
+            "variables": [],
+            "serviceCall": [],
+            "sentence_cut": [],
+        },
+    }
+
+    return node_obj, None
+
+
 # ---------------------------------------------------------------------------
 # Node-type dispatch registry
 # ---------------------------------------------------------------------------
 
 #: Maps node-type string → builder callable.
 #: Each builder must accept the same keyword signature as ``_build_talk_node``
-#: and return ``(node_obj, scs_row)``.
+#: and return ``(node_obj, scs_row | None)``.
+#: Terminal builders (exit, transfer) return scs_row=None (no SentenceCutSpeech row).
 NODE_BUILDERS: dict[str, Callable] = {
     "talk": _build_talk_node,
+    "exit": _build_exit_node,
+    "transfer": _build_transfer_node,
 }
 
 
@@ -282,11 +491,9 @@ def render_component_nodes(
     kb_ids: list[str],
     node_language: str,
     minter: Any,
+    component_nav: list[dict] | None = None,
 ) -> RenderedNodes:
     """Render a list of NodeSpec objects into WIZ.AI component sub-dicts.
-
-    For Task 1, edges=[] — every node is treated as an entry node (is_default=True,
-    present in inbound_ports, routes entry is {}).
 
     Parameters
     ----------
@@ -309,11 +516,19 @@ def render_component_nodes(
         Language code string (e.g. ``"3"`` for Bahasa Indonesia / default).
     minter:
         An ``IdMinter`` instance for deterministic UUID generation.
+    component_nav:
+        Optional list of component-nav dicts (all canvases in the bot) used to
+        populate ``canvas.component.props.list`` on exit/transfer nodes.  When
+        ``None`` (e.g. in unit tests), the list is left empty.
     """
+    # Terminal node types: no out-ports, not in inbound_ports, no SentenceCutSpeech row.
+    _TERMINAL_TYPES = frozenset({"exit", "transfer", "goto"})
+
     details: dict = {}
     routes: dict = {}
     inbound_ports: list = []
     sentence_cut_speech: list = []
+    top_floor_details: list = []
 
     # Compute entry nodes: nodes not targeted by any edge.
     nodes_with_no_incoming: set[str] = {n.id for n in nodes}
@@ -328,19 +543,22 @@ def render_component_nodes(
     for sort_index, spec in enumerate(nodes, start=1):
         nid_str = spec.id
         ci = canvas_index
+        is_terminal = spec.type in _TERMINAL_TYPES
 
         node_uuid = str(minter.uuid(f"node:{ci}:{nid_str}"))
         reccut_uuid = str(minter.uuid(f"reccut:{ci}:{nid_str}"))
         is_default = nid_str in nodes_with_no_incoming
 
-        # --- port UUIDs for checked branches ---
+        # --- port UUIDs for checked branches (Talk only; terminal nodes ignore these) ---
         port_uuids: dict[str, str] = {
             b: str(minter.uuid(f"port:{ci}:{nid_str}:{b}")) for b in _CHECKED
         }
 
         # Track mappings for edge wiring after the loop.
         _node_id_to_uuid[nid_str] = node_uuid
-        _node_id_to_port_uuids[nid_str] = port_uuids
+        # Terminal nodes have no out-ports — do NOT register in _node_id_to_port_uuids
+        if not is_terminal:
+            _node_id_to_port_uuids[nid_str] = port_uuids
 
         # --- dispatch to per-type builder ---
         builder = NODE_BUILDERS.get(spec.type)
@@ -361,18 +579,26 @@ def render_component_nodes(
             node_uuid=node_uuid,
             reccut_uuid=reccut_uuid,
             is_default=is_default,
+            component_nav=component_nav,
         )
 
         # --- accumulate ---
         details[node_uuid] = node_obj
-        routes[node_uuid] = {}  # leaf nodes keep empty {}; outgoing edges fill in below
+        routes[node_uuid] = {}  # leaf/terminal nodes keep empty {}; outgoing edges fill in below
 
-        sentence_cut_speech.append(scs_row)
+        if scs_row is not None:
+            sentence_cut_speech.append(scs_row)
 
-        if is_default:
+        # Only non-terminal entry nodes go into inbound_ports.
+        if is_default and not is_terminal:
             inbound_ports.append(
                 {"name": "Talk Node", "type": 1, "uuid": node_uuid, "is_default": True}
             )
+
+        # Exit (type 2) contributes a topFloorDetails row = its data dict.
+        # Transfer (type 13) does NOT (confirmed by fixture 26).
+        if spec.type == "exit":
+            top_floor_details.append(node_obj["data"])
 
     # --- Wire edges into routes ---
     for e in edges:
@@ -395,4 +621,5 @@ def render_component_nodes(
         routes=routes,
         inbound_ports=inbound_ports,
         sentence_cut_speech=sentence_cut_speech,
+        top_floor_details=top_floor_details,
     )

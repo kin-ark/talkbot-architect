@@ -96,3 +96,189 @@ def test_unknown_node_type_raises():
             node_language="3",
             minter=IdMinter("h"),
         )
+
+
+# ---------------------------------------------------------------------------
+# Task 2: exit (type 2) + transfer (type 13) node builders
+# ---------------------------------------------------------------------------
+
+_BRANCH_IDS = {"Positive": 1, "Negative": 2, "Reject": 3, "Unclassified": 4, "No answer": 5}
+
+def _render_exit(node_type: str, **kw):
+    """Helper: render a single Talk(entry) -Unclassified-> exit/transfer node pair."""
+    return render_component_nodes(
+        [NodeSpec(id="entry", prompt="Hello"), NodeSpec(id="ex", prompt="Goodbye", type=node_type)],
+        [EdgeSpec(src="entry", branch="Unclassified", dst="ex")],
+        canvas_index=0,
+        comp_uuid="comp-u",
+        speech_id=8309,
+        branch_intent_ids=_BRANCH_IDS,
+        kb_ids=["kb1", "kb2"],
+        node_language="3",
+        minter=IdMinter("h"),
+        **kw,
+    )
+
+
+def test_exit_node_type_2_envelope():
+    """Exit node has envelope type=2 and data.type=2."""
+    r = _render_exit("exit")
+    ex_uuid = next(k for k, v in r.details.items() if v["type"] == 2)
+    node = r.details[ex_uuid]
+    assert node["type"] == 2
+    assert node["data"]["type"] == 2
+    assert node["data"]["is_transfer"] == 0
+    assert node["name"] == "Exit Node"
+
+
+def test_exit_node_is_terminal_no_ports():
+    """Exit node canvas has NO 'ports' key (terminal)."""
+    r = _render_exit("exit")
+    ex_uuid = next(k for k, v in r.details.items() if v["type"] == 2)
+    assert "ports" not in r.details[ex_uuid]["canvas"]
+
+
+def test_exit_node_routes_empty():
+    """Exit node has routes[uuid]={} — no outgoing edges."""
+    r = _render_exit("exit")
+    ex_uuid = next(k for k, v in r.details.items() if v["type"] == 2)
+    assert r.routes[ex_uuid] == {}
+
+
+def test_exit_node_not_in_inbound_ports():
+    """Exit node is NOT an entry node and must not appear in inbound_ports."""
+    r = _render_exit("exit")
+    ex_uuid = next(k for k, v in r.details.items() if v["type"] == 2)
+    inbound_uuids = [p["uuid"] for p in r.inbound_ports]
+    assert ex_uuid not in inbound_uuids
+
+
+def test_exit_node_dialog_text_from_prompt():
+    """Exit node carries prompt text in data.dialog_list, data.list, and data.name."""
+    r = _render_exit("exit")
+    ex_uuid = next(k for k, v in r.details.items() if v["type"] == 2)
+    node = r.details[ex_uuid]
+    assert node["data"]["dialog_list"][0]["text"] == "Goodbye"
+    assert node["data"]["list"] == ["Goodbye"]
+
+
+def test_exit_node_data_keys_match_fixture():
+    """Exit node data keys must match the ground-truth fixture set."""
+    fixture_data_keys = {
+        "appoint_node_id", "speakType", "hitKnowledgeRate", "intention_judgment_time",
+        "type", "repeat_script_type", "hot_words_list", "hangupRate", "exclusive_key_words",
+        "dialog_list", "tag_list", "openUserPauseDuration", "can_be_interrupted", "id",
+        "node_repetition", "open_pause_duration", "selected", "hitKnowledgeCountsRate",
+        "multiple_appoint_id", "openChasingDedayTim", "allow_jump_knowledges_switch",
+        "allow_jump_knowledges", "is_transfer", "appoint_knowledge_id", "list", "is_default",
+        "textareaList", "nodeLabelArr", "node_language", "agent_type", "tts_language",
+        "sms_id", "can_interrupt_percent", "name", "notices_info", "notice_send_type",
+        "position",
+    }
+    r = _render_exit("exit")
+    ex_uuid = next(k for k, v in r.details.items() if v["type"] == 2)
+    assert set(r.details[ex_uuid]["data"]) == fixture_data_keys
+
+
+def test_exit_node_canvas_keys_match_fixture():
+    """Exit node canvas keys must match the ground-truth fixture set (no 'ports')."""
+    fixture_canvas_keys = {
+        "view", "component", "size", "shape", "id", "position", "zIndex",
+    }
+    r = _render_exit("exit")
+    ex_uuid = next(k for k, v in r.details.items() if v["type"] == 2)
+    assert set(r.details[ex_uuid]["canvas"]) == fixture_canvas_keys
+
+
+def test_exit_node_top_floor_details_row():
+    """Rendering an exit node produces one topFloorDetails row with the node's data."""
+    r = _render_exit("exit")
+    ex_uuid = next(k for k, v in r.details.items() if v["type"] == 2)
+    assert len(r.top_floor_details) == 1
+    row = r.top_floor_details[0]
+    assert row["id"] == ex_uuid
+    assert row["type"] == 2
+    assert row["is_transfer"] == 0
+    assert row["dialog_list"][0]["text"] == "Goodbye"
+
+
+def test_exit_node_allows_jump_knowledges():
+    """Exit node allow_jump_knowledges = kb_ids passed in."""
+    r = _render_exit("exit")
+    ex_uuid = next(k for k, v in r.details.items() if v["type"] == 2)
+    assert r.details[ex_uuid]["data"]["allow_jump_knowledges"] == ["kb1", "kb2"]
+
+
+def test_transfer_node_type_13_envelope():
+    """Transfer node has envelope type=13, data.type=13, is_transfer=1, agent_group=1."""
+    r = _render_exit("transfer")
+    tr_uuid = next(k for k, v in r.details.items() if v["type"] == 13)
+    node = r.details[tr_uuid]
+    assert node["type"] == 13
+    assert node["data"]["type"] == 13
+    assert node["data"]["is_transfer"] == 1
+    assert node["data"]["agent_group"] == 1
+
+
+def test_transfer_node_is_terminal_no_ports():
+    """Transfer node canvas has NO 'ports' key (terminal)."""
+    r = _render_exit("transfer")
+    tr_uuid = next(k for k, v in r.details.items() if v["type"] == 13)
+    assert "ports" not in r.details[tr_uuid]["canvas"]
+
+
+def test_transfer_node_routes_empty():
+    """Transfer node has routes[uuid]={} — no outgoing edges."""
+    r = _render_exit("transfer")
+    tr_uuid = next(k for k, v in r.details.items() if v["type"] == 13)
+    assert r.details[tr_uuid]["routes"] if False else r.routes[tr_uuid] == {}
+
+
+def test_transfer_node_top_floor_details_empty():
+    """Transfer node (type 13) does NOT add a topFloorDetails row (fixture 26 confirms [])."""
+    r = _render_exit("transfer")
+    assert r.top_floor_details == []
+
+
+def test_transfer_node_data_keys_match_fixture():
+    """Transfer node data keys must match the ground-truth fixture set (exit + agent_group)."""
+    fixture_data_keys = {
+        "agent_group",
+        "appoint_node_id", "speakType", "hitKnowledgeRate", "intention_judgment_time",
+        "type", "repeat_script_type", "hot_words_list", "hangupRate", "exclusive_key_words",
+        "dialog_list", "tag_list", "openUserPauseDuration", "can_be_interrupted", "id",
+        "node_repetition", "open_pause_duration", "selected", "hitKnowledgeCountsRate",
+        "multiple_appoint_id", "openChasingDedayTim", "allow_jump_knowledges_switch",
+        "allow_jump_knowledges", "is_transfer", "appoint_knowledge_id", "list", "is_default",
+        "textareaList", "nodeLabelArr", "node_language", "agent_type", "tts_language",
+        "sms_id", "can_interrupt_percent", "name", "notices_info", "notice_send_type",
+        "position",
+    }
+    r = _render_exit("transfer")
+    tr_uuid = next(k for k, v in r.details.items() if v["type"] == 13)
+    assert set(r.details[tr_uuid]["data"]) == fixture_data_keys
+
+
+def test_talk_node_unchanged_with_terminal_peer():
+    """Talk node output (data keys, ports, routes shape) is unchanged with an exit peer."""
+    r = _render_exit("exit")
+    talk_uuid = next(k for k, v in r.details.items() if v["type"] == 1)
+    talk = r.details[talk_uuid]
+    # Talk node has ports
+    assert "ports" in talk["canvas"]
+    # Talk node is entry
+    assert talk["is_default"] is True
+    assert any(p["uuid"] == talk_uuid for p in r.inbound_ports)
+    # Talk node has outgoing route to the exit node
+    assert len(r.routes[talk_uuid]) == 1
+
+
+def test_no_exit_nodes_top_floor_details_empty():
+    """Canvas with only Talk nodes returns empty top_floor_details."""
+    r = render_component_nodes(
+        [NodeSpec(id="a", prompt="A"), NodeSpec(id="b", prompt="B")],
+        [EdgeSpec(src="a", branch="Unclassified", dst="b")],
+        canvas_index=0, comp_uuid="c", speech_id=1,
+        branch_intent_ids=_BRANCH_IDS, kb_ids=[], node_language="3", minter=IdMinter("h"),
+    )
+    assert r.top_floor_details == []

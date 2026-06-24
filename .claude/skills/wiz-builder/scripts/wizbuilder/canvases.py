@@ -33,7 +33,8 @@ _SECONDARY_STRIP_KEYS = frozenset({
 _LANGUAGE_MAP = {
     "IDN": "3",
     "ENG": "3",
-    # TODO(lang-codes): verify ZHO/THA (and ENG) numeric codes from non-IDN reference exports — "3" is an empirical placeholder and may mislabel NLU/TTS routing for these languages.
+    # TODO(lang-codes): verify ZHO/THA (and ENG) numeric codes from non-IDN reference exports
+    # — "3" is an empirical placeholder and may mislabel NLU/TTS routing for these languages.
     "ZHO": "3",
     "THA": "3",
 }
@@ -81,12 +82,41 @@ def apply_canvases(
             f"Only {sorted(_LANGUAGE_MAP)} are supported in this MVP."
         )
 
+    # Pre-mint all component UUIDs so the component-nav list can be built before
+    # any canvas is rendered (exit/transfer nodes need the full list).
+    canvas_uuids: list[str] = [
+        str(minter.uuid(f"component:{ci}")) for ci, _ in enumerate(manifest.canvases)
+    ]
+
+    # component_nav: one entry per canvas, in order.  Used by exit/transfer node
+    # canvas.component.props.list.  The first canvas gets useStatus=2 (active/primary);
+    # subsequent canvases get useStatus=1.
+    component_nav: list[dict] = [
+        {
+            "sortIndexABS": ci + 1,
+            "sortIndex": ci + 1,
+            "editStatus": 1,
+            "hangUpRate": "0.0%",
+            "label": canvas.name,
+            "title": canvas.name,
+            "uuid": canvas_uuids[ci],
+            "hitRate": "0.0%",
+            "parentId": "",
+            "componentUuid": canvas_uuids[ci],
+            "useStatus": 2 if ci == 0 else 1,
+            "children": [],
+            "value": canvas_uuids[ci],
+        }
+        for ci, canvas in enumerate(manifest.canvases)
+    ]
+
     all_sentence_cut_rows: list[dict] = []
     new_components = []
     for ci, canvas in enumerate(manifest.canvases):
         comp, scs_rows = _build_component(
             canvas=canvas,
             canvas_index=ci,
+            canvas_uuid=canvas_uuids[ci],
             manifest=manifest,
             minter=minter,
             base=base,
@@ -94,6 +124,7 @@ def apply_canvases(
             branch_intent_ids=branch_intent_ids,
             kb_ids=kb_ids,
             node_language=node_language,
+            component_nav=component_nav,
         )
         new_components.append(comp)
         all_sentence_cut_rows.extend(scs_rows)
@@ -110,6 +141,7 @@ def apply_canvases(
 def _build_component(
     canvas: Canvas,
     canvas_index: int,
+    canvas_uuid: str,
     manifest: Manifest,
     minter: IdMinter,
     base: dict[str, Any],
@@ -117,14 +149,15 @@ def _build_component(
     branch_intent_ids: dict[str, int],
     kb_ids: list[str],
     node_language: str,
+    component_nav: list[dict] | None = None,
 ) -> tuple[dict[str, Any], list[dict]]:
     """Build a single BizSpeechComponent entry using render_component_nodes.
 
     Returns (component_dict, sentence_cut_speech_rows).
     """
-    canvas_uuid = str(minter.uuid(f"component:{canvas_index}"))
-
-    node_specs = [NodeSpec(id=n.id, prompt=n.prompt) for n in canvas.nodes]
+    node_specs = [
+        NodeSpec(id=n.id, prompt=n.prompt, type=n.type, config=n.config) for n in canvas.nodes
+    ]
     edge_specs = [EdgeSpec(src=e.src, branch=e.branch, dst=e.dst) for e in canvas.edges]
 
     r = render_component_nodes(
@@ -137,6 +170,7 @@ def _build_component(
         kb_ids=kb_ids,
         node_language=node_language,
         minter=minter,
+        component_nav=component_nav,
     )
 
     entry = {
@@ -162,10 +196,11 @@ def _build_component(
         "routes": json.dumps(r.routes, ensure_ascii=False, separators=(",", ":")),
         "nluConf": "{}",
         "sourceUuid": "",
-        # topFloorDetails is a JSON-encoded LIST (wiz-checker schema fields.md);
-        # WIZ import parses it as an array, so "{}" => "expect [, actual {" once a
-        # component carries real nodes. Empty list is valid for both empty + populated.
-        "topFloorDetails": "[]",
+        # topFloorDetails: one row per exit (type 2) node; empty list for talk-only canvases.
+        # Transfer (type 13) nodes do NOT contribute a row (confirmed by fixture 26).
+        "topFloorDetails": json.dumps(
+            r.top_floor_details, ensure_ascii=False, separators=(",", ":")
+        ),
         "details": json.dumps(r.details, ensure_ascii=False, separators=(",", ":")),
     }
 

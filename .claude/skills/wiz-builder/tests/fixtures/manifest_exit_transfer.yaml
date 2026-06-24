@@ -1,0 +1,22 @@
+name: "Exit Transfer Test"
+branch: dev
+language: IDN
+canvases:
+  - name: "1. Greeting"
+    nodes:
+      - id: greet-root
+        prompt: Hello there
+      - id: hangup
+        prompt: Goodbye and thanks
+        type: exit
+    edges:
+      - {from: greet-root, branch: Unclassified, to: hangup}
+  - name: "2. Transfer Canvas"
+    nodes:
+      - id: talk-root
+        prompt: Connecting you now
+      - id: xfer
+        prompt: Please hold while I transfer you
+        type: transfer
+    edges:
+      - {from: talk-root, branch: Unclassified, to: xfer}
