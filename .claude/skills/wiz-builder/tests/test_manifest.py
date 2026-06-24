@@ -737,3 +737,37 @@ canvases:
       - {id: t, type: assign, config: {variable: G, value: y}}
 """))
     assert m.canvases[0].nodes[0].config["branches"][0]["op"] == "IsNull"
+
+
+def test_assign_undeclared_variable_rejected(tmp_path):
+    """An assign node whose config.variable is not in custom_variables is rejected."""
+    with pytest.raises(ManifestError, match="not a declared variable"):
+        load_manifest(_write(tmp_path, """
+name: B
+branch: dev
+language: IDN
+custom_variables: [{name: Declared}]
+canvases:
+  - name: C
+    nodes:
+      - {id: cond, type: conditional, config: {variable: Declared, branches: [
+          {name: A, op: "=", value: x, to: t}, {name: Default, to: t}]}}
+      - {id: t, type: assign, config: {variable: Undeclared, value: y}}
+"""))
+
+
+def test_default_branch_rejected_on_talk_edge(tmp_path):
+    """Default is not a valid branch for an edge whose source is a talk node."""
+    with pytest.raises(ManifestError):
+        load_manifest(_write(tmp_path, """
+name: B
+branch: dev
+language: IDN
+canvases:
+  - name: C
+    nodes:
+      - {id: greet, prompt: "Halo", type: talk}
+      - {id: bye, prompt: "Bye", type: talk}
+    edges:
+      - {from: greet, branch: Default, to: bye}
+"""))

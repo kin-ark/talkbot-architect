@@ -10,9 +10,7 @@ from jsonschema import Draft7Validator
 
 _SCHEMA_PATH = Path(__file__).resolve().parents[2] / "schema" / "manifest.schema.yaml"
 
-_VALID_BRANCHES = frozenset(
-    {"Positive", "Negative", "Reject", "Unclassified", "No answer", "Default"}
-)
+_VALID_BRANCHES = frozenset({"Positive", "Negative", "Reject", "Unclassified", "No answer"})
 _TERMINAL_TYPES = frozenset({"exit", "transfer", "goto"})
 _VALID_OPERATORS = frozenset(
     {">", ">=", "<", "<=", "=", "!=", "In", "NotIn", "IsNull", "NotNull", "Contains"}
@@ -172,10 +170,12 @@ def _validate_cross_field_invariants(data: dict, path: Path) -> None:
                 raise ManifestError(
                     f"{path}: edge in canvas {cname!r} references unknown destination node {dst!r}"
                 )
-            if branch not in _VALID_BRANCHES:
+            extra = {"Default"} if node_types.get(src) == "assign" else set()
+            allowed = _VALID_BRANCHES | extra
+            if branch not in allowed:
                 raise ManifestError(
                     f"{path}: edge in canvas {cname!r} has invalid branch {branch!r}; "
-                    f"must be one of {sorted(_VALID_BRANCHES)}"
+                    f"must be one of {sorted(allowed)}"
                 )
             key = (src, branch)
             if key in seen_src_branch:
@@ -279,11 +279,7 @@ def _validate_cross_field_invariants(data: dict, path: Path) -> None:
                             f"{path}: canvas {cname!r}: conditional node {nid!r} branch "
                             f"missing name or to: {b!r}"
                         )
-                    if target not in ids_in_canvas:
-                        raise ManifestError(
-                            f"{path}: canvas {cname!r}: conditional node {nid!r} branch "
-                            f"{bname!r} has unknown target {target!r}"
-                        )
+                    # target existence is validated in the early pre-entry-node pass above
                     # one port = one target (same name must share to)
                     if bname in name_to_target and name_to_target[bname] != target:
                         raise ManifestError(
