@@ -115,27 +115,16 @@ export default function FlowCanvas({ summary, onSelectNode, focusComponentId }) 
   const fit = () => rf?.fitView({ duration: 300, padding: 0.2 });
   const mode = expanded.size === 0 ? 'map' : expanded.size === compIds.length ? 'detail' : null;
 
-  // Hover a node → light up its edges + neighbours, dim the rest, so a tangle of
-  // overlapping lines becomes one readable path. Guarded so a stale hoverId
-  // (node removed by collapse) never blanks the whole graph.
-  const display = useMemo(() => {
-    if (!hoverId || !nodes.some((n) => n.id === hoverId)) return { nodes, edges };
-    const litNodes = new Set([hoverId]);
-    const litEdges = new Set();
-    for (const e of edges) {
-      if (e.source === hoverId || e.target === hoverId) {
-        litEdges.add(e.id); litNodes.add(e.source); litNodes.add(e.target);
-      }
-    }
-    const dEdges = edges.map((e) => litEdges.has(e.id)
+  // Hover a node → light up its edges, fade the rest, so a tangle of overlapping
+  // lines becomes one readable path. Edges only: the `nodes` array is passed
+  // through referentially unchanged so the node layer never re-renders on hover
+  // (re-rendering it repaints under the cursor and bounces mouseenter/leave =
+  // flicker). Guarded so a stale hoverId (node hidden by collapse) is a no-op.
+  const displayEdges = useMemo(() => {
+    if (!hoverId || !nodes.some((n) => n.id === hoverId)) return edges;
+    return edges.map((e) => (e.source === hoverId || e.target === hoverId)
       ? { ...e, animated: true, style: { ...e.style, strokeWidth: 3, opacity: 1 } }
       : { ...e, style: { ...e.style, opacity: 0.1 } });
-    const dNodes = nodes.map((n) => {
-      // Don't fade component boxes — opacity inherits to their children.
-      if (n.data?.kind === 'component' || litNodes.has(n.id)) return n;
-      return { ...n, style: { ...n.style, opacity: 0.25 } };
-    });
-    return { nodes: dNodes, edges: dEdges };
   }, [nodes, edges, hoverId]);
 
   return (
@@ -158,8 +147,8 @@ export default function FlowCanvas({ summary, onSelectNode, focusComponentId }) 
           </div>
         )}
         <ReactFlow
-          nodes={display.nodes}
-          edges={display.edges}
+          nodes={nodes}
+          edges={displayEdges}
           nodeTypes={nodeTypes}
           onInit={setRf}
           fitView
