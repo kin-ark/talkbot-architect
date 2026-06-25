@@ -711,7 +711,9 @@ def append_node(bundle: InputBundle, params: dict, minter) -> None:
                 minter.uuid(f"append-edge:{index}:{node['id']}:{exit_name}:{e['to']}")
             )
             routes.setdefault(new_uuid, {})[child_exit_uuid] = {
-                "source": {"type": 1, "uuid": child_exit_uuid},
+                # FIX 2: nested (type-11) out-edges use source.type=3
+                # (port-origin reference into the child component).
+                "source": {"type": 3, "uuid": child_exit_uuid},
                 "target": {"type": 1, "uuid": dst_uuid},
                 "portDetail": {"id": edge_uuid, "zIndex": 3},
             }

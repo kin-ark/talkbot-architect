@@ -665,7 +665,8 @@ def test_nested_node_ports_mirror_child_exits():
     child_map = {"Child": {"Yes": "child-yes-uuid", "No": "child-no-uuid"}}
     nodes = [
         NodeSpec(id="open", prompt="Hi", type="talk"),
-        NodeSpec(id="sub", prompt="", type="nested", config={"target": "Child", "target_uuid": "child-comp-uuid"}),
+        NodeSpec(id="sub", prompt="", type="nested",
+                 config={"target": "Child", "target_uuid": "child-comp-uuid"}),
         NodeSpec(id="bye_yes", prompt="Y", type="exit"),
         NodeSpec(id="bye_no", prompt="N", type="exit"),
     ]
@@ -676,7 +677,8 @@ def test_nested_node_ports_mirror_child_exits():
     ]
     r = render_component_nodes(nodes, edges, minter=_minter(), nested_exit_map=child_map, **_CTX)
     sub_uuid, sub = next((u, o) for u, o in r.details.items() if o["type"] == 11)
-    assert sub["data"]["subComponentUuid"]  # set by canvases.py normally; here from config target resolution — see step 3
+    # subComponentUuid set by canvases.py normally; here from config target_uuid via spec.config
+    assert sub["data"]["subComponentUuid"]
     items = sub["canvas"]["ports"]["items"]
     by_name = {it["name"]: it for it in items}
     assert by_name["Yes"]["uuid"] == "child-yes-uuid"      # port.uuid == child exit uuid
@@ -688,3 +690,89 @@ def test_nested_node_ports_mirror_child_exits():
     # nested node contributes NO SCS row and NO topFloorDetails row
     assert sub["data"] not in r.top_floor_details
     assert sub_uuid not in [row["id"] for row in r.sentence_cut_speech]
+
+
+# ---------------------------------------------------------------------------
+# Deploy-gate fixes: FIX 1 (envelope id) + FIX 2 (source.type=3 for nested)
+# ---------------------------------------------------------------------------
+
+
+def test_nested_node_envelope_id_equals_sub_component_uuid():
+    """FIX 1: nested node_obj must carry a top-level 'id' == subComponentUuid.
+
+    Without this key WIZ import returns code:-1.
+    """
+    child_map = {"Child": {"Done": "child-done-uuid"}}
+    nodes = [
+        NodeSpec(id="open", prompt="Hi", type="talk"),
+        NodeSpec(id="sub", prompt="", type="nested",
+                 config={"target": "Child", "target_uuid": "child-comp-uuid-123"}),
+        NodeSpec(id="bye", prompt="Bye", type="exit"),
+    ]
+    edges = [
+        EdgeSpec(src="open", branch="Unclassified", dst="sub"),
+        EdgeSpec(src="sub", branch="Done", dst="bye"),
+    ]
+    r = render_component_nodes(nodes, edges, minter=_minter(), nested_exit_map=child_map, **_CTX)
+    sub_uuid, sub = next((u, o) for u, o in r.details.items() if o["type"] == 11)
+    # FIX 1: envelope must have id == subComponentUuid from spec.config["target_uuid"]
+    assert "id" in sub, "nested node_obj must have a top-level 'id' key"
+    assert sub["id"] == "child-comp-uuid-123", (
+        f"nested node envelope id must == subComponentUuid (target_uuid), "
+        f"got {sub['id']!r}"
+    )
+    assert sub["data"]["subComponentUuid"] == "child-comp-uuid-123"
+
+
+def test_nested_out_edges_have_source_type_3():
+    """FIX 2: route edges out of a nested (type-11) node must have source.type == 3.
+
+    With source.type=1 the import succeeds but the deployed flow breaks (port→target
+    link is not resolved). Only nested nodes are affected; talk nodes must stay at 1.
+    """
+    child_map = {"Child": {"Yes": "child-yes-uuid", "No": "child-no-uuid"}}
+    nodes = [
+        NodeSpec(id="open", prompt="Hi", type="talk"),
+        NodeSpec(id="sub", prompt="", type="nested",
+                 config={"target": "Child", "target_uuid": "child-comp-uuid"}),
+        NodeSpec(id="bye_yes", prompt="Y", type="exit"),
+        NodeSpec(id="bye_no", prompt="N", type="exit"),
+    ]
+    edges = [
+        EdgeSpec(src="open", branch="Unclassified", dst="sub"),
+        EdgeSpec(src="sub", branch="Yes", dst="bye_yes"),
+        EdgeSpec(src="sub", branch="No", dst="bye_no"),
+    ]
+    r = render_component_nodes(nodes, edges, minter=_minter(), nested_exit_map=child_map, **_CTX)
+    sub_uuid = next(u for u, o in r.details.items() if o["type"] == 11)
+    nested_routes = r.routes[sub_uuid]
+    assert nested_routes, "nested node must have outgoing routes"
+    for port_uuid, edge_obj in nested_routes.items():
+        assert edge_obj["source"]["type"] == 3, (
+            f"nested out-edge at port {port_uuid!r}: expected source.type=3, "
+            f"got {edge_obj['source']['type']!r}"
+        )
+
+
+def test_talk_out_edges_source_type_unchanged_at_1():
+    """Regression: talk node out-edges must still have source.type == 1 (not affected by FIX 2)."""
+    child_map = {"Child": {"Done": "child-done-uuid"}}
+    nodes = [
+        NodeSpec(id="open", prompt="Hi", type="talk"),
+        NodeSpec(id="sub", prompt="", type="nested",
+                 config={"target": "Child", "target_uuid": "child-comp-uuid"}),
+        NodeSpec(id="bye", prompt="Bye", type="exit"),
+    ]
+    edges = [
+        EdgeSpec(src="open", branch="Unclassified", dst="sub"),
+        EdgeSpec(src="sub", branch="Done", dst="bye"),
+    ]
+    r = render_component_nodes(nodes, edges, minter=_minter(), nested_exit_map=child_map, **_CTX)
+    open_uuid = next(u for u, o in r.details.items() if o["type"] == 1)
+    talk_routes = r.routes[open_uuid]
+    assert talk_routes, "talk node must have outgoing routes"
+    for port_uuid, edge_obj in talk_routes.items():
+        assert edge_obj["source"]["type"] == 1, (
+            f"talk out-edge at port {port_uuid!r}: expected source.type=1 (regression), "
+            f"got {edge_obj['source']['type']!r}"
+        )

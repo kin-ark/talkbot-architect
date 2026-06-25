@@ -408,6 +408,85 @@ def test_append_node_nested_target_no_exit_port_raises(baseline_dict):
         )
 
 
+def test_append_node_nested_envelope_id_and_source_type_3(baseline_dict):
+    """FIX 1 + FIX 2: appended nested node must have envelope id == subComponentUuid,
+    and its route out-edges must have source.type == 3 (not 1).
+
+    FIX 1: Without the envelope id, WIZ import returns code:-1.
+    FIX 2: With source.type=1 the import succeeds but the deployed flow is broken.
+    """
+    b = InputBundle(data=baseline_dict, speech_name="s.json")
+
+    # Step 1: add a child canvas with one exit_port node.
+    structure.add_component(
+        b,
+        {
+            "name": "Child Canvas",
+            "nodes": [
+                {"id": "ep1", "prompt": "", "type": "exit_port", "config": {"name": "Done"}},
+            ],
+        },
+        MINTER,
+    )
+    child_comp = get_components(b)[-1]
+    child_comp_uuid = child_comp["componentUuid"]
+    child_details = codec.decode(child_comp["details"])
+    child_exit_uuid = next(
+        uuid for uuid, obj in child_details.items()
+        if obj.get("type") == 4 and obj.get("data", {}).get("appoint_node_id", "") == ""
+    )
+
+    # Step 2: populate the parent component (index 0) with a talk node.
+    structure.populate_details(
+        b,
+        {"component": 0, "nodes": [{"id": "root", "prompt": "Root talk"}]},
+        MINTER,
+    )
+    comp0 = get_components(b)[0]
+    root_uuid = next(iter(codec.decode(comp0["details"])))
+
+    # Step 3: append the nested node with a "Done" out-edge to root.
+    structure.append_node(
+        b,
+        {
+            "component": 0,
+            "node": {
+                "id": "nested1",
+                "prompt": "",
+                "type": "nested",
+                "config": {"target": "Child Canvas"},
+            },
+            "edges": [{"from": "nested1", "branch": "Done", "to": root_uuid}],
+        },
+        MINTER,
+    )
+
+    comp0 = get_components(b)[0]
+    details = codec.decode(comp0["details"])
+    routes = codec.decode(comp0["routes"])
+
+    nested_objs = {k: v for k, v in details.items() if v.get("type") == 11}
+    assert len(nested_objs) == 1, "expected exactly one nested node"
+    nested_uuid, nested_obj = next(iter(nested_objs.items()))
+
+    # FIX 1: top-level 'id' must equal the child component's UUID (subComponentUuid).
+    assert "id" in nested_obj, "nested node_obj must have a top-level 'id' key"
+    assert nested_obj["id"] == child_comp_uuid, (
+        f"nested node envelope id must == child componentUuid {child_comp_uuid!r}, "
+        f"got {nested_obj.get('id')!r}"
+    )
+
+    # FIX 2: the out-route for the nested node must have source.type == 3.
+    nested_routes = routes.get(nested_uuid, {})
+    assert child_exit_uuid in nested_routes, (
+        f"nested route must be keyed by child exit uuid {child_exit_uuid!r}"
+    )
+    edge_obj = nested_routes[child_exit_uuid]
+    assert edge_obj["source"]["type"] == 3, (
+        f"nested out-edge source.type must be 3, got {edge_obj['source']['type']!r}"
+    )
+
+
 def test_append_node_exit_port_with_outgoing_edge_raises(baseline_dict):
     """append_node an exit_port node with an outgoing edge must raise ValueError
     (exit_port is terminal and must not have outgoing edges).
