@@ -21,6 +21,8 @@ CHECKER_CLI = PROJECT_ROOT / ".claude" / "skills" / "wiz-checker" / "scripts" / 
     "manifest_minimal.yaml",
     "manifest_multi_canvas.yaml",
     "manifest_with_customs.yaml",
+    "manifest_with_kb.yaml",
+    "manifest_with_multiround_kb.yaml",
 ])
 def test_build_produces_checker_clean_output(manifest_name, tmp_path):
     out = tmp_path / "speech.json"
@@ -273,4 +275,49 @@ def test_conditional_and_assign_build_checker_clean(tmp_path):
     )
     assert 10 in all_node_types, (
         f"Expected a type-10 (Variable-Assignment) node in details; found types: {all_node_types}"
+    )
+
+
+def test_build_multiround_kb_links_component(tmp_path):
+    """Full pipeline: a multi_round KB → checker-clean export whose delegate kdInfo item
+    points at a real top-level component.
+
+    Locks the deploy-shape decoded from the real Tiktok export (KB 179837):
+    - top-level answerType stays 1
+    - kdInfo carries a normal answerType:1 item plus a final answerType:2 delegate item
+    - the delegate's multipleAppointId resolves to a present component with parentUuid "0"
+    """
+    out = tmp_path / "speech.json"
+    result = compile_manifest(FIXTURES / "manifest_with_multiround_kb.yaml", out)
+    assert result.checker_errors == 0, (
+        f"multi-round KB manifest produced checker errors: "
+        f"{result.checker_errors} errors, codes: {result.finding_codes}"
+    )
+
+    built = json.loads(out.read_text(encoding="utf-8"))
+
+    def _unwrap(v):
+        return json.loads(v) if isinstance(v, str) else v
+
+    kbs = _unwrap(built["BizKnowledgeInfo"])
+    kb = next(k for k in kbs if k.get("kdTitle") == "Due Date KB")
+    assert kb["answerType"] == 1, "multi-round KB top-level answerType must stay 1"
+
+    kd_info = _unwrap(kb["kdInfo"])
+    answer_types = [item.get("answerType") for item in kd_info]
+    assert answer_types == [1, 2], (
+        f"expected a normal answer then a delegate item; got answerTypes {answer_types}"
+    )
+
+    delegate = kd_info[-1]
+    target_uuid = delegate["multipleAppointId"]
+    assert target_uuid, "delegate item must carry a multipleAppointId"
+
+    components = _unwrap(built["BizSpeechComponent"])
+    by_uuid = {c.get("componentUuid"): c for c in components}
+    assert target_uuid in by_uuid, (
+        f"multipleAppointId {target_uuid} does not resolve to any component"
+    )
+    assert by_uuid[target_uuid].get("parentUuid") == "0", (
+        "multi-round target must be a normal top-level component (parentUuid '0')"
     )
