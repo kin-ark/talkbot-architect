@@ -64,7 +64,7 @@ describe('FlowCanvas cross-component connections', () => {
     // target component collapsed → reroute to box id
     expect(xedge.target).toBe('cB');
     // style/marker survive reroute
-    expect(xedge.style.stroke).toBe('#6366f1');
+    expect(xedge.style.stroke).toBe('var(--c-edge-xcomp)');
     expect(xedge.markerEnd).toBeTruthy();
     expect(xedge.label).toBe('→ Payment');
   });
@@ -76,7 +76,7 @@ describe('FlowCanvas cross-component connections', () => {
     // target expanded → stay on the entry node emitted by buildGraph
     expect(xedge.target).toBe('b1'); // cB.entry_uuid
     // style/marker survive reroute
-    expect(xedge.style.stroke).toBe('#6366f1');
+    expect(xedge.style.stroke).toBe('var(--c-edge-xcomp)');
     expect(xedge.markerEnd).toBeTruthy();
     expect(xedge.label).toBe('→ Payment');
   });
