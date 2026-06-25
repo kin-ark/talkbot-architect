@@ -230,6 +230,8 @@ def propose_scaffold(params: dict) -> dict:
         manifest["custom_variables"] = params["custom_variables"]
     if params.get("custom_intents"):
         manifest["custom_intents"] = params["custom_intents"]
+    if params.get("knowledge_bases"):
+        manifest["knowledge_bases"] = params["knowledge_bases"]
     manifest["canvases"] = canvases
 
     manifest_yaml = yaml.safe_dump(manifest, sort_keys=False, allow_unicode=True)

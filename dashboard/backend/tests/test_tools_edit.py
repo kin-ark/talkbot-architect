@@ -135,6 +135,62 @@ _EXPECTED_NODE_TYPES = {"talk", "exit", "transfer", "goto", "conditional", "assi
                         "nested", "exit_port"}
 
 
+# ---------------------------------------------------------------------------
+# Task 6 (KB-T6): add_kb tool + scaffold_bot knowledge_bases
+# ---------------------------------------------------------------------------
+
+def test_add_kb_tool_registered():
+    """tool_specs() must include a tool named add_kb."""
+    specs = {s.name: s for s in registry.tool_specs()}
+    assert "add_kb" in specs, "add_kb tool not found in registry"
+
+
+def test_add_kb_tool_schema():
+    """add_kb schema exposes name/intents/answers/multi_round."""
+    specs = {s.name: s for s in registry.tool_specs()}
+    params = specs["add_kb"].parameters
+    props = params["properties"]
+    assert "name" in props
+    assert "intents" in props
+    assert props["intents"]["type"] == "array"
+    assert "answers" in props
+    assert props["answers"]["type"] == "array"
+    assert "multi_round" in props
+    # name and intents must be required
+    assert "name" in params.get("required", [])
+    assert "intents" in params.get("required", [])
+
+
+def test_scaffold_bot_schema_has_knowledge_bases():
+    """scaffold_bot schema must include a knowledge_bases property."""
+    specs = {s.name: s for s in registry.tool_specs()}
+    sb_props = specs["scaffold_bot"].parameters["properties"]
+    assert "knowledge_bases" in sb_props, "scaffold_bot schema missing knowledge_bases"
+    kb_schema = sb_props["knowledge_bases"]
+    assert kb_schema["type"] == "array"
+    item_props = kb_schema["items"]["properties"]
+    assert "name" in item_props
+    assert "intents" in item_props
+    assert "answers" in item_props
+    assert "multi_round" in item_props
+
+
+def test_add_kb_dispatch_returns_proposal(two_component_doc):
+    """dispatch add_kb builds an add-kb op and returns a proposal.
+
+    Uses two_component_doc (built via scaffold_bot) because the add-kb modifier
+    requires BizKnowledgeInfo to have baseline entries to clone config from.
+    """
+    out = registry.dispatch("add_kb", {
+        "name": "FAQ",
+        "intents": ["Positive"],
+        "answers": ["Yes, we can help."],
+    }, two_component_doc)
+    assert out["result"]["ok"] is True, out["result"].get("error")
+    assert out["proposal"] is not None
+    assert isinstance(out["proposal"]["proposed_data"], dict)
+
+
 def _assert_free_string_branch(branch_schema: dict, spec_name: str) -> None:
     """Assert edge branch is a free string (no enum — nested exit-port names are arbitrary)."""
     assert "enum" not in branch_schema, (

@@ -41,7 +41,9 @@ _SPECS = [
              "= child canvas name); their outgoing edges branch on the child canvas's exit_port "
              "names. exit_port is a named terminal return inside a child canvas (config.name = the "
              "port label). conditional nodes route by config.variable + config.branches (each "
-             "{name, op, value|value_var, to}); assign nodes set config.variable to config.value.",
+             "{name, op, value|value_var, to}); assign nodes set config.variable to config.value. "
+             "Optionally declare knowledge_bases (each has a name, triggering intents list, "
+             "answer(s), and optional multi_round = a canvas name to delegate multi-turn Q&A into).",
              {"type": "object",
               "properties": {
                   "name": {"type": "string"},
@@ -57,6 +59,13 @@ _SPECS = [
                           "keywords": {"type": "array", "items": {"type": "string"}},
                           "user_responses": {"type": "array", "items": {"type": "string"}}},
                       "required": ["name", "language"]}},
+                  "knowledge_bases": {"type": "array", "items": {
+                      "type": "object", "properties": {
+                          "name": {"type": "string"},
+                          "intents": {"type": "array", "items": {"type": "string"}},
+                          "answers": {"type": "array", "items": {"type": "string"}},
+                          "multi_round": {"type": "string"}},
+                      "required": ["name", "intents"]}},
                   "canvases": {"type": "array", "items": {
                       "type": "object", "properties": {
                           "name": {"type": "string"},
@@ -192,6 +201,15 @@ _SPECS = [
     ToolSpec("add_variable",
              "Add a custom variable to the dialogue. Proposes a dry-run.",
              {"type": "object", "properties": {"name": {"type": "string"}}, "required": ["name"]}),
+    ToolSpec("add_kb",
+             "Add a Knowledge Base (triggering intents + answer(s); optional multi_round = a "
+             "canvas/component name to delegate into). Proposes a dry-run.",
+             {"type": "object", "properties": {
+                 "name": {"type": "string"},
+                 "intents": {"type": "array", "items": {"type": "string"}},
+                 "answers": {"type": "array", "items": {"type": "string"}},
+                 "multi_round": {"type": "string"}},
+              "required": ["name", "intents"]}),
 ]
 
 
@@ -263,6 +281,13 @@ def dispatch(name: str, args: dict, data: dict) -> dict:
         import yaml
         return _as_proposal(agents.propose_mods(data, yaml.safe_dump(
             [{"op": "add-variable", "name": args["name"]}])))
+    if name == "add_kb":
+        import yaml
+        op = {"op": "add-kb", "name": args["name"], "intents": args["intents"],
+              "answers": args.get("answers", [])}
+        if args.get("multi_round"):
+            op["multi_round"] = args["multi_round"]
+        return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
     if name == "connect_components":
         import yaml
         node = {"id": args["id"], "prompt": args.get("prompt", "(goto)"),
