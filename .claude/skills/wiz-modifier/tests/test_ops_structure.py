@@ -487,6 +487,121 @@ def test_append_node_nested_envelope_id_and_source_type_3(baseline_dict):
     )
 
 
+def test_append_node_nested_sets_child_parent_uuid(baseline_dict):
+    """I1: after append_node wires a nested node, the child component's parentUuid must
+    equal the parent component's componentUuid (mirrors wiz-builder canvases.py behaviour).
+    """
+    b = InputBundle(data=baseline_dict, speech_name="s.json")
+
+    # Step 1: add a child canvas with one exit_port.
+    structure.add_component(
+        b,
+        {
+            "name": "Child Canvas",
+            "nodes": [
+                {"id": "ep1", "prompt": "", "type": "exit_port", "config": {"name": "Done"}},
+            ],
+        },
+        MINTER,
+    )
+    # Child parentUuid starts as "0" (set by add_component).
+    child_before = get_components(b)[-1]
+    assert child_before["parentUuid"] == "0"
+
+    # Step 2: populate the parent (index 0) and capture its componentUuid.
+    structure.populate_details(
+        b,
+        {"component": 0, "nodes": [{"id": "root", "prompt": "Root"}]},
+        MINTER,
+    )
+    parent_comp_uuid = get_components(b)[0]["componentUuid"]
+
+    # Step 3: append the nested node.
+    structure.append_node(
+        b,
+        {
+            "component": 0,
+            "node": {
+                "id": "nested1",
+                "prompt": "",
+                "type": "nested",
+                "config": {"target": "Child Canvas"},
+            },
+            "edges": [],
+        },
+        MINTER,
+    )
+
+    # Child's parentUuid must now equal parent's componentUuid.
+    child_after = next(c for c in get_components(b) if c["name"] == "Child Canvas")
+    assert child_after["parentUuid"] == parent_comp_uuid, (
+        f"child parentUuid should be {parent_comp_uuid!r}, got {child_after['parentUuid']!r}"
+    )
+
+
+def test_append_node_nested_duplicate_child_raises(baseline_dict):
+    """M2: appending a SECOND nested node targeting the same child must raise ValueError."""
+    b = InputBundle(data=baseline_dict, speech_name="s.json")
+
+    # Add a child canvas with one exit_port.
+    structure.add_component(
+        b,
+        {
+            "name": "Child Canvas",
+            "nodes": [
+                {"id": "ep1", "prompt": "", "type": "exit_port", "config": {"name": "Done"}},
+            ],
+        },
+        MINTER,
+    )
+
+    # Add a second parent canvas (index 2) for the duplicate nested node.
+    structure.add_component(b, {"name": "Parent B"}, MINTER)
+
+    # First nested ref: parent component 0.
+    structure.populate_details(
+        b,
+        {"component": 0, "nodes": [{"id": "root", "prompt": "Root"}]},
+        MINTER,
+    )
+    structure.append_node(
+        b,
+        {
+            "component": 0,
+            "node": {
+                "id": "nested1",
+                "prompt": "",
+                "type": "nested",
+                "config": {"target": "Child Canvas"},
+            },
+            "edges": [],
+        },
+        MINTER,
+    )
+
+    # Populate Parent B and try to wire the same child — must raise.
+    structure.populate_details(
+        b,
+        {"component": 2, "nodes": [{"id": "rootB", "prompt": "Root B"}]},
+        MINTER,
+    )
+    with pytest.raises(ValueError, match="already referenced by another nested node"):
+        structure.append_node(
+            b,
+            {
+                "component": 2,
+                "node": {
+                    "id": "nested2",
+                    "prompt": "",
+                    "type": "nested",
+                    "config": {"target": "Child Canvas"},
+                },
+                "edges": [],
+            },
+            MINTER,
+        )
+
+
 def test_append_node_exit_port_with_outgoing_edge_raises(baseline_dict):
     """append_node an exit_port node with an outgoing edge must raise ValueError
     (exit_port is terminal and must not have outgoing edges).

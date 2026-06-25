@@ -116,6 +116,34 @@ def _exit_ports_from_comp(comp: dict) -> dict[str, str]:
     return result
 
 
+def _find_nested_ref_to(
+    comp_by_name: dict[str, dict], target_comp_uuid: str, exclude_comp_name: str | None = None
+) -> str | None:
+    """Return the name of ANY component that already has a type-11 node pointing at
+    `target_comp_uuid` (subComponentUuid), ignoring `exclude_comp_name` if given.
+
+    Used by _validate_special_node to enforce single-parent uniqueness (M2).
+    """
+    for cname, comp in comp_by_name.items():
+        if cname == exclude_comp_name:
+            continue
+        raw_details = comp.get("details")
+        if not raw_details or raw_details in ("null", ""):
+            continue
+        try:
+            details = json.loads(raw_details) if isinstance(raw_details, str) else raw_details
+        except (ValueError, TypeError):
+            continue
+        if not isinstance(details, dict):
+            continue
+        for node_obj in details.values():
+            if node_obj.get("type") == 11:
+                data = node_obj.get("data") or {}
+                if data.get("subComponentUuid") == target_comp_uuid:
+                    return cname
+    return None
+
+
 def _validate_special_node(
     node: dict,
     declared_vars: set[str],
@@ -123,6 +151,7 @@ def _validate_special_node(
     prefix: str,
     comp_by_name: dict[str, dict] | None = None,
     edge_branches_from_node: set[str] | None = None,
+    current_comp_name: str | None = None,
 ) -> None:
     """Validate a conditional/assign/exit_port/nested node's config before rendering.
 
@@ -133,6 +162,8 @@ def _validate_special_node(
     comp_by_name: optional {component-name: bsc-dict} — required for nested validation.
     edge_branches_from_node: optional set of branch names used in edges leaving this node
         — used to validate that nested out-edges name real child exit ports.
+    current_comp_name: optional name of the component receiving this node — used to
+        skip self when scanning for existing nested references (M2).
     """
     ntype = node.get("type")
     if ntype not in ("conditional", "assign", "exit_port", "nested"):
@@ -169,6 +200,16 @@ def _validate_special_node(
             raise ValueError(
                 f"{prefix} nested node {nid!r} target {target!r} must contain "
                 f"at least one exit_port node"
+            )
+        # M2: single-parent uniqueness — a child canvas may only be wired to one parent.
+        child_comp = comp_by_name[target]
+        child_uuid = child_comp.get("componentUuid", "")
+        existing_parent = _find_nested_ref_to(
+            comp_by_name, child_uuid, exclude_comp_name=current_comp_name
+        )
+        if existing_parent is not None:
+            raise ValueError(
+                f"append-node: child {target!r} is already referenced by another nested node"
             )
         # Validate that any outgoing edge branch names actually name a child exit port.
         if edge_branches_from_node:
@@ -353,6 +394,8 @@ def _render_nodes(
         branches_by_node.setdefault(e["from"], set()).add(e["branch"])
 
     # Validate special nodes before rendering.
+    # current_comp_name is unknown here (we're in _render_nodes, not append_node/add_component),
+    # so pass None — the single-parent check is enforced in append_node directly.
     declared_vars = _declared_var_names(bundle)
     batch_node_ids = {n["id"] for n in params["nodes"]}
     for n in params["nodes"]:
@@ -362,6 +405,7 @@ def _render_nodes(
                 n, declared_vars, batch_node_ids, "add-component:",
                 comp_by_name=comp_by_name,
                 edge_branches_from_node=branches_by_node.get(n["id"]),
+                current_comp_name=None,
             )
 
     # Build nested_exit_map: {target-name: {exit-name: child-exit-uuid}} for all nested nodes.
@@ -562,6 +606,7 @@ def append_node(bundle: InputBundle, params: dict, minter) -> None:
         cfg["branches"] = stripped_branches
 
     # Validate special nodes BEFORE rendering.
+    current_comp_name = comp.get("name")
     if node_type_str in ("conditional", "assign", "exit_port", "nested"):
         _validate_special_node(
             node,
@@ -570,6 +615,7 @@ def append_node(bundle: InputBundle, params: dict, minter) -> None:
             "append-node:",
             comp_by_name=comp_by_name,
             edge_branches_from_node=edge_branches_from_node or None,
+            current_comp_name=current_comp_name,
         )
 
     # Build nested_exit_map for nested nodes: {target-name: {exit-name: child-exit-uuid}}.
@@ -722,6 +768,21 @@ def append_node(bundle: InputBundle, params: dict, minter) -> None:
     comp["routes"] = json.dumps(routes, ensure_ascii=False, separators=(",", ":"))
     comp["inboundPorts"] = json.dumps(inbound, ensure_ascii=False, separators=(",", ":"))
     comp["topFloorDetails"] = json.dumps(top_floor, ensure_ascii=False, separators=(",", ":"))
+
+    # I1: when a nested node is appended, wire the child component's parentUuid to the
+    # current (parent) component's componentUuid, mirroring the builder's behaviour.
+    # NOTE: comp_by_name was built from bsc2 (a separate parsed list), so we must locate
+    # the child in `comps` (the list we will write back) rather than mutating comp_by_name.
+    if node_type_str == "nested":
+        target_name_i1 = (node.get("config") or {}).get("target", "")
+        child_comp_i1 = comp_by_name.get(target_name_i1)
+        if child_comp_i1 is not None:
+            target_uuid_i1 = child_comp_i1.get("componentUuid", "")
+            for c in comps:
+                if c.get("componentUuid") == target_uuid_i1:
+                    c["parentUuid"] = comp_uuid
+                    break
+
     set_components(bundle, comps)
     _append_sentence_cut_speech(bundle, r.sentence_cut_speech)
 

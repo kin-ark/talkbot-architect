@@ -886,3 +886,21 @@ canvases:
     nodes: [{id: ask, prompt: Q}, {id: ex, type: exit_port, config: {name: "Yes"}}]
     edges: [{from: ask, branch: Positive, to: ex}]
 """))
+
+
+def test_stray_exit_port_canvas_rejected(tmp_path):
+    """M1: a canvas with exit_port nodes that is NOT targeted by any nested node must raise
+    ManifestError matching 'only valid in a nested child canvas'.
+    """
+    with pytest.raises(ManifestError, match="only valid in a nested child canvas"):
+        load_manifest(_write(tmp_path, """
+name: B
+branch: dev
+language: IDN
+canvases:
+  - name: Main
+    nodes: [{id: open, prompt: Hi}, {id: bye, type: exit, prompt: Bye}]
+    edges: [{from: open, branch: Positive, to: bye}]
+  - name: Orphan
+    nodes: [{id: ep1, type: exit_port, config: {name: "Done"}}]
+"""))

@@ -376,6 +376,17 @@ def _validate_cross_field_invariants(data: dict, path: Path) -> None:
                 f"({count}); a nested child maps to exactly one parent"
             )
 
+    # M1: any canvas that contains exit_port nodes but is NOT the target of any nested node
+    # is an error — exit_port is only valid inside a nested child canvas.
+    child_canvas_names: set[str] = set(nested_ref_count.keys())
+    for canvas in data["canvases"]:
+        cname = canvas["name"]
+        has_exit_port = any(n.get("type") == "exit_port" for n in canvas["nodes"])
+        if has_exit_port and cname not in child_canvas_names:
+            raise ManifestError(
+                f"{path}: canvas {cname!r}: exit_port nodes only valid in a nested child canvas"
+            )
+
 
 def _build_manifest(data: dict, raw_text: str) -> Manifest:
     custom_variables = [
