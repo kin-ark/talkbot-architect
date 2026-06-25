@@ -8,7 +8,7 @@ describe('useSession queue + errors', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('appends an error bubble when a turn fails', async () => {
-    api.sendChat.mockRejectedValue({ response: { data: { detail: 'LLM provider error: boom' } } });
+    api.streamChat.mockRejectedValue({ response: { data: { detail: 'LLM provider error: boom' } } });
     const { result } = renderHook(() => useSession());
     await act(async () => { await result.current.send('hi'); });
     await waitFor(() => {

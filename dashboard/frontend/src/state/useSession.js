@@ -47,13 +47,25 @@ export function useSession() {
       while (queue.current.length) {
         const msg = queue.current.shift();
         ctrl.current = new AbortController();
+        // placeholder agent bubble this turn fills
+        let agentIdx = -1;
+        setTranscript((t) => { agentIdx = t.length; return [...t, { role: 'agent', text: '', tool_trace: [] }]; });
+        const patch = (fn) => setTranscript((t) => t.map((m, i) => (i === agentIdx ? fn(m) : m)));
         try {
-          const r = await api.sendChat(msg, ctrl.current.signal);
-          setTranscript((t) => [...t, { role: 'agent', text: r.text, tool_trace: r.tool_trace }]);
-          setProposal(r.proposal || null);
+          await api.streamChat(msg, {
+            signal: ctrl.current.signal,
+            onEvent: (e) => {
+              if (e.type === 'token') patch((m) => ({ ...m, text: m.text + e.delta }));
+              else if (e.type === 'tool_start') patch((m) => ({ ...m, tool_trace: [...m.tool_trace, { name: e.name, arguments: e.args, status: 'running' }] }));
+              else if (e.type === 'tool_result') patch((m) => ({ ...m, tool_trace: m.tool_trace.map((tt, i) => (i === m.tool_trace.length - 1 ? { ...tt, status: 'done', summary: e.summary } : tt)) }));
+              else if (e.type === 'proposal') setProposal(e.proposal);
+              else if (e.type === 'error') setTranscript((t) => [...t, { role: 'error', text: e.message }]);
+              else if (e.type === 'done' && e.text) patch((m) => ({ ...m, text: e.text }));
+            },
+          });
         } catch (e) {
-          queue.current = [];        // halt the queue on error/cancel
-          if (e?.code !== 'ERR_CANCELED' && e?.name !== 'CanceledError') {
+          queue.current = [];
+          if (e?.name !== 'AbortError' && e?.name !== 'CanceledError') {
             setTranscript((t) => [...t, { role: 'error', text: errText(e) }]);
           }
         }
