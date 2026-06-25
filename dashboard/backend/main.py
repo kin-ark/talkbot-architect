@@ -53,7 +53,8 @@ SESSION = Session()
 
 @app.on_event("startup")
 def _load_persisted_session() -> None:
-    persistence.load_session(SESSION)
+    if not SESSION._stack:
+        persistence.load_session(SESSION)
 
 
 # ---------------------------------------------------------------------------
@@ -79,6 +80,17 @@ def _require_session() -> None:
     """Raise 503 if no data has been loaded into SESSION yet."""
     if not SESSION._stack:
         raise HTTPException(status_code=503, detail="no session loaded")
+
+
+def _reconstruct_transcript(messages) -> list[dict]:
+    """Backend LLM Messages -> frontend chat bubbles (plain text; tool turns dropped)."""
+    out: list[dict] = []
+    for m in messages:
+        if m.role == "user" and m.content:
+            out.append({"role": "user", "text": m.content})
+        elif m.role == "assistant" and m.content:
+            out.append({"role": "agent", "text": m.content})
+    return out
 
 
 def _parse_or_400(content: bytes) -> dict:
@@ -173,6 +185,21 @@ async def export_current(_: None = Depends(_require_session)):
         media_type="application/json",
         headers={"Content-Disposition": f"attachment; filename={SESSION.speech_name}"},
     )
+
+
+@app.get("/session")
+def get_session():
+    if not SESSION._stack:
+        return {"summary": None}
+    data = SESSION.current()
+    return {
+        "summary": agents.summarize(data),
+        "findings": agents.validate(data),
+        "transcript": _reconstruct_transcript(SESSION.transcript),
+        "proposal": SESSION.pending,
+        "can_undo": SESSION.can_undo(),
+        "can_redo": SESSION.can_redo(),
+    }
 
 
 @app.post("/session")
