@@ -173,6 +173,65 @@ def test_deploy_fixes_f1_f2_f3(tmp_path):
         )
 
 
+def test_build_nested_component_checker_clean(tmp_path):
+    """Full pipeline: nested (type 11) + exit_port (type 4) nodes across two canvases.
+
+    Structural assertions:
+    - child.parentUuid == parent.componentUuid  (two-way link)
+    - nested node's data.subComponentUuid == child.componentUuid
+    - nested node's canvas.ports.items UUIDs == set of child exit_port node UUIDs
+    - parent routes from nested node are keyed by child exit_port UUIDs
+    - checker_errors == 0
+    """
+    out = tmp_path / "speech_nested.json"
+    result = compile_manifest(FIXTURES / "manifest_nested.yaml", out)
+
+    assert result.checker_errors == 0, (
+        f"nested manifest produced checker errors: "
+        f"{result.checker_errors} errors, codes: {result.finding_codes}"
+    )
+
+    built = json.loads(out.read_text(encoding="utf-8"))
+    bsc = json.loads(built["BizSpeechComponent"])
+
+    parent = next(c for c in bsc if c["name"] == "Parent")
+    child = next(c for c in bsc if c["name"] == "Child")
+
+    # Two-way link: child.parentUuid == parent.componentUuid
+    assert child["parentUuid"] == parent["componentUuid"], (
+        f"child.parentUuid {child['parentUuid']!r} != parent.componentUuid "
+        f"{parent['componentUuid']!r}"
+    )
+
+    pdet = json.loads(parent["details"])
+    cdet = json.loads(child["details"])
+
+    # nested node (type 11) in parent details
+    nested_uuid = next((u for u, n in pdet.items() if n["type"] == 11), None)
+    assert nested_uuid is not None, "Expected a type-11 (Nested Component) node in parent details"
+    nested = pdet[nested_uuid]
+
+    # subComponentUuid == child.componentUuid
+    assert nested["data"]["subComponentUuid"] == child["componentUuid"], (
+        f"nested.data.subComponentUuid {nested['data']['subComponentUuid']!r} "
+        f"!= child.componentUuid {child['componentUuid']!r}"
+    )
+
+    # ports mirror child exits: port.uuid == a child exit_port node uuid
+    child_exit_uuids = {u for u, n in cdet.items() if n["type"] == 4}
+    port_uuids = {it["uuid"] for it in nested["canvas"]["ports"]["items"]}
+    assert port_uuids == child_exit_uuids, (
+        f"nested port UUIDs {port_uuids} do not match child exit_port UUIDs {child_exit_uuids}"
+    )
+
+    # parent routes from nested node keyed by child-exit-uuid
+    proutes = json.loads(parent["routes"])
+    assert set(proutes[nested_uuid].keys()) == child_exit_uuids, (
+        f"parent routes[nested] keys {set(proutes[nested_uuid].keys())} "
+        f"!= child exit_port UUIDs {child_exit_uuids}"
+    )
+
+
 def test_conditional_and_assign_build_checker_clean(tmp_path):
     """Full pipeline: conditional (type 7) + assign (type 10) nodes → checker-clean export.
 

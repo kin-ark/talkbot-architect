@@ -1,0 +1,44 @@
+name: "Nested Component Test"
+branch: dev
+language: IDN
+
+canvases:
+  - name: "Child"
+    nodes:
+      - id: child-talk
+        type: talk
+        prompt: "Child greeting"
+      - id: exit-success
+        type: exit_port
+        prompt: ""
+        config:
+          name: "Success"
+      - id: exit-fail
+        type: exit_port
+        prompt: ""
+        config:
+          name: "Fail"
+    edges:
+      - {from: child-talk, branch: Positive, to: exit-success}
+      - {from: child-talk, branch: Negative, to: exit-fail}
+
+  - name: "Parent"
+    nodes:
+      - id: parent-talk
+        type: talk
+        prompt: "Parent intro"
+      - id: call-child
+        type: nested
+        prompt: ""
+        config:
+          target: "Child"
+      - id: after-success
+        type: exit
+        prompt: "Goodbye after success"
+      - id: after-fail
+        type: exit
+        prompt: "Goodbye after fail"
+    edges:
+      - {from: parent-talk, branch: Positive, to: call-child}
+      - {from: call-child, branch: "Success", to: after-success}
+      - {from: call-child, branch: "Fail", to: after-fail}
