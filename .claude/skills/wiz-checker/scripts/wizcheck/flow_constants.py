@@ -69,6 +69,7 @@ NODE_TYPE_MAP: dict[int, str] = {
     7: "conditional",
     8: "goto_kb",           # Exit sub-type: jump to a specific knowledge base
     10: "variable_assignment",
+    11: "nested_component", # Nested/sub-component node (contains a child component)
     13: "transfer",         # Transfer-to-human node (distinct from type-2 exit/hangup)
     # LLM node type integer not observed in this export; §2.2.6 describes it
     # as a distinct node type — add here once seen in an LLM-enabled export.
