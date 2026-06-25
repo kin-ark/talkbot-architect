@@ -35,9 +35,12 @@ _SPECS = [
              "Create a brand-new dialogue from typed parameters (NOT raw YAML). "
              "Proposes a full new doc (dry-run). Use after the user confirms an outline. "
              "languages: ENG, IDN (ZHO/THA pending verified language codes). "
-             "Each node may include an optional type (talk/exit/transfer/goto/conditional/assign; "
-             "default: talk). goto nodes require config.target set to the name of another canvas "
-             "to jump to. conditional nodes route by config.variable + config.branches (each "
+             "Each node may include an optional type (talk/exit/transfer/goto/conditional/assign/"
+             "nested/exit_port; default: talk). goto nodes require config.target set to the name "
+             "of another canvas to jump to. nested nodes delegate to a child canvas (config.target "
+             "= child canvas name); their outgoing edges branch on the child canvas's exit_port "
+             "names. exit_port is a named terminal return inside a child canvas (config.name = the "
+             "port label). conditional nodes route by config.variable + config.branches (each "
              "{name, op, value|value_var, to}); assign nodes set config.variable to config.value.",
              {"type": "object",
               "properties": {
@@ -63,9 +66,11 @@ _SPECS = [
                                   "prompt": {"type": "string"},
                                   "type": {"type": "string",
                                            "enum": ["talk", "exit", "transfer", "goto",
-                                                    "conditional", "assign"]},
+                                                    "conditional", "assign",
+                                                    "nested", "exit_port"]},
                                   "config": {"type": "object", "properties": {
                                       "target": {"type": "string"},
+                                      "name": {"type": "string"},
                                       "variable": {"type": "string"},
                                       "value": {"type": "string"},
                                       "branches": {"type": "array", "items": {
@@ -93,8 +98,12 @@ _SPECS = [
               "required": ["name", "language", "branch", "canvases"]}),
     ToolSpec("add_component",
              "Add a new component (optionally with nodes+edges) to the current dialogue. Proposes a dry-run. "
-             "Each node may include an optional type (talk/exit/transfer/goto/conditional/assign; default: talk). "
+             "Each node may include an optional type (talk/exit/transfer/goto/conditional/assign/"
+             "nested/exit_port; default: talk). "
              "goto nodes require config.target set to the name of another component to jump to. "
+             "nested nodes delegate to a child canvas (config.target = child canvas name); their "
+             "outgoing edges branch on the child canvas's exit_port names. exit_port is a named "
+             "terminal return inside a child canvas (config.name = the port label). "
              "conditional nodes route by config.variable + config.branches (each {name, op, value|value_var, to}); "
              "assign nodes set config.variable to config.value.",
              {"type": "object", "properties": {
@@ -103,9 +112,11 @@ _SPECS = [
                      "id": {"type": "string"},
                      "prompt": {"type": "string"},
                      "type": {"type": "string", "enum": ["talk", "exit", "transfer", "goto",
-                                                         "conditional", "assign"]},
+                                                         "conditional", "assign",
+                                                         "nested", "exit_port"]},
                      "config": {"type": "object", "properties": {
                          "target": {"type": "string"},
+                         "name": {"type": "string"},
                          "variable": {"type": "string"},
                          "value": {"type": "string"},
                          "branches": {"type": "array", "items": {
@@ -127,9 +138,12 @@ _SPECS = [
                      "to": {"type": "string"}}, "required": ["from", "branch", "to"]}}},
               "required": ["name"]}),
     ToolSpec("add_node",
-             "Add a node (talk/exit/transfer/goto/conditional/assign) to an existing component (by index), "
-             "optionally wiring edges. Edge endpoints: the new node's id, or an existing node's uuid. "
-             "goto requires config.target = another component's name. "
+             "Add a node (talk/exit/transfer/goto/conditional/assign/nested/exit_port) to an existing "
+             "component (by index), optionally wiring edges. Edge endpoints: the new node's id, or an "
+             "existing node's uuid. goto requires config.target = another component's name. "
+             "nested delegates to a child canvas (config.target = child canvas name); outgoing edges "
+             "branch on the child canvas's exit_port names (free strings, not an enum). "
+             "exit_port is a named terminal return inside a child canvas (config.name = port label). "
              "conditional nodes route by config.variable + config.branches (each {name, op, value|value_var, to}). "
              "assign nodes set config.variable to config.value; assign continue-edges use branch: \"Default\". "
              "Proposes a dry-run.",
@@ -138,9 +152,11 @@ _SPECS = [
                  "id": {"type": "string"},
                  "prompt": {"type": "string"},
                  "type": {"type": "string", "enum": ["talk", "exit", "transfer", "goto",
-                                                     "conditional", "assign"]},
+                                                     "conditional", "assign",
+                                                     "nested", "exit_port"]},
                  "config": {"type": "object", "properties": {
                      "target": {"type": "string"},
+                     "name": {"type": "string"},
                      "variable": {"type": "string"},
                      "value": {"type": "string"},
                      "branches": {"type": "array", "items": {

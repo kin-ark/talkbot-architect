@@ -7,6 +7,7 @@ import { layoutComponents } from '../flow/componentLayout';
 const TYPE_COLOR = {
   talk: '#3b82f6', conditional: '#8b5cf6', variable_assignment: '#10b981',
   exit: '#0ea5e9', llm: '#f59e0b', unknown: '#94a3b8',
+  nested_component: '#f97316', exit_port: '#14b8a6',
 };
 
 function ComponentNode({ data }) {

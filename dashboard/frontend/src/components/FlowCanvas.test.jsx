@@ -31,4 +31,12 @@ describe('TYPE_COLOR node-type contract', () => {
     expect(src).toMatch(/conditional:\s*'#[0-9a-fA-F]{6}'/);
     expect(src).toMatch(/variable_assignment:\s*'#[0-9a-fA-F]{6}'/);
   });
+
+  it('defines colors for nested_component and exit_port', () => {
+    const __dirname = path.dirname(fileURLToPath(import.meta.url));
+    const src = fs.readFileSync(
+      path.resolve(__dirname, 'FlowCanvas.jsx'), 'utf-8');
+    expect(src).toMatch(/nested_component:\s*'#[0-9a-fA-F]{6}'/);
+    expect(src).toMatch(/exit_port:\s*'#[0-9a-fA-F]{6}'/);
+  });
 });
