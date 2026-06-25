@@ -110,11 +110,15 @@ _WIZ_OPERATOR: dict[str, str] = {
     "Contains": "Contain",
 }
 
-_TYPE_INT = {"talk": 1, "exit": 2, "goto": 4, "conditional": 7, "assign": 10, "transfer": 13}
+_TYPE_INT = {
+    "talk": 1, "exit": 2, "goto": 4, "conditional": 7, "assign": 10, "nested": 11, "transfer": 13,
+    "exit_port": 4,
+}
 _TYPE_NODE_NAME = {
     "talk": "Talk Node",
     "conditional": "Conditional Judgment Node",
     "assign": "Variable Assignment Node",
+    "nested": "Nested Component Node",
 }
 
 
@@ -172,6 +176,7 @@ def _build_talk_node(
     is_default: bool,
     component_nav: list[dict] | None = None,  # unused by Talk; accepted for uniform dispatch
     var_source_by_name: dict[str, int] | None = None,  # unused; accepted for uniform dispatch
+    nested_exit_map: dict[str, dict[str, str]] | None = None,  # unused; uniform dispatch
 ) -> tuple[dict, dict]:
     """Build one Talk-node ``node_obj`` and ``scs_row``.
 
@@ -323,6 +328,7 @@ def _build_exit_node(
     is_default: bool,
     component_nav: list[dict] | None = None,
     var_source_by_name: dict[str, int] | None = None,  # unused; accepted for uniform dispatch
+    nested_exit_map: dict[str, dict[str, str]] | None = None,  # unused; uniform dispatch
 ) -> tuple[dict, dict]:
     """Build one Exit-node (type 2) ``node_obj`` and ``scs_row``.
 
@@ -437,6 +443,7 @@ def _build_goto_node(
     is_default: bool,
     component_nav: list[dict] | None = None,
     var_source_by_name: dict[str, int] | None = None,  # unused; accepted for uniform dispatch
+    nested_exit_map: dict[str, dict[str, str]] | None = None,  # unused; uniform dispatch
 ) -> tuple[dict, None]:
     """Build one goto_component node (type 4) ``node_obj``.
 
@@ -540,6 +547,7 @@ def _build_transfer_node(
     is_default: bool,
     component_nav: list[dict] | None = None,
     var_source_by_name: dict[str, int] | None = None,  # unused; accepted for uniform dispatch
+    nested_exit_map: dict[str, dict[str, str]] | None = None,  # unused; uniform dispatch
 ) -> tuple[dict, dict]:
     """Build one Transfer-node (type 13) ``node_obj`` and ``scs_row``.
 
@@ -656,6 +664,7 @@ def _build_conditional_node(
     is_default: bool,
     component_nav: list[dict] | None = None,
     var_source_by_name: dict[str, int] | None = None,
+    nested_exit_map: dict[str, dict[str, str]] | None = None,  # unused; uniform dispatch
 ) -> tuple[dict, None]:
     """Build one Conditional-Judgment node (type 7). Router: one out-port per distinct
     branch name. No SentenceCutSpeech row, no topFloorDetails. Returns (node_obj, None).
@@ -779,6 +788,7 @@ def _build_assign_node(
     is_default: bool,
     component_nav: list[dict] | None = None,
     var_source_by_name: dict[str, int] | None = None,
+    nested_exit_map: dict[str, dict[str, str]] | None = None,  # unused; uniform dispatch
 ) -> tuple[dict, None]:
     """Build one Variable-Assignment node (type 10). Silent pass-through with a single
     out-port named "Default". No SCS row, no topFloorDetails. Returns (node_obj, None)."""
@@ -864,6 +874,166 @@ def _build_assign_node(
     return node_obj, None
 
 
+def _build_exit_port_node(
+    spec: NodeSpec,
+    *,
+    canvas_index: int,
+    comp_uuid: str,
+    speech_id: int,
+    branch_intent_ids: dict[str, int],
+    kb_ids: list[str],
+    node_language: str,
+    minter: Any,
+    sort_index: int,
+    port_uuids: dict[str, str],
+    node_uuid: str,
+    reccut_uuid: str,
+    is_default: bool,
+    component_nav: list[dict] | None = None,
+    var_source_by_name: dict[str, int] | None = None,  # unused; accepted for uniform dispatch
+    nested_exit_map: dict[str, dict[str, str]] | None = None,  # unused; uniform dispatch
+) -> tuple[dict, None]:
+    """Build one exit_port node (type 4) — a named exit point from a nested component.
+
+    Terminal: no ports, no SentenceCutSpeech row.  Returns (node_obj, None).
+    Distinct from goto_component: appoint_node_id and specificComponentName are EMPTY;
+    the name (from config["name"]) labels the port that the parent component routes through.
+
+    Emits a topFloorDetails row (add to the ("exit", "goto") condition in render_component_nodes).
+    """
+    name: str = spec.config.get("name", "Exit")
+
+    canvas = {
+        "view": "react-shape-view",
+        "component": {
+            "props": {
+                "text": name,
+                "list": list(component_nav) if component_nav else [],
+                "type": 2,
+            }
+        },
+        "size": {"width": 234, "height": 106},
+        "shape": "react-shape",
+        "id": node_uuid,
+        "position": {"x": -450, "y": 390},
+        "zIndex": 2,
+    }
+
+    data: dict = {
+        "appoint_node_id": "",
+        "speakType": 1,
+        "hitKnowledgeRate": [],
+        "intention_judgment_time": 2,
+        "type": 4,
+        "repeat_script_type": 0,
+        "hot_words_list": [],
+        "specificComponentName": "",
+        "hangupRate": "0.0%",
+        "exclusive_key_words": [],
+        "openUserPauseDuration": False,
+        "can_be_interrupted": 0,
+        "id": node_uuid,
+        "node_repetition": 0,
+        "open_pause_duration": False,
+        "selected": False,
+        "hitKnowledgeCountsRate": "0.0%",
+        "multiple_appoint_id": "",
+        "openChasingDedayTim": False,
+        "allow_jump_knowledges_switch": 0,
+        "allow_jump_knowledges": list(kb_ids),
+        "is_transfer": 0,
+        "appoint_knowledge_id": "",
+        "is_default": is_default,
+        "textareaList": [""],
+        "nodeLabelArr": [],
+        "node_language": node_language,
+        "agent_type": "SYSTEM",
+        "sms_id": "",
+        "can_interrupt_percent": 80,
+        "name": name,
+        "notices_info": [],
+        "notice_send_type": 0,
+        "position": {"x": -450, "y": 390},
+    }
+
+    node_obj: dict = {
+        "canvas": canvas,
+        "data": data,
+        "name": name,
+        "type": 4,
+        "is_default": is_default,
+        "data_extra": {
+            "hot_words_list": [],
+            "intents": [],
+            "variables": [],
+            "serviceCall": [],
+            "sentence_cut": [],
+        },
+    }
+
+    return node_obj, None
+
+
+def _build_nested_node(
+    spec: NodeSpec,
+    *,
+    canvas_index: int,
+    comp_uuid: str,
+    speech_id: int,
+    branch_intent_ids: dict[str, int],
+    kb_ids: list[str],
+    node_language: str,
+    minter: Any,
+    sort_index: int,
+    port_uuids: dict[str, str],
+    node_uuid: str,
+    reccut_uuid: str,
+    is_default: bool,
+    component_nav: list[dict] | None = None,
+    var_source_by_name: dict[str, int] | None = None,
+    nested_exit_map: dict[str, dict[str, str]] | None = None,
+) -> tuple[dict, None]:
+    """Type-11 nested-component delegator. Ports mirror the child's exit ports:
+    port.uuid == child exit-node uuid (from nested_exit_map), port.id == minted.
+    subComponentUuid is injected via spec.config['target_uuid'] by canvases.py.
+    Returns (node_obj, None). No SCS, no topFloorDetails."""
+    target_uuid = spec.config.get("target_uuid", "")
+    target_name = spec.config.get("target", "")
+    exits = (nested_exit_map or {}).get(target_name, {})  # {exit-name: child-exit-uuid}
+    items = []
+    for exit_name, child_exit_uuid in exits.items():
+        items.append({
+            "appointNodeId": "", "rate": "0.0%", "name": exit_name,
+            "id": str(minter.uuid(f"nestport:{canvas_index}:{spec.id}:{exit_name}")),
+            "uuid": child_exit_uuid,
+            "attrs": _fo(-37.67, 73), "group": "out",
+        })
+    canvas = {
+        "view": "react-shape-view",
+        "component": {"props": {"text": spec.config.get("name", target_name),
+                                "list": list(component_nav) if component_nav else [],
+                                "type": 11}},
+        "size": {"width": 293, "height": 106},
+        "shape": "react-shape", "id": node_uuid, "position": {"x": -450, "y": 250},
+        "ports": {"groups": {"in": {"position": {"name": "top"}, "attrs": _fo(-30, 140)},
+                             "out": {"position": {"left": 200, "name": "bottom"},
+                                     "attrs": {"fo": {"magnet": "true", "height": 24}}}},
+                  "items": items},
+        "portMarkup": _PORT_MARKUP, "zIndex": 1,
+    }
+    data = {
+        "subComponentUuid": target_uuid, "name": target_name, "type": 11,
+        "is_default": is_default, "isHangUp": False, "isJumpToKonwledge": False,
+        "hitKnowledgeRate": [], "hangupRate": "0.0%", "hitKnowledgeCountsRate": "0.0%",
+        "selected": False,
+    }
+    node_obj = {"canvas": canvas, "data": data, "name": target_name, "type": 11,
+                "is_default": is_default,
+                "data_extra": {"hot_words_list": [], "intents": [], "variables": [],
+                               "serviceCall": [], "sentence_cut": []}}
+    return node_obj, None
+
+
 # ---------------------------------------------------------------------------
 # Node-type dispatch registry
 # ---------------------------------------------------------------------------
@@ -879,10 +1049,15 @@ NODE_BUILDERS: dict[str, Callable] = {
     "goto": _build_goto_node,
     "conditional": _build_conditional_node,
     "assign": _build_assign_node,
+    "exit_port": _build_exit_port_node,
+    "nested": _build_nested_node,
 }
 
 
-def _out_port_names(spec: NodeSpec) -> list[str]:
+def _out_port_names(
+    spec: NodeSpec,
+    nested_exit_map: dict[str, dict[str, str]] | None = None,
+) -> list[str]:
     """Distinct out-port names for a node, in canonical order, by type."""
     if spec.type == "talk":
         return list(_CHECKED)
@@ -895,7 +1070,11 @@ def _out_port_names(spec: NodeSpec) -> list[str]:
             if name and name not in seen:
                 seen.append(name)
         return seen
-    return []  # terminal types: no out-ports
+    if spec.type == "nested":
+        target = spec.config.get("target", "")
+        exits = (nested_exit_map or {}).get(target, {})
+        return list(exits.keys())
+    return []  # terminal types (exit, transfer, goto, exit_port): no out-ports
 
 
 # ---------------------------------------------------------------------------
@@ -915,6 +1094,7 @@ def render_component_nodes(
     minter: Any,
     component_nav: list[dict] | None = None,
     var_source_by_name: dict[str, int] | None = None,
+    nested_exit_map: dict[str, dict[str, str]] | None = None,
 ) -> RenderedNodes:
     """Render a list of NodeSpec objects into WIZ.AI component sub-dicts.
 
@@ -949,9 +1129,16 @@ def render_component_nodes(
         Built from the merged ``SpeechVariable`` list in ``apply_canvases`` after
         ``apply_variables`` has run.  When ``None`` (e.g. in unit tests or modifier
         calls), all variables default to source 0 (custom).
+    nested_exit_map:
+        Optional mapping of child-canvas-name → {exit-name: child-exit-node-uuid}.
+        Used to wire a ``nested`` node's out-ports to the child component's exit_port
+        node UUIDs so that routing keys in ``routes`` are the child-exit-node UUIDs
+        (not freshly minted port UUIDs).  Injected by ``apply_canvases`` in Task 3
+        after child canvases have been rendered.  When ``None``, nested nodes emit
+        ports from an empty map (no port items; routes remains empty).
     """
     # Terminal node types: no out-ports, not in inbound_ports.
-    _TERMINAL_TYPES = frozenset({"exit", "transfer", "goto"})
+    _TERMINAL_TYPES = frozenset({"exit", "transfer", "goto", "exit_port"})
 
     details: dict = {}
     routes: dict = {}
@@ -991,10 +1178,17 @@ def render_component_nodes(
         is_default = nid_str in nodes_with_no_incoming
 
         # --- port UUIDs: type-dependent out-port names ---
-        port_names = _out_port_names(spec)
-        port_uuids: dict[str, str] = {
-            name: str(minter.uuid(f"port:{ci}:{nid_str}:{name}")) for name in port_names
-        }
+        port_names = _out_port_names(spec, nested_exit_map)
+        if spec.type == "nested":
+            # Nested node routing keys are the CHILD exit-node UUIDs (not freshly minted).
+            # This ensures routes[nested_uuid][child_exit_uuid] connects back to the child.
+            target = spec.config.get("target", "")
+            exits = (nested_exit_map or {}).get(target, {})
+            port_uuids = dict(exits)  # {exit-name: child-exit-uuid}
+        else:
+            port_uuids: dict[str, str] = {
+                name: str(minter.uuid(f"port:{ci}:{nid_str}:{name}")) for name in port_names
+            }
 
         # Track mappings for edge wiring after the loop.
         _node_id_to_uuid[nid_str] = node_uuid
@@ -1023,6 +1217,7 @@ def render_component_nodes(
             is_default=is_default,
             component_nav=component_nav,
             var_source_by_name=var_source_by_name,
+            nested_exit_map=nested_exit_map,
         )
 
         # --- accumulate ---
@@ -1041,9 +1236,9 @@ def render_component_nodes(
                 "is_default": True,
             })
 
-        # Exit (type 2) and goto (type 4) contribute a topFloorDetails row = their data dict.
-        # Transfer (type 13) does NOT (confirmed by fixture 26).
-        if spec.type in ("exit", "goto"):
+        # Exit (type 2), goto (type 4), and exit_port (type 4) contribute a topFloorDetails row.
+        # Transfer (type 13) and nested (type 11) do NOT.
+        if spec.type in ("exit", "goto", "exit_port"):
             top_floor_details.append(node_obj["data"])
 
     # --- Wire edges into routes (user edges + synthesized conditional edges) ---
