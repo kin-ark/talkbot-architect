@@ -138,6 +138,7 @@ def apply_canvases(
                     parent_of_child[target] = canvas.name
 
     child_names: set[str] = set(parent_of_child.keys())
+    # Scope: one level of nesting — child canvases are not themselves parents (no nested-in-nested).
 
     # Render order: children BEFORE parents (two-pass).
     # Pass 1: render child canvases; collect exit_port node UUIDs into nested_exit_map.

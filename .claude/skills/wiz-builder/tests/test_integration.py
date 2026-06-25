@@ -218,7 +218,9 @@ def test_build_nested_component_checker_clean(tmp_path):
     )
 
     # ports mirror child exits: port.uuid == a child exit_port node uuid
-    child_exit_uuids = {u for u, n in cdet.items() if n["type"] == 4}
+    # exit_port discriminant: type==4 AND empty specificComponentName (goto nodes have it populated)
+    child_exit_uuids = {u for u, n in cdet.items()
+                        if n["type"] == 4 and n["data"].get("specificComponentName") == ""}
     port_uuids = {it["uuid"] for it in nested["canvas"]["ports"]["items"]}
     assert port_uuids == child_exit_uuids, (
         f"nested port UUIDs {port_uuids} do not match child exit_port UUIDs {child_exit_uuids}"
