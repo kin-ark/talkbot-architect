@@ -10,9 +10,23 @@ function bubbleClass(role) {
   return 'bg-surface border border-border text-text';
 }
 
-export default function ChatPane({ transcript, proposal, sending, onSend, onApply, onReject, onCancel, onPreview }) {
+export default function ChatPane({ transcript, proposal, sending, onSend, onApply, onReject, onCancel, onPreview, summary, onSelectNode }) {
   const [input, setInput] = useState('');
   const submit = (e) => { e.preventDefault(); if (!input.trim()) return; onSend(input.trim()); setInput(''); };
+  const mdComponents = {
+    a: ({ href, children }) => {
+      if (typeof href === 'string' && href.startsWith('#node:')) {
+        const uuid = href.slice(6);            // '#node:'.length === 6
+        return (
+          <button type="button" onClick={() => onSelectNode?.({ uuid })}
+            className="text-primary underline hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded">
+            {children}
+          </button>
+        );
+      }
+      return <a href={href} target="_blank" rel="noreferrer" className="text-primary underline">{children}</a>;
+    },
+  };
   return (
     <div className="flex flex-col h-full" data-testid="chat-pane">
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
@@ -24,7 +38,7 @@ export default function ChatPane({ transcript, proposal, sending, onSend, onAppl
             <div className={`inline-block max-w-[80%] p-3 rounded-2xl text-sm ${bubbleClass(m.role)} ${m.role === 'user' || m.role === 'error' ? 'whitespace-pre-wrap' : 'prose prose-sm max-w-none prose-pre:bg-surface-muted prose-pre:text-text'}`}>
               {m.role === 'user' || m.role === 'error'
                 ? m.text
-                : <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.text || ''}</ReactMarkdown>}
+                : <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>{m.text || ''}</ReactMarkdown>}
             </div>
           </div>
         ))}
