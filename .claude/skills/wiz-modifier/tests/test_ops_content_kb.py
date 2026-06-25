@@ -75,6 +75,13 @@ def test_add_kb_appends_entry_and_sck_rows(baseline_dict):
     assert entry["isInit"] == 0
     assert entry["recordNum"] == 0
     assert entry["wordNum"] == 0
+    # Deploy-invariant lock (must match the builder's apply_knowledge_bases values, since the
+    # 35-field KB dict is hand-duplicated across the two surfaces): an Intent-triggered KB has
+    # conditions "null" (non-null → WIZ "System Trigger"); allowInterrupt/repeatScriptType are
+    # the business-KB defaults. Decoded from the real export + verified at the deploy gate.
+    assert entry["conditions"] == "null"
+    assert entry["allowInterrupt"] == 0
+    assert entry["repeatScriptType"] == 0
 
 
 def test_add_kb_intents_resolved_in_entry(baseline_dict):
