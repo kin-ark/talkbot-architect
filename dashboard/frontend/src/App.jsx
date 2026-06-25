@@ -16,7 +16,28 @@ export default function App() {
   const onExport = () => window.open(exportUrl(), '_blank');
   const onNew = () => window.location.reload();
 
-  const selectNode = (node) => { setSelectedNode(node); setDockTab('properties'); };
+  const ownerComponentOf = (uuid) => {
+    for (const c of s.summary?.components || []) {
+      if (c.nodes && c.nodes[uuid]) return c.uuid;
+    }
+    return null;
+  };
+
+  const resolveNode = (node) => {
+    if (!node?.uuid) return node;
+    for (const c of s.summary?.components || []) {
+      if (c.nodes?.[node.uuid]) return c.nodes[node.uuid];
+    }
+    return node;
+  };
+
+  const selectNode = (node) => {
+    const resolved = resolveNode(node);
+    setSelectedNode(resolved);
+    setDockTab('properties');
+    const owner = resolved?.uuid ? ownerComponentOf(resolved.uuid) : null;
+    if (owner) setFocusComponentId(owner);
+  };
 
   if (!s.summary) {
     return (
