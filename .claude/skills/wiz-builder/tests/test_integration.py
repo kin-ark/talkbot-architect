@@ -318,6 +318,24 @@ def test_build_multiround_kb_links_component(tmp_path):
     assert target_uuid in by_uuid, (
         f"multipleAppointId {target_uuid} does not resolve to any component"
     )
-    assert by_uuid[target_uuid].get("parentUuid") == "0", (
+    target_comp = by_uuid[target_uuid]
+    assert target_comp.get("parentUuid") == "0", (
         "multi-round target must be a normal top-level component (parentUuid '0')"
+    )
+    # The delegate target must be category=2 so WIZ files it under the Multi-Round Dialogue
+    # tab (decoded from the real export); normal Main Talk-Flow components stay category=1.
+    assert target_comp.get("category") == 2, (
+        f"multi-round target component must be category 2; got {target_comp.get('category')}"
+    )
+    by_name = {c.get("name"): c for c in components}
+    assert by_name["1. Main"].get("category") == 1, (
+        "a normal Main Talk-Flow component must stay category 1"
+    )
+
+    # The KB's triggering intent must be a user intent (isInit=1) so WIZ shows an
+    # "Intent Trigger", not a "System Trigger" (decoded from the real export).
+    speech_intents = _unwrap(built["SpeechIntent"])
+    by_intent_name = {i.get("intentName"): i for i in speech_intents}
+    assert by_intent_name["AskDueDate"].get("isInit") == 1, (
+        "a manifest custom_intent must be emitted with isInit=1 (user intent)"
     )

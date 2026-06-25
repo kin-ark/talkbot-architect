@@ -163,6 +163,14 @@ def apply_canvases(
     child_names: set[str] = set(parent_of_child.keys())
     # Scope: one level of nesting — child canvases are not themselves parents (no nested-in-nested).
 
+    # Multi-round target canvases: a KB's `multi_round` names the canvas it delegates into.
+    # That component must carry category=2 so WIZ files it under the "Multi-Round Dialogue"
+    # tab (category=1 = normal Main Talk-Flow). Decoded from the real export: every
+    # KB-multipleAppointId target component has category=2.
+    mr_target_names: set[str] = {
+        kb.multi_round for kb in manifest.knowledge_bases if kb.multi_round
+    }
+
     # Render order: children BEFORE parents (two-pass).
     # Pass 1: render child canvases; collect exit_port node UUIDs into nested_exit_map.
     # Pass 2: render parent (and non-nested) canvases with the populated nested_exit_map.
@@ -201,6 +209,7 @@ def apply_canvases(
             var_source_by_name=var_source_by_name,
             nested_exit_map=nested_exit_map,
             parent_uuid=canvas_uuid_by_name.get(parent_of_child.get(canvas.name, ""), "0"),
+            mr_target_names=mr_target_names,
         )
         comp_by_ci[ci] = comp
         scs_by_ci[ci] = scs_rows
@@ -234,6 +243,7 @@ def apply_canvases(
             var_source_by_name=var_source_by_name,
             nested_exit_map=nested_exit_map,
             parent_uuid="0",
+            mr_target_names=mr_target_names,
         )
         comp_by_ci[ci] = comp
         scs_by_ci[ci] = scs_rows
@@ -270,6 +280,7 @@ def _build_component(
     var_source_by_name: dict[str, int] | None = None,
     nested_exit_map: dict[str, dict[str, str]] | None = None,
     parent_uuid: str = "0",
+    mr_target_names: set[str] | None = None,
 ) -> tuple[dict[str, Any], list[dict]]:
     """Build a single BizSpeechComponent entry using render_component_nodes.
 
@@ -309,7 +320,10 @@ def _build_component(
         "componentUuid": canvas_uuid,
         "name": canvas.name,
         "branch": manifest.branch,
-        "category": base.get("category", 1),
+        # category 2 = Multi-Round Dialogue component; 1 = normal Main Talk-Flow. A canvas
+        # named as some KB's multi_round target must be filed under the Multi-Round tab.
+        "category": 2 if (mr_target_names and canvas.name in mr_target_names)
+        else base.get("category", 1),
         "type": base.get("type", 1),
         "language": base.get("language", 0),
         "editStatus": base.get("editStatus", 1),

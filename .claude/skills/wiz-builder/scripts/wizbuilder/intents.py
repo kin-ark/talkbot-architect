@@ -55,7 +55,10 @@ def apply_intents(
             "intentId": minter.int_id(f"intent:{ci.name}"),
             "intentName": ci.name,
             "isDelete": 0,
-            "isInit": 0,
+            # isInit: 1 = user-created intent (system/built-in intents are 0). A KB bound to
+            # an isInit:0 intent surfaces in WIZ as a "System Trigger" instead of an "Intent
+            # Trigger" — decoded from the real export (all business intents are isInit:1).
+            "isInit": 1,
             "keyWordInIntent": _bracket_join(ci.keywords, sep=","),
             "language": ci.language,
             "nodeId": "",

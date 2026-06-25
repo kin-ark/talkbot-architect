@@ -48,6 +48,8 @@ def test_add_intent_appends_13_key_shape(baseline_dict):
     assert added["intentName"] == "yes"
     assert added["keyWordInIntent"] == "[ya,betul]"
     assert added["userResponseInIntent"] == "[Ya]"
+    # isInit=1 marks a user-created intent → KBs bound to it show "Intent Trigger" (not System).
+    assert added["isInit"] == 1
     assert set(added.keys()) == {
         "branch", "createTime", "intentId", "intentName", "isDelete", "isInit",
         "keyWordInIntent", "language", "nodeId", "speechId", "templateCode",

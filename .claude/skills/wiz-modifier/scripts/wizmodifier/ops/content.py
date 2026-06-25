@@ -93,7 +93,9 @@ def add_intent(bundle: InputBundle, params: dict, minter) -> None:
         "intentId": minter.int_id(f"intent:{params['name']}"),
         "intentName": params["name"],
         "isDelete": 0,
-        "isInit": 0,
+        # isInit: 1 = user-created intent. A KB bound to an isInit:0 intent surfaces in WIZ
+        # as a "System Trigger" instead of an "Intent Trigger" (decoded from real export).
+        "isInit": 1,
         "keyWordInIntent": _bracket_join(params.get("keywords", []), sep=","),
         "language": params.get("language", default.get("language", 0)),
         "nodeId": "",
@@ -165,19 +167,23 @@ def add_kb(bundle: InputBundle, params: dict, minter) -> None:
         })
 
     # --- resolve multi_round component name → componentUuid ---
+    # When set, the target component must also be re-classified category=2 so WIZ files it
+    # under the "Multi-Round Dialogue" tab (1 = Main Talk-Flow); decoded from real export.
     multi_round_uuid: str | None = None
+    bsc_list: list[dict] | None = None
     if multi_round is not None:
-        bsc_raw = bundle.data.get("BizSpeechComponent", "[]")
-        bsc_list: list[dict] = json.loads(bsc_raw) if isinstance(bsc_raw, str) else list(bsc_raw)
-        comp_uuid_by_name: dict[str, str] = {
-            c.get("name", ""): c.get("componentUuid", "") for c in bsc_list
-        }
-        if multi_round not in comp_uuid_by_name or not comp_uuid_by_name[multi_round]:
+        bsc_list = codec.decode(bundle.data.get("BizSpeechComponent", "[]"))
+        target_comp: dict | None = next(
+            (c for c in bsc_list if c.get("name", "") == multi_round and c.get("componentUuid")),
+            None,
+        )
+        if target_comp is None:
             raise ValueError(
                 f"add-kb: KB {name!r} multi_round target {multi_round!r} not found "
                 f"in BizSpeechComponent; ensure the component exists"
             )
-        multi_round_uuid = comp_uuid_by_name[multi_round]
+        multi_round_uuid = target_comp["componentUuid"]
+        target_comp["category"] = 2
 
     # --- build kdInfo items (one per answer + optional delegate item) ---
     # Item ids use _wide_int seeded from a deterministic string; mirrors knowledge.py.
@@ -281,3 +287,6 @@ def add_kb(bundle: InputBundle, params: dict, minter) -> None:
 
     bundle.data["BizKnowledgeInfo"] = codec.encode(bk_list)
     bundle.data["SentenceCutKnowledge"] = codec.encode(sck_list)
+    # Persist the multi_round target's category=2 re-classification, if any.
+    if bsc_list is not None:
+        bundle.data["BizSpeechComponent"] = codec.encode(bsc_list)

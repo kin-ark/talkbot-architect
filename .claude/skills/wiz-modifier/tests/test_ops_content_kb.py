@@ -185,6 +185,13 @@ def test_add_kb_multi_round_appends_delegate_item(baseline_dict):
     # SCK rows: only the normal answerType:1 answer gets one
     assert len(_sck_list(b)) == sck_before + 1
 
+    # The multi_round target component must be re-classified category=2 so WIZ files it
+    # under the Multi-Round Dialogue tab (decoded from real export).
+    bsc_after = {c["componentUuid"]: c for c in codec.decode(b.data["BizSpeechComponent"])}
+    assert bsc_after[comp_uuid]["category"] == 2, (
+        f"multi_round target must become category 2; got {bsc_after[comp_uuid].get('category')}"
+    )
+
 
 def test_add_kb_multi_round_no_answers_only_delegate(baseline_dict):
     b = _make_bundle(baseline_dict)
