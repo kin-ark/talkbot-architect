@@ -47,7 +47,8 @@ export default function RightDock({ activeTab, onTabChange, summary, findings, s
         {activeTab === 'chat' && (
           <ChatPane transcript={chat.transcript} proposal={chat.proposal} sending={chat.sending}
             onSend={chat.onSend} onRetry={chat.onRetry} onApply={chat.onApply} onReject={chat.onReject} onCancel={chat.onCancel}
-            onPreview={onPreview} summary={summary} onSelectNode={onSelectNode} />
+            onPreview={onPreview} summary={summary} onSelectNode={onSelectNode}
+            canUndo={chat.canUndo} canRedo={chat.canRedo} onUndo={chat.onUndo} onRedo={chat.onRedo} />
         )}
         {activeTab === 'findings' && <FindingList findings={findings} onSelect={onSelectNode} />}
         {activeTab === 'properties' && <NodePropertiesPanel node={selectedNode} summary={summary} />}

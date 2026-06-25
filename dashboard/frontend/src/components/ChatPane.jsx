@@ -49,7 +49,7 @@ function bubbleClass(role) {
   return 'bg-surface border border-border text-text';
 }
 
-export default function ChatPane({ transcript, proposal, sending, onSend, onRetry, onApply, onReject, onCancel, onPreview, summary, onSelectNode }) {
+export default function ChatPane({ transcript, proposal, sending, onSend, onRetry, onApply, onReject, onCancel, onPreview, summary, onSelectNode, canUndo = false, canRedo = false, onUndo, onRedo }) {
   const [input, setInput] = useState('');
   const submit = (e) => { e.preventDefault(); if (!input.trim()) return; onSend(input.trim()); setInput(''); };
   const slashMatches = input.startsWith('/')
@@ -121,6 +121,12 @@ export default function ChatPane({ transcript, proposal, sending, onSend, onRetr
         )}
         {proposal && <DiffCard proposal={proposal} onApply={onApply} onReject={onReject} onPreview={onPreview} />}
       </div>
+      <div className="px-4 pb-1 flex gap-2" data-testid="chat-undo-row">
+          <button type="button" onClick={onUndo} disabled={!canUndo}
+            className="text-xs text-text-secondary disabled:opacity-40 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded">↶ Undo</button>
+          <button type="button" onClick={onRedo} disabled={!canRedo}
+            className="text-xs text-text-secondary disabled:opacity-40 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded">↷ Redo</button>
+        </div>
       <div className="px-4 pb-2"><ChipRow onSend={onSend} /></div>
       <form onSubmit={submit} data-testid="chat-form" className="p-4 border-t border-border bg-surface">
         <div className="relative flex gap-2">

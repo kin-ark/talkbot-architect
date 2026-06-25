@@ -7,6 +7,7 @@ vi.mock('./api', () => ({
   startBlank: vi.fn().mockResolvedValue({ summary: { components: [] }, findings: [] }),
   getConfig: vi.fn().mockResolvedValue({}),
   exportUrl: vi.fn(() => '/export'),
+  getSession: vi.fn().mockResolvedValue(null),
 }));
 import App from './App';
 
