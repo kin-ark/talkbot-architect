@@ -19,6 +19,7 @@ export async function getConfig() { return (await axios.get(`${BASE}/config`)).d
 export async function updateConfig(body) { return (await axios.put(`${BASE}/config`, body)).data; }
 export async function clearConfig() { return (await axios.post(`${BASE}/config/clear`)).data; }
 export async function startBlank() { return (await axios.post(`${BASE}/session/blank`)).data; }
+export async function getSession() { return (await axios.get(`${BASE}/session`)).data; }
 
 export async function streamChat(message, { onEvent, signal } = {}) {
   let resp;

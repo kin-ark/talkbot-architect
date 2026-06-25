@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import * as api from '../api';
 
 export function useSession() {
@@ -15,8 +15,24 @@ export function useSession() {
   const draining = useRef(false);
   const ctrl = useRef(null);
   const turnSeq = useRef(0);
+  const touched = useRef(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.resolve(api.getSession()).then((r) => {
+      if (cancelled || touched.current || !r?.summary) return;
+      setSummary(r.summary);
+      setFindings(r.findings || []);
+      setTranscript(r.transcript || []);
+      setProposal(r.proposal || null);
+      setCanUndo(!!r.can_undo);
+      setCanRedo(!!r.can_redo);
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
 
   const upload = useCallback(async (file) => {
+    touched.current = true;
     setLoading(true);
     try {
       const r = await api.uploadSession(file);
@@ -26,6 +42,7 @@ export function useSession() {
   }, []);
 
   const startBlank = useCallback(async () => {
+    touched.current = true;
     setLoading(true);
     try {
       const r = await api.startBlank();
@@ -81,6 +98,7 @@ export function useSession() {
   }, []);
 
   const send = useCallback(async (message) => {
+    touched.current = true;
     setTranscript((t) => [...t, { role: 'user', text: message }]);
     queue.current.push(message);
     await drain();
