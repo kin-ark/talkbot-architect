@@ -10,7 +10,7 @@ function bubbleClass(role) {
   return 'bg-surface border border-border text-text';
 }
 
-export default function ChatPane({ transcript, proposal, sending, onSend, onApply, onReject, onCancel }) {
+export default function ChatPane({ transcript, proposal, sending, onSend, onApply, onReject, onCancel, onPreview }) {
   const [input, setInput] = useState('');
   const submit = (e) => { e.preventDefault(); if (!input.trim()) return; onSend(input.trim()); setInput(''); };
   return (
@@ -33,7 +33,7 @@ export default function ChatPane({ transcript, proposal, sending, onSend, onAppl
             <span className="inline-block p-3 rounded-2xl text-sm bg-surface border border-border text-text-tertiary">thinking…</span>
           </div>
         )}
-        {proposal && <DiffCard proposal={proposal} onApply={onApply} onReject={onReject} />}
+        {proposal && <DiffCard proposal={proposal} onApply={onApply} onReject={onReject} onPreview={onPreview} />}
       </div>
       <form onSubmit={submit} data-testid="chat-form" className="p-4 border-t border-border bg-surface">
         <div className="flex gap-2">

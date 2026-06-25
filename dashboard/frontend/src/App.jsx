@@ -13,6 +13,7 @@ export default function App() {
   const [selectedNode, setSelectedNode] = useState(null);
   const [dockTab, setDockTab] = useState('chat');
   const [focusComponentId, setFocusComponentId] = useState(null);
+  const [preview, setPreview] = useState(null);
   const onExport = () => window.open(exportUrl(), '_blank');
   const onNew = () => window.location.reload();
 
@@ -62,9 +63,15 @@ export default function App() {
     );
   }
 
+  const onPreview = (proposal) => setPreview(
+    proposal?.proposed_summary ? { summary: proposal.proposed_summary, changeSet: proposal.change_set } : null);
+  const exitPreview = () => setPreview(null);
+  const applyAndExit = () => { exitPreview(); return s.apply(); };
+  const rejectAndExit = () => { exitPreview(); s.reject(); };
+
   const chat = {
     transcript: s.transcript, proposal: s.proposal, sending: s.sending,
-    onSend: s.send, onApply: s.apply, onReject: s.reject, onCancel: s.cancel,
+    onSend: s.send, onApply: applyAndExit, onReject: rejectAndExit, onCancel: s.cancel,
   };
 
   return (
@@ -73,11 +80,22 @@ export default function App() {
       <div className="flex-1 flex overflow-hidden">
         <ComponentsRail summary={s.summary} selectedComponentId={focusComponentId}
           onSelectComponent={setFocusComponentId} />
-        <div className="flex-1 min-w-0">
-          <FlowCanvas summary={s.summary} onSelectNode={selectNode} focusComponentId={focusComponentId} />
+        <div className="flex-1 min-w-0 flex flex-col">
+          {preview && (
+            <div className="flex items-center gap-2 px-3 py-1.5 text-xs bg-warning-bg text-warning border-b border-warning">
+              <span>Previewing proposed change — added/changed nodes highlighted.</span>
+              <button type="button" onClick={exitPreview}
+                className="ml-auto text-primary hover:underline">Exit preview</button>
+            </div>
+          )}
+          <div className="flex-1 min-h-0">
+            <FlowCanvas summary={preview ? preview.summary : s.summary}
+              onSelectNode={selectNode} focusComponentId={focusComponentId}
+              highlight={preview ? preview.changeSet : null} />
+          </div>
         </div>
         <RightDock activeTab={dockTab} onTabChange={setDockTab} summary={s.summary} findings={s.findings}
-          selectedNode={selectedNode} onSelectNode={selectNode} chat={chat} />
+          selectedNode={selectedNode} onSelectNode={selectNode} chat={chat} onPreview={onPreview} />
       </div>
     </div>
   );

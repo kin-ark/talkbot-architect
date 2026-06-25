@@ -6,7 +6,7 @@ import NodePropertiesPanel from './NodePropertiesPanel';
 import KBPlane from './KBPlane';
 import FlowCanvas from './FlowCanvas';
 
-export default function RightDock({ activeTab, onTabChange, summary, findings, selectedNode, onSelectNode, chat }) {
+export default function RightDock({ activeTab, onTabChange, summary, findings, selectedNode, onSelectNode, chat, onPreview }) {
   const [drill, setDrill] = useState(null);
   const [width, setWidth] = useState(() => {
     const saved = Number(localStorage.getItem('tb-dock-w'));
@@ -46,7 +46,8 @@ export default function RightDock({ activeTab, onTabChange, summary, findings, s
       <div className="flex-1 overflow-hidden">
         {activeTab === 'chat' && (
           <ChatPane transcript={chat.transcript} proposal={chat.proposal} sending={chat.sending}
-            onSend={chat.onSend} onApply={chat.onApply} onReject={chat.onReject} onCancel={chat.onCancel} />
+            onSend={chat.onSend} onApply={chat.onApply} onReject={chat.onReject} onCancel={chat.onCancel}
+            onPreview={onPreview} />
         )}
         {activeTab === 'findings' && <FindingList findings={findings} onSelect={onSelectNode} />}
         {activeTab === 'properties' && <NodePropertiesPanel node={selectedNode} summary={summary} />}
