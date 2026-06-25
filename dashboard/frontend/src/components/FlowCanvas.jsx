@@ -123,7 +123,12 @@ export default function FlowCanvas({ summary, onSelectNode, focusComponentId }) 
           className="px-3 py-1 text-sm rounded-md border border-border text-text-secondary hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">Fit</button>
         <span className="ml-auto text-xs text-text-tertiary">{compIds.length} components</span>
       </div>
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0 relative">
+        {compIds.length === 0 && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+            <p className="text-sm text-text-tertiary">No components yet — describe a bot in Chat.</p>
+          </div>
+        )}
         <ReactFlow
           nodes={nodes}
           edges={edges}
