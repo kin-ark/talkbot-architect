@@ -11,7 +11,7 @@ from jsonschema import Draft7Validator
 _SCHEMA_PATH = Path(__file__).resolve().parents[2] / "schema" / "manifest.schema.yaml"
 
 _VALID_BRANCHES = frozenset({"Positive", "Negative", "Reject", "Unclassified", "No answer"})
-_TERMINAL_TYPES = frozenset({"exit", "transfer", "goto"})
+_TERMINAL_TYPES = frozenset({"exit", "transfer", "goto", "exit_port"})
 _VALID_OPERATORS = frozenset(
     {">", ">=", "<", "<=", "=", "!=", "In", "NotIn", "IsNull", "NotNull", "Contains"}
 )
@@ -170,13 +170,16 @@ def _validate_cross_field_invariants(data: dict, path: Path) -> None:
                 raise ManifestError(
                     f"{path}: edge in canvas {cname!r} references unknown destination node {dst!r}"
                 )
-            extra = {"Default"} if node_types.get(src) == "assign" else set()
-            allowed = _VALID_BRANCHES | extra
-            if branch not in allowed:
-                raise ManifestError(
-                    f"{path}: edge in canvas {cname!r} has invalid branch {branch!r}; "
-                    f"must be one of {sorted(allowed)}"
-                )
+            # nested-source edges are validated against the child's exit ports in a later
+            # cross-canvas pass; skip the system-branch check for them.
+            if node_types.get(src) != "nested":
+                extra = {"Default"} if node_types.get(src) == "assign" else set()
+                allowed = _VALID_BRANCHES | extra
+                if branch not in allowed:
+                    raise ManifestError(
+                        f"{path}: edge in canvas {cname!r} has invalid branch {branch!r}; "
+                        f"must be one of {sorted(allowed)}"
+                    )
             key = (src, branch)
             if key in seen_src_branch:
                 raise ManifestError(
@@ -316,6 +319,62 @@ def _validate_cross_field_invariants(data: dict, path: Path) -> None:
                                 f"{path}: canvas {cname!r}: conditional node {nid!r} branch "
                                 f"{bname!r} value_var {b['value_var']!r} is not a declared variable"
                             )
+
+    # --- Nested-component validation (cross-canvas) ---
+    # Map canvas name -> set of exit_port names it declares.
+    exit_ports_by_canvas: dict[str, set[str]] = {}
+    for canvas in data["canvases"]:
+        names: set[str] = set()
+        for node in canvas["nodes"]:
+            if node.get("type") == "exit_port":
+                pname = (node.get("config") or {}).get("name")
+                if not pname:
+                    raise ManifestError(
+                        f"{path}: canvas {canvas['name']!r}: exit_port node {node['id']!r} "
+                        f"missing config.name"
+                    )
+                names.add(pname)
+        exit_ports_by_canvas[canvas["name"]] = names
+
+    # Count nested references per target; validate targets + branch names.
+    nested_ref_count: dict[str, int] = {}
+    for canvas in data["canvases"]:
+        cname = canvas["name"]
+        node_types = {n["id"]: n.get("type", "talk") for n in canvas["nodes"]}
+        for node in canvas["nodes"]:
+            if node.get("type") != "nested":
+                continue
+            target = (node.get("config") or {}).get("target")
+            if not target or target not in all_canvas_names or target == cname:
+                raise ManifestError(
+                    f"{path}: canvas {cname!r}: nested node {node['id']!r} config.target "
+                    f"{target!r} does not match any other canvas in this manifest"
+                )
+            nested_ref_count[target] = nested_ref_count.get(target, 0) + 1
+            if not exit_ports_by_canvas.get(target):
+                raise ManifestError(
+                    f"{path}: nested node {node['id']!r} target {target!r} must contain at "
+                    f"least one exit_port node"
+                )
+        # Edges leaving a nested node must name one of the child's exit ports.
+        for edge in (canvas.get("edges") or []):
+            if node_types.get(edge["from"]) == "nested":
+                target = next(
+                    (n["config"]["target"] for n in canvas["nodes"]
+                     if n["id"] == edge["from"]), None
+                )
+                if edge["branch"] not in exit_ports_by_canvas.get(target, set()):
+                    raise ManifestError(
+                        f"{path}: canvas {cname!r}: edge from nested node {edge['from']!r} "
+                        f"branch {edge['branch']!r} has no exit_port named {edge['branch']!r} "
+                        f"in child {target!r}"
+                    )
+    for target, count in nested_ref_count.items():
+        if count > 1:
+            raise ManifestError(
+                f"{path}: child canvas {target!r} is referenced by more than one nested node "
+                f"({count}); a nested child maps to exactly one parent"
+            )
 
 
 def _build_manifest(data: dict, raw_text: str) -> Manifest:

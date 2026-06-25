@@ -771,3 +771,118 @@ canvases:
     edges:
       - {from: greet, branch: Default, to: bye}
 """))
+
+
+# ---------------------------------------------------------------------------
+# NC-Task 1 (nested + exit_port): new node types
+# ---------------------------------------------------------------------------
+
+
+def test_nested_and_exit_port_load(tmp_path):
+    m = load_manifest(_write(tmp_path, """
+name: Nest Bot
+branch: dev
+language: IDN
+canvases:
+  - name: Parent
+    nodes:
+      - {id: open, prompt: "Halo"}
+      - {id: sub, type: nested, config: {target: Child}}
+      - {id: bye_yes, type: exit, prompt: "Ya"}
+      - {id: bye_no, type: exit, prompt: "Tidak"}
+    edges:
+      - {from: open, branch: Unclassified, to: sub}
+      - {from: sub, branch: "Yes", to: bye_yes}
+      - {from: sub, branch: "No", to: bye_no}
+  - name: Child
+    nodes:
+      - {id: ask, prompt: "Setuju?"}
+      - {id: ex_yes, type: exit_port, config: {name: "Yes"}}
+      - {id: ex_no, type: exit_port, config: {name: "No"}}
+    edges:
+      - {from: ask, branch: Positive, to: ex_yes}
+      - {from: ask, branch: Negative, to: ex_no}
+"""))
+    parent = next(c for c in m.canvases if c.name == "Parent")
+    sub = next(n for n in parent.nodes if n.id == "sub")
+    assert sub.type == "nested" and sub.config["target"] == "Child"
+    child = next(c for c in m.canvases if c.name == "Child")
+    assert {n.config["name"] for n in child.nodes if n.type == "exit_port"} == {"Yes", "No"}
+
+
+def test_nested_unknown_target_rejected(tmp_path):
+    with pytest.raises(ManifestError, match="does not match any other canvas"):
+        load_manifest(_write(tmp_path, """
+name: B
+branch: dev
+language: IDN
+canvases:
+  - name: Parent
+    nodes:
+      - {id: open, prompt: "Hi"}
+      - {id: sub, type: nested, config: {target: Ghost}}
+    edges: [{from: open, branch: Unclassified, to: sub}]
+"""))
+
+
+def test_child_must_have_exit_port(tmp_path):
+    with pytest.raises(ManifestError, match="must contain at least one exit_port"):
+        load_manifest(_write(tmp_path, """
+name: B
+branch: dev
+language: IDN
+canvases:
+  - name: Parent
+    nodes: [{id: open, prompt: Hi}, {id: sub, type: nested, config: {target: Child}}]
+    edges: [{from: open, branch: Unclassified, to: sub}]
+  - name: Child
+    nodes: [{id: ask, prompt: Q}]
+"""))
+
+
+def test_nested_branch_must_match_child_exit(tmp_path):
+    with pytest.raises(ManifestError, match="no exit_port named"):
+        load_manifest(_write(tmp_path, """
+name: B
+branch: dev
+language: IDN
+canvases:
+  - name: Parent
+    nodes: [{id: open, prompt: Hi}, {id: sub, type: nested, config: {target: Child}}, {id: bye, type: exit, prompt: Bye}]
+    edges: [{from: open, branch: Unclassified, to: sub}, {from: sub, branch: Maybe, to: bye}]
+  - name: Child
+    nodes: [{id: ask, prompt: Q}, {id: ex, type: exit_port, config: {name: "Yes"}}]
+    edges: [{from: ask, branch: Positive, to: ex}]
+"""))
+
+
+def test_exit_port_terminal_no_outgoing(tmp_path):
+    with pytest.raises(ManifestError, match="terminal"):
+        load_manifest(_write(tmp_path, """
+name: B
+branch: dev
+language: IDN
+canvases:
+  - name: Parent
+    nodes: [{id: open, prompt: Hi}, {id: sub, type: nested, config: {target: Child}}, {id: bye, type: exit, prompt: B}]
+    edges: [{from: open, branch: Unclassified, to: sub}, {from: sub, branch: "Yes", to: bye}]
+  - name: Child
+    nodes: [{id: ask, prompt: Q}, {id: ex, type: exit_port, config: {name: "Yes"}}, {id: ask2, prompt: Q2}]
+    edges: [{from: ask, branch: Positive, to: ex}, {from: ex, branch: Positive, to: ask2}]
+"""))
+
+
+def test_child_referenced_by_two_nested_rejected(tmp_path):
+    with pytest.raises(ManifestError, match="referenced by more than one"):
+        load_manifest(_write(tmp_path, """
+name: B
+branch: dev
+language: IDN
+canvases:
+  - name: Parent
+    nodes: [{id: open, prompt: Hi}, {id: s1, type: nested, config: {target: Child}}, {id: s2, type: nested, config: {target: Child}}, {id: bye, type: exit, prompt: B}]
+    edges: [{from: open, branch: Unclassified, to: s1}, {from: s1, branch: "Yes", to: s2}, {from: s2, branch: "Yes", to: bye}]
+  - name: Child
+    nodes: [{id: ask, prompt: Q}, {id: ex, type: exit_port, config: {name: "Yes"}}]
+    edges: [{from: ask, branch: Positive, to: ex}]
+"""))
