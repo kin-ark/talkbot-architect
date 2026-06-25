@@ -635,3 +635,56 @@ def test_talk_golden_unchanged():
     assert talk["type"] == 1
     assert [it["name"] for it in talk["canvas"]["ports"]["items"]] == \
         ["Positive", "Negative", "Unclassified"]
+
+
+# ---------------------------------------------------------------------------
+# NC-Task 2: exit_port (type 4) + nested (type 11) builders
+# ---------------------------------------------------------------------------
+
+def test_exit_port_terminal_topfloor_no_scs():
+    nodes = [
+        NodeSpec(id="ask", prompt="Q", type="talk"),
+        NodeSpec(id="ex", prompt="", type="exit_port", config={"name": "Yes"}),
+    ]
+    edges = [EdgeSpec(src="ask", branch="Positive", dst="ex")]
+    r = render_component_nodes(nodes, edges, minter=_minter(), **_CTX)
+    ex = next(o for o in r.details.values() if o["type"] == 4)
+    assert ex["data"]["appoint_node_id"] == "" and ex["data"]["specificComponentName"] == ""
+    assert ex["name"] == "Yes" and ex["data"]["name"] == "Yes"
+    assert "ports" not in ex["canvas"]                      # terminal
+    ex_uuid = next(u for u, o in r.details.items() if o["type"] == 4)
+    assert r.routes[ex_uuid] == {}                          # terminal route
+    assert ex["data"] in r.top_floor_details                # topFloorDetails row
+    # talk emits 1 SCS row, exit_port emits none: total == 1
+    assert len(r.sentence_cut_speech) == 1
+    assert ex_uuid not in [row["id"] for row in r.sentence_cut_speech]  # exit_port itself: no SCS
+
+
+def test_nested_node_ports_mirror_child_exits():
+    # child exit uuids supplied via nested_exit_map
+    child_map = {"Child": {"Yes": "child-yes-uuid", "No": "child-no-uuid"}}
+    nodes = [
+        NodeSpec(id="open", prompt="Hi", type="talk"),
+        NodeSpec(id="sub", prompt="", type="nested", config={"target": "Child", "target_uuid": "child-comp-uuid"}),
+        NodeSpec(id="bye_yes", prompt="Y", type="exit"),
+        NodeSpec(id="bye_no", prompt="N", type="exit"),
+    ]
+    edges = [
+        EdgeSpec(src="open", branch="Unclassified", dst="sub"),
+        EdgeSpec(src="sub", branch="Yes", dst="bye_yes"),
+        EdgeSpec(src="sub", branch="No", dst="bye_no"),
+    ]
+    r = render_component_nodes(nodes, edges, minter=_minter(), nested_exit_map=child_map, **_CTX)
+    sub_uuid, sub = next((u, o) for u, o in r.details.items() if o["type"] == 11)
+    assert sub["data"]["subComponentUuid"]  # set by canvases.py normally; here from config target resolution — see step 3
+    items = sub["canvas"]["ports"]["items"]
+    by_name = {it["name"]: it for it in items}
+    assert by_name["Yes"]["uuid"] == "child-yes-uuid"      # port.uuid == child exit uuid
+    assert by_name["No"]["uuid"] == "child-no-uuid"
+    # routes keyed by child-exit-uuid -> parent target
+    assert "child-yes-uuid" in r.routes[sub_uuid]
+    assert r.routes[sub_uuid]["child-yes-uuid"]["target"]["uuid"] == \
+        next(u for u, o in r.details.items() if o.get("data", {}).get("list") == ["Y"])
+    # nested node contributes NO SCS row and NO topFloorDetails row
+    assert sub["data"] not in r.top_floor_details
+    assert sub_uuid not in [row["id"] for row in r.sentence_cut_speech]
