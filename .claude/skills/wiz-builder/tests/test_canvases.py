@@ -202,7 +202,7 @@ def test_apply_canvases_secondary_strips_template_keys(template_dict, fixture_pa
 
     manifest = load_manifest(fixture_path("manifest_multi_canvas.yaml"))
     minter = IdMinter(manifest_hash=manifest_hash_of(manifest.raw_text))
-    result = apply_canvases(template_dict, manifest, minter)
+    result, _uuid_map = apply_canvases(template_dict, manifest, minter)
 
     comps = json.loads(result["BizSpeechComponent"])
     assert len(comps) == 2

@@ -44,8 +44,22 @@ def apply_canvases(
     template: dict[str, Any],
     manifest: Manifest,
     minter: IdMinter,
-) -> dict[str, Any]:
-    """Replace the template's BizSpeechComponent list with manifest canvases."""
+    *,
+    kb_id_by_name: dict[str, int] | None = None,
+) -> tuple[dict[str, Any], dict[str, str]]:
+    """Replace the template's BizSpeechComponent list with manifest canvases.
+
+    Returns (template, canvas_uuid_by_name) so callers can pass the UUID map to
+    apply_knowledge_bases for multi-round linkage (Task 3).
+
+    Parameters
+    ----------
+    kb_id_by_name:
+        Optional pre-minted {kb.name: knowledgeId} map from compile.py.  When
+        provided, the ids are appended to kb_ids so talk nodes include them in
+        allow_jump_knowledges.  When None (legacy callers, unit tests), no
+        manifest-KB ids are added.
+    """
     raw = template.get("BizSpeechComponent")
     if not isinstance(raw, str) or not raw.strip():
         raise ValueError(
@@ -69,10 +83,19 @@ def apply_canvases(
         if i.get("intentName") in _system_branch_names
     }
 
-    # Resolve kb_ids from template BizKnowledgeInfo
+    # Resolve kb_ids from template BizKnowledgeInfo (baseline entries)
     biz_kb_raw = template.get("BizKnowledgeInfo", "[]")
     biz_kb = json.loads(biz_kb_raw) if isinstance(biz_kb_raw, str) else biz_kb_raw
     kb_ids: list[str] = [str(k["knowledgeId"]) for k in biz_kb]
+
+    # Extend kb_ids with manifest-KB ids pre-minted by compile.py so that
+    # talk nodes advertise them in allow_jump_knowledges before the KB entries
+    # are actually appended by apply_knowledge_bases (which runs after apply_canvases).
+    if kb_id_by_name:
+        for kid in kb_id_by_name.values():
+            kid_str = str(kid)
+            if kid_str not in kb_ids:
+                kb_ids.append(kid_str)
 
     # Resolve node_language from manifest.language
     node_language = _LANGUAGE_MAP.get(manifest.language)
@@ -228,7 +251,7 @@ def apply_canvases(
     template["SentenceCutSpeech"] = json.dumps(
         all_sentence_cut_rows, ensure_ascii=False, separators=(",", ":")
     )
-    return template
+    return template, canvas_uuid_by_name
 
 
 def _build_component(

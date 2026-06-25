@@ -12,6 +12,7 @@ from wizbuilder.canvases import apply_canvases
 from wizbuilder.identity import apply_identity
 from wizbuilder.ids import IdMinter, manifest_hash_of
 from wizbuilder.intents import apply_intents
+from wizbuilder.knowledge import apply_knowledge_bases
 from wizbuilder.manifest import load_manifest
 from wizbuilder.variables import apply_variables
 
@@ -58,7 +59,24 @@ def compile_manifest(manifest_path: Path, output_path: Path) -> CompileResult:
     template = apply_identity(template, manifest, minter)
     template = apply_variables(template, manifest, minter)
     template = apply_intents(template, manifest, minter)
-    template = apply_canvases(template, manifest, minter)
+
+    # Pre-mint KB ids BEFORE apply_canvases so that talk nodes can include them
+    # in allow_jump_knowledges.  Only simple KBs (no multi_round) are pre-minted here;
+    # multi-round KB ids are handled in Task 3.
+    kb_id_by_name: dict[str, int] = {
+        kb.name: minter.int_id(f"kb:{kb.name}")
+        for kb in manifest.knowledge_bases
+        if kb.multi_round is None
+    }
+
+    template, canvas_uuid_by_name = apply_canvases(
+        template, manifest, minter, kb_id_by_name=kb_id_by_name
+    )
+    template = apply_knowledge_bases(
+        template, manifest, minter,
+        kb_id_by_name=kb_id_by_name,
+        canvas_uuid_by_name=canvas_uuid_by_name,
+    )
 
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)

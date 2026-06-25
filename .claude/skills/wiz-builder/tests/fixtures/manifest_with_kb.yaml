@@ -1,0 +1,23 @@
+name: "KB Test Bot"
+branch: dev
+language: IDN
+
+custom_intents:
+  - name: AskPayment
+    language: IDN
+    keywords: ["bayar", "cicilan"]
+    user_responses: ["bagaimana cara bayar"]
+
+knowledge_bases:
+  - name: "Payment FAQ"
+    intents:
+      - AskPayment
+    answers:
+      - "Pembayaran bisa dilakukan melalui transfer bank."
+      - "Anda bisa bayar melalui aplikasi kami."
+
+canvases:
+  - name: "1. Main"
+    nodes:
+      - id: greet
+        prompt: Halo, ada yang bisa saya bantu?
