@@ -17,6 +17,14 @@
   --c-warning: #FF8800;
   --c-warning-bg: #FFF7E8;
   --shadow-card: 0 1px 3px rgba(0, 0, 0, .06);
+  --c-edge-intent: #D9821B;
+  --c-edge-condition: #7C4DDA;
+  --c-edge-default: #8F959E;
+  --c-edge-next: #9AA4B2;
+  --c-edge-exit: #0E8FD6;
+  --c-edge-xcomp: #5B63E0;
+  --c-kb-bg: #FEFCE8;
+  --c-kb-border: #FBBF24;
 }
 
 .dark {
@@ -38,6 +46,14 @@
   --c-warning: #FF8800;
   --c-warning-bg: #2A2010;
   --shadow-card: 0 1px 3px rgba(0, 0, 0, .4);
+  --c-edge-intent: #E8A24B;
+  --c-edge-condition: #A98AF0;
+  --c-edge-default: #6B7280;
+  --c-edge-next: #7E8794;
+  --c-edge-exit: #4CA9E8;
+  --c-edge-xcomp: #8189F0;
+  --c-kb-bg: #2A2510;
+  --c-kb-border: #B8860B;
 }
 
 html, body, #root { height: 100%; }

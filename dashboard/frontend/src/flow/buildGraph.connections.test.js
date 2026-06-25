@@ -29,7 +29,7 @@ describe('buildGraph cross-component connections', () => {
   it('carries a distinct style + arrowhead + named label', () => {
     const e = xedge(SUMMARY);
     expect(e.markerEnd).toBeTruthy();
-    expect(e.style.stroke).toBe('#6366f1');
+    expect(e.style.stroke).toBe('var(--c-edge-xcomp)');
     expect(e.label).toContain('Payment');
   });
 

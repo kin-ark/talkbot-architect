@@ -1,5 +1,8 @@
-const EDGE_COLOR = { intent: '#f59e0b', condition: '#8b5cf6', default: '#94a3b8', next: '#cbd5e1', exit: '#0ea5e9' };
-const XCOMP_COLOR = '#6366f1';
+const EDGE_COLOR = {
+  intent: 'var(--c-edge-intent)', condition: 'var(--c-edge-condition)',
+  default: 'var(--c-edge-default)', next: 'var(--c-edge-next)', exit: 'var(--c-edge-exit)',
+};
+const XCOMP_COLOR = 'var(--c-edge-xcomp)';
 
 export function buildGraph(summary) {
   const nodes = [];
@@ -42,7 +45,7 @@ export function buildGraph(summary) {
         if (b.target_uuid) {
           edges.push({
             id: `e-${node.uuid}-${b.target_uuid}-${b.kind}-${i}`, source: node.uuid, target: b.target_uuid,
-            label: b.label || undefined, type: 'smoothstep', style: { stroke: EDGE_COLOR[b.kind] || '#cbd5e1' },
+            label: b.label || undefined, type: 'smoothstep', style: { stroke: EDGE_COLOR[b.kind] || 'var(--c-edge-default)' },
             data: { sourceComp: comp.uuid, sourceNode: node.uuid, targetComp: comp.uuid, targetNode: b.target_uuid },
           });
         } else if (b.target_component) {
@@ -64,7 +67,7 @@ export function buildGraph(summary) {
             const title = kbTitleMap[b.target_kb] || String(b.target_kb);
             nodes.push({
               id: kbNodeId, position: { x: 0, y: 0 }, data: { label: `📖 KB ${title}`, kbNode: true },
-              style: { background: '#fefce8', border: '2px solid #fbbf24', borderRadius: 8, padding: 8, fontSize: 12 },
+              style: { background: 'var(--c-kb-bg)', border: '2px solid var(--c-kb-border)', borderRadius: 8, padding: 8, fontSize: 12 },
             });
           }
           edges.push({

@@ -54,7 +54,7 @@ describe('buildGraph cross-component', () => {
     const { edges } = buildGraph(summary);
     const e = edges.find((x) => x.source === 'n1' && x.target === 'n2-entry');
     expect(e.style.strokeDasharray).toBeTruthy();
-    expect(e.style.stroke).toBe('#6366f1');
+    expect(e.style.stroke).toBe('var(--c-edge-xcomp)');
     expect(e.markerEnd).toBeTruthy();
   });
 
