@@ -1,12 +1,15 @@
 import threading
 import time
 from fastapi.testclient import TestClient
-from llm.base import LLMResponse
+from llm.base import LLMClient, LLMResponse
 import main
 
 
-class _SlowClient:
-    """Records concurrent entry; sleeps so overlap is observable."""
+class _SlowClient(LLMClient):
+    """Records concurrent entry; sleeps so overlap is observable.
+
+    Subclasses LLMClient so it inherits the default stream_chat (which wraps
+    chat) — run_turn now drives the client through stream_chat."""
     active = 0
     max_active = 0
     lock = threading.Lock()
