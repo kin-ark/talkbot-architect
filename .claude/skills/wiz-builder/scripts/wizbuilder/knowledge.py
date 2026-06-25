@@ -1,11 +1,22 @@
 """apply_knowledge_bases: emit BizKnowledgeInfo entries + SentenceCutKnowledge rows.
 
-Clones config fields verbatim from the baseline template's first KB entry,
-then parameterises kdTitle, intents, kdInfo, knowledgeId, and speechId per
-manifest KnowledgeBase.
+Clones the FULL field set from the baseline template's first KB entry (ground truth:
+knowledgeId 179824 in talkbot/Tiktok+Paylater+DPD0/speech4892384019254584542.json),
+then overrides only the variable fields: kdTitle, intents, kdInfo, knowledgeId,
+speechId.  Instance/stat fields are reset to new-KB values.
 
-Ground truth: knowledgeId 179824 from
-  talkbot/Tiktok+Paylater+DPD0/speech4892384019254584542.json
+BizKnowledgeInfo full field set (35 fields — all must be present):
+  allowInterrupt, answerType, branch, canInterruptPercent, conditions, createId,
+  createTime, enableUse, engineType, exclusiveKeyWords, forceHangup,
+  intentionJudgmentTime, intents, interruptRecognitionThresholdSwitch, isDelete,
+  isInit, isTransfer, kdInfo, kdTitle, kdType, knowledgeId, modifyId, modifyTime,
+  nodeResponseDurationSwitch, noticeSendType, recordNum, repeatScriptType,
+  soundexMatch, speakType, speechId, tagList, threshold, valueAssignment, wordNum.
+
+Previously missing (added in KB-T2 fix): repeatScriptType, tagList.
+
+SentenceCutKnowledge speechRecCutId: UUID-format string (deterministic uuid5 via
+IdMinter.uuid), NOT a wide-int.  knowledgeRecCutId stays int (matches real rows).
 """
 
 from __future__ import annotations
@@ -137,7 +148,7 @@ def apply_knowledge_bases(
             "intents": json.dumps(resolved_intents, ensure_ascii=False, separators=(",", ":")),
             "interruptRecognitionThresholdSwitch": 0,
             "isDelete": 0,
-            "isInit": 0,
+            "isInit": 0,  # 0 = user-created; template runtime KB has isInit:1
             "isTransfer": 0,
             "kdInfo": json.dumps(kd_info_items, ensure_ascii=False, separators=(",", ":")),
             "kdTitle": kb.name,
@@ -145,26 +156,35 @@ def apply_knowledge_bases(
             "knowledgeId": knowledge_id,
             "modifyId": modify_id,
             "modifyTime": modify_time,
-            "nodeResponseDurationSwitch": 0,
+            # nodeResponseDurationSwitch: cloned from base_kb if present; falls back to 0.
+            # The Empty+Dialogue baseline has this field; real deploy-verified KBs do too.
+            "nodeResponseDurationSwitch": base_kb.get("nodeResponseDurationSwitch", 0),
             "noticeSendType": 0,
-            "recordNum": 0,
+            "recordNum": 0,  # reset stat: no recordings yet
+            # repeatScriptType: ground-truth value from knowledgeId 179824 (deploy-verified).
+            # The Empty+Dialogue baseline omits this field; cloning from ground truth is safe.
+            "repeatScriptType": 1,
             "soundexMatch": 0,
             "speakType": 1,
             "speechId": speech_id,
+            "tagList": "[]",  # fresh KB: no tags; template uses a JSON-string-encoded list
             "threshold": "",
             "valueAssignment": "[]",
-            "wordNum": 0,
+            "wordNum": 0,  # reset stat: no word count yet
         }
         bk_list.append(bk_entry)
 
-        # Emit one SentenceCutKnowledge row per answer
+        # Emit one SentenceCutKnowledge row per answer.
+        # Field types must match real rows (ground truth: knowledgeId 179824):
+        #   id: str (wide-int string)     knowledgeRecCutId: int
+        #   speechRecCutId: str (UUID4-format, e.g. "781f1a53-0d7b-4d88-...")
         for ai, answer_text in enumerate(kb.answers):
             # Re-use the same kdInfo item id as the SCK row id (mirrors WIZ.AI export pattern)
             item_id = str(_wide_int(f"{minter.manifest_hash}:kdinfo:{kb.name}:{ai}"))
             krec_cut_id: int = minter.int_id(f"sck-knowledgeRecCutId:{kb.name}:{ai}")
-            speech_rec_cut_id = str(
-                _wide_int(f"{minter.manifest_hash}:sck-speechRecCutId:{kb.name}:{ai}")
-            )
+            # speechRecCutId must be a UUID-format string (not a wide-int).
+            # Real rows: "781f1a53-0d7b-4d88-a34c-49e1000fba38" etc.
+            speech_rec_cut_id: str = str(minter.uuid(f"sck-speechRecCutId:{kb.name}:{ai}"))
             sck_row: dict = {
                 "branch": "dev",
                 "id": item_id,

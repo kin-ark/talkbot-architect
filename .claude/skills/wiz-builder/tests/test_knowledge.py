@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 from wizbuilder.canvases import apply_canvases
@@ -17,6 +18,20 @@ from wizbuilder.variables import apply_variables
 SKILL_DIR = Path(__file__).resolve().parents[1]
 FIXTURES = SKILL_DIR / "tests" / "fixtures"
 TEMPLATE_PATH = SKILL_DIR / "templates" / "empty_dialogue.json"
+
+# Ground-truth template KB (knowledgeId 179824) from a real deploy-verified export.
+# SKILL_DIR = .../kb-authoring/.claude/skills/wiz-builder
+# parents[2] = .../kb-authoring  (worktree root where talkbot/ lives)
+_REPO_ROOT = SKILL_DIR.parents[2]
+_GROUND_TRUTH_EXPORT = (
+    _REPO_ROOT / "talkbot" / "Tiktok+Paylater+DPD0" / "speech4892384019254584542.json"
+)
+
+# UUID4 pattern (case-insensitive hex, standard hyphenated form)
+_UUID_RE = re.compile(
+    r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+    re.IGNORECASE,
+)
 
 
 def _build_pipeline(manifest_name: str) -> tuple[dict, object, IdMinter, dict, dict]:
@@ -292,3 +307,131 @@ def test_kb_via_compile_manifest_checker_clean(tmp_path):
     assert result.checker_errors == 0, (
         f"compile produced {result.checker_errors} checker errors: {result.finding_codes}"
     )
+
+
+# ---------------------------------------------------------------------------
+# KB-T2 fix-pass: deploy-risk field coverage + speechRecCutId format
+# ---------------------------------------------------------------------------
+
+
+def _run_apply_kb(template_dict, fixture_path) -> tuple[dict, dict]:
+    """Helper: run the full pipeline up to apply_knowledge_bases and return
+    (built_kb_entry, minter) for the 'Payment FAQ' KB."""
+    manifest = load_manifest(fixture_path("manifest_with_kb.yaml"))
+    minter = IdMinter(manifest_hash=manifest_hash_of(manifest.raw_text))
+
+    template = template_dict
+    template = apply_identity(template, manifest, minter)
+    template = apply_variables(template, manifest, minter)
+    template = apply_intents(template, manifest, minter)
+    kb_id_by_name = {
+        kb.name: minter.int_id(f"kb:{kb.name}")
+        for kb in manifest.knowledge_bases
+        if kb.multi_round is None
+    }
+    template, canvas_uuid_by_name = apply_canvases(
+        template, manifest, minter, kb_id_by_name=kb_id_by_name
+    )
+    apply_knowledge_bases(
+        template, manifest, minter,
+        kb_id_by_name=kb_id_by_name,
+        canvas_uuid_by_name=canvas_uuid_by_name,
+    )
+    bk_after = json.loads(template["BizKnowledgeInfo"])
+    built_kb = next(e for e in bk_after if e["kdTitle"] == "Payment FAQ")
+    return built_kb, template
+
+
+def test_biz_knowledge_info_key_superset_of_template(template_dict, fixture_path):
+    """Built KB entry must have at least all keys present in the real template KB
+    (knowledgeId 179824 from speech4892384019254584542.json).
+
+    This is the deploy-risk guard: missing fields → opaque WIZ deploy failures.
+    Previously missing: repeatScriptType, tagList.
+    """
+    if not _GROUND_TRUTH_EXPORT.exists():
+        import pytest
+        pytest.skip(f"Ground-truth export not found: {_GROUND_TRUTH_EXPORT}")
+
+    # Load the real template KB key set
+    with _GROUND_TRUTH_EXPORT.open(encoding="utf-8") as fh:
+        gt_data = json.load(fh)
+    bk_raw = gt_data.get("BizKnowledgeInfo", "[]")
+    bk_list = json.loads(bk_raw) if isinstance(bk_raw, str) else bk_raw
+    template_kb = next(kb for kb in bk_list if kb.get("knowledgeId") == 179824)
+    template_keys = set(template_kb.keys())
+
+    built_kb, _ = _run_apply_kb(template_dict, fixture_path)
+    built_keys = set(built_kb.keys())
+
+    missing = template_keys - built_keys
+    assert not missing, (
+        f"Built KB entry is missing fields vs ground-truth template KB: {sorted(missing)}"
+    )
+
+
+def test_biz_knowledge_info_instance_stat_fields_reset(template_dict, fixture_path):
+    """New-KB instance/stat fields must be reset to zero, NOT copied from template.
+
+    recordNum=0 (no recordings), wordNum=0 (no words), isInit=0 (user-created).
+    The template KB has isInit:1 (system-init) and non-zero recordNum/wordNum.
+    """
+    built_kb, _ = _run_apply_kb(template_dict, fixture_path)
+
+    assert built_kb["recordNum"] == 0, (
+        f"recordNum should be 0 for a new KB, got {built_kb['recordNum']!r}"
+    )
+    assert built_kb["wordNum"] == 0, (
+        f"wordNum should be 0 for a new KB, got {built_kb['wordNum']!r}"
+    )
+    assert built_kb["isInit"] == 0, (
+        f"isInit should be 0 (user-created) for a new KB, got {built_kb['isInit']!r}"
+    )
+
+
+def test_sentence_cut_knowledge_speech_rec_cut_id_is_uuid(template_dict, fixture_path):
+    """Each SentenceCutKnowledge row's speechRecCutId must be a UUID-format string.
+
+    Real rows use UUID4 format: "781f1a53-0d7b-4d88-a34c-49e1000fba38".
+    The previous implementation emitted a wide-int string, which caused deploy
+    failures.  knowledgeRecCutId must remain an int (matches real row types).
+    """
+    manifest = load_manifest(fixture_path("manifest_with_kb.yaml"))
+    minter = IdMinter(manifest_hash=manifest_hash_of(manifest.raw_text))
+
+    template = template_dict
+    template = apply_identity(template, manifest, minter)
+    template = apply_variables(template, manifest, minter)
+    template = apply_intents(template, manifest, minter)
+    kb_id_by_name = {
+        kb.name: minter.int_id(f"kb:{kb.name}")
+        for kb in manifest.knowledge_bases
+        if kb.multi_round is None
+    }
+    template, canvas_uuid_by_name = apply_canvases(
+        template, manifest, minter, kb_id_by_name=kb_id_by_name
+    )
+    apply_knowledge_bases(
+        template, manifest, minter,
+        kb_id_by_name=kb_id_by_name,
+        canvas_uuid_by_name=canvas_uuid_by_name,
+    )
+
+    sck_after = json.loads(template["SentenceCutKnowledge"])
+    kb_id = kb_id_by_name["Payment FAQ"]
+    kb_rows = [r for r in sck_after if r["knowledgeId"] == kb_id]
+    assert kb_rows, "Expected SCK rows for 'Payment FAQ' KB"
+
+    for row in kb_rows:
+        speech_rec_cut_id = row["speechRecCutId"]
+        assert isinstance(speech_rec_cut_id, str), (
+            f"speechRecCutId must be a str, got {type(speech_rec_cut_id).__name__}: "
+            f"{speech_rec_cut_id!r}"
+        )
+        assert _UUID_RE.match(speech_rec_cut_id), (
+            f"speechRecCutId must be UUID-format, got {speech_rec_cut_id!r}"
+        )
+        # knowledgeRecCutId must remain an int (real rows: int)
+        assert isinstance(row["knowledgeRecCutId"], int), (
+            f"knowledgeRecCutId must be int, got {type(row['knowledgeRecCutId']).__name__}"
+        )
