@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -58,9 +59,19 @@ class LLMResponse:
     tool_calls: list[ToolCall] = field(default_factory=list)
 
 
+@dataclass
+class StreamChunk:
+    text_delta: str | None = None       # incremental assistant text
+    response: LLMResponse | None = None  # set once, on the final chunk
+
+
 class LLMClient(ABC):
     @abstractmethod
     def chat(self, messages: list[Message], tools: list[ToolSpec]) -> LLMResponse: ...
+
+    def stream_chat(self, messages: list[Message], tools: list[ToolSpec]) -> Iterator[StreamChunk]:
+        """Default: no token streaming — emit the whole response as one final chunk."""
+        yield StreamChunk(response=self.chat(messages, tools))
 
 
 class FakeLLMClient(LLMClient):
@@ -74,3 +85,12 @@ class FakeLLMClient(LLMClient):
         r = self._script[self._i]
         self._i += 1
         return r
+
+    def stream_chat(self, messages: list[Message], tools: list[ToolSpec]) -> Iterator[StreamChunk]:
+        r = self._script[self._i]
+        self._i += 1
+        if r.text:
+            words = r.text.split(" ")
+            for k, w in enumerate(words):
+                yield StreamChunk(text_delta=(w if k == 0 else " " + w))
+        yield StreamChunk(response=r)
