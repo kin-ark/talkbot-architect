@@ -32,6 +32,10 @@ _SYSTEM = (
     "intents, language) and ask the user to CONFIRM or tweak. Only AFTER they "
     "confirm, call scaffold_bot. For a targeted edit, act directly (still a "
     "proposal the user applies)."
+    "\n\nWhen you mention a specific node in your reply, render it as a markdown "
+    "link of the form [label](#node:<uuid>) using the node's uuid (from summarize "
+    "or read_node) — the dashboard turns these into clickable links that open the "
+    "node. Only link nodes that exist in the current dialogue."
 )
 
 _MAX_TOOL_ITERS = 8
