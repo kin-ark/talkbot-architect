@@ -37,7 +37,8 @@ def test_specs_have_all_tools():
     names = {t.name for t in registry.tool_specs()}
     expected = {"validate", "summarize", "read_node", "get_facts",
                 "apply_mods", "set_path", "delete_path", "build", "scaffold_bot", "get_schema",
-                "add_component", "add_node", "add_intent", "add_variable", "connect_components"}
+                "add_component", "add_node", "add_intent", "add_variable", "connect_components",
+        "add_kb"}
     assert names == expected
 
 
