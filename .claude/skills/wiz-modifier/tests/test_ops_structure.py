@@ -247,3 +247,389 @@ def test_add_variable_rejects_duplicate_name(baseline_dict):
     content.add_variable(b, {"name": "user_name", "branch": "dev"}, MINTER)
     with pytest.raises(ValueError, match="already exists"):
         content.add_variable(b, {"name": "user_name", "branch": "dev"}, MINTER)
+
+
+# ---------------------------------------------------------------------------
+# Nested + exit_port tests (NC-T4)
+# ---------------------------------------------------------------------------
+
+
+def test_add_component_with_exit_port_nodes(baseline_dict):
+    """add_component for a child canvas with exit_port nodes emits type-4 terminal nodes
+    with empty appoint_node_id and specificComponentName (the exit_port discriminant).
+    """
+    b = InputBundle(data=baseline_dict, speech_name="s.json")
+    structure.add_component(
+        b,
+        {
+            "name": "Child Canvas",
+            "nodes": [
+                {"id": "talk1", "prompt": "Child intro"},
+                {
+                    "id": "ep1",
+                    "prompt": "",
+                    "type": "exit_port",
+                    "config": {"name": "Done"},
+                },
+            ],
+            "edges": [{"from": "talk1", "branch": "Positive", "to": "ep1"}],
+        },
+        MINTER,
+    )
+    child_comp = get_components(b)[-1]
+    assert child_comp["name"] == "Child Canvas"
+    details = codec.decode(child_comp["details"])
+
+    # Find exit_port node: type 4 with empty appoint_node_id + specificComponentName.
+    exit_port_objs = {
+        k: v for k, v in details.items()
+        if v.get("type") == 4
+        and v.get("data", {}).get("appoint_node_id", "") == ""
+        and v.get("data", {}).get("specificComponentName", "") == ""
+    }
+    assert len(exit_port_objs) == 1, "expected exactly one exit_port node"
+    ep_uuid, ep_obj = next(iter(exit_port_objs.items()))
+    assert ep_obj["data"]["name"] == "Done"
+
+    # topFloorDetails must contain the exit_port's data dict.
+    tfd = codec.decode(child_comp["topFloorDetails"])
+    assert isinstance(tfd, list)
+    assert any(row.get("name") == "Done" for row in tfd), (
+        "topFloorDetails must carry the exit_port data row"
+    )
+
+
+def test_append_node_nested_mirrors_child_exit_ports(baseline_dict):
+    """append_node a nested node targeting a child component: the nested node's routes
+    are keyed by the child's exit-port node UUIDs (matching the builder's wiring).
+    """
+    b = InputBundle(data=baseline_dict, speech_name="s.json")
+
+    # Step 1: add a child canvas with one exit_port node.
+    structure.add_component(
+        b,
+        {
+            "name": "Child Canvas",
+            "nodes": [
+                {"id": "ep1", "prompt": "", "type": "exit_port", "config": {"name": "Done"}},
+            ],
+        },
+        MINTER,
+    )
+    child_comp = get_components(b)[-1]
+    child_details = codec.decode(child_comp["details"])
+    # Locate the child exit_port uuid.
+    child_exit_uuid = next(
+        uuid for uuid, obj in child_details.items()
+        if obj.get("type") == 4
+        and obj.get("data", {}).get("appoint_node_id", "") == ""
+    )
+
+    # Step 2: populate the parent component (index 0) with a talk node.
+    structure.populate_details(
+        b,
+        {"component": 0, "nodes": [{"id": "root", "prompt": "Root talk"}]},
+        MINTER,
+    )
+    comp0 = get_components(b)[0]
+    root_uuid = next(iter(codec.decode(comp0["details"])))
+
+    # Step 3: append a nested node into the parent, wiring its "Done" port to root.
+    structure.append_node(
+        b,
+        {
+            "component": 0,
+            "node": {
+                "id": "nested1",
+                "prompt": "",
+                "type": "nested",
+                "config": {"target": "Child Canvas"},
+            },
+            "edges": [{"from": "nested1", "branch": "Done", "to": root_uuid}],
+        },
+        MINTER,
+    )
+
+    comp0 = get_components(b)[0]
+    details = codec.decode(comp0["details"])
+    routes = codec.decode(comp0["routes"])
+
+    # Find the nested node (type 11).
+    nested_objs = {k: v for k, v in details.items() if v.get("type") == 11}
+    assert len(nested_objs) == 1, "expected exactly one nested node"
+    nested_uuid = next(iter(nested_objs))
+
+    # routes[nested_uuid] must be keyed by the child's exit_port uuid.
+    nested_routes = routes.get(nested_uuid, {})
+    assert child_exit_uuid in nested_routes, (
+        f"routes[nested] must be keyed by child exit uuid {child_exit_uuid!r}; "
+        f"got keys {list(nested_routes.keys())}"
+    )
+    assert nested_routes[child_exit_uuid]["target"]["uuid"] == root_uuid
+
+
+def test_append_node_nested_target_no_exit_port_raises(baseline_dict):
+    """append_node a nested node whose target child has NO exit_port nodes must raise ValueError."""
+    b = InputBundle(data=baseline_dict, speech_name="s.json")
+
+    # Add a child canvas with only a talk node (no exit_port).
+    structure.add_component(
+        b,
+        {
+            "name": "Empty Child",
+            "nodes": [{"id": "talk1", "prompt": "Just a talk node"}],
+        },
+        MINTER,
+    )
+
+    # Populate parent with a talk node so append_node has something to target.
+    structure.populate_details(
+        b,
+        {"component": 0, "nodes": [{"id": "root", "prompt": "Root"}]},
+        MINTER,
+    )
+    comp0 = get_components(b)[0]
+    root_uuid = next(iter(codec.decode(comp0["details"])))
+
+    with pytest.raises(ValueError, match="exit_port"):
+        structure.append_node(
+            b,
+            {
+                "component": 0,
+                "node": {
+                    "id": "nested1",
+                    "prompt": "",
+                    "type": "nested",
+                    "config": {"target": "Empty Child"},
+                },
+                "edges": [{"from": "nested1", "branch": "Done", "to": root_uuid}],
+            },
+            MINTER,
+        )
+
+
+def test_append_node_nested_envelope_id_and_source_type_3(baseline_dict):
+    """FIX 1 + FIX 2: appended nested node must have envelope id == subComponentUuid,
+    and its route out-edges must have source.type == 3 (not 1).
+
+    FIX 1: Without the envelope id, WIZ import returns code:-1.
+    FIX 2: With source.type=1 the import succeeds but the deployed flow is broken.
+    """
+    b = InputBundle(data=baseline_dict, speech_name="s.json")
+
+    # Step 1: add a child canvas with one exit_port node.
+    structure.add_component(
+        b,
+        {
+            "name": "Child Canvas",
+            "nodes": [
+                {"id": "ep1", "prompt": "", "type": "exit_port", "config": {"name": "Done"}},
+            ],
+        },
+        MINTER,
+    )
+    child_comp = get_components(b)[-1]
+    child_comp_uuid = child_comp["componentUuid"]
+    child_details = codec.decode(child_comp["details"])
+    child_exit_uuid = next(
+        uuid for uuid, obj in child_details.items()
+        if obj.get("type") == 4 and obj.get("data", {}).get("appoint_node_id", "") == ""
+    )
+
+    # Step 2: populate the parent component (index 0) with a talk node.
+    structure.populate_details(
+        b,
+        {"component": 0, "nodes": [{"id": "root", "prompt": "Root talk"}]},
+        MINTER,
+    )
+    comp0 = get_components(b)[0]
+    root_uuid = next(iter(codec.decode(comp0["details"])))
+
+    # Step 3: append the nested node with a "Done" out-edge to root.
+    structure.append_node(
+        b,
+        {
+            "component": 0,
+            "node": {
+                "id": "nested1",
+                "prompt": "",
+                "type": "nested",
+                "config": {"target": "Child Canvas"},
+            },
+            "edges": [{"from": "nested1", "branch": "Done", "to": root_uuid}],
+        },
+        MINTER,
+    )
+
+    comp0 = get_components(b)[0]
+    details = codec.decode(comp0["details"])
+    routes = codec.decode(comp0["routes"])
+
+    nested_objs = {k: v for k, v in details.items() if v.get("type") == 11}
+    assert len(nested_objs) == 1, "expected exactly one nested node"
+    nested_uuid, nested_obj = next(iter(nested_objs.items()))
+
+    # FIX 1: top-level 'id' must equal the child component's UUID (subComponentUuid).
+    assert "id" in nested_obj, "nested node_obj must have a top-level 'id' key"
+    assert nested_obj["id"] == child_comp_uuid, (
+        f"nested node envelope id must == child componentUuid {child_comp_uuid!r}, "
+        f"got {nested_obj.get('id')!r}"
+    )
+
+    # FIX 2: the out-route for the nested node must have source.type == 3.
+    nested_routes = routes.get(nested_uuid, {})
+    assert child_exit_uuid in nested_routes, (
+        f"nested route must be keyed by child exit uuid {child_exit_uuid!r}"
+    )
+    edge_obj = nested_routes[child_exit_uuid]
+    assert edge_obj["source"]["type"] == 3, (
+        f"nested out-edge source.type must be 3, got {edge_obj['source']['type']!r}"
+    )
+
+
+def test_append_node_nested_sets_child_parent_uuid(baseline_dict):
+    """I1: after append_node wires a nested node, the child component's parentUuid must
+    equal the parent component's componentUuid (mirrors wiz-builder canvases.py behaviour).
+    """
+    b = InputBundle(data=baseline_dict, speech_name="s.json")
+
+    # Step 1: add a child canvas with one exit_port.
+    structure.add_component(
+        b,
+        {
+            "name": "Child Canvas",
+            "nodes": [
+                {"id": "ep1", "prompt": "", "type": "exit_port", "config": {"name": "Done"}},
+            ],
+        },
+        MINTER,
+    )
+    # Child parentUuid starts as "0" (set by add_component).
+    child_before = get_components(b)[-1]
+    assert child_before["parentUuid"] == "0"
+
+    # Step 2: populate the parent (index 0) and capture its componentUuid.
+    structure.populate_details(
+        b,
+        {"component": 0, "nodes": [{"id": "root", "prompt": "Root"}]},
+        MINTER,
+    )
+    parent_comp_uuid = get_components(b)[0]["componentUuid"]
+
+    # Step 3: append the nested node.
+    structure.append_node(
+        b,
+        {
+            "component": 0,
+            "node": {
+                "id": "nested1",
+                "prompt": "",
+                "type": "nested",
+                "config": {"target": "Child Canvas"},
+            },
+            "edges": [],
+        },
+        MINTER,
+    )
+
+    # Child's parentUuid must now equal parent's componentUuid.
+    child_after = next(c for c in get_components(b) if c["name"] == "Child Canvas")
+    assert child_after["parentUuid"] == parent_comp_uuid, (
+        f"child parentUuid should be {parent_comp_uuid!r}, got {child_after['parentUuid']!r}"
+    )
+
+
+def test_append_node_nested_duplicate_child_raises(baseline_dict):
+    """M2: appending a SECOND nested node targeting the same child must raise ValueError."""
+    b = InputBundle(data=baseline_dict, speech_name="s.json")
+
+    # Add a child canvas with one exit_port.
+    structure.add_component(
+        b,
+        {
+            "name": "Child Canvas",
+            "nodes": [
+                {"id": "ep1", "prompt": "", "type": "exit_port", "config": {"name": "Done"}},
+            ],
+        },
+        MINTER,
+    )
+
+    # Add a second parent canvas (index 2) for the duplicate nested node.
+    structure.add_component(b, {"name": "Parent B"}, MINTER)
+
+    # First nested ref: parent component 0.
+    structure.populate_details(
+        b,
+        {"component": 0, "nodes": [{"id": "root", "prompt": "Root"}]},
+        MINTER,
+    )
+    structure.append_node(
+        b,
+        {
+            "component": 0,
+            "node": {
+                "id": "nested1",
+                "prompt": "",
+                "type": "nested",
+                "config": {"target": "Child Canvas"},
+            },
+            "edges": [],
+        },
+        MINTER,
+    )
+
+    # Populate Parent B and try to wire the same child — must raise.
+    structure.populate_details(
+        b,
+        {"component": 2, "nodes": [{"id": "rootB", "prompt": "Root B"}]},
+        MINTER,
+    )
+    with pytest.raises(ValueError, match="already referenced by another nested node"):
+        structure.append_node(
+            b,
+            {
+                "component": 2,
+                "node": {
+                    "id": "nested2",
+                    "prompt": "",
+                    "type": "nested",
+                    "config": {"target": "Child Canvas"},
+                },
+                "edges": [],
+            },
+            MINTER,
+        )
+
+
+def test_append_node_exit_port_with_outgoing_edge_raises(baseline_dict):
+    """append_node an exit_port node with an outgoing edge must raise ValueError
+    (exit_port is terminal and must not have outgoing edges).
+    """
+    b = InputBundle(data=baseline_dict, speech_name="s.json")
+
+    # Populate the component with a talk node so we have an existing uuid to wire to.
+    structure.populate_details(
+        b,
+        {"component": 0, "nodes": [{"id": "root", "prompt": "Root"}]},
+        MINTER,
+    )
+    comp0 = get_components(b)[0]
+    root_uuid = next(iter(codec.decode(comp0["details"])))
+
+    with pytest.raises(ValueError, match="terminal"):
+        structure.append_node(
+            b,
+            {
+                "component": 0,
+                "node": {
+                    "id": "ep1",
+                    "prompt": "",
+                    "type": "exit_port",
+                    "config": {"name": "Done"},
+                },
+                # exit_port cannot have outgoing edges
+                "edges": [{"from": "ep1", "branch": "Positive", "to": root_uuid}],
+            },
+            MINTER,
+        )

@@ -2,7 +2,7 @@
   "file": "speech12554783185497473808.json",
   "summary": {
     "errors": 0,
-    "warnings": 21,
+    "warnings": 20,
     "checks_run": [
       "schema",
       "graph",
@@ -12,16 +12,6 @@
     ]
   },
   "findings": [
-    {
-      "code": "WIZ104",
-      "severity": "warning",
-      "location": {
-        "entity": "WizFile",
-        "id": "",
-        "field": null
-      },
-      "message": "Export contains 1 external component reference(s). Confirm each is an intentional Component Library import."
-    },
     {
       "code": "WIZ202",
       "severity": "warning",

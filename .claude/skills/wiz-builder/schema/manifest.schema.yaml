@@ -68,7 +68,7 @@ properties:
                 type: string
               type:
                 type: string
-                enum: [talk, exit, transfer, goto, conditional, assign]
+                enum: [talk, exit, transfer, goto, conditional, assign, nested, exit_port]
               config:
                 type: object
                 additionalProperties: true
@@ -87,4 +87,4 @@ properties:
                 minLength: 1
               branch:
                 type: string
-                enum: [Positive, Negative, Reject, Unclassified, "No answer", Default]
+                minLength: 1

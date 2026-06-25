@@ -1027,8 +1027,10 @@ def _build_nested_node(
         "hitKnowledgeRate": [], "hangupRate": "0.0%", "hitKnowledgeCountsRate": "0.0%",
         "selected": False,
     }
+    # FIX 1: envelope-level id = subComponentUuid (required by WIZ importer; absent → code:-1).
     node_obj = {"canvas": canvas, "data": data, "name": target_name, "type": 11,
                 "is_default": is_default,
+                "id": target_uuid,
                 "data_extra": {"hot_words_list": [], "intents": [], "variables": [],
                                "serviceCall": [], "sentence_cut": []}}
     return node_obj, None
@@ -1167,6 +1169,8 @@ def render_component_nodes(
     # Build node_id -> node_uuid and node_id -> port_uuid maps (filled during loop).
     _node_id_to_uuid: dict[str, str] = {}
     _node_id_to_port_uuids: dict[str, dict[str, str]] = {}
+    # FIX 2: track node_id -> spec.type so edge wiring can set source.type=3 for nested nodes.
+    _node_id_to_type: dict[str, str] = {n.id: n.type for n in nodes}
 
     for sort_index, spec in enumerate(nodes, start=1):
         nid_str = spec.id
@@ -1251,8 +1255,11 @@ def render_component_nodes(
             )
         src_port_uuid = _node_id_to_port_uuids[e.src][e.branch]
         edge_uuid = str(minter.uuid(f"edge:{canvas_index}:{e.src}:{e.branch}"))
+        # FIX 2: nested (type-11) out-edges use source.type=3 (port-origin reference into child);
+        # all other node types use source.type=1.
+        src_type_int = 3 if _node_id_to_type.get(e.src) == "nested" else 1
         routes[src_node_uuid][src_port_uuid] = {
-            "source": {"type": 1, "uuid": src_port_uuid},
+            "source": {"type": src_type_int, "uuid": src_port_uuid},
             "target": {"type": 1, "uuid": dst_node_uuid},
             "portDetail": {"id": edge_uuid, "zIndex": 3},
         }

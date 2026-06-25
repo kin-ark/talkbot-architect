@@ -127,9 +127,41 @@ def apply_canvases(
         v["name"]: v.get("variableSource", 0) for v in speech_vars
     }
 
-    all_sentence_cut_rows: list[dict] = []
-    new_components = []
-    for ci, canvas in enumerate(manifest.canvases):
+    # Identify child canvases: any canvas named as a `nested` node's config.target.
+    # parent_of_child maps child-canvas-name → parent-canvas-name.
+    parent_of_child: dict[str, str] = {}
+    for canvas in manifest.canvases:
+        for node in canvas.nodes:
+            if node.type == "nested":
+                target = node.config.get("target", "")
+                if target:
+                    parent_of_child[target] = canvas.name
+
+    child_names: set[str] = set(parent_of_child.keys())
+    # Scope: one level of nesting — child canvases are not themselves parents (no nested-in-nested).
+
+    # Render order: children BEFORE parents (two-pass).
+    # Pass 1: render child canvases; collect exit_port node UUIDs into nested_exit_map.
+    # Pass 2: render parent (and non-nested) canvases with the populated nested_exit_map.
+    #
+    # nested_exit_map: {child-canvas-name: {exit-port-name: child-exit-node-uuid}}
+    # The exit-port name is stored in node_obj["data"]["name"] (== config["name"]).
+    nested_exit_map: dict[str, dict[str, str]] = {}
+
+    # Maintain insertion order for the final component list (children first, then parents,
+    # in their original manifest position within each group).
+    child_canvases = [(ci, c) for ci, c in enumerate(manifest.canvases) if c.name in child_names]
+    parent_canvases = [
+        (ci, c) for ci, c in enumerate(manifest.canvases) if c.name not in child_names
+    ]
+
+    # We need a stable final ordering for new_components that matches the manifest order.
+    # Build a ci→comp map, then emit in manifest order.
+    comp_by_ci: dict[int, dict] = {}
+    scs_by_ci: dict[int, list] = {}
+
+    # Pass 1: render children
+    for ci, canvas in child_canvases:
         comp, scs_rows = _build_component(
             canvas=canvas,
             canvas_index=ci,
@@ -144,9 +176,51 @@ def apply_canvases(
             component_nav=component_nav,
             canvas_uuid_by_name=canvas_uuid_by_name,
             var_source_by_name=var_source_by_name,
+            nested_exit_map=nested_exit_map,
+            parent_uuid=canvas_uuid_by_name.get(parent_of_child.get(canvas.name, ""), "0"),
         )
-        new_components.append(comp)
-        all_sentence_cut_rows.extend(scs_rows)
+        comp_by_ci[ci] = comp
+        scs_by_ci[ci] = scs_rows
+
+        # After rendering the child, extract exit_port node UUIDs from its details.
+        # details is a JSON string: {node_uuid: node_obj}; exit_port nodes have type==4
+        # and their port name is node_obj["data"]["name"].
+        details_dict: dict = json.loads(comp["details"])
+        exit_map: dict[str, str] = {}
+        for node_uuid, node_obj in details_dict.items():
+            if node_obj.get("type") == 4 and node_obj["data"].get("specificComponentName") == "":
+                # exit_port nodes have empty specificComponentName (unlike goto nodes).
+                exit_map[node_obj["data"]["name"]] = node_uuid
+        nested_exit_map[canvas.name] = exit_map
+
+    # Pass 2: render parents (and any non-child canvases)
+    for ci, canvas in parent_canvases:
+        comp, scs_rows = _build_component(
+            canvas=canvas,
+            canvas_index=ci,
+            canvas_uuid=canvas_uuids[ci],
+            manifest=manifest,
+            minter=minter,
+            base=base,
+            speech_id=speech_id,
+            branch_intent_ids=branch_intent_ids,
+            kb_ids=kb_ids,
+            node_language=node_language,
+            component_nav=component_nav,
+            canvas_uuid_by_name=canvas_uuid_by_name,
+            var_source_by_name=var_source_by_name,
+            nested_exit_map=nested_exit_map,
+            parent_uuid="0",
+        )
+        comp_by_ci[ci] = comp
+        scs_by_ci[ci] = scs_rows
+
+    # Reassemble in original manifest order.
+    all_sentence_cut_rows: list[dict] = []
+    new_components = []
+    for ci, _canvas in enumerate(manifest.canvases):
+        new_components.append(comp_by_ci[ci])
+        all_sentence_cut_rows.extend(scs_by_ci[ci])
 
     template["BizSpeechComponent"] = json.dumps(
         new_components, ensure_ascii=False, separators=(",", ":")
@@ -171,6 +245,8 @@ def _build_component(
     component_nav: list[dict] | None = None,
     canvas_uuid_by_name: dict[str, str] | None = None,
     var_source_by_name: dict[str, int] | None = None,
+    nested_exit_map: dict[str, dict[str, str]] | None = None,
+    parent_uuid: str = "0",
 ) -> tuple[dict[str, Any], list[dict]]:
     """Build a single BizSpeechComponent entry using render_component_nodes.
 
@@ -184,6 +260,10 @@ def _build_component(
             target_name = cfg.get("target", "")
             cfg["target_uuid"] = canvas_uuid_by_name.get(target_name, "")
             cfg["target_name"] = target_name
+        elif n.type == "nested" and canvas_uuid_by_name:
+            # Resolve config.target (a child canvas name) to the pre-minted componentUuid.
+            target_name = cfg.get("target", "")
+            cfg["target_uuid"] = canvas_uuid_by_name.get(target_name, "")
         node_specs.append(NodeSpec(id=n.id, prompt=n.prompt, type=n.type, config=cfg))
     edge_specs = [EdgeSpec(src=e.src, branch=e.branch, dst=e.dst) for e in canvas.edges]
 
@@ -199,6 +279,7 @@ def _build_component(
         minter=minter,
         component_nav=component_nav,
         var_source_by_name=var_source_by_name,
+        nested_exit_map=nested_exit_map,
     )
 
     entry = {
@@ -210,7 +291,7 @@ def _build_component(
         "language": base.get("language", 0),
         "editStatus": base.get("editStatus", 1),
         "useStatus": base.get("useStatus", 1),
-        "parentUuid": "0",
+        "parentUuid": parent_uuid,
         "sortIndex": canvas_index + 1,
         "speechId": speech_id,
         "templateCode": base.get("templateCode", ""),

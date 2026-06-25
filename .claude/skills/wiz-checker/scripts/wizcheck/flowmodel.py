@@ -93,6 +93,7 @@ class FlowComponent:
     entry_uuid: str | None              # node with is_default true
     root_uuids: list[str]               # [entry_uuid] if present else []
     nodes: dict[str, FlowModelNode]
+    parent_uuid: str = ""               # populated from parentUuid; "" or "0" = top-level
 
 
 @dataclass
@@ -164,6 +165,16 @@ def _build_branches(
     """Build the branch list for one node according to the brief's rules."""
     branches: list[BranchEdge] = []
 
+    if node_type == "exit_port":
+        # type 4 with empty appoint_node_id + empty specificComponentName:
+        # a named terminal return port in a child (nested) component.
+        label = data.get("name") or ""
+        branches.append(BranchEdge(
+            label=label,
+            kind="exit",
+        ))
+        return branches
+
     if node_type == "goto_component":
         # type 4: ONE cross-component exit edge
         target_comp = data.get("appoint_node_id")
@@ -173,6 +184,36 @@ def _build_branches(
             kind="exit",
             target_component=target_comp,
         ))
+        return branches
+
+    if node_type == "nested_component":
+        # type 11: one branch per exit port of the child component.
+        # Routes key = child exit node uuid; target uuid = parent's downstream node.
+        # Port label resolved from canvas.ports.items[].name where items[].uuid == route key.
+        # The canvas port items were injected into data as '_canvas_ports_items' by _build_node.
+        canvas_ports_items: list[dict] = data.get("_canvas_ports_items", [])
+        # Build uuid→name lookup from ports items
+        port_uuid_to_name: dict[str, str] = {}
+        for item in canvas_ports_items:
+            if isinstance(item, dict):
+                port_id = item.get("uuid")
+                if port_id:
+                    port_uuid_to_name[port_id] = item.get("name", "")
+
+        edge_map = routes.get(node_uuid, {})
+        if isinstance(edge_map, dict):
+            for exit_port_uuid, edge in edge_map.items():
+                target_uuid = None
+                if isinstance(edge, dict):
+                    tgt = edge.get("target")
+                    if isinstance(tgt, dict):
+                        target_uuid = tgt.get("uuid") or None
+                label = port_uuid_to_name.get(exit_port_uuid, "")
+                branches.append(BranchEdge(
+                    label=label,
+                    kind="exit",
+                    target_uuid=target_uuid,
+                ))
         return branches
 
     if node_type == "goto_kb":
@@ -264,6 +305,30 @@ def _build_node(
     if not isinstance(data, dict):
         data = {}
 
+    # Type-4 disambiguation: a type-4 node with empty appoint_node_id AND
+    # empty specificComponentName is an exit_port (named return in a child
+    # component), not a goto_component.
+    if (
+        node_type == "goto_component"
+        and data.get("appoint_node_id", "") == ""
+        and data.get("specificComponentName", "") == ""
+    ):
+        node_type = "exit_port"
+
+    # For nested_component (type 11), inject canvas port items into data so
+    # _build_branches can resolve exit port labels from canvas.ports.items.
+    # We use a private key to avoid mutating the original data dict.
+    if node_type == "nested_component":
+        canvas = envelope.get("canvas", {})
+        if isinstance(canvas, dict):
+            ports = canvas.get("ports", {})
+            canvas_ports_items = ports.get("items", []) if isinstance(ports, dict) else []
+        else:
+            canvas_ports_items = []
+        # Make a shallow copy so we don't mutate the original envelope data
+        data = dict(data)
+        data["_canvas_ports_items"] = canvas_ports_items
+
     label = (
         envelope.get("name")
         or data.get("name")
@@ -280,6 +345,9 @@ def _build_node(
                 allowed_kbs.append(int(k))
 
     branches = _build_branches(node_uuid, node_type, data, routes)
+
+    # Strip the private injection key from the stored data dict
+    data.pop("_canvas_ports_items", None)
 
     return FlowModelNode(
         uuid=node_uuid,
@@ -408,6 +476,8 @@ def build_components(data: dict) -> list[FlowComponent]:
 
         root_uuids = [entry_uuid] if entry_uuid else []
 
+        parent_uuid = comp.get("parentUuid", "") or ""
+
         components.append(FlowComponent(
             uuid=comp_uuid,
             name=comp_name,
@@ -415,6 +485,7 @@ def build_components(data: dict) -> list[FlowComponent]:
             entry_uuid=entry_uuid,
             root_uuids=root_uuids,
             nodes=nodes,
+            parent_uuid=parent_uuid,
         ))
 
     return components
@@ -466,6 +537,7 @@ def _component_to_dict(c: FlowComponent) -> dict:
         "entry_uuid": c.entry_uuid,
         "root_uuids": c.root_uuids,
         "nodes": {uuid: _node_to_dict(n) for uuid, n in c.nodes.items()},
+        "parent_uuid": c.parent_uuid,
     }
 
 
