@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useSession } from './state/useSession';
 import TopBar from './components/TopBar';
-import ChatPane from './components/ChatPane';
-import SidePanel from './components/SidePanel';
+import ComponentsRail from './components/ComponentsRail';
+import FlowCanvas from './components/FlowCanvas';
+import RightDock from './components/RightDock';
 import UploadZone from './components/UploadZone';
 import SettingsPopover from './components/SettingsPopover';
 import { exportUrl } from './api';
@@ -10,8 +11,12 @@ import { exportUrl } from './api';
 export default function App() {
   const s = useSession();
   const [selectedNode, setSelectedNode] = useState(null);
+  const [dockTab, setDockTab] = useState('chat');
+  const [focusComponentId, setFocusComponentId] = useState(null);
   const onExport = () => window.open(exportUrl(), '_blank');
   const onNew = () => window.location.reload();
+
+  const selectNode = (node) => { setSelectedNode(node); setDockTab('properties'); };
 
   if (!s.summary) {
     return (
@@ -35,15 +40,24 @@ export default function App() {
       </div>
     );
   }
+
+  const chat = {
+    transcript: s.transcript, proposal: s.proposal, sending: s.sending,
+    onSend: s.send, onApply: s.apply, onReject: s.reject, onCancel: s.cancel,
+  };
+
   return (
     <div className="h-screen flex flex-col bg-canvas">
       <TopBar canUndo={s.canUndo} canRedo={s.canRedo} onUndo={s.undo} onRedo={s.redo} onExport={onExport} onNew={onNew} />
       <div className="flex-1 flex overflow-hidden">
+        <ComponentsRail summary={s.summary} selectedComponentId={focusComponentId}
+          onSelectComponent={setFocusComponentId}
+          onAddComponent={() => setDockTab('chat')} />
         <div className="flex-1 min-w-0">
-          <ChatPane transcript={s.transcript} proposal={s.proposal} sending={s.sending}
-            onSend={s.send} onApply={s.apply} onReject={s.reject} onCancel={s.cancel} />
+          <FlowCanvas summary={s.summary} onSelectNode={selectNode} focusComponentId={focusComponentId} />
         </div>
-        <SidePanel summary={s.summary} findings={s.findings} selectedNode={selectedNode} onSelectNode={setSelectedNode} />
+        <RightDock activeTab={dockTab} onTabChange={setDockTab} summary={s.summary} findings={s.findings}
+          selectedNode={selectedNode} onSelectNode={selectNode} chat={chat} />
       </div>
     </div>
   );
