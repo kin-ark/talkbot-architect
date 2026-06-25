@@ -165,11 +165,17 @@ def apply_knowledge_bases(
             })
 
         bk_entry: dict = {
-            "allowInterrupt": 1,
+            # allowInterrupt 0 = the intent-triggered (business) KB default (179834);
+            # the system KB template carried 1.
+            "allowInterrupt": 0,
             "answerType": 1,
             "branch": manifest.branch,
             "canInterruptPercent": 80.0,
-            "conditions": json.dumps([{"type": 0}], ensure_ascii=False, separators=(", ", ": ")),
+            # conditions MUST be JSON-encoded null ("null") for an Intent-triggered KB. A
+            # non-null conditions value (e.g. [{"type":0}], cloned from a system KB) makes WIZ
+            # classify the KB as a "System Trigger" instead of an "Intent Trigger" — decoded
+            # from the real export: every intent-triggered business KB has conditions "null".
+            "conditions": "null",
             "createId": create_id,
             "createTime": create_time,
             "enableUse": 1,
@@ -193,9 +199,9 @@ def apply_knowledge_bases(
             "nodeResponseDurationSwitch": base_kb.get("nodeResponseDurationSwitch", 0),
             "noticeSendType": 0,
             "recordNum": 0,  # reset stat: no recordings yet
-            # repeatScriptType: ground-truth value from knowledgeId 179824 (deploy-verified).
-            # The Empty+Dialogue baseline omits this field; cloning from ground truth is safe.
-            "repeatScriptType": 1,
+            # repeatScriptType 0 = the intent-triggered (business) KB default (179834);
+            # the system KB template carried 1.
+            "repeatScriptType": 0,
             "soundexMatch": 0,
             "speakType": 1,
             "speechId": speech_id,

@@ -226,11 +226,14 @@ def add_kb(bundle: InputBundle, params: dict, minter) -> None:
     knowledge_id: int = minter.int_id(f"add-kb:{name}")
 
     bk_entry: dict = {
-        "allowInterrupt": 1,
+        # allowInterrupt 0 = intent-triggered (business) KB default.
+        "allowInterrupt": 0,
         "answerType": 1,
         "branch": branch,
         "canInterruptPercent": 80.0,
-        "conditions": json.dumps([{"type": 0}], ensure_ascii=False, separators=(", ", ": ")),
+        # conditions MUST be JSON-encoded null ("null") for an Intent-triggered KB; a non-null
+        # value makes WIZ classify it as a "System Trigger" (decoded from real export).
+        "conditions": "null",
         "createId": create_id,
         "createTime": create_time,
         "enableUse": 1,
@@ -252,7 +255,8 @@ def add_kb(bundle: InputBundle, params: dict, minter) -> None:
         "nodeResponseDurationSwitch": base_kb.get("nodeResponseDurationSwitch", 0),
         "noticeSendType": 0,
         "recordNum": 0,
-        "repeatScriptType": 1,
+        # repeatScriptType 0 = intent-triggered (business) KB default.
+        "repeatScriptType": 0,
         "soundexMatch": 0,
         "speakType": 1,
         "speechId": speech_id,

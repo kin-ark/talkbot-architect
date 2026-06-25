@@ -302,6 +302,11 @@ def test_build_multiround_kb_links_component(tmp_path):
     kbs = _unwrap(built["BizKnowledgeInfo"])
     kb = next(k for k in kbs if k.get("kdTitle") == "Due Date KB")
     assert kb["answerType"] == 1, "multi-round KB top-level answerType must stay 1"
+    # conditions must be JSON-encoded null for an Intent-triggered KB; a non-null value
+    # makes WIZ classify it as a "System Trigger" (decoded from the real export).
+    assert kb["conditions"] == "null", (
+        f"intent-triggered KB must have conditions 'null'; got {kb['conditions']!r}"
+    )
 
     kd_info = _unwrap(kb["kdInfo"])
     answer_types = [item.get("answerType") for item in kd_info]
