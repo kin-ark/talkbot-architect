@@ -20,6 +20,7 @@ OP_REGISTRY: dict[str, Callable] = {
     "append-node": structure.append_node,
     "add-variable": content.add_variable,
     "add-intent": content.add_intent,
+    "add-kb": content.add_kb,
     "set-path": generic.set_path,
     "delete-path": generic.delete_path,
 }
