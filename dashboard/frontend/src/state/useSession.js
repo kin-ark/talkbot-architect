@@ -16,6 +16,7 @@ export function useSession() {
   const ctrl = useRef(null);
   const turnSeq = useRef(0);
   const touched = useRef(false);
+  const lastSent = useRef(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -99,8 +100,17 @@ export function useSession() {
 
   const send = useCallback(async (message) => {
     touched.current = true;
+    lastSent.current = message;
     setTranscript((t) => [...t, { role: 'user', text: message }]);
     queue.current.push(message);
+    await drain();
+  }, [drain]);
+
+  const retry = useCallback(async () => {
+    if (!lastSent.current) return;
+    const msg = lastSent.current;
+    setTranscript((t) => [...t, { role: 'user', text: msg }]);
+    queue.current.push(msg);
     await drain();
   }, [drain]);
 
@@ -120,5 +130,5 @@ export function useSession() {
   const redo = useCallback(async () => refresh(await api.redo()), []);
 
   return { summary, findings, transcript, proposal, canUndo, canRedo, loading, sending,
-           upload, startBlank, send, apply, reject, undo, redo, cancel };
+           upload, startBlank, send, retry, apply, reject, undo, redo, cancel };
 }

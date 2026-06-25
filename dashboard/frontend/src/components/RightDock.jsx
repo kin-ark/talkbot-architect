@@ -46,7 +46,7 @@ export default function RightDock({ activeTab, onTabChange, summary, findings, s
       <div className="flex-1 overflow-hidden">
         {activeTab === 'chat' && (
           <ChatPane transcript={chat.transcript} proposal={chat.proposal} sending={chat.sending}
-            onSend={chat.onSend} onApply={chat.onApply} onReject={chat.onReject} onCancel={chat.onCancel}
+            onSend={chat.onSend} onRetry={chat.onRetry} onApply={chat.onApply} onReject={chat.onReject} onCancel={chat.onCancel}
             onPreview={onPreview} summary={summary} onSelectNode={onSelectNode} />
         )}
         {activeTab === 'findings' && <FindingList findings={findings} onSelect={onSelectNode} />}

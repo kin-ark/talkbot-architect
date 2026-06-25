@@ -71,7 +71,7 @@ export default function App() {
 
   const chat = {
     transcript: s.transcript, proposal: s.proposal, sending: s.sending,
-    onSend: s.send, onApply: applyAndExit, onReject: rejectAndExit, onCancel: s.cancel,
+    onSend: s.send, onRetry: s.retry, onApply: applyAndExit, onReject: rejectAndExit, onCancel: s.cancel,
   };
 
   return (

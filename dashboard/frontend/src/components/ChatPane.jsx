@@ -49,7 +49,7 @@ function bubbleClass(role) {
   return 'bg-surface border border-border text-text';
 }
 
-export default function ChatPane({ transcript, proposal, sending, onSend, onApply, onReject, onCancel, onPreview, summary, onSelectNode }) {
+export default function ChatPane({ transcript, proposal, sending, onSend, onRetry, onApply, onReject, onCancel, onPreview, summary, onSelectNode }) {
   const [input, setInput] = useState('');
   const submit = (e) => { e.preventDefault(); if (!input.trim()) return; onSend(input.trim()); setInput(''); };
   const slashMatches = input.startsWith('/')
@@ -94,8 +94,26 @@ export default function ChatPane({ transcript, proposal, sending, onSend, onAppl
                 ? m.text
                 : <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>{m.text || ''}</ReactMarkdown>}
             </div>
+            {m.role === 'error' && (
+              <div className="mt-1">
+                <button type="button" onClick={onRetry}
+                  className="text-xs text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded">Retry</button>
+              </div>
+            )}
+            {m.role === 'agent' && typeof m.text === 'string' && m.text.includes('tool-iteration limit') && (
+              <div className="mt-1">
+                <button type="button" onClick={() => onSend('continue')}
+                  className="text-xs text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded">Continue</button>
+              </div>
+            )}
           </div>
         ))}
+        {transcript.length > 0 && transcript[transcript.length - 1].role === 'agent' && (
+          <div className="text-left">
+            <button type="button" onClick={onRetry}
+              className="text-xs text-text-tertiary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded">↻ Regenerate</button>
+          </div>
+        )}
         {sending && (
           <div className="text-left" data-testid="thinking">
             <span className="inline-block p-3 rounded-2xl text-sm bg-surface border border-border text-text-tertiary">thinking…</span>
