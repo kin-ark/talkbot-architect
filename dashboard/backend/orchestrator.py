@@ -2,8 +2,9 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Iterator
 
-from llm.base import LLMClient, Message
+from llm.base import LLMClient, LLMResponse, Message
 from session import Session
 from tools import registry
 
@@ -36,45 +37,104 @@ _SYSTEM = (
 _MAX_TOOL_ITERS = 8
 
 
-def run_turn(client: LLMClient, session: Session, user_message: str) -> dict:
-    mark = len(session.transcript)                      # pre-turn snapshot
+def _summarize_tool_result(name: str, result) -> str:
+    if isinstance(result, dict):
+        if result.get("proposal") is not None or "diff" in result:
+            return "proposal ready"
+        if name == "validate" and isinstance(result.get("findings"), list):
+            return f"{len(result['findings'])} findings"
+        if "error" in result:
+            return "error"
+    if isinstance(result, list):
+        return f"{len(result)} items"
+    return "done"
+
+
+def run_turn_stream(client, session, user_message: str) -> Iterator[dict]:
+    mark = len(session.transcript)
     session.transcript.append(Message(role="user", content=user_message))
     messages = [Message(role="system", content=_SYSTEM), *session.transcript]
-    tool_trace: list[dict] = []
     proposal: dict | None = None
+    text_acc = ""
 
-    def _rollback_canceled():
-        del session.transcript[mark:]                   # discard partial turn
+    def _rollback():
+        del session.transcript[mark:]
         session.cancel_requested = False
-        return {"text": "(canceled)", "tool_trace": tool_trace,
-                "proposal": None, "canceled": True}
 
     for _ in range(_MAX_TOOL_ITERS):
         if session.cancel_requested:
-            return _rollback_canceled()
-        resp = client.chat(messages, registry.tool_specs())
+            _rollback()
+            yield {"type": "done", "canceled": True, "text": ""}
+            return
+
+        resp = None
+        turn_text = ""
+        for chunk in client.stream_chat(messages, registry.tool_specs()):
+            if session.cancel_requested:
+                _rollback()
+                yield {"type": "done", "canceled": True, "text": ""}
+                return
+            if chunk.text_delta:
+                turn_text += chunk.text_delta
+                yield {"type": "token", "delta": chunk.text_delta}
+            if chunk.response is not None:
+                resp = chunk.response
+        if resp is None:                       # defensive: empty stream
+            resp = LLMResponse(text=turn_text or None, tool_calls=[])
+
         assistant = Message(role="assistant", content=resp.text, tool_calls=resp.tool_calls)
         messages.append(assistant)
         session.transcript.append(assistant)
+        if resp.text:
+            text_acc = resp.text
+
         if not resp.tool_calls:
             session.cancel_requested = False
-            return {"text": resp.text or "", "tool_trace": tool_trace,
-                    "proposal": proposal, "canceled": False}
+            yield {"type": "done", "canceled": False, "text": text_acc}
+            return
+
         seen_call_ids: set[str] = set()
         for call in resp.tool_calls:
             if call.id in seen_call_ids:
-                continue  # a model may echo a tool_use id twice; one result per id
+                continue
             seen_call_ids.add(call.id)
+            yield {"type": "tool_start", "name": call.name, "args": call.arguments}
             out = registry.dispatch(call.name, call.arguments, session.current())
-            tool_trace.append({"name": call.name, "arguments": call.arguments,
-                               "result": out["result"]})
+            yield {"type": "tool_result", "name": call.name, "result": out["result"],
+                   "summary": _summarize_tool_result(call.name, out["result"])}
             if out["proposal"] is not None:
                 proposal = out["proposal"]
                 session.pending = proposal
+                yield {"type": "proposal", "proposal": proposal}
             tool_msg = Message(role="tool", tool_call_id=call.id,
                                content=json.dumps(out["result"], ensure_ascii=False, default=str))
             messages.append(tool_msg)
             session.transcript.append(tool_msg)
+
     session.cancel_requested = False
-    return {"text": "(stopped after tool-iteration limit)", "tool_trace": tool_trace,
-            "proposal": proposal, "canceled": False}
+    yield {"type": "done", "canceled": False, "text": text_acc or "(stopped after tool-iteration limit)"}
+
+
+def run_turn(client: LLMClient, session: Session, user_message: str) -> dict:
+    """Blocking drainer over run_turn_stream — same return shape as before."""
+    text = ""
+    tool_trace: list[dict] = []
+    proposal: dict | None = None
+    canceled = False
+    for ev in run_turn_stream(client, session, user_message):
+        t = ev["type"]
+        if t == "token":
+            pass  # text comes from the final done event
+        elif t == "tool_start":
+            tool_trace.append({"name": ev["name"], "arguments": ev["args"], "result": None})
+        elif t == "tool_result":
+            if tool_trace and tool_trace[-1]["result"] is None:
+                tool_trace[-1]["result"] = ev["result"]
+            else:
+                tool_trace.append({"name": ev["name"], "arguments": {}, "result": ev["result"]})
+        elif t == "proposal":
+            proposal = ev["proposal"]
+        elif t == "done":
+            text = ev["text"]
+            canceled = ev["canceled"]
+    return {"text": text, "tool_trace": tool_trace, "proposal": proposal, "canceled": canceled}
