@@ -59,7 +59,7 @@ export default function ChatPane({ transcript, proposal, sending, onSend, onAppl
     if (c.mode === 'send') { onSend(c.text); setInput(''); }
     else { setInput(c.text); }
   };
-  const mentionMatch = input.match(/@(\S*)$/);          // trailing @token, no space
+  const mentionMatch = input.startsWith('/') ? null : input.match(/@(\S*)$/);  // trailing @token; suppressed inside a slash command
   const mentionQuery = mentionMatch ? mentionMatch[1].toLowerCase() : null;
   const mentionMatches = mentionQuery !== null
     ? mentionEntries(summary).filter((e) => e.label.toLowerCase().includes(mentionQuery)).slice(0, 8)
