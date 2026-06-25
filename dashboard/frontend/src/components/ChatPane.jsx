@@ -19,7 +19,7 @@ export default function ChatPane({ transcript, proposal, sending, onSend, onAppl
         {transcript.map((m, i) => (
           <div key={i} className={m.role === 'user' ? 'text-right' : 'text-left'}>
             {m.tool_trace?.length > 0 && (
-              <div className="mb-1">{m.tool_trace.map((t, j) => <ToolChip key={j} name={t.name} args={t.arguments} />)}</div>
+              <div className="mb-1">{m.tool_trace.map((t, j) => <ToolChip key={j} name={t.name} args={t.arguments} status={t.status} summary={t.summary} />)}</div>
             )}
             <div className={`inline-block max-w-[80%] p-3 rounded-2xl text-sm ${bubbleClass(m.role)} ${m.role === 'user' || m.role === 'error' ? 'whitespace-pre-wrap' : 'prose prose-sm max-w-none prose-pre:bg-surface-muted prose-pre:text-text'}`}>
               {m.role === 'user' || m.role === 'error'
