@@ -61,12 +61,11 @@ def compile_manifest(manifest_path: Path, output_path: Path) -> CompileResult:
     template = apply_intents(template, manifest, minter)
 
     # Pre-mint KB ids BEFORE apply_canvases so that talk nodes can include them
-    # in allow_jump_knowledges.  Only simple KBs (no multi_round) are pre-minted here;
-    # multi-round KB ids are handled in Task 3.
+    # in allow_jump_knowledges.  ALL KBs (simple + multi-round) are pre-minted so
+    # that multi-round KBs are also emitted in BizKnowledgeInfo and referenceable.
     kb_id_by_name: dict[str, int] = {
         kb.name: minter.int_id(f"kb:{kb.name}")
         for kb in manifest.knowledge_bases
-        if kb.multi_round is None
     }
 
     template, canvas_uuid_by_name = apply_canvases(

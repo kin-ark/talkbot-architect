@@ -17,6 +17,17 @@ Previously missing (added in KB-T2 fix): repeatScriptType, tagList.
 
 SentenceCutKnowledge speechRecCutId: UUID-format string (deterministic uuid5 via
 IdMinter.uuid), NOT a wide-int.  knowledgeRecCutId stays int (matches real rows).
+
+Multi-round KBs (kb.multi_round is not None):
+  The final kdInfo item (appended after all normal answerType:1 items) has:
+    answerType: 2
+    multipleAppointId: <target canvas componentUuid>
+    editorValue: {xml: '<speak …></speak>', html: '<p></p>', text: ''}  [empty body]
+    id: <UUID-format string, minted via minter.uuid>
+  The KB top-level answerType stays 1.
+  The delegating item's editorValue is always the empty-body form — decoded from
+  knowledgeId 179837 in speech4892384019254584542.json (golden reference).
+  SentenceCutKnowledge rows are only emitted for normal (answerType:1) items.
 """
 
 from __future__ import annotations
@@ -92,10 +103,6 @@ def apply_knowledge_bases(
 
     # --- emit one BizKnowledgeInfo + SCK rows per manifest KB ---
     for kb in manifest.knowledge_bases:
-        if kb.multi_round is not None:
-            # Task 3: multi-round linkage deferred.
-            continue
-
         knowledge_id: int = kb_id_by_name[kb.name]
 
         # Resolve intents → [{intentName, intentId}]
@@ -130,6 +137,31 @@ def apply_knowledge_bases(
                     "text": answer_text,
                 },
                 "id": item_id,
+            })
+
+        # Multi-round: append the delegating answerType:2 item LAST.
+        # Shape decoded from golden KB 179837 (speech4892384019254584542.json):
+        #   {answerType:2, multipleAppointId:<componentUuid>, editorValue:{empty}, id:<uuid>}
+        # editorValue is always the empty-body form: xml="<speak …></speak>", html="<p></p>",
+        # text="" — regardless of whether normal answers precede it.
+        if kb.multi_round is not None:
+            target_uuid = canvas_uuid_by_name.get(kb.multi_round)
+            if target_uuid is None:
+                raise ValueError(
+                    f"apply_knowledge_bases: KB {kb.name!r} multi_round target "
+                    f"{kb.multi_round!r} not found in canvas_uuid_by_name; "
+                    f"ensure the canvas is declared in the manifest"
+                )
+            delegate_item_id = str(minter.uuid(f"kdinfo-delegate:{kb.name}"))
+            kd_info_items.append({
+                "answerType": 2,
+                "editorValue": {
+                    "xml": '<speak xmlns:wiz="http://www.wiz.ai/develop/xml/tts"></speak>',
+                    "html": "<p></p>",
+                    "text": "",
+                },
+                "id": delegate_item_id,
+                "multipleAppointId": target_uuid,
             })
 
         bk_entry: dict = {

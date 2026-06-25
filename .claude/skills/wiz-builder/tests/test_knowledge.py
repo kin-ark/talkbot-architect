@@ -1,4 +1,4 @@
-"""Tests for wizbuilder.knowledge — apply_knowledge_bases step (KB-T2)."""
+"""Tests for wizbuilder.knowledge — apply_knowledge_bases step (KB-T2 + KB-T3)."""
 
 from __future__ import annotations
 
@@ -47,10 +47,10 @@ def _build_pipeline(manifest_name: str) -> tuple[dict, object, IdMinter, dict, d
     template = apply_variables(template, manifest, minter)
     template = apply_intents(template, manifest, minter)
 
+    # Pre-mint ALL KBs (simple + multi-round) — mirrors compile.py behaviour after KB-T3 fix.
     kb_id_by_name: dict[str, int] = {
         kb.name: minter.int_id(f"kb:{kb.name}")
         for kb in manifest.knowledge_bases
-        if kb.multi_round is None
     }
 
     template, canvas_uuid_by_name = apply_canvases(
@@ -77,7 +77,6 @@ def test_biz_knowledge_info_has_new_entry(template_dict, fixture_path):
     kb_id_by_name = {
         kb.name: minter.int_id(f"kb:{kb.name}")
         for kb in manifest.knowledge_bases
-        if kb.multi_round is None
     }
     template, canvas_uuid_by_name = apply_canvases(
         template, manifest, minter, kb_id_by_name=kb_id_by_name
@@ -115,7 +114,6 @@ def test_biz_knowledge_info_intents_resolved(template_dict, fixture_path):
     kb_id_by_name = {
         kb.name: minter.int_id(f"kb:{kb.name}")
         for kb in manifest.knowledge_bases
-        if kb.multi_round is None
     }
     template, canvas_uuid_by_name = apply_canvases(
         template, manifest, minter, kb_id_by_name=kb_id_by_name
@@ -152,7 +150,6 @@ def test_biz_knowledge_info_kd_info_has_speak_xml(template_dict, fixture_path):
     kb_id_by_name = {
         kb.name: minter.int_id(f"kb:{kb.name}")
         for kb in manifest.knowledge_bases
-        if kb.multi_round is None
     }
     template, canvas_uuid_by_name = apply_canvases(
         template, manifest, minter, kb_id_by_name=kb_id_by_name
@@ -195,7 +192,6 @@ def test_sentence_cut_knowledge_rows_emitted(template_dict, fixture_path):
     kb_id_by_name = {
         kb.name: minter.int_id(f"kb:{kb.name}")
         for kb in manifest.knowledge_bases
-        if kb.multi_round is None
     }
     template, canvas_uuid_by_name = apply_canvases(
         template, manifest, minter, kb_id_by_name=kb_id_by_name
@@ -242,7 +238,6 @@ def test_talk_node_allow_jump_knowledges_includes_new_kb(template_dict, fixture_
     kb_id_by_name = {
         kb.name: minter.int_id(f"kb:{kb.name}")
         for kb in manifest.knowledge_bases
-        if kb.multi_round is None
     }
     template, canvas_uuid_by_name = apply_canvases(
         template, manifest, minter, kb_id_by_name=kb_id_by_name
@@ -327,7 +322,6 @@ def _run_apply_kb(template_dict, fixture_path) -> tuple[dict, dict]:
     kb_id_by_name = {
         kb.name: minter.int_id(f"kb:{kb.name}")
         for kb in manifest.knowledge_bases
-        if kb.multi_round is None
     }
     template, canvas_uuid_by_name = apply_canvases(
         template, manifest, minter, kb_id_by_name=kb_id_by_name
@@ -406,7 +400,6 @@ def test_sentence_cut_knowledge_speech_rec_cut_id_is_uuid(template_dict, fixture
     kb_id_by_name = {
         kb.name: minter.int_id(f"kb:{kb.name}")
         for kb in manifest.knowledge_bases
-        if kb.multi_round is None
     }
     template, canvas_uuid_by_name = apply_canvases(
         template, manifest, minter, kb_id_by_name=kb_id_by_name
@@ -435,3 +428,149 @@ def test_sentence_cut_knowledge_speech_rec_cut_id_is_uuid(template_dict, fixture
         assert isinstance(row["knowledgeRecCutId"], int), (
             f"knowledgeRecCutId must be int, got {type(row['knowledgeRecCutId']).__name__}"
         )
+
+
+# ---------------------------------------------------------------------------
+# KB-T3 tests — multi-round linkage
+# ---------------------------------------------------------------------------
+
+
+def _apply_kb_multiround() -> tuple[dict, dict, dict, IdMinter]:
+    """Run the full pipeline including apply_knowledge_bases for the multi-round fixture.
+
+    Returns (template, kb_id_by_name, canvas_uuid_by_name, minter).
+    """
+    template, manifest, minter, kb_id_by_name, canvas_uuid_by_name = _build_pipeline(
+        "manifest_with_multiround_kb.yaml"
+    )
+    apply_knowledge_bases(
+        template, manifest, minter,
+        kb_id_by_name=kb_id_by_name,
+        canvas_uuid_by_name=canvas_uuid_by_name,
+    )
+    return template, kb_id_by_name, canvas_uuid_by_name, minter
+
+
+def test_multiround_kb_with_answers_kd_info_final_item_is_delegate():
+    """A KB with answers + multi_round: the LAST kdInfo item is answerType:2 with multipleAppointId.
+    """
+    template, kb_id_by_name, canvas_uuid_by_name, _ = _apply_kb_multiround()
+    bk_after = json.loads(template["BizKnowledgeInfo"])
+    due_date_kb = next(e for e in bk_after if e["kdTitle"] == "Due Date KB")
+
+    kd_info = json.loads(due_date_kb["kdInfo"])
+    # 1 normal answer + 1 delegate item
+    assert len(kd_info) == 2, f"Expected 2 kdInfo items, got {len(kd_info)}"
+
+    # First item: normal answerType:1
+    assert kd_info[0]["answerType"] == 1
+    assert kd_info[0]["answer"] == "Jatuh tempo Anda adalah hari ini."
+
+    # Last item: delegate answerType:2
+    final = kd_info[-1]
+    assert final["answerType"] == 2, f"Last item answerType must be 2, got {final['answerType']!r}"
+    handler_uuid = canvas_uuid_by_name["Handler"]
+    assert final["multipleAppointId"] == handler_uuid, (
+        f"multipleAppointId must be Handler componentUuid {handler_uuid!r}, "
+        f"got {final.get('multipleAppointId')!r}"
+    )
+
+    # editorValue is the empty-body form (golden: KB 179837 item[1])
+    ev = final["editorValue"]
+    assert ev["text"] == ""
+    assert ev["html"] == "<p></p>"
+    assert ev["xml"] == '<speak xmlns:wiz="http://www.wiz.ai/develop/xml/tts"></speak>'
+
+    # id must be UUID-format string
+    assert _UUID_RE.match(final["id"]), f"delegate item id must be UUID-format, got {final['id']!r}"
+
+
+def test_multiround_kb_only_kd_info_single_delegate_item():
+    """A KB with multi_round only (no answers): kdInfo has exactly one answerType:2 item."""
+    template, kb_id_by_name, canvas_uuid_by_name, _ = _apply_kb_multiround()
+    bk_after = json.loads(template["BizKnowledgeInfo"])
+    installment_kb = next(e for e in bk_after if e["kdTitle"] == "Installment KB")
+
+    kd_info = json.loads(installment_kb["kdInfo"])
+    assert len(kd_info) == 1, f"Expected 1 kdInfo item (delegate only), got {len(kd_info)}"
+
+    final = kd_info[0]
+    assert final["answerType"] == 2
+    handler_uuid = canvas_uuid_by_name["Handler"]
+    assert final["multipleAppointId"] == handler_uuid
+    ev = final["editorValue"]
+    assert ev["text"] == ""
+    assert ev["html"] == "<p></p>"
+    assert _UUID_RE.match(final["id"])
+
+
+def test_multiround_kb_top_level_answer_type_stays_1():
+    """The KB's top-level answerType must remain 1 even when multi_round is set."""
+    template, _, _, _ = _apply_kb_multiround()
+    bk_after = json.loads(template["BizKnowledgeInfo"])
+    for kb_entry in bk_after:
+        if kb_entry["kdTitle"] in ("Due Date KB", "Installment KB"):
+            assert kb_entry["answerType"] == 1, (
+                f"KB {kb_entry['kdTitle']!r} top-level answerType must be 1, "
+                f"got {kb_entry['answerType']!r}"
+            )
+
+
+def test_multiround_kb_present_in_biz_knowledge_info():
+    """Multi-round KBs are emitted in BizKnowledgeInfo with a minted knowledgeId."""
+    template, kb_id_by_name, _, minter = _apply_kb_multiround()
+    bk_after = json.loads(template["BizKnowledgeInfo"])
+    bk_titles = {e["kdTitle"] for e in bk_after}
+
+    assert "Due Date KB" in bk_titles, "Due Date KB must appear in BizKnowledgeInfo"
+    assert "Installment KB" in bk_titles, "Installment KB must appear in BizKnowledgeInfo"
+
+    # knowledgeId must match the pre-minted value
+    for e in bk_after:
+        if e["kdTitle"] == "Due Date KB":
+            assert e["knowledgeId"] == kb_id_by_name["Due Date KB"]
+        elif e["kdTitle"] == "Installment KB":
+            assert e["knowledgeId"] == kb_id_by_name["Installment KB"]
+
+
+def test_multiround_kb_handler_canvas_is_top_level_component():
+    """The 'Handler' canvas referenced by multi_round must exist as a top-level component
+    (parentUuid='0').
+    """
+    template, _, _, _ = _apply_kb_multiround()
+    bsc = json.loads(template["BizSpeechComponent"])
+    handler = next((c for c in bsc if c["name"] == "Handler"), None)
+    assert handler is not None, "Handler canvas must be present in BizSpeechComponent"
+    assert handler["parentUuid"] == "0", (
+        f"Handler canvas must be a top-level component (parentUuid='0'), "
+        f"got {handler.get('parentUuid')!r}"
+    )
+
+
+def test_multiround_kb_no_sck_rows_for_delegate_item():
+    """No SentenceCutKnowledge rows are emitted for the answerType:2 delegate item."""
+    template, kb_id_by_name, _, _ = _apply_kb_multiround()
+    sck_after = json.loads(template.get("SentenceCutKnowledge", "[]"))
+
+    installment_kb_id = kb_id_by_name["Installment KB"]
+    installment_rows = [r for r in sck_after if r["knowledgeId"] == installment_kb_id]
+    # Installment KB has no answers → must have 0 SCK rows (no rows for the delegate)
+    assert len(installment_rows) == 0, (
+        f"Installment KB (multi_round-only) must have 0 SCK rows, got {len(installment_rows)}"
+    )
+
+    due_date_kb_id = kb_id_by_name["Due Date KB"]
+    due_date_rows = [r for r in sck_after if r["knowledgeId"] == due_date_kb_id]
+    # Due Date KB has 1 answer → exactly 1 SCK row (only for the normal answer, not the delegate)
+    assert len(due_date_rows) == 1, (
+        f"Due Date KB must have 1 SCK row (normal answer only), got {len(due_date_rows)}"
+    )
+
+
+def test_multiround_kb_compile_checker_clean(tmp_path):
+    """A manifest with multi-round KBs compiles without checker errors (end-to-end)."""
+    out = tmp_path / "speech_multiround.json"
+    result = compile_manifest(FIXTURES / "manifest_with_multiround_kb.yaml", out)
+    assert result.checker_errors == 0, (
+        f"compile produced {result.checker_errors} checker errors: {result.finding_codes}"
+    )

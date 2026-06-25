@@ -1,0 +1,45 @@
+name: "Multi-Round KB Test Bot"
+branch: dev
+language: IDN
+
+custom_intents:
+  - name: AskDueDate
+    language: IDN
+    keywords: ["jatuh tempo", "due date"]
+    user_responses: ["kapan jatuh temponya"]
+  - name: AskInstallment
+    language: IDN
+    keywords: ["cicilan"]
+    user_responses: ["berapa cicilan saya"]
+
+knowledge_bases:
+  # KB with answers + multi_round delegation
+  - name: "Due Date KB"
+    intents:
+      - AskDueDate
+    answers:
+      - "Jatuh tempo Anda adalah hari ini."
+    multi_round: "Handler"
+
+  # KB with only multi_round (no answers)
+  - name: "Installment KB"
+    intents:
+      - AskInstallment
+    multi_round: "Handler"
+
+canvases:
+  - name: "1. Main"
+    nodes:
+      - id: greet
+        prompt: Halo, ada yang bisa saya bantu?
+
+  - name: "Handler"
+    nodes:
+      - id: clarify
+        prompt: Boleh saya bantu lebih lanjut?
+      - id: done
+        type: exit
+    edges:
+      - from: clarify
+        branch: Positive
+        to: done
