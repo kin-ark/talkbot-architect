@@ -4,6 +4,14 @@ import remarkGfm from 'remark-gfm';
 import ToolChip from './ToolChip';
 import DiffCard from './DiffCard';
 
+const SLASH = [
+  { cmd: '/validate', mode: 'send', text: 'Validate the dialogue and list all findings.' },
+  { cmd: '/explain', mode: 'send', text: 'Explain what this bot does, step by step.' },
+  { cmd: '/summary', mode: 'send', text: 'Summarize the dialogue flow.' },
+  { cmd: '/add-node', mode: 'fill', text: 'Add a node: ' },
+  { cmd: '/add-component', mode: 'fill', text: 'Add a component named ' },
+];
+
 const SUGGESTIONS = [
   { label: 'Validate', prompt: 'Validate the dialogue and list all findings.' },
   { label: 'Explain this bot', prompt: 'Explain what this bot does, step by step.' },
@@ -33,6 +41,13 @@ function bubbleClass(role) {
 export default function ChatPane({ transcript, proposal, sending, onSend, onApply, onReject, onCancel, onPreview, summary, onSelectNode }) {
   const [input, setInput] = useState('');
   const submit = (e) => { e.preventDefault(); if (!input.trim()) return; onSend(input.trim()); setInput(''); };
+  const slashMatches = input.startsWith('/')
+    ? SLASH.filter((c) => c.cmd.startsWith(input.split(' ')[0].toLowerCase()))
+    : [];
+  const pickSlash = (c) => {
+    if (c.mode === 'send') { onSend(c.text); setInput(''); }
+    else { setInput(c.text); }
+  };
   const mdComponents = {
     a: ({ href, children }) => {
       if (typeof href === 'string' && href.startsWith('#node:')) {
@@ -71,7 +86,19 @@ export default function ChatPane({ transcript, proposal, sending, onSend, onAppl
       </div>
       <div className="px-4 pb-2"><ChipRow onSend={onSend} /></div>
       <form onSubmit={submit} data-testid="chat-form" className="p-4 border-t border-border bg-surface">
-        <div className="flex gap-2">
+        <div className="relative flex gap-2">
+          {slashMatches.length > 0 && (
+            <div data-testid="slash-menu"
+              className="absolute bottom-full mb-1 left-0 w-72 rounded-lg border border-border bg-surface shadow-card overflow-hidden z-30">
+              {slashMatches.map((c) => (
+                <button key={c.cmd} type="button" onClick={() => pickSlash(c)}
+                  className="block w-full text-left px-3 py-1.5 text-sm text-text hover:bg-surface-muted">
+                  <span className="font-mono text-primary">{c.cmd}</span>
+                  <span className="text-text-tertiary"> — {c.text.trim() || '…'}</span>
+                </button>
+              ))}
+            </div>
+          )}
           <input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Ask about or edit the dialogue…"
             className="flex-1 border border-border rounded-xl px-3 py-2 text-sm text-text bg-surface focus:outline-none focus:ring-2 focus:ring-primary" />
           {sending
