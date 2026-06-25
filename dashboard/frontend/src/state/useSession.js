@@ -129,6 +129,16 @@ export function useSession() {
   const undo = useCallback(async () => refresh(await api.undo()), []);
   const redo = useCallback(async () => refresh(await api.redo()), []);
 
+  // Clear backend + local state so the app returns to the upload/landing screen.
+  // Without clearing the backend, a later reload would rehydrate the old session.
+  const reset = useCallback(async () => {
+    queue.current = [];
+    if (ctrl.current) ctrl.current.abort();
+    try { await api.clearSession(); } catch { /* best-effort */ }
+    setSummary(null); setFindings([]); setTranscript([]); setProposal(null);
+    setCanUndo(false); setCanRedo(false);
+  }, []);
+
   return { summary, findings, transcript, proposal, canUndo, canRedo, loading, sending,
-           upload, startBlank, send, retry, apply, reject, undo, redo, cancel };
+           upload, startBlank, send, retry, apply, reject, undo, redo, cancel, reset };
 }

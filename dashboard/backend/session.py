@@ -40,6 +40,15 @@ class Session:
         self.wavs = wavs if wavs is not None else {}
         self._autosave()
 
+    def reset(self) -> None:
+        """Drop the loaded dialogue + transcript so the app returns to landing."""
+        self._stack = []
+        self._idx = -1
+        self.transcript = []
+        self.pending = None
+        self.cancel_requested = False
+        self._autosave()
+
     def current(self) -> dict:
         return self._stack[self._idx]
 

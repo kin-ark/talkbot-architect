@@ -15,7 +15,10 @@ export default function App() {
   const [focusComponentId, setFocusComponentId] = useState(null);
   const [preview, setPreview] = useState(null);
   const onExport = () => window.open(exportUrl(), '_blank');
-  const onNew = () => window.location.reload();
+  const onNew = () => {
+    setSelectedNode(null); setDockTab('chat'); setFocusComponentId(null); setPreview(null);
+    s.reset();           // clears backend + session state -> returns to landing
+  };
 
   const ownerComponentOf = (uuid) => {
     for (const c of s.summary?.components || []) {

@@ -238,6 +238,13 @@ def create_blank_session():
     return {"summary": agents.summarize(data), "findings": agents.validate(data)}
 
 
+@app.post("/session/clear")
+def clear_session():
+    """Drop the current session so the dashboard returns to the upload/landing screen."""
+    SESSION.reset()
+    return {"cleared": True}
+
+
 @app.get("/summary")
 async def get_summary():
     _require_session()
