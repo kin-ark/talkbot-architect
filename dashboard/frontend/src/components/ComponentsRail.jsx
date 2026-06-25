@@ -1,4 +1,4 @@
-export default function ComponentsRail({ summary, selectedComponentId, onSelectComponent, onAddComponent }) {
+export default function ComponentsRail({ summary, selectedComponentId, onSelectComponent }) {
   const components = summary?.components || [];
   return (
     <div className="w-56 shrink-0 h-full border-r border-border bg-surface flex flex-col" data-testid="components-rail">
@@ -21,12 +21,6 @@ export default function ComponentsRail({ summary, selectedComponentId, onSelectC
         {components.length === 0 && (
           <p className="px-2 py-3 text-xs text-text-tertiary">No components yet.</p>
         )}
-      </div>
-      <div className="p-2 border-t border-divider">
-        <button type="button" onClick={onAddComponent}
-          className="w-full rounded-md px-2.5 py-1.5 text-sm text-primary hover:bg-surface-muted text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-          + Add component
-        </button>
       </div>
     </div>
   );

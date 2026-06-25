@@ -21,7 +21,7 @@ export function layoutComponents(nodes, edges, expanded) {
     if (expanded.has(comp.id) && kids.length) {
       const g = new dagre.graphlib.Graph();
       g.setDefaultEdgeLabel(() => ({}));
-      g.setGraph({ rankdir: 'TB', nodesep: 30, ranksep: 50 });
+      g.setGraph({ rankdir: 'TB', nodesep: 48, ranksep: 72 });
       kids.forEach((k) => g.setNode(k.id, { width: NODE_W, height: NODE_H }));
       edges.forEach((e) => {
         if (e.data?.sourceComp === comp.id && e.data?.targetComp === comp.id) {
@@ -49,7 +49,7 @@ export function layoutComponents(nodes, edges, expanded) {
   // Outer: arrange component boxes + top-level KB nodes via inter-component edges.
   const og = new dagre.graphlib.Graph();
   og.setDefaultEdgeLabel(() => ({}));
-  og.setGraph({ rankdir: 'TB', nodesep: 60, ranksep: 90 });
+  og.setGraph({ rankdir: 'TB', nodesep: 100, ranksep: 130 });
   comps.forEach((c) => og.setNode(c.id, sizeByComp[c.id]));
   kbNodes.forEach((k) => og.setNode(k.id, { width: COLLAPSED_W, height: COLLAPSED_H }));
   const seen = new Set();

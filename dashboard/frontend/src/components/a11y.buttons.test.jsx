@@ -16,9 +16,8 @@ describe('Plan-B controls are typed buttons', () => {
       expect(screen.getByRole('button', { name }).getAttribute('type')).toBe('button');
     }
   });
-  it('ComponentsRail Add + rows have type=button', () => {
-    render(<ComponentsRail summary={SUMMARY} onSelectComponent={() => {}} onAddComponent={() => {}} />);
-    expect(screen.getByRole('button', { name: /add component/i }).getAttribute('type')).toBe('button');
+  it('ComponentsRail rows have type=button', () => {
+    render(<ComponentsRail summary={SUMMARY} onSelectComponent={() => {}} />);
     expect(screen.getByRole('button', { name: /greeting/i }).getAttribute('type')).toBe('button');
   });
 });

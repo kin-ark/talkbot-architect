@@ -41,6 +41,7 @@ const nodeTypes = { componentNode: ComponentNode };
 export default function FlowCanvas({ summary, onSelectNode, focusComponentId }) {
   const [expanded, setExpanded] = useState(() => new Set());
   const [rf, setRf] = useState(null);
+  const [hoverId, setHoverId] = useState(null);
 
   // Reset to all-collapsed whenever a new summary loads.
   const summaryKey = summary ? JSON.stringify(summary.components?.map((c) => c.uuid)) : '';
@@ -111,6 +112,29 @@ export default function FlowCanvas({ summary, onSelectNode, focusComponentId }) 
   const fit = () => rf?.fitView({ duration: 300, padding: 0.2 });
   const mode = expanded.size === 0 ? 'map' : expanded.size === compIds.length ? 'detail' : null;
 
+  // Hover a node → light up its edges + neighbours, dim the rest, so a tangle of
+  // overlapping lines becomes one readable path. Guarded so a stale hoverId
+  // (node removed by collapse) never blanks the whole graph.
+  const display = useMemo(() => {
+    if (!hoverId || !nodes.some((n) => n.id === hoverId)) return { nodes, edges };
+    const litNodes = new Set([hoverId]);
+    const litEdges = new Set();
+    for (const e of edges) {
+      if (e.source === hoverId || e.target === hoverId) {
+        litEdges.add(e.id); litNodes.add(e.source); litNodes.add(e.target);
+      }
+    }
+    const dEdges = edges.map((e) => litEdges.has(e.id)
+      ? { ...e, animated: true, style: { ...e.style, strokeWidth: 3, opacity: 1 } }
+      : { ...e, style: { ...e.style, opacity: 0.1 } });
+    const dNodes = nodes.map((n) => {
+      // Don't fade component boxes — opacity inherits to their children.
+      if (n.data?.kind === 'component' || litNodes.has(n.id)) return n;
+      return { ...n, style: { ...n.style, opacity: 0.25 } };
+    });
+    return { nodes: dNodes, edges: dEdges };
+  }, [nodes, edges, hoverId]);
+
   return (
     <div className="w-full h-full flex flex-col" data-testid="flow-canvas">
       <div className="flex items-center gap-2 px-3 py-2 border-b border-divider bg-surface">
@@ -131,13 +155,15 @@ export default function FlowCanvas({ summary, onSelectNode, focusComponentId }) 
           </div>
         )}
         <ReactFlow
-          nodes={nodes}
-          edges={edges}
+          nodes={display.nodes}
+          edges={display.edges}
           nodeTypes={nodeTypes}
           onInit={setRf}
           fitView
           fitViewOptions={{ padding: 0.2 }}
           minZoom={0.05}
+          onNodeMouseEnter={(_, n) => setHoverId(n.id)}
+          onNodeMouseLeave={() => setHoverId(null)}
           onNodeClick={(_, n) => { if (n.data?.kind !== 'component') onSelectNode?.(n.data); }}
         >
           <Background gap={16} color="var(--c-border)" />

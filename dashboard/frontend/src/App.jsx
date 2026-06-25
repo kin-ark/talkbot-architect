@@ -72,8 +72,7 @@ export default function App() {
       <TopBar canUndo={s.canUndo} canRedo={s.canRedo} onUndo={s.undo} onRedo={s.redo} onExport={onExport} onNew={onNew} />
       <div className="flex-1 flex overflow-hidden">
         <ComponentsRail summary={s.summary} selectedComponentId={focusComponentId}
-          onSelectComponent={setFocusComponentId}
-          onAddComponent={() => setDockTab('chat')} />
+          onSelectComponent={setFocusComponentId} />
         <div className="flex-1 min-w-0">
           <FlowCanvas summary={s.summary} onSelectNode={selectNode} focusComponentId={focusComponentId} />
         </div>

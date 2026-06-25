@@ -9,7 +9,7 @@ const SUMMARY = { components: [
 
 describe('ComponentsRail', () => {
   it('lists components with node counts', () => {
-    render(<ComponentsRail summary={SUMMARY} onSelectComponent={() => {}} onAddComponent={() => {}} />);
+    render(<ComponentsRail summary={SUMMARY} onSelectComponent={() => {}} />);
     expect(screen.getByText('Greeting')).toBeInTheDocument();
     expect(screen.getByText('Payment')).toBeInTheDocument();
     expect(screen.getByText('2')).toBeInTheDocument();   // Greeting node count
@@ -17,21 +17,14 @@ describe('ComponentsRail', () => {
 
   it('selecting a component fires onSelectComponent with its uuid', () => {
     const onSelect = vi.fn();
-    render(<ComponentsRail summary={SUMMARY} onSelectComponent={onSelect} onAddComponent={() => {}} />);
+    render(<ComponentsRail summary={SUMMARY} onSelectComponent={onSelect} />);
     fireEvent.click(screen.getByText('Payment'));
     expect(onSelect).toHaveBeenCalledWith('cB');
   });
 
-  it('Add component fires onAddComponent', () => {
-    const onAdd = vi.fn();
-    render(<ComponentsRail summary={SUMMARY} onSelectComponent={() => {}} onAddComponent={onAdd} />);
-    fireEvent.click(screen.getByText(/add component/i));
-    expect(onAdd).toHaveBeenCalled();
-  });
-
   it('marks the selected component active', () => {
     render(<ComponentsRail summary={SUMMARY} selectedComponentId="cB"
-      onSelectComponent={() => {}} onAddComponent={() => {}} />);
+      onSelectComponent={() => {}} />);
     const active = screen.getByRole('button', { name: /payment/i });
     expect(active.className).toContain('text-primary');
     expect(active.className).toContain('font-semibold');
