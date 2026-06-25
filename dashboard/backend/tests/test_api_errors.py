@@ -1,8 +1,11 @@
 from fastapi.testclient import TestClient
+from llm.base import LLMClient
 import main
 
 
-class _BoomClient:
+class _BoomClient(LLMClient):
+    # subclass LLMClient so it inherits the default stream_chat (run_turn drives
+    # the client via stream_chat); the raising chat still surfaces the error.
     def chat(self, messages, tools):
         raise RuntimeError("provider exploded")
 

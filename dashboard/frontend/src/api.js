@@ -8,10 +8,6 @@ export async function uploadSession(file) {
   const { data } = await axios.post(`${BASE}/session`, fd);
   return data;
 }
-export async function sendChat(message, signal) {
-  const { data } = await axios.post(`${BASE}/chat`, { message }, { signal });
-  return data;
-}
 export async function cancelChat() { return (await axios.post(`${BASE}/chat/cancel`)).data; }
 export async function applyPending() { return (await axios.post(`${BASE}/apply`)).data; }
 export async function undo() { return (await axios.post(`${BASE}/undo`)).data; }
