@@ -133,7 +133,17 @@ def test_connect_components(two_component_doc):
 
 _EXPECTED_NODE_TYPES = {"talk", "exit", "transfer", "goto", "conditional", "assign",
                         "nested", "exit_port"}
-_EXPECTED_BRANCHES = {"Positive", "Negative", "Reject", "Unclassified", "No answer", "Default"}
+
+
+def _assert_free_string_branch(branch_schema: dict, spec_name: str) -> None:
+    """Assert edge branch is a free string (no enum — nested exit-port names are arbitrary)."""
+    assert "enum" not in branch_schema, (
+        f"{spec_name} edge branch must not have an enum (nested exit-port names are free strings); "
+        f"found: {branch_schema.get('enum')}"
+    )
+    assert branch_schema["type"] == "string", (
+        f"{spec_name} edge branch type must be 'string', got {branch_schema['type']!r}"
+    )
 
 
 def test_node_type_enum_includes_conditional_and_assign():
@@ -147,9 +157,8 @@ def test_node_type_enum_includes_conditional_and_assign():
     assert "branches" in cfg and "variable" in cfg and "value" in cfg
     assert "target" in cfg, "add_node config must advertise 'target' (for nested + goto)"
     assert "name" in cfg, "add_node config must advertise 'name' (for exit_port label)"
-    # edge branch enum includes Default for assign continue-edges
-    edge_branch_enum = props["edges"]["items"]["properties"]["branch"]["enum"]
-    assert set(edge_branch_enum) == _EXPECTED_BRANCHES, f"add_node edge branch enum: {edge_branch_enum}"
+    # edge branch is a free string — no enum (nested outgoing edges use arbitrary exit-port names)
+    _assert_free_string_branch(props["edges"]["items"]["properties"]["branch"], "add_node")
 
     # --- add_component ---
     ac_props = specs["add_component"].parameters["properties"]
@@ -157,9 +166,8 @@ def test_node_type_enum_includes_conditional_and_assign():
     ac_cfg = ac_props["nodes"]["items"]["properties"]["config"]["properties"]
     assert "target" in ac_cfg, "add_component config must advertise 'target'"
     assert "name" in ac_cfg, "add_component config must advertise 'name'"
-    ac_edge_branch_enum = ac_props["edges"]["items"]["properties"]["branch"]["enum"]
-    assert set(ac_edge_branch_enum) == _EXPECTED_BRANCHES, (
-        f"add_component edge branch enum: {ac_edge_branch_enum}"
+    _assert_free_string_branch(
+        ac_props["edges"]["items"]["properties"]["branch"], "add_component"
     )
 
     # --- scaffold_bot (nodes+edges nested under canvases.items.properties) ---
@@ -171,9 +179,8 @@ def test_node_type_enum_includes_conditional_and_assign():
     sb_cfg = sb_canvas_item_props["nodes"]["items"]["properties"]["config"]["properties"]
     assert "target" in sb_cfg, "scaffold_bot config must advertise 'target'"
     assert "name" in sb_cfg, "scaffold_bot config must advertise 'name'"
-    sb_edge_branch_enum = sb_canvas_item_props["edges"]["items"]["properties"]["branch"]["enum"]
-    assert set(sb_edge_branch_enum) == _EXPECTED_BRANCHES, (
-        f"scaffold_bot edge branch enum: {sb_edge_branch_enum}"
+    _assert_free_string_branch(
+        sb_canvas_item_props["edges"]["items"]["properties"]["branch"], "scaffold_bot"
     )
 
 

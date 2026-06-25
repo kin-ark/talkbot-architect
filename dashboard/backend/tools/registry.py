@@ -88,9 +88,7 @@ _SPECS = [
                           "edges": {"type": "array", "items": {
                               "type": "object", "properties": {
                                   "from": {"type": "string"},
-                                  "branch": {"type": "string",
-                                             "enum": ["Positive", "Negative", "Reject",
-                                                      "Unclassified", "No answer", "Default"]},
+                                  "branch": {"type": "string", "minLength": 1},
                                   "to": {"type": "string"}},
                               "required": ["from", "branch", "to"]}}},
                       "required": ["name", "nodes"]}},
@@ -132,9 +130,7 @@ _SPECS = [
                      "required": ["id", "prompt"]}},
                  "edges": {"type": "array", "items": {"type": "object", "properties": {
                      "from": {"type": "string"},
-                     "branch": {"type": "string",
-                                "enum": ["Positive", "Negative", "Reject", "Unclassified",
-                                         "No answer", "Default"]},
+                     "branch": {"type": "string", "minLength": 1},
                      "to": {"type": "string"}}, "required": ["from", "branch", "to"]}}},
               "required": ["name"]}),
     ToolSpec("add_node",
@@ -171,9 +167,7 @@ _SPECS = [
                          "required": ["name", "to"]}}}},
                  "edges": {"type": "array", "items": {"type": "object", "properties": {
                      "from": {"type": "string"},
-                     "branch": {"type": "string",
-                                "enum": ["Positive", "Negative", "Reject", "Unclassified",
-                                         "No answer", "Default"]},
+                     "branch": {"type": "string", "minLength": 1},
                      "to": {"type": "string"}}, "required": ["from", "branch", "to"]}}},
               "required": ["component", "id", "prompt"]}),
     ToolSpec("connect_components",
