@@ -70,6 +70,16 @@ class Canvas:
 
 
 @dataclass(frozen=True)
+class KnowledgeBase:
+    """A KB entry: triggering intents → spoken answers, optionally delegating to a canvas."""
+
+    name: str
+    intents: tuple[str, ...]
+    answers: tuple[str, ...]
+    multi_round: str | None = None
+
+
+@dataclass(frozen=True)
 class Manifest:
     name: str
     branch: str
@@ -78,6 +88,7 @@ class Manifest:
     custom_intents: tuple[CustomIntent, ...]
     canvases: tuple[Canvas, ...]
     raw_text: str = field(repr=False)
+    knowledge_bases: tuple[KnowledgeBase, ...] = field(default_factory=tuple)
 
 
 def load_manifest(path: str | Path) -> Manifest:
@@ -387,6 +398,43 @@ def _validate_cross_field_invariants(data: dict, path: Path) -> None:
                 f"{path}: canvas {cname!r}: exit_port nodes only valid in a nested child canvas"
             )
 
+    # --- knowledge_bases validation ---
+    declared_intent_names = {i["name"] for i in data.get("custom_intents", [])}
+
+    kb_list = data.get("knowledge_bases") or []
+    kb_names: list[str] = []
+    for kb in kb_list:
+        kname = kb["name"]
+
+        # Unique KB names
+        if kname in kb_names:
+            raise ManifestError(f"{path}: duplicate knowledge base name: {kname!r}")
+        kb_names.append(kname)
+
+        # Each intent must be a declared custom_intent
+        for intent_ref in kb.get("intents") or []:
+            if intent_ref not in declared_intent_names:
+                raise ManifestError(
+                    f"{path}: knowledge base {kname!r} intent {intent_ref!r} "
+                    f"is not a declared custom_intent"
+                )
+
+        # Must have ≥1 answers OR a multi_round target
+        has_answers = bool(kb.get("answers"))
+        multi_round = kb.get("multi_round")
+        if not has_answers and not multi_round:
+            raise ManifestError(
+                f"{path}: knowledge base {kname!r} must have at least one answer "
+                f"or a multi_round target"
+            )
+
+        # multi_round (if set) must match a canvas name
+        if multi_round and multi_round not in all_canvas_names:
+            raise ManifestError(
+                f"{path}: knowledge base {kname!r} multi_round target {multi_round!r} "
+                f"does not match any canvas"
+            )
+
 
 def _build_manifest(data: dict, raw_text: str) -> Manifest:
     custom_variables = [
@@ -424,6 +472,16 @@ def _build_manifest(data: dict, raw_text: str) -> Manifest:
             )
         canvases.append(Canvas(name=canvas["name"], nodes=tuple(nodes), edges=tuple(edges)))
 
+    knowledge_bases = [
+        KnowledgeBase(
+            name=kb["name"],
+            intents=tuple(kb.get("intents") or []),
+            answers=tuple(kb.get("answers") or []),
+            multi_round=kb.get("multi_round"),
+        )
+        for kb in (data.get("knowledge_bases") or [])
+    ]
+
     return Manifest(
         name=data["name"],
         branch=data["branch"],
@@ -431,5 +489,6 @@ def _build_manifest(data: dict, raw_text: str) -> Manifest:
         custom_variables=tuple(custom_variables),
         custom_intents=tuple(custom_intents),
         canvases=tuple(canvases),
+        knowledge_bases=tuple(knowledge_bases),
         raw_text=raw_text,
     )

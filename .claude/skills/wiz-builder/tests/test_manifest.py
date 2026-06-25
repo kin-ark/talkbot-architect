@@ -904,3 +904,139 @@ canvases:
   - name: Orphan
     nodes: [{id: ep1, type: exit_port, config: {name: "Done"}}]
 """))
+
+
+# ---------------------------------------------------------------------------
+# KB-T1: knowledge_bases manifest surface + validation
+# ---------------------------------------------------------------------------
+
+from wizbuilder.manifest import KnowledgeBase  # noqa: E402
+
+
+def test_knowledge_bases_load(tmp_path):
+    m = load_manifest(_write(tmp_path, """
+name: KB Bot
+branch: dev
+language: IDN
+custom_intents:
+  - {name: "Due Q", language: IDN}
+canvases:
+  - name: Flow
+    nodes: [{id: greet, prompt: "Halo"}]
+  - name: Handler
+    nodes: [{id: h_greet, prompt: "Handler greeting"}]
+knowledge_bases:
+  - {name: "Due date", intents: ["Due Q"], answers: ["Jatuh tempo tanggal 25."]}
+  - {name: "Special case", intents: ["Due Q"], answers: ["Baik."], multi_round: "Handler"}
+"""))
+    kbs = {k.name: k for k in m.knowledge_bases}
+    assert len(m.knowledge_bases) == 2
+    assert isinstance(kbs["Due date"], KnowledgeBase)
+    assert kbs["Due date"].intents == ("Due Q",)
+    assert kbs["Due date"].answers == ("Jatuh tempo tanggal 25.",)
+    assert kbs["Due date"].multi_round is None
+    assert kbs["Special case"].multi_round == "Handler"
+
+
+def test_knowledge_bases_empty_by_default(tmp_path):
+    """A manifest with no knowledge_bases key parses to an empty tuple."""
+    m = load_manifest(_write(tmp_path, """
+name: T
+branch: dev
+language: IDN
+canvases:
+  - name: C
+    nodes: [{id: root, prompt: Hi}]
+"""))
+    assert m.knowledge_bases == ()
+
+
+def test_kb_undeclared_intent_rejected(tmp_path):
+    """A KB referencing an intent name not in custom_intents is rejected."""
+    with pytest.raises(ManifestError, match="not a declared"):
+        load_manifest(_write(tmp_path, """
+name: KB Bot
+branch: dev
+language: IDN
+custom_intents:
+  - {name: "Real Intent", language: IDN}
+canvases:
+  - name: Flow
+    nodes: [{id: greet, prompt: "Halo"}]
+knowledge_bases:
+  - {name: "Due date", intents: ["Ghost Intent"], answers: ["Answer."]}
+"""))
+
+
+def test_kb_unknown_multiround_target_rejected(tmp_path):
+    """A KB multi_round naming a canvas that does not exist is rejected."""
+    with pytest.raises(ManifestError, match="multi_round target"):
+        load_manifest(_write(tmp_path, """
+name: KB Bot
+branch: dev
+language: IDN
+custom_intents:
+  - {name: "Due Q", language: IDN}
+canvases:
+  - name: Flow
+    nodes: [{id: greet, prompt: "Halo"}]
+knowledge_bases:
+  - {name: "Due date", intents: ["Due Q"], answers: ["Ans."], multi_round: "NonExistent"}
+"""))
+
+
+def test_kb_needs_answer_or_multiround(tmp_path):
+    """A KB with no answers and no multi_round is rejected."""
+    with pytest.raises(ManifestError, match="at least one answer"):
+        load_manifest(_write(tmp_path, """
+name: KB Bot
+branch: dev
+language: IDN
+custom_intents:
+  - {name: "Due Q", language: IDN}
+canvases:
+  - name: Flow
+    nodes: [{id: greet, prompt: "Halo"}]
+knowledge_bases:
+  - {name: "Due date", intents: ["Due Q"]}
+"""))
+
+
+def test_kb_duplicate_name_rejected(tmp_path):
+    """Two KBs with the same name are rejected."""
+    with pytest.raises(ManifestError, match="duplicate knowledge base"):
+        load_manifest(_write(tmp_path, """
+name: KB Bot
+branch: dev
+language: IDN
+custom_intents:
+  - {name: "Due Q", language: IDN}
+canvases:
+  - name: Flow
+    nodes: [{id: greet, prompt: "Halo"}]
+knowledge_bases:
+  - {name: "Due date", intents: ["Due Q"], answers: ["Answer 1."]}
+  - {name: "Due date", intents: ["Due Q"], answers: ["Answer 2."]}
+"""))
+
+
+def test_kb_multiround_only_valid(tmp_path):
+    """A KB with multi_round but no answers is valid (multi_round counts as the answer target)."""
+    m = load_manifest(_write(tmp_path, """
+name: KB Bot
+branch: dev
+language: IDN
+custom_intents:
+  - {name: "Due Q", language: IDN}
+canvases:
+  - name: Flow
+    nodes: [{id: greet, prompt: "Halo"}]
+  - name: Handler
+    nodes: [{id: h, prompt: "Handler"}]
+knowledge_bases:
+  - {name: "Delegated", intents: ["Due Q"], multi_round: "Handler"}
+"""))
+    kb = m.knowledge_bases[0]
+    assert kb.name == "Delegated"
+    assert kb.answers == ()
+    assert kb.multi_round == "Handler"
