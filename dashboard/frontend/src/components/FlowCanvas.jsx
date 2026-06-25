@@ -38,7 +38,7 @@ function ComponentNode({ data }) {
 
 const nodeTypes = { componentNode: ComponentNode };
 
-export default function FlowCanvas({ summary, onSelectNode, focusComponentId }) {
+export default function FlowCanvas({ summary, onSelectNode, focusComponentId, highlight }) {
   const [expanded, setExpanded] = useState(() => new Set());
   const [rf, setRf] = useState(null);
   const [hoverId, setHoverId] = useState(null);
@@ -77,12 +77,17 @@ export default function FlowCanvas({ summary, onSelectNode, focusComponentId }) 
           return { ...n, data: { ...n.data, expanded: expanded.has(n.id), onToggle: () => toggle(n.id) } };
         }
         if (n.data?.kbNode || n.data?.terminal) return n;
+        const added = highlight?.added_nodes?.includes(n.id);
+        const changed = highlight?.changed_nodes?.includes(n.id);
+        const ring = added ? '0 0 0 2px var(--c-success)'
+          : changed ? '0 0 0 2px var(--c-warning)' : undefined;
         return {
           ...n,
           style: {
             ...n.style, background: 'var(--c-surface)', border: '1px solid var(--c-border)',
             borderLeft: `4px solid ${TYPE_COLOR[n.data?.node_type] || '#94a3b8'}`,
             borderRadius: 8, padding: 8, fontSize: 12, width: 200, color: 'var(--c-text)',
+            ...(ring ? { boxShadow: ring } : {}),
           },
           data: { ...n.data },
         };
@@ -108,7 +113,7 @@ export default function FlowCanvas({ summary, onSelectNode, focusComponentId }) 
         style: { ...e.style, pointerEvents: 'none' } });
     }
     return { nodes: visible, edges: rerouted, compIds: (summary?.components || []).map((c) => c.uuid) };
-  }, [summary, expanded, toggle]);
+  }, [summary, expanded, toggle, highlight]);
 
   const showMap = () => setExpanded(new Set());
   const showDetail = () => setExpanded(new Set(compIds));
