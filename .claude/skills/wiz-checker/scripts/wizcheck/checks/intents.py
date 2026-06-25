@@ -37,4 +37,22 @@ def check_intents(wf: WizFile) -> list[Finding]:
                 message=f"Required intent {required!r} is not declared.",
             ))
 
+    # WIZ302: KB triggering intents declared in SpeechIntent
+    for kb in wf.knowledge_bases.values():
+        for iid in kb.intents:
+            if iid not in wf.intents:
+                out.append(Finding(
+                    code="WIZ302",
+                    severity=Severity.ERROR,
+                    location=Location(
+                        entity="BizKnowledgeInfo",
+                        id=str(kb.knowledge_id),
+                        field="intents",
+                    ),
+                    message=(
+                        f"Knowledge base {kb.title!r} (id {kb.knowledge_id}) references"
+                        f" intent id {iid} which is not declared in SpeechIntent."
+                    ),
+                ))
+
     return out
