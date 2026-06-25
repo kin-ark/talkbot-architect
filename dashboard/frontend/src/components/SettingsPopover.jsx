@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getConfig, updateConfig, clearConfig } from '../api';
+import Button from './ui/Button';
 
 const PROVIDERS = ['anthropic', 'openai', 'openai-compatible'];
 
@@ -147,18 +148,8 @@ export default function SettingsPopover() {
           )}
 
           <div className="flex gap-2">
-            <button
-              onClick={handleSave}
-              className="flex-1 bg-primary text-primary-fg rounded px-3 py-1 text-xs hover:bg-primary-hover"
-            >
-              Save
-            </button>
-            <button
-              onClick={handleReset}
-              className="flex-1 border border-border rounded px-3 py-1 text-xs text-text-secondary hover:bg-surface-muted"
-            >
-              Reset to env defaults
-            </button>
+            <Button variant="primary" onClick={handleSave} className="flex-1">Save</Button>
+            <Button variant="secondary" onClick={handleReset} className="flex-1">Reset to env defaults</Button>
           </div>
         </div>
       )}

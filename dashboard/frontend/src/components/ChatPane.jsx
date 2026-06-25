@@ -40,7 +40,7 @@ export default function ChatPane({ transcript, proposal, sending, onSend, onAppl
           <input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Ask about or edit the dialogue…"
             className="flex-1 border border-border rounded-xl px-3 py-2 text-sm text-text bg-surface focus:outline-none focus:ring-2 focus:ring-primary" />
           {sending
-            ? <button type="button" onClick={onCancel} className="px-4 bg-error text-primary-fg rounded-xl hover:bg-red-700">Stop</button>
+            ? <button type="button" onClick={onCancel} className="px-4 bg-error text-primary-fg rounded-xl hover:opacity-90">Stop</button>
             : <button type="submit" className="px-4 bg-primary text-primary-fg rounded-xl hover:bg-primary-hover">Send</button>}
         </div>
       </form>
