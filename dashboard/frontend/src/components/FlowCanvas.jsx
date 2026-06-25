@@ -102,7 +102,10 @@ export default function FlowCanvas({ summary, onSelectNode, focusComponentId }) 
       if (source === target) continue;           // self-loop after collapse — skip
       if ((!expanded.has(sComp) || !expanded.has(tComp)) && seen.has(key)) continue; // aggregate box edges
       seen.add(key);
-      rerouted.push({ ...e, source, target });
+      // pointerEvents:none + interactionWidth:0 so an edge never steals hover
+      // from a node it touches (was causing enter/leave flicker on highlight).
+      rerouted.push({ ...e, source, target, interactionWidth: 0,
+        style: { ...e.style, pointerEvents: 'none' } });
     }
     return { nodes: visible, edges: rerouted, compIds: (summary?.components || []).map((c) => c.uuid) };
   }, [summary, expanded, toggle]);
