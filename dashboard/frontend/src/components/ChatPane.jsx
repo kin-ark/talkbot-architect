@@ -4,6 +4,26 @@ import remarkGfm from 'remark-gfm';
 import ToolChip from './ToolChip';
 import DiffCard from './DiffCard';
 
+const SUGGESTIONS = [
+  { label: 'Validate', prompt: 'Validate the dialogue and list all findings.' },
+  { label: 'Explain this bot', prompt: 'Explain what this bot does, step by step.' },
+  { label: 'Find problems', prompt: 'Find problems or issues in this dialogue.' },
+  { label: 'Suggest improvements', prompt: 'Suggest improvements to this dialogue.' },
+];
+
+function ChipRow({ onSend }) {
+  return (
+    <div className="flex flex-wrap gap-2" data-testid="suggestion-chips">
+      {SUGGESTIONS.map((s) => (
+        <button key={s.label} type="button" onClick={() => onSend(s.prompt)}
+          className="text-xs rounded-full border border-border px-3 py-1 text-text-secondary hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+          {s.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function bubbleClass(role) {
   if (role === 'user') return 'bg-primary text-primary-fg';
   if (role === 'error') return 'bg-error-bg border border-error text-error';
@@ -49,6 +69,7 @@ export default function ChatPane({ transcript, proposal, sending, onSend, onAppl
         )}
         {proposal && <DiffCard proposal={proposal} onApply={onApply} onReject={onReject} onPreview={onPreview} />}
       </div>
+      <div className="px-4 pb-2"><ChipRow onSend={onSend} /></div>
       <form onSubmit={submit} data-testid="chat-form" className="p-4 border-t border-border bg-surface">
         <div className="flex gap-2">
           <input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Ask about or edit the dialogue…"
