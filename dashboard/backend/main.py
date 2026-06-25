@@ -14,7 +14,7 @@ from typing import Optional
 from fastapi import Depends, FastAPI, File, HTTPException, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.requests import Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 
 import agents
@@ -23,7 +23,7 @@ import persistence
 from config_store import CONFIG, any_override, effective_key_set
 from llm.base import LLMClient
 from llm.factory import LLMConfigError, make_client
-from orchestrator import run_turn
+from orchestrator import run_turn, run_turn_stream
 from session import Session
 from wizmodifier.io import InputBundle
 
@@ -246,6 +246,24 @@ def chat(req: ChatRequest, client: LLMClient = Depends(get_client)):
         raise LLMProviderError(f"LLM provider error: {e}") from e
     SESSION._autosave()
     return result
+
+
+@app.post("/chat/stream")
+def chat_stream(req: ChatRequest, client: LLMClient = Depends(get_client)):
+    _require_session()
+
+    def _gen():
+        with SESSION._lock:
+            try:
+                for ev in run_turn_stream(client, SESSION, req.message):
+                    yield f"data: {json.dumps(ev, ensure_ascii=False, default=str)}\n\n"
+            except Exception as e:  # surface provider/tool failure as an SSE error, not a 500
+                yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
+                yield f"data: {json.dumps({'type': 'done', 'canceled': False, 'text': ''})}\n\n"
+            finally:
+                SESSION._autosave()
+
+    return StreamingResponse(_gen(), media_type="text/event-stream")
 
 
 @app.post("/chat/cancel")

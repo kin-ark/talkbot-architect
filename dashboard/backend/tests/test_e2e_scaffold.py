@@ -1,6 +1,6 @@
 import json
 from fastapi.testclient import TestClient
-from llm.base import LLMResponse, ToolCall
+from llm.base import LLMClient, LLMResponse, ToolCall
 import main
 
 
@@ -24,7 +24,7 @@ def test_scaffold_chat_to_export_is_checker_clean():
         LLMResponse(text="Scaffolded your Debt Collector bot. Review the diff.", tool_calls=[]),
     ]
 
-    class _Fake:
+    class _Fake(LLMClient):
         def __init__(self): self.i = 0
         def chat(self, messages, tools):
             r = script[self.i]; self.i += 1; return r

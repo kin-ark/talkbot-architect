@@ -32,6 +32,7 @@ from wizmodifier.apply import run_mods           # noqa: E402
 from wizmodifier.registry import OP_REGISTRY     # noqa: E402
 from wizmodifier import codec as _wm_codec       # noqa: E402
 import diffing                                    # noqa: E402
+import proposal_meta                              # noqa: E402
 
 
 # ---------------------------------------------------------------------------
@@ -50,6 +51,21 @@ def _ensure_packed(data: dict) -> dict:
     for k, v in data.items():
         result[k] = _wm_codec.encode(v) if isinstance(v, (list, dict)) else v
     return result
+
+
+def _unpack(data: dict) -> dict:
+    """Inverse of _ensure_packed: decode JSON-string top-level values to objects.
+    summarize()/build_flow_model expect the unpacked export shape."""
+    out: dict = {}
+    for k, v in data.items():
+        if isinstance(v, str):
+            try:
+                out[k] = _wm_codec.decode(v)
+            except Exception:
+                out[k] = v
+        else:
+            out[k] = v
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -186,11 +202,18 @@ def propose_mods(data: dict, mods_yaml: str) -> dict:
         h = hashlib.sha256(mods_yaml.encode("utf-8")).hexdigest()
         run_mods(bundle, mods, manifest_hash=h)
         proposed = bundle.data
+        before_summary = summarize(_unpack(packed))
+        after_summary = summarize(_unpack(proposed))
+        cs = proposal_meta.change_set(before_summary, after_summary)
+        delta = diffing.checker_delta(packed, proposed)
         return {
             "ok": True,
             "proposed_data": proposed,
             "diff": diffing.unified_diff_of(packed, proposed),
-            "checker_delta": diffing.checker_delta(packed, proposed),
+            "checker_delta": delta,
+            "proposed_summary": after_summary,
+            "change_set": cs,
+            "change_summary": proposal_meta.change_summary(cs, delta),
             "error": None,
         }
     except (ValueError, KeyError, yaml.YAMLError) as e:
@@ -238,8 +261,13 @@ def propose_scaffold(params: dict) -> dict:
     built = propose_build(manifest_yaml)
     if not built["ok"]:
         return {"ok": False, "proposed_data": None, "error": built["error"]}
+    after_summary = summarize(built["proposed_data"])
+    empty_summary = {"components": [], "knowledge_bases": []}
+    cs = proposal_meta.change_set(empty_summary, after_summary)
     return {"ok": True, "proposed_data": built["proposed_data"],
-            "diff": "(new dialogue scaffolded)", "checker_delta": None, "error": None}
+            "diff": "(new dialogue scaffolded)", "checker_delta": None,
+            "proposed_summary": after_summary, "change_set": cs,
+            "change_summary": proposal_meta.change_summary(cs, None), "error": None}
 
 
 def propose_build(manifest_yaml: str) -> dict:

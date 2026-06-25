@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from llm.base import LLMClient, LLMResponse, Message, ToolCall, ToolSpec
+from collections.abc import Iterator
+
+from llm.base import LLMClient, LLMResponse, Message, StreamChunk, ToolCall, ToolSpec
 
 
 class AnthropicClient(LLMClient):
@@ -29,6 +31,29 @@ class AnthropicClient(LLMClient):
             elif block.type == "tool_use":
                 calls.append(ToolCall(id=block.id, name=block.name, arguments=block.input))
         return LLMResponse(text=text, tool_calls=calls)
+
+    def stream_chat(self, messages: list[Message], tools: list[ToolSpec]) -> Iterator[StreamChunk]:
+        sys_msgs = [m.content for m in messages if m.role == "system"]
+        api_msgs = self._to_anthropic_messages([m for m in messages if m.role != "system"])
+        api_tools = [{"name": t.name, "description": t.description,
+                      "input_schema": t.parameters} for t in tools]
+        with self._client.messages.stream(
+            model=self._model, max_tokens=4096,
+            system="\n".join(sys_msgs) or None,
+            messages=api_msgs, tools=api_tools or None,
+        ) as stream:
+            for event in stream:
+                if getattr(event, "type", None) == "content_block_delta" \
+                        and getattr(event.delta, "type", None) == "text_delta":
+                    yield StreamChunk(text_delta=event.delta.text)
+            final = stream.get_final_message()
+        text, calls = None, []
+        for block in final.content:
+            if block.type == "text":
+                text = (text or "") + block.text
+            elif block.type == "tool_use":
+                calls.append(ToolCall(id=block.id, name=block.name, arguments=block.input))
+        yield StreamChunk(response=LLMResponse(text=text, tool_calls=calls))
 
     @staticmethod
     def _to_anthropic_messages(messages: list[Message]) -> list[dict]:

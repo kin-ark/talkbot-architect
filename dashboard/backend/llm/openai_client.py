@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Iterator
 
-from llm.base import LLMClient, LLMResponse, Message, ToolCall, ToolSpec
+from llm.base import LLMClient, LLMResponse, Message, StreamChunk, ToolCall, ToolSpec
 
 
 class OpenAIClient(LLMClient):
@@ -25,6 +26,31 @@ class OpenAIClient(LLMClient):
                           arguments=json.loads(tc.function.arguments or "{}"))
                  for tc in (msg.tool_calls or [])]
         return LLMResponse(text=msg.content, tool_calls=calls)
+
+    def stream_chat(self, messages: list[Message], tools: list[ToolSpec]) -> Iterator[StreamChunk]:
+        api_tools = [{"type": "function", "function": {
+            "name": t.name, "description": t.description, "parameters": t.parameters}} for t in tools]
+        stream = self._client.chat.completions.create(
+            model=self._model, messages=self._to_openai_messages(messages),
+            tools=api_tools or None, stream=True)
+        text = ""
+        acc: dict[int, dict] = {}     # index -> {id, name, args}
+        for chunk in stream:
+            delta = chunk.choices[0].delta
+            if getattr(delta, "content", None):
+                text += delta.content
+                yield StreamChunk(text_delta=delta.content)
+            for tc in (getattr(delta, "tool_calls", None) or []):
+                slot = acc.setdefault(tc.index, {"id": None, "name": None, "args": ""})
+                if tc.id:
+                    slot["id"] = tc.id
+                if tc.function and tc.function.name:
+                    slot["name"] = tc.function.name
+                if tc.function and tc.function.arguments:
+                    slot["args"] += tc.function.arguments
+        calls = [ToolCall(id=s["id"], name=s["name"], arguments=json.loads(s["args"] or "{}"))
+                 for s in (acc[k] for k in sorted(acc)) if s["name"]]
+        yield StreamChunk(response=LLMResponse(text=text or None, tool_calls=calls))
 
     @staticmethod
     def _to_openai_messages(messages: list[Message]) -> list[dict]:

@@ -238,18 +238,22 @@ def dispatch(name: str, args: dict, data: dict) -> dict:
         mods = yaml.safe_dump([{"op": "delete-path", "path": args["path"]}])
         return _as_proposal(agents.propose_mods(data, mods))
     if name == "build":
-        p = agents.propose_build(args["manifest_yaml"])
-        if not p["ok"]:
-            return {"result": {"ok": False, "error": p["error"]}, "proposal": None}
-        return {"result": {"ok": True}, "proposal": {"proposed_data": p["proposed_data"],
-                "diff": "(new dialogue scaffolded)", "checker_delta": None}}
+        built = agents.propose_build(args["manifest_yaml"])
+        if not built["ok"]:
+            return {"result": {"ok": False, "error": built["error"]}, "proposal": None}
+        # Enrich via propose_scaffold path: compute summary/change_set from the built doc
+        after_summary = agents.summarize(built["proposed_data"])
+        import proposal_meta as _pm
+        empty_summary = {"components": [], "knowledge_bases": []}
+        cs = _pm.change_set(empty_summary, after_summary)
+        p = {"ok": True, "proposed_data": built["proposed_data"],
+             "diff": "(new dialogue scaffolded)", "checker_delta": None,
+             "proposed_summary": after_summary, "change_set": cs,
+             "change_summary": _pm.change_summary(cs, None)}
+        return _as_proposal(p)
     if name == "scaffold_bot":
         p = agents.propose_scaffold(args)
-        if not p["ok"]:
-            return {"result": {"ok": False, "error": p["error"]}, "proposal": None}
-        return {"result": {"ok": True, "diff": p["diff"], "checker_delta": p["checker_delta"]},
-                "proposal": {"proposed_data": p["proposed_data"],
-                             "diff": p["diff"], "checker_delta": p["checker_delta"]}}
+        return _as_proposal(p)
     if name == "get_schema":
         return {"result": agents.get_schema(), "proposal": None}
     if name == "add_component":
@@ -302,6 +306,11 @@ def _as_proposal(p: dict) -> dict:
     if not p.get("ok"):
         return {"result": {"ok": False, "error": p.get("error"),
                            "known_ops": p.get("known_ops")}, "proposal": None}
-    return {"result": {"ok": True, "diff": p["diff"], "checker_delta": p["checker_delta"]},
-            "proposal": {"proposed_data": p["proposed_data"], "diff": p["diff"],
-                         "checker_delta": p["checker_delta"]}}
+    proposal = {"proposed_data": p["proposed_data"], "diff": p["diff"],
+                "checker_delta": p["checker_delta"]}
+    for k in ("proposed_summary", "change_set", "change_summary"):
+        if k in p:
+            proposal[k] = p[k]
+    return {"result": {"ok": True, "diff": p["diff"], "checker_delta": p["checker_delta"],
+                       "change_summary": p.get("change_summary")},
+            "proposal": proposal}
