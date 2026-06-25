@@ -78,23 +78,107 @@ def _var_source_map(bundle: InputBundle) -> dict[str, int]:
     }
 
 
+def _is_exit_port_node(node_obj: dict) -> bool:
+    """Return True if node_obj (a decoded details entry) is an exit_port node.
+
+    An exit_port is type-4 with EMPTY appoint_node_id/specificComponentName,
+    distinguishing it from goto_component which populates both.
+    """
+    data = node_obj.get("data") or {}
+    return (
+        node_obj.get("type") == 4
+        and data.get("appoint_node_id", "") == ""
+        and data.get("specificComponentName", "") == ""
+    )
+
+
+def _exit_ports_from_comp(comp: dict) -> dict[str, str]:
+    """Scan a BSC entry's decoded details for exit_port nodes.
+
+    Returns {exit-port-name (data["name"]): node_uuid} for all exit_port nodes
+    in the component.  Empty dict when the component has no details or no exit ports.
+    """
+    raw_details = comp.get("details")
+    if not raw_details or raw_details in ("null", ""):
+        return {}
+    try:
+        details = json.loads(raw_details) if isinstance(raw_details, str) else raw_details
+    except (ValueError, TypeError):
+        return {}
+    if not isinstance(details, dict):
+        return {}
+    result: dict[str, str] = {}
+    for node_uuid, node_obj in details.items():
+        if _is_exit_port_node(node_obj):
+            name = (node_obj.get("data") or {}).get("name", "")
+            if name:
+                result[name] = node_uuid
+    return result
+
+
 def _validate_special_node(
     node: dict,
     declared_vars: set[str],
     canvas_node_ids: set[str],
     prefix: str,
+    comp_by_name: dict[str, dict] | None = None,
+    edge_branches_from_node: set[str] | None = None,
 ) -> None:
-    """Validate a conditional/assign node's config before rendering.
+    """Validate a conditional/assign/exit_port/nested node's config before rendering.
 
-    Mirrors the manifest.py conditional/assign invariants; branch targets resolve
-    against canvas_node_ids (ids valid in THIS op's context). Raises ValueError on
-    any violation, prefixed with `prefix` ("append-node:" / "add-component:").
+    Mirrors manifest.py invariants; branch targets resolve against canvas_node_ids
+    (ids valid in THIS op's context).  Raises ValueError on any violation, prefixed
+    with `prefix` ("append-node:" / "add-component:").
+
+    comp_by_name: optional {component-name: bsc-dict} — required for nested validation.
+    edge_branches_from_node: optional set of branch names used in edges leaving this node
+        — used to validate that nested out-edges name real child exit ports.
     """
     ntype = node.get("type")
-    if ntype not in ("conditional", "assign"):
+    if ntype not in ("conditional", "assign", "exit_port", "nested"):
         return
     nid = node.get("id", "<no-id>")
     cfg = node.get("config") or {}
+
+    if ntype == "exit_port":
+        name = cfg.get("name")
+        if not name:
+            raise ValueError(
+                f"{prefix} exit_port node {nid!r} missing config.name"
+            )
+        # Terminal: caller must pass no outgoing edges for this node.
+        if edge_branches_from_node:
+            raise ValueError(
+                f"{prefix} exit_port node {nid!r} is terminal and must not have outgoing edges"
+            )
+        return
+
+    if ntype == "nested":
+        target = cfg.get("target")
+        if not target:
+            raise ValueError(
+                f"{prefix} nested node {nid!r} missing config.target"
+            )
+        if comp_by_name is None or target not in comp_by_name:
+            raise ValueError(
+                f"{prefix} nested node {nid!r} config.target {target!r} "
+                f"does not match any existing component name"
+            )
+        child_exits = _exit_ports_from_comp(comp_by_name[target])
+        if not child_exits:
+            raise ValueError(
+                f"{prefix} nested node {nid!r} target {target!r} must contain "
+                f"at least one exit_port node"
+            )
+        # Validate that any outgoing edge branch names actually name a child exit port.
+        if edge_branches_from_node:
+            for branch in edge_branches_from_node:
+                if branch not in child_exits:
+                    raise ValueError(
+                        f"{prefix} nested node {nid!r} edge branch {branch!r} has no "
+                        f"exit_port named {branch!r} in child {target!r}"
+                    )
+        return
 
     if ntype == "assign":
         var = cfg.get("variable")
@@ -248,29 +332,53 @@ def _render_nodes(
     For goto nodes, resolves config["target"] (a canvas name) to the target componentUuid
     by looking up existing components' name→componentUuid mapping.
 
+    For nested nodes, resolves config["target_uuid"] from the export's components AND
+    builds nested_exit_map from the child component's details (exit_port nodes).
+
     Returns a RenderedNodes instance.
     """
-    # Build name→uuid map from existing components for goto target resolution.
+    # Build name→uuid map and name→comp dict from existing components.
     bsc_raw = bundle.data.get("BizSpeechComponent", "[]")
     bsc = json.loads(bsc_raw) if isinstance(bsc_raw, str) else bsc_raw
     comp_uuid_by_name: dict[str, str] = {
         c.get("name", ""): c.get("componentUuid", "") for c in bsc
     }
+    comp_by_name: dict[str, dict] = {c.get("name", ""): c for c in bsc}
     component_nav = _build_component_nav(bsc)
 
-    # Validate conditional/assign nodes against declared vars and this batch's node ids
-    # before rendering, so a malformed node fails loudly instead of producing a deploy-
-    # breaking export (raw KeyError on missing op, or silently wrong operators/vars).
+    # Pre-compute per-node edge branch sets for terminal validation.
+    raw_edges = params.get("edges") or []
+    branches_by_node: dict[str, set[str]] = {}
+    for e in raw_edges:
+        branches_by_node.setdefault(e["from"], set()).add(e["branch"])
+
+    # Validate special nodes before rendering.
     declared_vars = _declared_var_names(bundle)
     batch_node_ids = {n["id"] for n in params["nodes"]}
     for n in params["nodes"]:
-        if n.get("type") in ("conditional", "assign"):
-            _validate_special_node(n, declared_vars, batch_node_ids, "add-component:")
+        ntype = n.get("type")
+        if ntype in ("conditional", "assign", "exit_port", "nested"):
+            _validate_special_node(
+                n, declared_vars, batch_node_ids, "add-component:",
+                comp_by_name=comp_by_name,
+                edge_branches_from_node=branches_by_node.get(n["id"]),
+            )
+
+    # Build nested_exit_map: {target-name: {exit-name: child-exit-uuid}} for all nested nodes.
+    nested_exit_map: dict[str, dict[str, str]] = {}
+    for n in params["nodes"]:
+        if n.get("type") == "nested":
+            target_name = (n.get("config") or {}).get("target", "")
+            if target_name and target_name not in nested_exit_map:
+                child_comp = comp_by_name.get(target_name)
+                if child_comp:
+                    nested_exit_map[target_name] = _exit_ports_from_comp(child_comp)
 
     node_specs = []
     for n in params["nodes"]:
         cfg = dict(n.get("config") or {})
-        if n.get("type") == "goto":
+        ntype = n.get("type", "talk")
+        if ntype == "goto":
             target_name = cfg.get("target", "")
             cfg["target_uuid"] = comp_uuid_by_name.get(target_name, "")
             cfg["target_name"] = target_name
@@ -279,13 +387,15 @@ def _render_nodes(
                     f"goto node {n['id']!r}: config.target {target_name!r} "
                     f"does not match any existing component name"
                 )
+        elif ntype == "nested":
+            target_name = cfg.get("target", "")
+            cfg["target_uuid"] = comp_uuid_by_name.get(target_name, "")
         node_specs.append(
             NodeSpec(
-                id=n["id"], prompt=n["prompt"],
-                type=n.get("type", "talk"), config=cfg,
+                id=n["id"], prompt=n.get("prompt", ""),
+                type=ntype, config=cfg,
             )
         )
-    raw_edges = params.get("edges") or []
     edge_specs = [EdgeSpec(src=e["from"], branch=e["branch"], dst=e["to"]) for e in raw_edges]
 
     speech_id, branch_intent_ids, kb_ids, node_language = _resolve_context(bundle)
@@ -302,6 +412,7 @@ def _render_nodes(
         minter=minter,
         component_nav=component_nav,
         var_source_by_name=_var_source_map(bundle),
+        nested_exit_map=nested_exit_map or None,
     )
 
 
@@ -346,6 +457,9 @@ def populate_details(bundle: InputBundle, params: dict, minter) -> None:
     comp["details"] = json.dumps(r.details, ensure_ascii=False, separators=(",", ":"))
     comp["routes"] = json.dumps(r.routes, ensure_ascii=False, separators=(",", ":"))
     comp["inboundPorts"] = json.dumps(r.inbound_ports, ensure_ascii=False, separators=(",", ":"))
+    comp["topFloorDetails"] = json.dumps(
+        r.top_floor_details, ensure_ascii=False, separators=(",", ":")
+    )
 
     set_components(bundle, comps)
     _append_sentence_cut_speech(bundle, r.sentence_cut_speech)
@@ -375,32 +489,56 @@ def append_node(bundle: InputBundle, params: dict, minter) -> None:
         raise ValueError(f"append-node: component {index} has no componentUuid")
 
     raw_details = comp.get("details")
-    details = json.loads(raw_details) if isinstance(raw_details, str) and raw_details not in ("null", "") else {}
+    details = (
+        json.loads(raw_details)
+        if isinstance(raw_details, str) and raw_details not in ("null", "")
+        else {}
+    )
     if not isinstance(details, dict):
         details = {}
     raw_routes = comp.get("routes")
-    routes = json.loads(raw_routes) if isinstance(raw_routes, str) and raw_routes not in ("null", "") else {}
+    routes = (
+        json.loads(raw_routes)
+        if isinstance(raw_routes, str) and raw_routes not in ("null", "")
+        else {}
+    )
     if not isinstance(routes, dict):
         routes = {}
     raw_inbound = comp.get("inboundPorts")
-    inbound = json.loads(raw_inbound) if isinstance(raw_inbound, str) and raw_inbound not in ("null", "") else []
+    inbound = (
+        json.loads(raw_inbound)
+        if isinstance(raw_inbound, str) and raw_inbound not in ("null", "")
+        else []
+    )
     if not isinstance(inbound, list):
         inbound = []
+    raw_tfd = comp.get("topFloorDetails")
+    top_floor = (
+        json.loads(raw_tfd)
+        if isinstance(raw_tfd, str) and raw_tfd not in ("null", "")
+        else []
+    )
+    if not isinstance(top_floor, list):
+        top_floor = []
 
     node = params["node"]
     new_edges = params.get("edges") or []
+    node_type_str = node.get("type", "talk")
 
-    # Parse BSC for goto resolution and component_nav (needed regardless of node type).
+    # Parse BSC for target resolution and component_nav (needed regardless of node type).
     bsc_raw2 = bundle.data.get("BizSpeechComponent", "[]")
     bsc2 = json.loads(bsc_raw2) if isinstance(bsc_raw2, str) else bsc_raw2
+    comp_uuid_by_name: dict[str, str] = {
+        c.get("name", ""): c.get("componentUuid", "") for c in bsc2
+    }
+    comp_by_name: dict[str, dict] = {c.get("name", ""): c for c in bsc2}
 
-    # Resolve goto config.target (component name) → componentUuid.
-    # Mirrors the resolution in _render_nodes so append-node and add-component are consistent.
+    # Compute edge branches leaving the new node (for terminal validation).
+    edge_branches_from_node = {e["branch"] for e in new_edges if e["from"] == node["id"]}
+
     cfg = dict(node.get("config") or {})
-    if node.get("type") == "goto":
-        comp_uuid_by_name: dict[str, str] = {
-            c.get("name", ""): c.get("componentUuid", "") for c in bsc2
-        }
+
+    if node_type_str == "goto":
         target_name = cfg.get("target", "")
         cfg["target_uuid"] = comp_uuid_by_name.get(target_name, "")
         cfg["target_name"] = target_name
@@ -409,28 +547,49 @@ def append_node(bundle: InputBundle, params: dict, minter) -> None:
                 f"append-node: goto node {node['id']!r}: config.target {target_name!r} "
                 f"does not match any existing component name"
             )
+    elif node_type_str == "nested":
+        target_name = cfg.get("target", "")
+        cfg["target_uuid"] = comp_uuid_by_name.get(target_name, "")
 
     # For conditional nodes, strip `to` from branches before isolated rendering.
     # render_component_nodes synthesises edges from config.branches[].to, but in append_node
     # the targets are existing node uuids (not logical ids in this render batch), which would
     # cause a KeyError. We wire the routes ourselves after render (using orig_branches below).
     orig_branches = list(cfg.get("branches") or [])  # preserve `to` for post-render wiring
-    if node.get("type") == "conditional":
+    if node_type_str == "conditional":
         stripped_branches = [{k: v for k, v in b.items() if k != "to"} for b in orig_branches]
         cfg = dict(cfg)  # shallow copy so original params are unaffected
         cfg["branches"] = stripped_branches
 
-    # Validate conditional/assign nodes BEFORE rendering. A conditional branch `to` may
-    # target the new node's own id or an existing details uuid (same set resolve_uuid uses).
-    if node.get("type") in ("conditional", "assign"):
+    # Validate special nodes BEFORE rendering.
+    if node_type_str in ("conditional", "assign", "exit_port", "nested"):
         _validate_special_node(
-            node, _declared_var_names(bundle), {node["id"], *details.keys()}, "append-node:"
+            node,
+            _declared_var_names(bundle),
+            {node["id"], *details.keys()},
+            "append-node:",
+            comp_by_name=comp_by_name,
+            edge_branches_from_node=edge_branches_from_node or None,
         )
+
+    # Build nested_exit_map for nested nodes: {target-name: {exit-name: child-exit-uuid}}.
+    nested_exit_map: dict[str, dict[str, str]] | None = None
+    if node_type_str == "nested":
+        target_name = cfg.get("target", "")
+        child_comp = comp_by_name.get(target_name)
+        if child_comp:
+            child_exits = _exit_ports_from_comp(child_comp)
+            if child_exits:
+                nested_exit_map = {target_name: child_exits}
 
     # Render the new node ALONE. Namespace its logical id so minted uuids cannot
     # collide with any existing node minted under the same canvas_index.
-    spec = NodeSpec(id=f"append:{node['id']}", prompt=node["prompt"],
-                    type=node.get("type", "talk"), config=cfg)
+    spec = NodeSpec(
+        id=f"append:{node['id']}",
+        prompt=node.get("prompt", ""),
+        type=node_type_str,
+        config=cfg,
+    )
     speech_id, branch_intent_ids, kb_ids, node_language = _resolve_context(bundle)
     component_nav = _build_component_nav(bsc2)
     r = render_component_nodes(
@@ -439,6 +598,7 @@ def append_node(bundle: InputBundle, params: dict, minter) -> None:
         kb_ids=kb_ids, node_language=node_language, minter=minter,
         component_nav=component_nav,
         var_source_by_name=_var_source_map(bundle),
+        nested_exit_map=nested_exit_map,
     )
     (new_uuid, new_obj), = r.details.items()
 
@@ -448,7 +608,10 @@ def append_node(bundle: InputBundle, params: dict, minter) -> None:
             return new_uuid
         if ref in details:
             return ref
-        raise ValueError(f"append-node: edge endpoint {ref!r} is neither the new node id nor an existing node uuid")
+        raise ValueError(
+            f"append-node: edge endpoint {ref!r} is neither the new node id "
+            f"nor an existing node uuid"
+        )
 
     # Determine whether the new node is an entry node (no incoming edge).
     has_incoming = any(resolve_uuid(e["to"]) == new_uuid for e in new_edges)
@@ -461,12 +624,15 @@ def append_node(bundle: InputBundle, params: dict, minter) -> None:
         "talk": "Talk Node",
         "conditional": "Conditional Judgment Node",
         "assign": "Variable Assignment Node",
+        "nested": "Nested Component Node",
     }
     _NODE_TYPE_INT = {
-        "talk": 1, "exit": 2, "goto": 4, "conditional": 7, "assign": 10, "transfer": 13,
+        "talk": 1, "exit": 2, "goto": 4, "exit_port": 4,
+        "conditional": 7, "assign": 10, "nested": 11, "transfer": 13,
     }
-    node_type_str = node.get("type", "talk")
-    if not has_incoming:
+    # Terminal nodes (exit, transfer, goto, exit_port) are not added to inboundPorts.
+    _TERMINAL = frozenset({"exit", "transfer", "goto", "exit_port"})
+    if not has_incoming and node_type_str not in _TERMINAL:
         inbound.append({
             "name": _NODE_NAME.get(node_type_str, "Talk Node"),
             "type": _NODE_TYPE_INT.get(node_type_str, 1),
@@ -474,13 +640,19 @@ def append_node(bundle: InputBundle, params: dict, minter) -> None:
             "is_default": True,
         })
 
+    # exit_port and goto contribute a topFloorDetails row (mirrors render_component_nodes).
+    if node_type_str in ("exit", "goto", "exit_port"):
+        top_floor.append(new_obj["data"])
+
     # Wire each edge onto its source node's branch port.
     for e in new_edges:
         src_uuid = resolve_uuid(e["from"])
         dst_uuid = resolve_uuid(e["to"])
         src_ports = _ports_of(details[src_uuid])
         if e["branch"] not in src_ports:
-            raise ValueError(f"append-node: branch {e['branch']!r} has no port on source node {e['from']!r}")
+            raise ValueError(
+                f"append-node: branch {e['branch']!r} has no port on source node {e['from']!r}"
+            )
         src_port_uuid = src_ports[e["branch"]]
         edge_uuid = str(minter.uuid(f"append-edge:{index}:{e['from']}:{e['branch']}:{e['to']}"))
         routes.setdefault(src_uuid, {})[src_port_uuid] = {
@@ -492,14 +664,14 @@ def append_node(bundle: InputBundle, params: dict, minter) -> None:
     # Wire conditional node branch ports from config.branches[].to.
     # The type-7 builder bakes one port per distinct branch name into canvas.ports.items.
     # Port uuid == all_client_intent id == routes key. Targets are resolved via resolve_uuid.
-    if node.get("type") == "conditional":
+    if node_type_str == "conditional":
         new_node_ports = _ports_of(details[new_uuid])  # branch-name → port-uuid
         seen_branches: dict[str, str] = {}  # distinct branch-name → first-seen `to`
         for b in orig_branches:
-            name = b.get("name")
+            bname = b.get("name")
             to = b.get("to")
-            if name and to and name not in seen_branches:
-                seen_branches[name] = to
+            if bname and to and bname not in seen_branches:
+                seen_branches[bname] = to
         for branch_name, to_ref in seen_branches.items():
             if branch_name not in new_node_ports:
                 raise ValueError(
@@ -517,9 +689,37 @@ def append_node(bundle: InputBundle, params: dict, minter) -> None:
                 "portDetail": {"id": edge_uuid, "zIndex": 3},
             }
 
+    # Wire nested node out-ports from new_edges.
+    # For a nested node, the serializer bakes one out-port per child exit port with
+    # port.uuid == child-exit-node-uuid. routes[nested][child-exit-uuid] = edge_obj.
+    # new_edges from the caller use the child's exit-port NAME as `branch`; we look up
+    # the corresponding child-exit-uuid from nested_exit_map to use as the routes key.
+    if node_type_str == "nested" and nested_exit_map:
+        target_name = cfg.get("target", "")
+        child_exits = (nested_exit_map or {}).get(target_name, {})  # {exit-name: child-exit-uuid}
+        for e in new_edges:
+            if e["from"] != node["id"]:
+                continue
+            exit_name = e["branch"]
+            child_exit_uuid = child_exits.get(exit_name)
+            if not child_exit_uuid:
+                raise ValueError(
+                    f"append-node: nested branch {exit_name!r} not found in child {target_name!r}"
+                )
+            dst_uuid = resolve_uuid(e["to"])
+            edge_uuid = str(
+                minter.uuid(f"append-edge:{index}:{node['id']}:{exit_name}:{e['to']}")
+            )
+            routes.setdefault(new_uuid, {})[child_exit_uuid] = {
+                "source": {"type": 1, "uuid": child_exit_uuid},
+                "target": {"type": 1, "uuid": dst_uuid},
+                "portDetail": {"id": edge_uuid, "zIndex": 3},
+            }
+
     comp["details"] = json.dumps(details, ensure_ascii=False, separators=(",", ":"))
     comp["routes"] = json.dumps(routes, ensure_ascii=False, separators=(",", ":"))
     comp["inboundPorts"] = json.dumps(inbound, ensure_ascii=False, separators=(",", ":"))
+    comp["topFloorDetails"] = json.dumps(top_floor, ensure_ascii=False, separators=(",", ":"))
     set_components(bundle, comps)
     _append_sentence_cut_speech(bundle, r.sentence_cut_speech)
 
@@ -564,6 +764,9 @@ def add_component(bundle: InputBundle, params: dict, minter) -> None:
         new_comp["routes"] = json.dumps(r.routes, ensure_ascii=False, separators=(",", ":"))
         new_comp["inboundPorts"] = json.dumps(
             r.inbound_ports, ensure_ascii=False, separators=(",", ":")
+        )
+        new_comp["topFloorDetails"] = json.dumps(
+            r.top_floor_details, ensure_ascii=False, separators=(",", ":")
         )
         set_components(bundle, comps)
         _append_sentence_cut_speech(bundle, r.sentence_cut_speech)
