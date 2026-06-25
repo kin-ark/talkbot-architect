@@ -1,0 +1,44 @@
+:root {
+  --c-canvas: #F5F6F7;
+  --c-surface: #FFFFFF;
+  --c-surface-muted: #F7F8FA;
+  --c-border: #E4E6EB;
+  --c-divider: #EFF1F4;
+  --c-text: #1F2329;
+  --c-text-2: #646A73;
+  --c-text-3: #8F959E;
+  --c-primary: #3370FF;
+  --c-primary-hover: #245BDB;
+  --c-on-primary: #FFFFFF;
+  --c-success: #34C724;
+  --c-success-bg: #E8F7E8;
+  --c-error: #F54A45;
+  --c-error-bg: #FFF1F0;
+  --c-warning: #FF8800;
+  --c-warning-bg: #FFF7E8;
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, .06);
+}
+
+.dark {
+  --c-canvas: #0F1115;
+  --c-surface: #1A1D23;
+  --c-surface-muted: #22262E;
+  --c-border: #2B313A;
+  --c-divider: #23272F;
+  --c-text: #E5E7EB;
+  --c-text-2: #A1A8B3;
+  --c-text-3: #6B7280;
+  --c-primary: #4C82FF;
+  --c-primary-hover: #3370FF;
+  --c-on-primary: #FFFFFF;
+  --c-success: #34C724;
+  --c-success-bg: #15291B;
+  --c-error: #F54A45;
+  --c-error-bg: #2A1517;
+  --c-warning: #FF8800;
+  --c-warning-bg: #2A2010;
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, .4);
+}
+
+html, body, #root { height: 100%; }
+body { background: var(--c-canvas); color: var(--c-text); }
