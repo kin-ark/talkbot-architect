@@ -12,18 +12,18 @@ export default function UploadZone({ onUpload }) {
   return (
     <div
       data-testid="upload-zone"
-      className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center hover:border-blue-500 transition-colors cursor-pointer relative"
+      className="border-2 border-dashed border-border rounded-lg p-12 text-center hover:border-primary transition-colors cursor-pointer relative"
       onClick={() => fileInputRef.current.click()}
     >
-      <input 
+      <input
         ref={fileInputRef}
-        type="file" 
-        className="hidden" 
+        type="file"
+        className="hidden"
         onChange={handleChange}
         accept=".json,.zip"
       />
-      <Upload className="mx-auto h-12 w-12 text-gray-400" />
-      <p className="mt-2 text-sm text-gray-600">Drag speech*.json or export .zip here, or click to select</p>
+      <Upload className="mx-auto h-12 w-12 text-text-tertiary" />
+      <p className="mt-2 text-sm text-text-secondary">Drag speech*.json or export .zip here, or click to select</p>
     </div>
   );
 }

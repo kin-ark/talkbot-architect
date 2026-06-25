@@ -70,21 +70,21 @@ export default function SettingsPopover() {
       <button
         onClick={() => setOpen((o) => !o)}
         aria-label="⚙"
-        className="px-2 py-1 text-sm rounded hover:bg-slate-100"
+        className="px-2 py-1 text-sm rounded hover:bg-surface-muted text-text-secondary"
       >
         ⚙
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-80 bg-white border border-slate-200 rounded-lg shadow-lg p-4 text-xs text-slate-700 z-10">
-          <p className="font-semibold text-sm mb-3">AI settings</p>
+        <div className="absolute right-0 mt-2 w-80 bg-surface border border-border rounded-lg shadow-card p-4 text-xs text-text z-10">
+          <p className="font-semibold text-sm mb-3 text-text">AI settings</p>
 
-          {loading && <p className="text-slate-400 mb-2">Loading…</p>}
+          {loading && <p className="text-text-tertiary mb-2">Loading…</p>}
 
           {status && (
-            <p className="mb-3 text-slate-500">
+            <p className="mb-3 text-text-secondary">
               API key:{' '}
-              <span className={status.key_set ? 'text-green-600 font-medium' : 'text-red-500'}>
+              <span className={status.key_set ? 'text-success font-medium' : 'text-error'}>
                 {status.key_set ? 'set ✓' : 'not set'}
               </span>
               {' · '}source: <span className="font-mono">{status.source}</span>
@@ -93,11 +93,11 @@ export default function SettingsPopover() {
 
           <div className="space-y-2 mb-3">
             <label className="block">
-              <span className="text-slate-500">Provider</span>
+              <span className="text-text-secondary">Provider</span>
               <select
                 value={provider}
                 onChange={(e) => setProvider(e.target.value)}
-                className="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-xs bg-white"
+                className="mt-1 w-full border border-border rounded px-2 py-1 text-xs bg-surface text-text"
               >
                 {PROVIDERS.map((p) => (
                   <option key={p} value={p}>{p}</option>
@@ -106,42 +106,42 @@ export default function SettingsPopover() {
             </label>
 
             <label className="block">
-              <span className="text-slate-500">Model</span>
+              <span className="text-text-secondary">Model</span>
               <input
                 type="text"
                 value={model}
                 onChange={(e) => setModel(e.target.value)}
                 placeholder="e.g. claude-opus-4-8, gpt-4o"
-                className="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-xs"
+                className="mt-1 w-full border border-border rounded px-2 py-1 text-xs bg-surface text-text"
               />
             </label>
 
             <label className="block">
-              <span className="text-slate-500">Base URL</span>
+              <span className="text-text-secondary">Base URL</span>
               <input
                 type="text"
                 value={baseUrl}
                 onChange={(e) => setBaseUrl(e.target.value)}
                 placeholder="optional — for gateways / OpenAI-compatible endpoints"
-                className="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-xs"
+                className="mt-1 w-full border border-border rounded px-2 py-1 text-xs bg-surface text-text"
               />
             </label>
 
             <label className="block">
-              <span className="text-slate-500">API key</span>
+              <span className="text-text-secondary">API key</span>
               <input
                 type="password"
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
                 placeholder="leave blank to keep current"
                 autoComplete="new-password"
-                className="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-xs"
+                className="mt-1 w-full border border-border rounded px-2 py-1 text-xs bg-surface text-text"
               />
             </label>
           </div>
 
           {notice && (
-            <p className={`mb-2 ${notice.type === 'ok' ? 'text-green-600' : 'text-red-500'}`}>
+            <p className={`mb-2 ${notice.type === 'ok' ? 'text-success' : 'text-error'}`}>
               {notice.text}
             </p>
           )}
@@ -149,13 +149,13 @@ export default function SettingsPopover() {
           <div className="flex gap-2">
             <button
               onClick={handleSave}
-              className="flex-1 bg-slate-800 text-white rounded px-3 py-1 text-xs hover:bg-slate-700"
+              className="flex-1 bg-primary text-primary-fg rounded px-3 py-1 text-xs hover:bg-primary-hover"
             >
               Save
             </button>
             <button
               onClick={handleReset}
-              className="flex-1 border border-slate-200 rounded px-3 py-1 text-xs hover:bg-slate-50"
+              className="flex-1 border border-border rounded px-3 py-1 text-xs text-text-secondary hover:bg-surface-muted"
             >
               Reset to env defaults
             </button>

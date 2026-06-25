@@ -15,28 +15,28 @@ export default function App() {
 
   if (!s.summary) {
     return (
-      <div className="h-screen flex flex-col bg-slate-50">
+      <div className="h-screen flex flex-col bg-canvas">
         <div className="flex justify-end p-3">
           <SettingsPopover />
         </div>
         <div className="flex-1 flex items-center justify-center -mt-12">
           <div className="max-w-md w-full">
-            <h2 className="text-2xl font-semibold mb-4 text-center text-slate-800">Talkbot Architect</h2>
-            <p className="text-center text-slate-500 mb-6 text-sm">Upload a WIZ dialogue JSON or ZIP to begin.</p>
+            <h2 className="text-2xl font-semibold mb-4 text-center text-text">Talkbot Architect</h2>
+            <p className="text-center text-text-secondary mb-6 text-sm">Upload a WIZ dialogue JSON or ZIP to begin.</p>
             <UploadZone onUpload={s.upload} />
             <button onClick={s.startBlank}
-              className="mt-4 w-full border border-slate-300 rounded-xl py-2 text-sm text-slate-600 hover:bg-slate-100">
+              className="mt-4 w-full border border-border rounded-xl py-2 text-sm text-text-secondary hover:bg-surface-muted">
               Start from scratch — describe a new bot
             </button>
-            {s.loading && <p className="text-center mt-4 text-slate-400">Analyzing…</p>}
-            <p className="text-center mt-6 text-xs text-slate-400">Set your AI provider/key via ⚙ (top-right) or a backend <code>.env</code>.</p>
+            {s.loading && <p className="text-center mt-4 text-text-tertiary">Analyzing…</p>}
+            <p className="text-center mt-6 text-xs text-text-tertiary">Set your AI provider/key via ⚙ (top-right) or a backend <code>.env</code>.</p>
           </div>
         </div>
       </div>
     );
   }
   return (
-    <div className="h-screen flex flex-col bg-slate-50">
+    <div className="h-screen flex flex-col bg-canvas">
       <TopBar canUndo={s.canUndo} canRedo={s.canRedo} onUndo={s.undo} onRedo={s.redo} onExport={onExport} onNew={onNew} />
       <div className="flex-1 flex overflow-hidden">
         <div className="flex-1 min-w-0">

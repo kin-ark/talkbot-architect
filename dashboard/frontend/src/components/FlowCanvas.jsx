@@ -15,8 +15,8 @@ function ComponentNode({ data }) {
       role="button"
       onClick={data.onToggle}
       data-testid={`comp-${data.label}`}
-      style={{ width: '100%', height: '100%', border: '2px dashed #cbd5e1',
-               borderRadius: 12, background: '#f8fafc', cursor: 'pointer' }}
+      style={{ width: '100%', height: '100%', border: '2px dashed var(--c-border)',
+               borderRadius: 12, background: 'var(--c-surface)', cursor: 'pointer' }}
     >
       {/* Invisible anchors so ReactFlow can draw cross-component edges to/from a
           collapsed component box. Without handles no edge path is computed.
@@ -24,10 +24,10 @@ function ComponentNode({ data }) {
       <Handle type="target" position={Position.Top} style={{ opacity: 0 }} />
       <Handle type="source" position={Position.Bottom} style={{ opacity: 0 }} />
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 10px',
-                    fontSize: 13, fontWeight: 600, color: '#334155' }}>
+                    fontSize: 13, fontWeight: 600, color: 'var(--c-text)' }}>
         <span>{data.expanded ? '▾' : '▸'}</span>
         <span>{data.label}</span>
-        <span style={{ marginLeft: 'auto', fontSize: 11, fontWeight: 400, color: '#64748b' }}>
+        <span style={{ marginLeft: 'auto', fontSize: 11, fontWeight: 400, color: 'var(--c-text-2)' }}>
           {data.nodeCount} node{data.nodeCount === 1 ? '' : 's'}
         </span>
       </div>
@@ -69,9 +69,9 @@ export default function FlowCanvas({ summary, onSelectNode }) {
         return {
           ...n,
           style: {
-            ...n.style, background: '#fff', border: '1px solid #e2e8f0',
+            ...n.style, background: 'var(--c-surface)', border: '1px solid var(--c-border)',
             borderLeft: `4px solid ${TYPE_COLOR[n.data?.node_type] || '#94a3b8'}`,
-            borderRadius: 8, padding: 8, fontSize: 12, width: 200,
+            borderRadius: 8, padding: 8, fontSize: 12, width: 200, color: 'var(--c-text)',
           },
           data: { ...n.data },
         };
@@ -107,7 +107,7 @@ export default function FlowCanvas({ summary, onSelectNode }) {
         minZoom={0.05}
         onNodeClick={(_, n) => { if (n.data?.kind !== 'component') onSelectNode?.(n.data); }}
       >
-        <Background gap={16} color="#e2e8f0" />
+        <Background gap={16} color="var(--c-border)" />
         <Controls />
         <MiniMap pannable zoomable />
       </ReactFlow>

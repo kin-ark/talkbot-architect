@@ -6,9 +6,9 @@ function Group({ title, items, color, onSelect }) {
       <ul className="space-y-1">
         {items.map((f, i) => (
           <li key={i} onClick={() => f.id && onSelect?.({ uuid: f.id })}
-            className="text-xs p-2 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer">
+            className="text-xs p-2 rounded border border-border hover:bg-surface-muted cursor-pointer text-text">
             <span className="font-mono font-semibold">{f.code}</span> — {f.message}
-            {f.entity && <span className="text-slate-400"> [{f.entity}{f.id ? ` ${f.id}` : ''}]</span>}
+            {f.entity && <span className="text-text-tertiary"> [{f.entity}{f.id ? ` ${f.id}` : ''}]</span>}
           </li>
         ))}
       </ul>
@@ -21,9 +21,9 @@ export default function FindingList({ findings = [], onSelect }) {
   const warnings = findings.filter((f) => f.severity === 'warning');
   return (
     <div className="p-4 overflow-y-auto h-full" data-testid="finding-list">
-      {findings.length === 0 && <p className="text-sm text-emerald-600">No findings. ✓</p>}
-      {errors.length > 0 && <Group title="Errors" items={errors} color="text-red-600" onSelect={onSelect} />}
-      {warnings.length > 0 && <Group title="Warnings" items={warnings} color="text-amber-600" onSelect={onSelect} />}
+      {findings.length === 0 && <p className="text-sm text-success">No findings. ✓</p>}
+      {errors.length > 0 && <Group title="Errors" items={errors} color="text-error" onSelect={onSelect} />}
+      {warnings.length > 0 && <Group title="Warnings" items={warnings} color="text-warning" onSelect={onSelect} />}
     </div>
   );
 }
