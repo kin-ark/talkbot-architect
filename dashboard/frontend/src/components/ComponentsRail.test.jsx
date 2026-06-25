@@ -28,4 +28,12 @@ describe('ComponentsRail', () => {
     fireEvent.click(screen.getByText(/add component/i));
     expect(onAdd).toHaveBeenCalled();
   });
+
+  it('marks the selected component active', () => {
+    render(<ComponentsRail summary={SUMMARY} selectedComponentId="cB"
+      onSelectComponent={() => {}} onAddComponent={() => {}} />);
+    const active = screen.getByRole('button', { name: /payment/i });
+    expect(active.className).toContain('text-primary');
+    expect(active.className).toContain('font-semibold');
+  });
 });

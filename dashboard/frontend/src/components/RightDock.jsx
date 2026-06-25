@@ -31,7 +31,7 @@ export default function RightDock({ activeTab, onTabChange, summary, findings, s
         {activeTab === 'kb' && drill && (
           <div className="flex flex-col h-full">
             <div className="flex items-center gap-2 px-4 py-2 border-b border-divider bg-surface-muted">
-              <button onClick={() => setDrill(null)} className="text-xs text-primary hover:underline">← Back</button>
+              <button type="button" onClick={() => setDrill(null)} className="text-xs text-primary hover:underline">← Back</button>
               <span className="text-xs text-text-secondary">{drill.title}</span>
             </div>
             <div className="flex-1 overflow-hidden">

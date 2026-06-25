@@ -10,8 +10,8 @@ export default function ComponentsRail({ summary, selectedComponentId, onSelectC
           const count = Object.keys(c.nodes || {}).length;
           const active = c.uuid === selectedComponentId;
           return (
-            <button key={c.uuid} onClick={() => onSelectComponent(c.uuid)}
-              className={`w-full flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-left ${
+            <button type="button" key={c.uuid} onClick={() => onSelectComponent(c.uuid)}
+              className={`w-full flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                 active ? 'bg-surface-muted text-primary font-semibold' : 'text-text-secondary hover:bg-surface-muted'}`}>
               <span className="truncate">{c.name}</span>
               <span className="ml-auto text-xs text-text-tertiary">{count}</span>
@@ -23,8 +23,8 @@ export default function ComponentsRail({ summary, selectedComponentId, onSelectC
         )}
       </div>
       <div className="p-2 border-t border-divider">
-        <button onClick={onAddComponent}
-          className="w-full rounded-md px-2.5 py-1.5 text-sm text-primary hover:bg-surface-muted text-left">
+        <button type="button" onClick={onAddComponent}
+          className="w-full rounded-md px-2.5 py-1.5 text-sm text-primary hover:bg-surface-muted text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
           + Add component
         </button>
       </div>

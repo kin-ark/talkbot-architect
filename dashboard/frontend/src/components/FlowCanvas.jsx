@@ -43,7 +43,7 @@ export default function FlowCanvas({ summary, onSelectNode, focusComponentId }) 
 
   // Reset to all-collapsed whenever a new summary loads.
   const summaryKey = summary ? JSON.stringify(summary.components?.map((c) => c.uuid)) : '';
-  // eslint-disable-next-line react-hooks/set-state-in-effect -- legitimate summary-change reset; collapsed state is derived from which summary is loaded, not from a parent prop sync
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- legitimate summary-change reset; collapsed state is derived from which summary is loaded
   useEffect(() => { setExpanded(new Set()); }, [summaryKey]);
 
   // Rail-driven focus: expand the chosen component and fit to it.
@@ -62,8 +62,8 @@ export default function FlowCanvas({ summary, onSelectNode, focusComponentId }) 
     });
   }, []);
 
-  const { nodes, edges } = useMemo(() => {
-    if (!summary) return { nodes: [], edges: [] };
+  const { nodes, edges, compIds } = useMemo(() => {
+    if (!summary) return { nodes: [], edges: [], compIds: [] };
     const { nodes: rawNodes, edges: rawEdges } = buildGraph(summary);
     const positioned = layoutComponents(rawNodes, rawEdges, expanded);
 
@@ -102,27 +102,25 @@ export default function FlowCanvas({ summary, onSelectNode, focusComponentId }) 
       seen.add(key);
       rerouted.push({ ...e, source, target });
     }
-    return { nodes: visible, edges: rerouted };
+    return { nodes: visible, edges: rerouted, compIds: (summary?.components || []).map((c) => c.uuid) };
   }, [summary, expanded, toggle]);
-
-  const compIds = (summary?.components || []).map((c) => c.uuid);
 
   const showMap = () => setExpanded(new Set());
   const showDetail = () => setExpanded(new Set(compIds));
   const fit = () => rf?.fitView({ duration: 300, padding: 0.2 });
-  const mode = expanded.size === 0 ? 'map' : 'detail';
+  const mode = expanded.size === 0 ? 'map' : expanded.size === compIds.length ? 'detail' : null;
 
   return (
     <div className="w-full h-full flex flex-col" data-testid="flow-canvas">
       <div className="flex items-center gap-2 px-3 py-2 border-b border-divider bg-surface">
         <div className="inline-flex rounded-md border border-border overflow-hidden text-sm">
-          <button onClick={showMap}
-            className={`px-3 py-1 ${mode === 'map' ? 'bg-primary text-primary-fg' : 'text-text-secondary hover:bg-surface-muted'}`}>Map</button>
-          <button onClick={showDetail}
-            className={`px-3 py-1 ${mode === 'detail' ? 'bg-primary text-primary-fg' : 'text-text-secondary hover:bg-surface-muted'}`}>Detail</button>
+          <button type="button" onClick={showMap}
+            className={`px-3 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${mode === 'map' ? 'bg-primary text-primary-fg' : 'text-text-secondary hover:bg-surface-muted'}`}>Map</button>
+          <button type="button" onClick={showDetail}
+            className={`px-3 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${mode === 'detail' ? 'bg-primary text-primary-fg' : 'text-text-secondary hover:bg-surface-muted'}`}>Detail</button>
         </div>
-        <button onClick={fit}
-          className="px-3 py-1 text-sm rounded-md border border-border text-text-secondary hover:bg-surface-muted">Fit</button>
+        <button type="button" onClick={fit}
+          className="px-3 py-1 text-sm rounded-md border border-border text-text-secondary hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">Fit</button>
         <span className="ml-auto text-xs text-text-tertiary">{compIds.length} components</span>
       </div>
       <div className="flex-1 min-h-0">
