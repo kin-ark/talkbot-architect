@@ -282,3 +282,159 @@ class TestWIZ302MultiRoundTolerance:
         # No WIZ302 even if multi_round has absent component (the IR KnowledgeBase
         # does not carry multi_round; that lives in KBView from flowmodel).
         assert not any(f.code == "WIZ302" for f in findings)
+
+
+# ===========================================================================
+# 4. parse_dict regression: KB intents JSON-string + kdTitle (parser bug fix)
+# ===========================================================================
+
+@pytest.mark.skipif(not _HAS_BUILDER, reason="wiz-builder not on path")
+@pytest.mark.skipif(not _MANIFEST_KB.exists(), reason="manifest_with_kb.yaml not found")
+def test_parse_dict_kb_intents_non_empty(tmp_path):
+    """parse_dict must resolve KB intents from the JSON-string form the builder emits.
+
+    Regression test for parser._parse_knowledge_bases which previously silently
+    dropped the intents JSON-string and always returned KnowledgeBase.intents=().
+    """
+    out = tmp_path / "speech_kb_parse.json"
+    compile_manifest(_MANIFEST_KB, out)
+    data = json.loads(out.read_text(encoding="utf-8"))
+
+    wf = parse_dict(data)
+
+    # At least one KB should have non-empty intents (the custom KB: "Payment FAQ")
+    non_empty = [kb for kb in wf.knowledge_bases.values() if kb.intents]
+    assert len(non_empty) >= 1, (
+        f"Expected at least one KnowledgeBase with non-empty intents in parse_dict IR, "
+        f"got all empty. knowledge_bases: {wf.knowledge_bases}"
+    )
+
+
+@pytest.mark.skipif(not _HAS_BUILDER, reason="wiz-builder not on path")
+@pytest.mark.skipif(not _MANIFEST_KB.exists(), reason="manifest_with_kb.yaml not found")
+def test_parse_dict_kb_title_reads_kdtitle(tmp_path):
+    """parse_dict must read KnowledgeBase.title from kdTitle (not the absent 'title' key).
+
+    Regression test: parser previously used e.get('title', '') which is always ''
+    in real WIZ exports that use 'kdTitle'.
+    """
+    out = tmp_path / "speech_kb_title.json"
+    compile_manifest(_MANIFEST_KB, out)
+    data = json.loads(out.read_text(encoding="utf-8"))
+
+    wf = parse_dict(data)
+
+    # All KBs should have non-empty titles (builder sets kdTitle on every KB)
+    empty_titles = [kb for kb in wf.knowledge_bases.values() if kb.title == ""]
+    assert len(empty_titles) == 0, (
+        f"Expected no KnowledgeBase with empty title; these were empty: "
+        f"{[kb.knowledge_id for kb in empty_titles]}"
+    )
+
+
+# ===========================================================================
+# 5. WIZ302 end-to-end via parse_dict: JSON-string intents path
+# ===========================================================================
+
+def _raw_export_with_kb_json_string_intents(
+    intent_id_in_kb: int,
+    declare_intent: bool,
+) -> dict:
+    """Build a minimal raw export dict with BizKnowledgeInfo.intents as JSON-string.
+
+    Mirrors the real WIZ shape (intents is a JSON-encoded string, title is 'kdTitle').
+    If declare_intent=True, the intentId is declared in SpeechIntent; else it is absent.
+    """
+    kb_intents_str = json.dumps([{"intentId": str(intent_id_in_kb), "intentName": "TestIntent"}])
+    kbs = [
+        {
+            "knowledgeId": 999001,
+            "kdTitle": "Test KB",
+            "kdType": 0,
+            "intents": kb_intents_str,
+        }
+    ]
+    speech_intents = []
+    if declare_intent:
+        speech_intents.append({
+            "intentId": intent_id_in_kb,
+            "intentName": "TestIntent",
+            "language": "IDN",
+        })
+    else:
+        # Always add at least 'Unclassified' so WIZ301 doesn't fire
+        speech_intents.append({
+            "intentId": 1,
+            "intentName": "Unclassified",
+            "language": "IDN",
+        })
+
+    return {
+        "SpeechIntent": speech_intents,
+        "BizKnowledgeInfo": kbs,
+        "SpeechVariable": [],
+        "SentenceCutSpeech": [],
+        "SpeechAudio": [],
+        "BizSpeechComponent": [],
+        "BizSpeechCanvas": [],
+        "BizSpeechRoute": [],
+    }
+
+
+class TestWIZ302EndToEndJsonString:
+    """WIZ302 fires end-to-end when BizKnowledgeInfo.intents is a JSON-string."""
+
+    def test_json_string_intents_dangling_yields_wiz302(self):
+        """parse_dict on a raw export with JSON-string intents + absent intentId -> WIZ302."""
+        raw = _raw_export_with_kb_json_string_intents(
+            intent_id_in_kb=777999,
+            declare_intent=False,
+        )
+        wf = parse_dict(raw)
+
+        # Assert parse resolved the intents (not silently dropped them)
+        kb = wf.knowledge_bases[999001]
+        assert kb.intents == (777999,), (
+            f"Expected kb.intents=(777999,) after parse_dict, got {kb.intents!r}. "
+            "Parser is likely still dropping JSON-string intents."
+        )
+
+        findings = check_intents(wf)
+        wiz302 = [f for f in findings if f.code == "WIZ302"]
+        assert len(wiz302) == 1, (
+            f"Expected exactly 1 WIZ302 finding for dangling intentId 777999, "
+            f"got {len(wiz302)}: {wiz302}"
+        )
+        assert wiz302[0].severity is Severity.ERROR
+        assert "777999" in wiz302[0].message
+
+    def test_json_string_intents_declared_no_wiz302(self):
+        """parse_dict on a raw export with JSON-string intents + declared intentId -> no WIZ302."""
+        raw = _raw_export_with_kb_json_string_intents(
+            intent_id_in_kb=777888,
+            declare_intent=True,
+        )
+        wf = parse_dict(raw)
+
+        kb = wf.knowledge_bases[999001]
+        assert kb.intents == (777888,), (
+            f"Expected kb.intents=(777888,) after parse_dict, got {kb.intents!r}."
+        )
+
+        findings = check_intents(wf)
+        assert not any(f.code == "WIZ302" for f in findings), (
+            f"Expected no WIZ302 when intentId is declared; findings: {findings}"
+        )
+
+    def test_kb_title_from_kdtitle_in_parse_dict(self):
+        """parse_dict must set KnowledgeBase.title from kdTitle (not absent 'title')."""
+        raw = _raw_export_with_kb_json_string_intents(
+            intent_id_in_kb=1,
+            declare_intent=True,
+        )
+        wf = parse_dict(raw)
+        kb = wf.knowledge_bases[999001]
+        assert kb.title == "Test KB", (
+            f"Expected kb.title='Test KB' (from kdTitle), got {kb.title!r}. "
+            "Parser is likely still reading 'title' instead of 'kdTitle'."
+        )

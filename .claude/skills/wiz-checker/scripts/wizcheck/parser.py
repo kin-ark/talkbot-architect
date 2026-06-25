@@ -230,9 +230,7 @@ def _parse_audios(entries: list[dict[str, Any]]) -> dict[int, Audio]:
 def _parse_knowledge_bases(entries: list[dict[str, Any]]) -> dict[int, KnowledgeBase]:
     out: dict[int, KnowledgeBase] = {}
     for e in entries:
-        intents_raw = e.get("intents", [])
-        if not isinstance(intents_raw, list):
-            intents_raw = []
+        intents_raw = _unwrap_list(e.get("intents"), "BizKnowledgeInfo.intents")
         intents_list = []
         for intent in intents_raw:
             if isinstance(intent, dict) and "intentId" in intent:
@@ -244,7 +242,7 @@ def _parse_knowledge_bases(entries: list[dict[str, Any]]) -> dict[int, Knowledge
             knowledge_id=_parse_int(
                 _require(e, "knowledgeId", "BizKnowledgeInfo"), "BizKnowledgeInfo.knowledgeId"
             ),
-            title=str(e.get("title", "")),
+            title=str(e.get("kdTitle", e.get("title", ""))),
             kd_type=_parse_int(e.get("kdType", 0), "BizKnowledgeInfo.kdType"),
             intents=tuple(intents_list),
             raw=e,
