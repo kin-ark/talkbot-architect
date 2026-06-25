@@ -14,6 +14,7 @@ export function useSession() {
   const queue = useRef([]);
   const draining = useRef(false);
   const ctrl = useRef(null);
+  const turnSeq = useRef(0);
 
   const upload = useCallback(async (file) => {
     setLoading(true);
@@ -47,10 +48,12 @@ export function useSession() {
       while (queue.current.length) {
         const msg = queue.current.shift();
         ctrl.current = new AbortController();
-        // placeholder agent bubble this turn fills
-        let agentIdx = -1;
-        setTranscript((t) => { agentIdx = t.length; return [...t, { role: 'agent', text: '', tool_trace: [] }]; });
-        const patch = (fn) => setTranscript((t) => t.map((m, i) => (i === agentIdx ? fn(m) : m)));
+        // placeholder agent bubble this turn fills. Patch by a stable id (NOT
+        // array index): the id is assigned before setTranscript, so the closure
+        // is correct even when SSE events arrive async across render batches.
+        const aid = `a${turnSeq.current++}`;
+        setTranscript((t) => [...t, { role: 'agent', text: '', tool_trace: [], _id: aid }]);
+        const patch = (fn) => setTranscript((t) => t.map((m) => (m._id === aid ? fn(m) : m)));
         try {
           await api.streamChat(msg, {
             signal: ctrl.current.signal,
