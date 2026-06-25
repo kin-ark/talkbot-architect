@@ -37,13 +37,22 @@ function ComponentNode({ data }) {
 
 const nodeTypes = { componentNode: ComponentNode };
 
-export default function FlowCanvas({ summary, onSelectNode }) {
+export default function FlowCanvas({ summary, onSelectNode, focusComponentId }) {
   const [expanded, setExpanded] = useState(() => new Set());
+  const [rf, setRf] = useState(null);
 
   // Reset to all-collapsed whenever a new summary loads.
   const summaryKey = summary ? JSON.stringify(summary.components?.map((c) => c.uuid)) : '';
   // eslint-disable-next-line react-hooks/set-state-in-effect -- legitimate summary-change reset; collapsed state is derived from which summary is loaded, not from a parent prop sync
   useEffect(() => { setExpanded(new Set()); }, [summaryKey]);
+
+  // Rail-driven focus: expand the chosen component and fit to it.
+  useEffect(() => {
+    if (!focusComponentId) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- prop-driven focus expansion; rf.fitView() must run after the expand re-render so the node has layout
+    setExpanded((prev) => new Set(prev).add(focusComponentId));
+    if (rf) rf.fitView({ nodes: [{ id: focusComponentId }], duration: 300, padding: 0.3 });
+  }, [focusComponentId, rf]);
 
   const toggle = useCallback((id) => {
     setExpanded((prev) => {
@@ -96,21 +105,42 @@ export default function FlowCanvas({ summary, onSelectNode }) {
     return { nodes: visible, edges: rerouted };
   }, [summary, expanded, toggle]);
 
+  const compIds = (summary?.components || []).map((c) => c.uuid);
+
+  const showMap = () => setExpanded(new Set());
+  const showDetail = () => setExpanded(new Set(compIds));
+  const fit = () => rf?.fitView({ duration: 300, padding: 0.2 });
+  const mode = expanded.size === 0 ? 'map' : 'detail';
+
   return (
-    <div className="w-full h-full" data-testid="flow-canvas">
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        nodeTypes={nodeTypes}
-        fitView
-        fitViewOptions={{ padding: 0.2 }}
-        minZoom={0.05}
-        onNodeClick={(_, n) => { if (n.data?.kind !== 'component') onSelectNode?.(n.data); }}
-      >
-        <Background gap={16} color="var(--c-border)" />
-        <Controls />
-        <MiniMap pannable zoomable />
-      </ReactFlow>
+    <div className="w-full h-full flex flex-col" data-testid="flow-canvas">
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-divider bg-surface">
+        <div className="inline-flex rounded-md border border-border overflow-hidden text-sm">
+          <button onClick={showMap}
+            className={`px-3 py-1 ${mode === 'map' ? 'bg-primary text-primary-fg' : 'text-text-secondary hover:bg-surface-muted'}`}>Map</button>
+          <button onClick={showDetail}
+            className={`px-3 py-1 ${mode === 'detail' ? 'bg-primary text-primary-fg' : 'text-text-secondary hover:bg-surface-muted'}`}>Detail</button>
+        </div>
+        <button onClick={fit}
+          className="px-3 py-1 text-sm rounded-md border border-border text-text-secondary hover:bg-surface-muted">Fit</button>
+        <span className="ml-auto text-xs text-text-tertiary">{compIds.length} components</span>
+      </div>
+      <div className="flex-1 min-h-0">
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          nodeTypes={nodeTypes}
+          onInit={setRf}
+          fitView
+          fitViewOptions={{ padding: 0.2 }}
+          minZoom={0.05}
+          onNodeClick={(_, n) => { if (n.data?.kind !== 'component') onSelectNode?.(n.data); }}
+        >
+          <Background gap={16} color="var(--c-border)" />
+          <Controls />
+          <MiniMap pannable zoomable />
+        </ReactFlow>
+      </div>
     </div>
   );
 }
