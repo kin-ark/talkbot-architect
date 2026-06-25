@@ -4,6 +4,17 @@ import remarkGfm from 'remark-gfm';
 import ToolChip from './ToolChip';
 import DiffCard from './DiffCard';
 
+function mentionEntries(summary) {
+  const out = [];
+  for (const c of summary?.components || []) {
+    out.push({ kind: 'component', label: c.name, uuid: c.uuid });
+    for (const n of Object.values(c.nodes || {})) {
+      out.push({ kind: 'node', label: n.label || n.uuid, uuid: n.uuid });
+    }
+  }
+  return out;
+}
+
 const SLASH = [
   { cmd: '/validate', mode: 'send', text: 'Validate the dialogue and list all findings.' },
   { cmd: '/explain', mode: 'send', text: 'Explain what this bot does, step by step.' },
@@ -47,6 +58,14 @@ export default function ChatPane({ transcript, proposal, sending, onSend, onAppl
   const pickSlash = (c) => {
     if (c.mode === 'send') { onSend(c.text); setInput(''); }
     else { setInput(c.text); }
+  };
+  const mentionMatch = input.match(/@(\S*)$/);          // trailing @token, no space
+  const mentionQuery = mentionMatch ? mentionMatch[1].toLowerCase() : null;
+  const mentionMatches = mentionQuery !== null
+    ? mentionEntries(summary).filter((e) => e.label.toLowerCase().includes(mentionQuery)).slice(0, 8)
+    : [];
+  const pickMention = (e) => {
+    setInput(input.replace(/@(\S*)$/, `@${e.label} (${e.uuid}) `));
   };
   const mdComponents = {
     a: ({ href, children }) => {
@@ -95,6 +114,18 @@ export default function ChatPane({ transcript, proposal, sending, onSend, onAppl
                   className="block w-full text-left px-3 py-1.5 text-sm text-text hover:bg-surface-muted">
                   <span className="font-mono text-primary">{c.cmd}</span>
                   <span className="text-text-tertiary"> — {c.text.trim() || '…'}</span>
+                </button>
+              ))}
+            </div>
+          )}
+          {mentionMatches.length > 0 && (
+            <div data-testid="mention-menu"
+              className="absolute bottom-full mb-1 left-0 w-72 max-h-60 overflow-y-auto rounded-lg border border-border bg-surface shadow-card z-30">
+              {mentionMatches.map((e) => (
+                <button key={`${e.kind}-${e.uuid}`} type="button" onClick={() => pickMention(e)}
+                  className="block w-full text-left px-3 py-1.5 text-sm text-text hover:bg-surface-muted">
+                  <span className="text-text-tertiary text-xs uppercase mr-2">{e.kind === 'component' ? 'comp' : 'node'}</span>
+                  {e.label}
                 </button>
               ))}
             </div>
