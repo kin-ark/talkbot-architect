@@ -85,7 +85,10 @@ def test_scs_link_is_locked(tmp_path):
     scs = _uw(doc["SentenceCutSpeech"])
     talk = next(u for u, n in _uw(comp["details"]).items() if n["type"] == 1)
     rows = fe.scs_rows_for(talk, scs)
+    # componentUuid filter: every row belongs to this component
     assert rows and all(r.get("componentUuid") == comp["componentUuid"] for r in rows)
+    # id filter: every row belongs specifically to this node (not just to the component)
+    assert all(r.get("id") == talk for r in rows)
 
 
 # ---------------------------------------------------------------------------
@@ -152,18 +155,28 @@ def test_resolve_unique_label(tmp_path):
 
 
 def test_unconnected_branches_talk_node_has_unconnected(tmp_path):
-    """Talk node has 4 checked branches; only those with edges are connected.
+    """The greet talk node wires only Positive → check_status; Negative and
+    Unclassified are unrouted, so unconnected_branches() must surface them.
 
-    The fixture wires only Positive from greet → check_status, so Negative,
-    Reject(?), Unclassified, No-answer branches of the greet node may remain
-    unconnected (depending on manifest edges).  At minimum, unconnected_branches()
-    must return a list (may be empty for a fully-wired bot).
+    Fixture: manifest_conditional_assign.yaml
+      edges: greet.Positive → check_status   (routed)
+             greet.Negative                  (unrouted)
+             greet.Unclassified              (unrouted)
     """
     doc = _build(tmp_path, "manifest_conditional_assign.yaml")
     comp = _uw(doc["BizSpeechComponent"])[0]
     fe = FlowEditor(comp)
     result = fe.unconnected_branches()
-    assert isinstance(result, list)
+    # greet is the first type-1 node in details order
+    talk = next(u for u, n in _uw(comp["details"]).items() if n["type"] == 1)
+    unconnected_for_talk = [b for (u, b) in result if u == talk]
+    # Negative is unrouted on greet; Unclassified is also unrouted
+    assert "Negative" in unconnected_for_talk, (
+        f"expected Negative to be unconnected on greet node; got {unconnected_for_talk}"
+    )
+    assert "Unclassified" in unconnected_for_talk, (
+        f"expected Unclassified to be unconnected on greet node; got {unconnected_for_talk}"
+    )
     # all entries are (str, str) tuples
     for item in result:
         assert len(item) == 2
