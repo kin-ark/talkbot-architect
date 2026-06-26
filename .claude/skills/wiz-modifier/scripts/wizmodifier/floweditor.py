@@ -13,6 +13,7 @@ filters ``all_scs`` by ``componentUuid == comp["componentUuid"]`` and then by
 
 from __future__ import annotations
 
+import copy as _copy
 import json
 import uuid as _uuid_mod
 from typing import Any
@@ -315,6 +316,6 @@ class FlowEditor:
             for edge in port_map.values():
                 pd = edge.get("portDetail")
                 if pd and isinstance(pd, dict):
-                    return dict(pd)
+                    return _copy.deepcopy(pd)
         return None
 
