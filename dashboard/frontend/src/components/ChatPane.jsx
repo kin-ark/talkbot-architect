@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
@@ -79,6 +79,17 @@ function bubbleClass(role) {
 
 export default function ChatPane({ transcript, proposal, sending, onSend, onRetry, onApply, onReject, onCancel, onPreview, summary, onSelectNode, canUndo = false, canRedo = false, onUndo, onRedo }) {
   const [input, setInput] = useState('');
+  const scrollRef = useRef(null);
+  const nearBottomRef = useRef(true);
+  const onScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    nearBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+  };
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el && nearBottomRef.current) el.scrollTop = el.scrollHeight;
+  }, [transcript]);
   const submit = (e) => { e.preventDefault(); if (!input.trim()) return; onSend(input.trim()); setInput(''); };
   const slashMatches = input.startsWith('/')
     ? SLASH.filter((c) => c.cmd.startsWith(input.split(' ')[0].toLowerCase()))
@@ -127,7 +138,7 @@ export default function ChatPane({ transcript, proposal, sending, onSend, onRetr
   };
   return (
     <div className="flex flex-col h-full" data-testid="chat-pane">
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div ref={scrollRef} onScroll={onScroll} className="flex-1 overflow-y-auto p-4 space-y-3">
         {transcript.map((m, i) => (
           <div key={i} className={m.role === 'user' ? 'text-right' : 'text-left'}>
             {m.tool_trace?.length > 0 && (
@@ -137,6 +148,9 @@ export default function ChatPane({ transcript, proposal, sending, onSend, onRetr
               {m.role === 'user' || m.role === 'error'
                 ? m.text
                 : <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]} components={mdComponents}>{m.text || ''}</ReactMarkdown>}
+              {m.role !== 'user' && m.role !== 'error' && sending && i === transcript.length - 1 && (
+                <span data-testid="stream-caret" className="inline-block w-1.5 animate-pulse">▍</span>
+              )}
             </div>
             {m.role === 'error' && (
               <div className="mt-1">
@@ -158,7 +172,7 @@ export default function ChatPane({ transcript, proposal, sending, onSend, onRetr
               className="text-xs text-text-tertiary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded">↻ Regenerate</button>
           </div>
         )}
-        {sending && (
+        {sending && !(transcript.length > 0 && transcript[transcript.length - 1].role === 'agent') && (
           <div className="text-left" data-testid="thinking">
             <span className="inline-block p-3 rounded-2xl text-sm bg-surface border border-border text-text-tertiary">thinking…</span>
           </div>
