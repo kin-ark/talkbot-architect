@@ -210,6 +210,57 @@ _SPECS = [
                  "answers": {"type": "array", "items": {"type": "string"}},
                  "multi_round": {"type": "string"}},
               "required": ["name", "intents"]}),
+    ToolSpec("rewire_edge",
+             "Set or replace an edge route for a branch on a node. Proposes a dry-run.",
+             {"type": "object", "properties": {
+                 "component": {"type": "integer"},
+                 "from": {"type": "object", "properties": {
+                     "uuid": {"type": "string"}, "label": {"type": "string"}}},
+                 "branch": {"type": "string"},
+                 "to": {"type": "object", "properties": {
+                     "uuid": {"type": "string"}, "label": {"type": "string"}}},
+                 "to_component": {"type": "string"}},
+              "required": ["component", "from", "branch"]}),
+    ToolSpec("delete_edge",
+             "Remove the route for a branch on a node (leaves the out-port intact). Proposes a dry-run.",
+             {"type": "object", "properties": {
+                 "component": {"type": "integer"},
+                 "from": {"type": "object", "properties": {
+                     "uuid": {"type": "string"}, "label": {"type": "string"}}},
+                 "branch": {"type": "string"}},
+              "required": ["component", "from", "branch"]}),
+    ToolSpec("delete_node",
+             "Remove a node and cascade-clean all related tables. Proposes a dry-run.",
+             {"type": "object", "properties": {
+                 "component": {"type": "integer"},
+                 "node": {"type": "object", "properties": {
+                     "uuid": {"type": "string"}, "label": {"type": "string"}}}},
+              "required": ["component", "node"]}),
+    ToolSpec("move_node",
+             "Move a node from one component to another. Proposes a dry-run.",
+             {"type": "object", "properties": {
+                 "node": {"type": "object", "properties": {
+                     "uuid": {"type": "string"}, "label": {"type": "string"}}},
+                 "to_component": {"type": "string"},
+                 "from_component": {"type": "integer"}},
+              "required": ["node", "to_component"]}),
+    ToolSpec("rename_node",
+             "Set a new label and/or prompt text on a node. Proposes a dry-run.",
+             {"type": "object", "properties": {
+                 "component": {"type": "integer"},
+                 "node": {"type": "object", "properties": {
+                     "uuid": {"type": "string"}, "label": {"type": "string"}}},
+                 "label": {"type": "string"},
+                 "prompt": {"type": "string"}},
+              "required": ["component", "node"]}),
+    ToolSpec("complete_component",
+             "Auto-complete a component to WIZ completeness rules (exit node + wired branches). "
+             "Proposes a dry-run.",
+             {"type": "object", "properties": {
+                 "component": {"type": "integer"},
+                 "exit_target": {"type": "object", "properties": {
+                     "uuid": {"type": "string"}, "label": {"type": "string"}}}},
+              "required": ["component"]}),
 ]
 
 
@@ -298,6 +349,44 @@ def dispatch(name: str, args: dict, data: dict) -> dict:
                 "type": "goto", "config": {"target": args["target"]}}
         op = {"op": "append-node", "component": args["component"], "node": node,
               "edges": [{"from": args["from"], "branch": args["branch"], "to": args["id"]}]}
+        return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
+    if name == "rewire_edge":
+        import yaml
+        op = {"op": "rewire-edge", "component": args["component"],
+              "from": args["from"], "branch": args["branch"]}
+        if args.get("to"):
+            op["to"] = args["to"]
+        if args.get("to_component"):
+            op["to_component"] = args["to_component"]
+        return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
+    if name == "delete_edge":
+        import yaml
+        op = {"op": "delete-edge", "component": args["component"],
+              "from": args["from"], "branch": args["branch"]}
+        return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
+    if name == "delete_node":
+        import yaml
+        op = {"op": "delete-node", "component": args["component"], "node": args["node"]}
+        return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
+    if name == "move_node":
+        import yaml
+        op = {"op": "move-node", "node": args["node"], "to_component": args["to_component"]}
+        if args.get("from_component") is not None:
+            op["from_component"] = args["from_component"]
+        return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
+    if name == "rename_node":
+        import yaml
+        op = {"op": "rename-node", "component": args["component"], "node": args["node"]}
+        if args.get("label"):
+            op["label"] = args["label"]
+        if args.get("prompt"):
+            op["prompt"] = args["prompt"]
+        return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
+    if name == "complete_component":
+        import yaml
+        op = {"op": "complete-component", "component": args["component"]}
+        if args.get("exit_target"):
+            op["exit_target"] = args["exit_target"]
         return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
     return {"result": {"error": f"unknown tool {name!r}"}, "proposal": None}
 

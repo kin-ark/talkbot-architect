@@ -263,3 +263,120 @@ def test_add_node_exit_no_config(two_component_doc):
     # Raw envelope uses obj["type"], not obj["data"]["node_type"]
     exit_nodes = [obj for obj in details2.values() if obj.get("type") == 2]
     assert exit_nodes, "No type-2 (exit) node found in proposed comp0"
+
+
+# ---------------------------------------------------------------------------
+# Task 9 (FM-T9): six flow-mutation chat tools
+# ---------------------------------------------------------------------------
+
+_FLOW_MUTATION_TOOLS = [
+    "rewire_edge", "delete_edge", "delete_node", "move_node", "rename_node",
+    "complete_component",
+]
+
+_NODE_REF_SCHEMA = {
+    "type": "object",
+    "properties": {"uuid": {"type": "string"}, "label": {"type": "string"}},
+}
+
+
+def test_flow_mutation_tools_registered():
+    """tool_specs() must include all six flow-mutation tools."""
+    names = {s.name for s in registry.tool_specs()}
+    for tool_name in _FLOW_MUTATION_TOOLS:
+        assert tool_name in names, f"{tool_name!r} not found in registry"
+
+
+def test_flow_mutation_tool_schemas():
+    """Each flow-mutation tool must have the correct parameter schema."""
+    specs = {s.name: s for s in registry.tool_specs()}
+
+    # rewire_edge: component(int), from(node-ref), branch(str), to?(node-ref), to_component?(str)
+    rw = specs["rewire_edge"].parameters
+    assert rw["properties"]["component"]["type"] == "integer"
+    assert rw["properties"]["from"] == _NODE_REF_SCHEMA
+    assert rw["properties"]["branch"]["type"] == "string"
+    assert rw["properties"]["to"] == _NODE_REF_SCHEMA
+    assert rw["properties"]["to_component"]["type"] == "string"
+    assert set(rw["required"]) >= {"component", "from", "branch"}
+
+    # delete_edge: component(int), from(node-ref), branch(str)
+    de = specs["delete_edge"].parameters
+    assert de["properties"]["component"]["type"] == "integer"
+    assert de["properties"]["from"] == _NODE_REF_SCHEMA
+    assert de["properties"]["branch"]["type"] == "string"
+    assert set(de["required"]) >= {"component", "from", "branch"}
+
+    # delete_node: component(int), node(node-ref)
+    dn = specs["delete_node"].parameters
+    assert dn["properties"]["component"]["type"] == "integer"
+    assert dn["properties"]["node"] == _NODE_REF_SCHEMA
+    assert set(dn["required"]) >= {"component", "node"}
+
+    # move_node: node(node-ref), to_component(str), from_component?(int)
+    mn = specs["move_node"].parameters
+    assert mn["properties"]["node"] == _NODE_REF_SCHEMA
+    assert mn["properties"]["to_component"]["type"] == "string"
+    assert "from_component" in mn["properties"]
+    assert set(mn["required"]) >= {"node", "to_component"}
+
+    # rename_node: component(int), node(node-ref), label?(str), prompt?(str)
+    rn = specs["rename_node"].parameters
+    assert rn["properties"]["component"]["type"] == "integer"
+    assert rn["properties"]["node"] == _NODE_REF_SCHEMA
+    assert rn["properties"]["label"]["type"] == "string"
+    assert rn["properties"]["prompt"]["type"] == "string"
+    assert set(rn["required"]) >= {"component", "node"}
+
+    # complete_component: component(int), exit_target?(node-ref)
+    cc = specs["complete_component"].parameters
+    assert cc["properties"]["component"]["type"] == "integer"
+    assert cc["properties"]["exit_target"] == _NODE_REF_SCHEMA
+    assert set(cc["required"]) >= {"component"}
+
+
+def test_complete_component_dispatch_returns_proposal(two_component_doc):
+    """dispatch complete_component builds a complete-component op and returns a proposal."""
+    out = registry.dispatch("complete_component", {"component": 0}, two_component_doc)
+    assert out["result"]["ok"] is True, out["result"].get("error")
+    assert out["proposal"] is not None
+    assert isinstance(out["proposal"]["proposed_data"], dict)
+
+
+def test_rewire_edge_dispatch_returns_proposal(two_component_doc):
+    """dispatch rewire_edge builds a rewire-edge op and returns a proposal.
+
+    After complete_component ensures there is an exit node, rewire_edge
+    re-targets the entry node's Unclassified branch to that same exit node.
+    """
+    # First complete component 0 so it has an exit node + wired branches.
+    completed = registry.dispatch("complete_component", {"component": 0}, two_component_doc)
+    assert completed["result"]["ok"] is True, completed["result"].get("error")
+    doc_with_exit = completed["proposal"]["proposed_data"]
+
+    bsc = _decode(doc_with_exit, "BizSpeechComponent")
+    details0 = json.loads(bsc[0]["details"])
+    entry_uuid = next(uid for uid, obj in details0.items()
+                      if (obj.get("data") or {}).get("is_default"))
+    exit_uuid = next(uid for uid, obj in details0.items() if obj.get("type") == 2)
+
+    out = registry.dispatch("rewire_edge", {
+        "component": 0,
+        "from": {"uuid": entry_uuid},
+        "branch": "Unclassified",
+        "to": {"uuid": exit_uuid},
+    }, doc_with_exit)
+    assert out["result"]["ok"] is True, out["result"].get("error")
+    assert out["proposal"] is not None
+
+
+def test_complete_component_op_dict():
+    """complete_component with component=0 (no exit_target) builds the minimal op dict.
+
+    We verify the proposal is generated (end-to-end), which implicitly validates the
+    op dict sent to propose_mods contains op='complete-component' and component=0.
+    """
+    out = registry.dispatch("complete_component", {"component": 0}, DATA)
+    # DATA has one empty component at index 0; complete_component should succeed.
+    assert out["result"]["ok"] is True, out["result"].get("error")
+    assert out["proposal"] is not None
