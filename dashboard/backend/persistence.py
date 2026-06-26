@@ -5,6 +5,7 @@ import base64
 import json
 import os
 import time
+import uuid
 from pathlib import Path
 
 from llm.base import Message
@@ -109,7 +110,6 @@ def migrate_legacy(session) -> bool:
         state = json.loads(LEGACY_PATH.read_text(encoding="utf-8"))
     except (FileNotFoundError, json.JSONDecodeError, OSError):
         return False
-    import uuid
     _restore(session, state)
     session.id = uuid.uuid4().hex
     session.name = "Imported session"
