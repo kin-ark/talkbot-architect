@@ -20,6 +20,7 @@ from pydantic import BaseModel
 import agents
 import config_store
 import persistence
+import speechname
 from config_store import CONFIG, any_override, effective_key_set
 from llm.base import LLMClient
 from llm.factory import LLMConfigError, make_client
@@ -81,6 +82,10 @@ class RenameRequest(BaseModel):
     name: str
 
 
+class BotNameRequest(BaseModel):
+    name: str
+
+
 # ---------------------------------------------------------------------------
 # Helpers / dependencies
 # ---------------------------------------------------------------------------
@@ -106,10 +111,11 @@ def _active_payload() -> dict:
     """Return the rehydrate payload for the current active session."""
     s = _S()
     if not s._stack:
-        return {"summary": None, "id": s.id}
+        return {"summary": None, "id": s.id, "bot_name": None}
     data = s.current()
     return {
         "id": s.id,
+        "bot_name": speechname.read_speech_name(data),
         "summary": agents.summarize(data),
         "findings": agents.validate(data),
         "transcript": _reconstruct_transcript(s.transcript),
@@ -207,10 +213,12 @@ async def clear_config():
 @app.get("/export")
 async def export_current(_: None = Depends(_require_session)):
     payload = json.dumps(_S().current(), ensure_ascii=False, separators=(",", ":"))
+    nm = speechname.read_speech_name(_S().current())
+    filename = speechname.slugify_filename(nm) if nm else _S().speech_name
     return Response(
         content=payload,
         media_type="application/json",
-        headers={"Content-Disposition": f"attachment; filename={_S().speech_name}"},
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
     )
 
 
@@ -250,6 +258,9 @@ async def create_session(file: UploadFile = File(...)):
         _S().name = stem
 
     _S()._autosave()
+    nm = speechname.read_speech_name(_S().current())
+    if nm and nm != "Empty Dialogue" and _S().id:
+        STORE.rename(_S().id, nm)
     # Validate only once; reuse the result for the response.
     findings = agents.validate(data)
     return {"summary": agents.summarize(data), "findings": findings}
@@ -338,6 +349,9 @@ async def apply_pending():
     if _S().pending is None:
         raise HTTPException(status_code=409, detail="no pending proposal")
     _S().apply(_S().pending["proposed_data"])
+    nm = speechname.read_speech_name(_S().current())
+    if nm and _S().id:
+        STORE.rename(_S().id, nm)
     return {
         "applied": True,
         "summary": agents.summarize(_S().current()),
@@ -366,6 +380,27 @@ async def redo():
     ok = _S().redo()
     return {
         "ok": ok,
+        "summary": agents.summarize(_S().current()),
+        "findings": agents.validate(_S().current()),
+        "can_undo": _S().can_undo(),
+        "can_redo": _S().can_redo(),
+    }
+
+
+@app.put("/speech-name")
+def set_speech_name_route(body: BotNameRequest):
+    _require_session()
+    name = body.name.strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="name must not be empty")
+    new = speechname.set_speech_name(_S().current(), name)
+    _S().apply(new)                                  # new undoable version + autosave
+    _S().speech_name = speechname.slugify_filename(name)
+    if _S().id:
+        STORE.rename(_S().id, name)                  # mirror the session label (persists snapshot)
+    return {
+        "ok": True,
+        "bot_name": name,
         "summary": agents.summarize(_S().current()),
         "findings": agents.validate(_S().current()),
         "can_undo": _S().can_undo(),
