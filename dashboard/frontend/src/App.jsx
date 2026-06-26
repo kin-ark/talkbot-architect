@@ -66,6 +66,10 @@ export default function App() {
     );
   }
 
+  const onAskFix = (f) => {
+    setDockTab('chat');
+    s.send(`Fix finding ${f.code}${f.id ? ' on node ' + f.id : ''}: ${f.message}`);
+  };
   const onPreview = (proposal) => setPreview(
     proposal?.proposed_summary ? { summary: proposal.proposed_summary, changeSet: proposal.change_set } : null);
   const exitPreview = () => setPreview(null);
@@ -99,7 +103,7 @@ export default function App() {
           </div>
         </div>
         <RightDock activeTab={dockTab} onTabChange={setDockTab} summary={s.summary} findings={s.findings}
-          selectedNode={selectedNode} onSelectNode={selectNode} chat={chat} onPreview={onPreview} />
+          selectedNode={selectedNode} onSelectNode={selectNode} chat={chat} onPreview={onPreview} onAskFix={onAskFix} />
       </div>
     </div>
   );
