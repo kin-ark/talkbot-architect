@@ -296,6 +296,15 @@ def dispatch(name: str, args: dict, data: dict) -> dict:
         built = agents.propose_build(args["manifest_yaml"])
         if not built["ok"]:
             return {"result": {"ok": False, "error": built["error"]}, "proposal": None}
+        import yaml as _yaml
+        import speechname as _sn
+        try:
+            _mani = _yaml.safe_load(args["manifest_yaml"])
+            _nm = _mani.get("name") if isinstance(_mani, dict) else None
+        except Exception:
+            _nm = None
+        if _nm:
+            built["proposed_data"] = _sn.set_speech_name(built["proposed_data"], _nm)
         # Enrich via propose_scaffold path: compute summary/change_set from the built doc
         after_summary = agents.summarize(built["proposed_data"])
         import proposal_meta as _pm
@@ -308,6 +317,9 @@ def dispatch(name: str, args: dict, data: dict) -> dict:
         return _as_proposal(p)
     if name == "scaffold_bot":
         p = agents.propose_scaffold(args)
+        if p.get("ok") and args.get("name"):
+            import speechname as _sn
+            p["proposed_data"] = _sn.set_speech_name(p["proposed_data"], args["name"])
         return _as_proposal(p)
     if name == "get_schema":
         return {"result": agents.get_schema(), "proposal": None}
