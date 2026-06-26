@@ -15,7 +15,9 @@ def _isolate(tmp_path, monkeypatch):
     # Point persistence at a throwaway path if the module exists yet
     try:
         persistence = importlib.import_module("persistence")
-        monkeypatch.setattr(persistence, "STATE_PATH", tmp_path / "state.json", raising=False)
+        monkeypatch.setattr(persistence, "SESSIONS_DIR", tmp_path / ".sessions", raising=False)
+        monkeypatch.setattr(persistence, "ACTIVE_PATH", tmp_path / ".sessions" / "active", raising=False)
+        monkeypatch.setattr(persistence, "LEGACY_PATH", tmp_path / ".session" / "state.json", raising=False)
     except ModuleNotFoundError:
         pass
 

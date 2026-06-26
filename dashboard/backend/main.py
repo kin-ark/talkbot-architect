@@ -24,7 +24,7 @@ from config_store import CONFIG, any_override, effective_key_set
 from llm.base import LLMClient
 from llm.factory import LLMConfigError, make_client
 from orchestrator import run_turn, run_turn_stream
-from session import Session
+from session_store import SessionStore
 from wizmodifier.io import InputBundle
 
 app = FastAPI(title="Talkbot Architect API")
@@ -48,13 +48,13 @@ async def _provider_error(request: Request, exc: LLMProviderError):
 async def _unhandled(request: Request, exc: Exception):
     return JSONResponse(status_code=500, content=_error_body(exc))
 
-SESSION = Session()
+STORE = SessionStore()
+SESSION = STORE.active()        # module alias — the live active object
 
 
 @app.on_event("startup")
 def _load_persisted_session() -> None:
-    if not SESSION._stack:
-        persistence.load_session(SESSION)
+    STORE.boot()
 
 
 # ---------------------------------------------------------------------------
@@ -221,11 +221,18 @@ async def create_session(file: UploadFile = File(...)):
         finally:
             tmp_path.unlink(missing_ok=True)
         data = bundle.data
+        stem = Path(filename).stem or "Imported bot"
+        STORE.new(name=stem)
         SESSION.load(data, speech_name=bundle.speech_name, wavs=bundle.wavs)
+        SESSION.name = stem
     else:
         data = _parse_or_400(raw)
+        stem = Path(filename).stem or "Imported bot"
+        STORE.new(name=stem)
         SESSION.load(data)
+        SESSION.name = stem
 
+    SESSION._autosave()
     # Validate only once; reuse the result for the response.
     findings = agents.validate(data)
     return {"summary": agents.summarize(data), "findings": findings}
@@ -233,6 +240,7 @@ async def create_session(file: UploadFile = File(...)):
 
 @app.post("/session/blank")
 def create_blank_session():
+    STORE.new(name="New session")
     SESSION.load({"BizSpeechComponent": []})
     data = SESSION.current()
     return {"summary": agents.summarize(data), "findings": agents.validate(data)}
