@@ -24,7 +24,6 @@ from config_store import CONFIG, any_override, effective_key_set
 from llm.base import LLMClient
 from llm.factory import LLMConfigError, make_client
 from orchestrator import run_turn, run_turn_stream
-from session import Session
 from session_store import SessionStore
 from wizmodifier.io import InputBundle
 
