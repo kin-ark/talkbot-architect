@@ -5,8 +5,9 @@ import FindingList from './FindingList';
 import NodePropertiesPanel from './NodePropertiesPanel';
 import KBPlane from './KBPlane';
 import FlowCanvas from './FlowCanvas';
+import ComponentsRail from './ComponentsRail';
 
-export default function RightDock({ activeTab, onTabChange, summary, findings, selectedNode, onSelectNode, chat, onPreview, onAskFix }) {
+export default function RightDock({ activeTab, onTabChange, summary, findings, selectedNode, onSelectNode, chat, onPreview, onAskFix, onSelectComponent, focusComponentId }) {
   const [drill, setDrill] = useState(null);
   const [width, setWidth] = useState(() => {
     const saved = Number(localStorage.getItem('tb-dock-w'));
@@ -18,6 +19,7 @@ export default function RightDock({ activeTab, onTabChange, summary, findings, s
     { id: 'findings', label: 'Findings', badge: errorCount || undefined },
     { id: 'properties', label: 'Properties' },
     { id: 'kb', label: 'KB' },
+    { id: 'components', label: 'Components' },
   ];
 
   // Drag the left edge to resize; clamp to [320px, 70vw] and persist.
@@ -54,6 +56,10 @@ export default function RightDock({ activeTab, onTabChange, summary, findings, s
         {activeTab === 'properties' && <NodePropertiesPanel node={selectedNode} summary={summary} />}
         {activeTab === 'kb' && !drill && (
           <KBPlane knowledgeBases={summary?.knowledge_bases || []} onDrillIn={setDrill} />
+        )}
+        {activeTab === 'components' && (
+          <ComponentsRail summary={summary} selectedComponentId={focusComponentId}
+            onSelectComponent={onSelectComponent} />
         )}
         {activeTab === 'kb' && drill && (
           <div className="flex flex-col h-full">

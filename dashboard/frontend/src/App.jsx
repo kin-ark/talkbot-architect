@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useSession } from './state/useSession';
 import TopBar from './components/TopBar';
-import ComponentsRail from './components/ComponentsRail';
+import SessionRail from './components/SessionRail';
 import FlowCanvas from './components/FlowCanvas';
 import RightDock from './components/RightDock';
 import UploadZone from './components/UploadZone';
@@ -14,6 +14,14 @@ export default function App() {
   const [dockTab, setDockTab] = useState('chat');
   const [focusComponentId, setFocusComponentId] = useState(null);
   const [preview, setPreview] = useState(null);
+  const [railCollapsed, setRailCollapsed] = useState(() => {
+    try { return localStorage.getItem('tb-rail-collapsed') === '1'; } catch { return false; }
+  });
+  const toggleRail = () => setRailCollapsed((c) => {
+    const next = !c;
+    try { localStorage.setItem('tb-rail-collapsed', next ? '1' : '0'); } catch { /* ignore */ }
+    return next;
+  });
   const onExport = () => window.open(exportUrl(), '_blank');
   const onNew = () => {
     setSelectedNode(null); setDockTab('chat'); setFocusComponentId(null); setPreview(null);
@@ -86,8 +94,10 @@ export default function App() {
     <div className="h-screen flex flex-col bg-canvas">
       <TopBar canUndo={s.canUndo} canRedo={s.canRedo} onUndo={s.undo} onRedo={s.redo} onExport={onExport} onNew={onNew} />
       <div className="flex-1 flex overflow-hidden">
-        <ComponentsRail summary={s.summary} selectedComponentId={focusComponentId}
-          onSelectComponent={setFocusComponentId} />
+        <SessionRail sessions={s.sessions} activeSessionId={s.activeSessionId}
+          usage={s.usage} collapsed={railCollapsed} onToggleCollapse={toggleRail}
+          onNew={s.newSession} onSwitch={s.switchSession}
+          onRename={s.renameSession} onDelete={s.deleteSession} />
         <div className="flex-1 min-w-0 flex flex-col">
           {preview && (
             <div className="flex items-center gap-2 px-3 py-1.5 text-xs bg-warning-bg text-warning border-b border-warning">
@@ -103,7 +113,8 @@ export default function App() {
           </div>
         </div>
         <RightDock activeTab={dockTab} onTabChange={setDockTab} summary={s.summary} findings={s.findings}
-          selectedNode={selectedNode} onSelectNode={selectNode} chat={chat} onPreview={onPreview} onAskFix={onAskFix} />
+          selectedNode={selectedNode} onSelectNode={selectNode} chat={chat} onPreview={onPreview} onAskFix={onAskFix}
+          onSelectComponent={setFocusComponentId} focusComponentId={focusComponentId} />
       </div>
     </div>
   );

@@ -44,17 +44,19 @@ export function useSession() {
   useEffect(() => {
     let cancelled = false;
     Promise.resolve(api.getSession()).then((r) => {
-      if (cancelled || touched.current || !r?.summary) return;
-      setSummary(r.summary);
-      setFindings(r.findings || []);
-      setTranscript(r.transcript || []);
-      setProposal(r.proposal || null);
-      setCanUndo(!!r.can_undo);
-      setCanRedo(!!r.can_redo);
-      setUsage(r.usage || null);
-      if (r.id !== undefined) setActiveSessionId(r.id);
-    }).catch(() => {});
-    refreshSessions();
+      if (cancelled) return;
+      if (!touched.current && r?.summary) {
+        setSummary(r.summary);
+        setFindings(r.findings || []);
+        setTranscript(r.transcript || []);
+        setProposal(r.proposal || null);
+        setCanUndo(!!r.can_undo);
+        setCanRedo(!!r.can_redo);
+        setUsage(r.usage || null);
+        if (r.id !== undefined) setActiveSessionId(r.id);
+      }
+      if (!cancelled) refreshSessions();
+    }).catch(() => { if (!cancelled) refreshSessions(); });
     return () => { cancelled = true; };
   }, [refreshSessions]);
 

@@ -16,8 +16,10 @@ beforeEach(() => {
   useSession.mockReturnValue({
     summary: SUMMARY, findings: FINDINGS, transcript: [{ role: 'agent', text: 'ready' }],
     proposal: null, canUndo: false, canRedo: false, loading: false, sending: false,
+    sessions: [], activeSessionId: null, usage: null,
     upload: vi.fn(), startBlank: vi.fn(), send: vi.fn(), apply: vi.fn(), reject: vi.fn(),
-    undo: vi.fn(), redo: vi.fn(), cancel: vi.fn(),
+    undo: vi.fn(), redo: vi.fn(), cancel: vi.fn(), reset: vi.fn(),
+    newSession: vi.fn(), switchSession: vi.fn(), renameSession: vi.fn(), deleteSession: vi.fn(),
   });
 });
 
@@ -28,7 +30,8 @@ describe('App selection wiring', () => {
     fireEvent.click(screen.getByText(/orphan node/));        // finding row → select node a1
     // Properties tab now active: NodePropertiesPanel renders the node label/id.
     expect(screen.getByTestId('right-dock').textContent).toMatch(/GreetNode|a1/);
-    // Owning component cA is now the focused/active rail row (font-semibold active class).
+    // Owning component cA is now the focused/active row in the dock Components tab.
+    fireEvent.click(screen.getByText('Components'));
     const railRow = screen.getByTestId('components-rail').querySelector('.text-primary.font-semibold');
     expect(railRow).not.toBeNull();
     expect(railRow.textContent).toMatch(/Greeting/);
