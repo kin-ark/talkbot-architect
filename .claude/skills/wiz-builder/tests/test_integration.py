@@ -345,3 +345,126 @@ def test_build_multiround_kb_links_component(tmp_path):
     assert by_intent_name["AskDueDate"].get("isInit") == 1, (
         "a manifest custom_intent must be emitted with isInit=1 (user intent)"
     )
+
+
+def test_goto_kb_node_links_to_kb(tmp_path):
+    """Full pipeline: goto_kb (type 8) node links to a manifest-declared KB.
+
+    Structural assertions (T5 Step 1):
+    - checker_errors == 0
+    - The built export contains exactly one type-8 node in BizSpeechComponent details
+    - The type-8 node is terminal: routes[uuid] == {}
+    - The type-8 node appears in the component's topFloorDetails
+    - data["appoint_knowledge_id"] == str(KB.knowledgeId) for "Payment FAQ"
+    - data["appoint_node_id"] == "" and data["specificComponentName"] == ""
+      and data["multiple_appoint_id"] == "" (no source* fields)
+    - Field presence matches a real type-8 node from talkbot/Test+Kinan/speech*.json
+      (appoint_knowledge_id set as a string; appoint_node_id/"specificComponentName"/
+      "multiple_appoint_id" empty; no source* provenance fields).
+
+    Manifest: tests/fixtures/manifest_goto_kb.yaml
+    KB name: "Payment FAQ", resolved knowledgeId: 1543872530 (minted deterministically).
+    """
+    out = tmp_path / "speech_goto_kb.json"
+    result = compile_manifest(FIXTURES / "manifest_goto_kb.yaml", out)
+
+    # Primary: checker-clean.
+    assert result.checker_errors == 0, (
+        f"goto_kb manifest produced checker errors: "
+        f"{result.checker_errors} errors, codes: {result.finding_codes}"
+    )
+
+    built = json.loads(out.read_text(encoding="utf-8"))
+
+    def _unwrap(v):
+        return json.loads(v) if isinstance(v, str) else v
+
+    # --- Locate the type-8 node across all components ---
+    components = _unwrap(built["BizSpeechComponent"])
+    assert components, "BizSpeechComponent must be non-empty"
+
+    goto_kb_node: dict | None = None
+    goto_kb_uuid: str | None = None
+    host_comp: dict | None = None
+
+    for comp in components:
+        details = _unwrap(comp.get("details", "{}") or "{}")
+        if not isinstance(details, dict):
+            continue
+        for uuid, node in details.items():
+            if isinstance(node, dict) and node.get("type") == 8:
+                goto_kb_node = node
+                goto_kb_uuid = uuid
+                host_comp = comp
+                break
+        if goto_kb_node is not None:
+            break
+
+    assert goto_kb_node is not None, (
+        "Expected exactly one type-8 (goto_kb) node in BizSpeechComponent details"
+    )
+
+    # --- Terminal: routes[uuid] must be an empty dict ---
+    routes = _unwrap(host_comp.get("routes", "{}") or "{}")
+    assert goto_kb_uuid in routes, (
+        f"goto_kb node uuid {goto_kb_uuid!r} not present as a routes key"
+    )
+    assert routes[goto_kb_uuid] == {}, (
+        f"goto_kb must be terminal (empty route dict); got {routes[goto_kb_uuid]!r}"
+    )
+
+    # --- topFloorDetails: the type-8 node must appear ---
+    top_floor_raw = host_comp.get("topFloorDetails", "[]")
+    top_floor = _unwrap(top_floor_raw) if top_floor_raw else []
+    tfd_uuids = {item.get("id") for item in top_floor if isinstance(item, dict)}
+    assert goto_kb_uuid in tfd_uuids, (
+        f"goto_kb uuid {goto_kb_uuid!r} not found in topFloorDetails; "
+        f"present uuids: {tfd_uuids}"
+    )
+
+    # --- KB linkage: appoint_knowledge_id == str(KB knowledgeId) for "Payment FAQ" ---
+    kbs = _unwrap(built["BizKnowledgeInfo"])
+    payment_faq = next(
+        (k for k in kbs if k.get("kdTitle") == "Payment FAQ"), None
+    )
+    assert payment_faq is not None, (
+        "BizKnowledgeInfo must contain a KB entry with kdTitle 'Payment FAQ'"
+    )
+    kb_id = payment_faq["knowledgeId"]  # int in the KB row
+    assert kb_id, f"Payment FAQ KB must have a non-zero knowledgeId; got {kb_id!r}"
+
+    node_data = goto_kb_node["data"]
+    assert node_data["appoint_knowledge_id"] == str(kb_id), (
+        f"goto_kb appoint_knowledge_id must == str(knowledgeId) "
+        f"'{kb_id}'; got {node_data['appoint_knowledge_id']!r}"
+    )
+
+    # --- Decode-compare against real type-8 node shape ---
+    # Real WIZ export (talkbot/Test+Kinan) confirms:
+    #   appoint_node_id / specificComponentName / multiple_appoint_id are "" for a
+    #   manifest-authored goto_kb; source* fields (sourceTemplateCode, sourceSpeechId,
+    #   sourceComponentUuid, sourceNodeId) are library-import-only and must be absent.
+    assert node_data["appoint_node_id"] == "", (
+        f"goto_kb appoint_node_id must be empty; got {node_data['appoint_node_id']!r}"
+    )
+    assert node_data["specificComponentName"] == "", (
+        f"goto_kb specificComponentName must be empty; "
+        f"got {node_data['specificComponentName']!r}"
+    )
+    assert node_data["multiple_appoint_id"] == "", (
+        f"goto_kb multiple_appoint_id must be empty; "
+        f"got {node_data['multiple_appoint_id']!r}"
+    )
+    for source_field in ("sourceTemplateCode", "sourceSpeechId",
+                         "sourceComponentUuid", "sourceNodeId"):
+        assert source_field not in node_data, (
+            f"goto_kb node must not carry library-only field {source_field!r}"
+        )
+
+    # appoint_knowledge_id is a non-empty string (confirmed from real export: "244124")
+    assert isinstance(node_data["appoint_knowledge_id"], str), (
+        f"appoint_knowledge_id must be a string; got {type(node_data['appoint_knowledge_id'])}"
+    )
+    assert node_data["appoint_knowledge_id"] != "", (
+        "appoint_knowledge_id must be non-empty for a targeted goto_kb"
+    )
