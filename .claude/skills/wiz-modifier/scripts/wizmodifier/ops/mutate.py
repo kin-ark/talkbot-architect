@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from wizmodifier import codec
-from wizmodifier.floweditor import FlowEditor
+from wizmodifier.floweditor import FlowEditError, FlowEditor
 from wizmodifier.io import InputBundle
 from wizmodifier.ops._bsc import get_components, require_component, set_components
 
@@ -122,6 +122,125 @@ def delete_node(bundle: InputBundle, params: dict, minter) -> dict:  # noqa: ARG
     set_components(bundle, comps)
 
     return summary
+
+
+def move_node(bundle: InputBundle, params: dict, minter) -> dict:  # noqa: ARG001
+    """Move a node from one component to another.
+
+    params:
+        node           — {uuid: <uuid>} or {label: <name>} — the node to move
+        to_component   — component name (str) — the destination component
+        from_component — (optional int) index of the source component; if omitted,
+                         the source is auto-detected by scanning all components for
+                         the one containing the node.
+
+    Steps:
+    1. Resolve source component (explicit index or scan).
+    2. Resolve destination component by name; reject same-component move.
+    3. Capture inbound and outbound edges before extraction for reporting.
+    4. extract_node from src (unwires inbound, carries SCS/SCK rows deep-copied).
+    5. insert_node into dst (rewriting componentUuid on carried rows).
+    6. Drop any outbound routes in dst that point at nodes not in dst's details
+       (cross-boundary danglers); report them in dropped_cross_edges.
+    7. Flush both editors, write scs/sck back, set_components.
+
+    Returns:
+        {
+            "moved":               <node uuid>,
+            "dropped_cross_edges": [(branch, target_uuid), ...],
+            "unwired_inbound":     [(src_uuid, branch), ...],
+        }
+
+    Raises:
+        ValueError      if to_component is not found, or src == dst
+        FlowEditError   if the node ref is unresolvable or ambiguous
+    """
+    comps = get_components(bundle)
+
+    # --- Step 1: resolve source component ---
+    explicit_from = params.get("from_component")
+    if explicit_from is not None:
+        src_comp = comps[int(explicit_from)]
+        fe_src = FlowEditor(src_comp)
+        uuid = fe_src.resolve(params["node"])
+    else:
+        # Scan all components for the one that resolves the node ref.
+        fe_src = None
+        uuid = None
+        src_comp = None
+        for comp in comps:
+            fe_candidate = FlowEditor(comp)
+            try:
+                resolved = fe_candidate.resolve(params["node"])
+            except (FlowEditError, KeyError, ValueError):
+                continue
+            fe_src = fe_candidate
+            uuid = resolved
+            src_comp = comp
+            break
+        if fe_src is None or uuid is None:
+            ref = params["node"]
+            raise FlowEditError(f"move-node: could not find node {ref!r} in any component")
+
+    # --- Step 2: resolve dest component by name; reject same-component ---
+    to_name: str = params["to_component"]
+    dst_comp = next(
+        (c for c in comps if c.get("name") == to_name and c.get("componentUuid")),
+        None,
+    )
+    if dst_comp is None:
+        raise ValueError(
+            f"move-node: to_component {to_name!r} not found in BizSpeechComponent"
+        )
+    if src_comp.get("componentUuid") == dst_comp.get("componentUuid"):
+        raise ValueError(
+            "move-node: source and destination component are the same"
+        )
+    fe_dst = FlowEditor(dst_comp)
+
+    # --- Step 3: capture inbound/outbound before extraction ---
+    # Inbound edges (in src) targeting the node — extract_node unwires these.
+    unwired_inbound: list[tuple[str, str]] = [
+        (src_uuid, branch) for (src_uuid, branch, _t) in fe_src.in_edges(uuid)
+    ]
+
+    # --- Step 4: decode export-level SCS/SCK, then extract ---
+    scs: list[dict] = codec.decode(bundle.data.get("SentenceCutSpeech", "[]"))
+    sck: list[dict] = codec.decode(bundle.data.get("SentenceCutKnowledge", "[]"))
+
+    payload = fe_src.extract_node(uuid, scs, sck)
+
+    # --- Step 5: insert into dest (rewriting componentUuid on SCS/SCK rows) ---
+    fe_dst.insert_node(payload, scs, sck)
+
+    # --- Step 6: drop cross-boundary outbound edges in dst ---
+    # After insert, fe_dst.routes[uuid] may have routes to nodes not in fe_dst.details.
+    dropped_cross_edges: list[tuple[str, str]] = []
+    node_routes_in_dst = fe_dst.routes.get(uuid, {})
+    # Build inverse port-id → branch-name map for the moved node in dst.
+    # _ports reads from fe_dst.details (node was just inserted there).
+    ports_inv = {pid: branch for branch, pid in fe_dst._ports(uuid).items()}  # noqa: SLF001
+    for port_id, edge in list(node_routes_in_dst.items()):
+        target_uuid = (edge.get("target") or {}).get("uuid")
+        if target_uuid and target_uuid not in fe_dst.details:
+            branch = ports_inv.get(port_id, port_id)
+            dropped_cross_edges.append((branch, target_uuid))
+            del node_routes_in_dst[port_id]
+    # Rebuild inbound in dst after potential route removal.
+    fe_dst._rebuild_inbound()  # noqa: SLF001
+
+    # --- Step 7: write back ---
+    bundle.data["SentenceCutSpeech"] = codec.encode(scs)
+    bundle.data["SentenceCutKnowledge"] = codec.encode(sck)
+    fe_src.flush()
+    fe_dst.flush()
+    set_components(bundle, comps)
+
+    return {
+        "moved": uuid,
+        "dropped_cross_edges": dropped_cross_edges,
+        "unwired_inbound": unwired_inbound,
+    }
 
 
 def rename_node(bundle: InputBundle, params: dict, minter) -> None:  # noqa: ARG001

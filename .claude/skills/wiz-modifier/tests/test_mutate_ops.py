@@ -466,3 +466,171 @@ def test_rename_node_neither_raises(tmp_path):
             "component": 0,
             "node": {"uuid": talk_uuid},
         }, MINTER)
+
+
+# ---------------------------------------------------------------------------
+# Task 7: move-node tests (cross-component re-parent)
+# ---------------------------------------------------------------------------
+
+
+def _build_multi(tmp_path: Path) -> dict:
+    """Compile manifest_multi_canvas.yaml → parsed export dict."""
+    return _build(tmp_path, "manifest_multi_canvas.yaml")
+
+
+def test_move_node_leaves_src_enters_dst(tmp_path):
+    """move-node: node uuid GONE from source component details, PRESENT in dest."""
+    doc = _build_multi(tmp_path)
+    bundle = _bundle(doc)
+
+    comps = get_components(bundle)
+    assert len(comps) >= 2, "Expected at least 2 components from manifest_multi_canvas"
+
+    # Use the first (non-entry) talk node of comp 0, which has an outbound edge
+    # to the second talk node (which stays in comp 0). This gives us a
+    # cross-boundary outbound edge to check.
+    fe0 = FlowEditor(comps[0])
+    # Find the node in comp 0 that has outbound edges (i.e. greet-root node)
+    node_to_move = next(
+        u for u in fe0.details if fe0.out_edges(u)
+    )
+
+    dst_name = comps[1]["name"]
+
+    result = mutate.move_node(bundle, {
+        "node": {"uuid": node_to_move},
+        "to_component": dst_name,
+    }, MINTER)
+
+    assert result["moved"] == node_to_move
+
+    # Re-parse from bundle
+    comps_after = get_components(bundle)
+    details_a = _uw(comps_after[0]["details"])
+    details_b = _uw(comps_after[1]["details"])
+
+    assert node_to_move not in details_a, "Moved node must be removed from source comp"
+    assert node_to_move in details_b, "Moved node must be present in dest comp"
+
+
+def test_move_node_inbound_unwired(tmp_path):
+    """move-node: an A-internal edge that targeted the moved node is cleared;
+    it is reported in unwired_inbound."""
+    doc = _build_multi(tmp_path)
+    bundle = _bundle(doc)
+
+    comps = get_components(bundle)
+    fe0 = FlowEditor(comps[0])
+
+    # greet-pitch node is the TARGET of greet-root's Unclassified edge.
+    # Move greet-pitch → comp 1 and check that the edge from greet-root is cleared.
+    node_to_move = next(
+        u for u in fe0.details if not fe0.out_edges(u)
+    )
+
+    # Find which node points to it (should be greet-root)
+    inbound_before = fe0.in_edges(node_to_move)
+    assert inbound_before, "Expected at least one inbound edge to greet-pitch before move"
+
+    dst_name = comps[1]["name"]
+    result = mutate.move_node(bundle, {
+        "node": {"uuid": node_to_move},
+        "to_component": dst_name,
+    }, MINTER)
+
+    # unwired_inbound should report the cleared inbound edge(s)
+    assert len(result["unwired_inbound"]) >= 1, (
+        "Expected at least one entry in unwired_inbound"
+    )
+
+    # Verify the route is actually gone from comp 0
+    comps_after = get_components(bundle)
+    routes0 = _uw(comps_after[0]["routes"])
+    for port_map in routes0.values():
+        if not isinstance(port_map, dict):
+            continue
+        for edge in port_map.values():
+            tgt = (edge.get("target") or {}).get("uuid")
+            assert tgt != node_to_move, (
+                "No route in comp 0 should still target the moved node"
+            )
+
+
+def test_move_node_cross_outbound_dropped(tmp_path):
+    """move-node: outbound edge from moved node to a node staying in src is dropped
+    and reported in dropped_cross_edges."""
+    doc = _build_multi(tmp_path)
+    bundle = _bundle(doc)
+
+    comps = get_components(bundle)
+    fe0 = FlowEditor(comps[0])
+
+    # Move the node that HAS an outbound edge (greet-root → greet-pitch).
+    # After moving greet-root to comp 1, its edge to greet-pitch (staying in comp 0)
+    # is cross-boundary and must be dropped + reported.
+    node_to_move = next(u for u in fe0.details if fe0.out_edges(u))
+    out_edges_before = fe0.out_edges(node_to_move)
+    assert out_edges_before, "Expected outbound edges on greet-root"
+    # All targets stay in comp 0 (since we're moving the node to comp 1)
+    staying_in_src = {tgt for _, tgt in out_edges_before}
+
+    dst_name = comps[1]["name"]
+    result = mutate.move_node(bundle, {
+        "node": {"uuid": node_to_move},
+        "to_component": dst_name,
+    }, MINTER)
+
+    dropped = result["dropped_cross_edges"]
+    assert dropped, "Expected at least one dropped cross-boundary edge"
+
+    dropped_targets = {tgt for _, tgt in dropped}
+    # All reported dropped targets must have been in src comp
+    assert dropped_targets.issubset(staying_in_src), (
+        "Dropped edges should be the ones to nodes that stayed in src"
+    )
+
+    # The moved node in comp 1 must NOT have any routes pointing to src nodes
+    comps_after = get_components(bundle)
+    fe1_after = FlowEditor(comps_after[1])
+    routes_of_moved = fe1_after.routes.get(node_to_move, {})
+    details_b = comps_after[1]["details"]  # raw, but we compare uuids
+    details_b_parsed = _uw(details_b)
+    for edge in routes_of_moved.values():
+        tgt = (edge.get("target") or {}).get("uuid")
+        if tgt:
+            assert tgt in details_b_parsed, (
+                "Moved node routes in dest must only target nodes in dest"
+            )
+
+
+def test_move_node_unknown_to_component_raises(tmp_path):
+    """move-node: to_component not found raises ValueError."""
+    doc = _build_multi(tmp_path)
+    bundle = _bundle(doc)
+
+    comps = get_components(bundle)
+    fe0 = FlowEditor(comps[0])
+    some_node = next(iter(fe0.details))
+
+    with pytest.raises(ValueError, match="NoSuchCanvas|not found"):
+        mutate.move_node(bundle, {
+            "node": {"uuid": some_node},
+            "to_component": "NoSuchCanvas",
+        }, MINTER)
+
+
+def test_move_node_same_component_raises(tmp_path):
+    """move-node: src == dst raises ValueError with a clear message."""
+    doc = _build_multi(tmp_path)
+    bundle = _bundle(doc)
+
+    comps = get_components(bundle)
+    fe0 = FlowEditor(comps[0])
+    some_node = next(iter(fe0.details))
+    src_name = comps[0]["name"]  # same as src
+
+    with pytest.raises(ValueError, match="same"):
+        mutate.move_node(bundle, {
+            "node": {"uuid": some_node},
+            "to_component": src_name,
+        }, MINTER)
