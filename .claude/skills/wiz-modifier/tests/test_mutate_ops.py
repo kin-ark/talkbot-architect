@@ -1,0 +1,295 @@
+"""Tests for rewire-edge and delete-edge ops (Task 5 — FM-T5)."""
+
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+import pytest
+
+# wiz-builder's scripts dir is a sibling skill, not on pythonpath.
+sys.path.insert(
+    0, str(Path(__file__).resolve().parents[2] / "wiz-builder" / "scripts")
+)
+
+from wizbuilder.compile import compile_manifest  # noqa: E402
+from wizbuilder.ids import IdMinter  # noqa: E402
+from wizmodifier.floweditor import FlowEditError, FlowEditor  # noqa: E402
+from wizmodifier.io import InputBundle  # noqa: E402
+from wizmodifier.ops import mutate  # noqa: E402
+from wizmodifier.ops._bsc import get_components  # noqa: E402
+
+FIXTURES = Path(__file__).resolve().parents[2] / "wiz-builder" / "tests" / "fixtures"
+MINTER = IdMinter(manifest_hash="deadbeef")
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+
+def _build(tmp_path: Path, manifest_name: str) -> dict:
+    """Compile a builder fixture manifest → parsed export dict."""
+    out = tmp_path / "speech.json"
+    compile_manifest(FIXTURES / manifest_name, out)
+    return json.loads(out.read_text(encoding="utf-8"))
+
+
+def _bundle(doc: dict) -> InputBundle:
+    return InputBundle(data=dict(doc), speech_name="s.json")
+
+
+def _uw(v):
+    return json.loads(v) if isinstance(v, str) else v
+
+
+def _comp_fe(bundle: InputBundle, index: int = 0) -> tuple[dict, FlowEditor]:
+    """Return (comp_dict, FlowEditor) for component at index (re-decoded from bundle)."""
+    comp = get_components(bundle)[index]
+    return comp, FlowEditor(comp)
+
+
+# ---------------------------------------------------------------------------
+# Test 1: rewire-edge repoints a talk branch to another existing node
+# ---------------------------------------------------------------------------
+
+
+def test_rewire_edge_talk_branch(tmp_path):
+    """rewire-edge: repoint an existing talk branch to a different node via uuid ref."""
+    doc = _build(tmp_path, "manifest_conditional_assign.yaml")
+    bundle = _bundle(doc)
+
+    comp, fe = _comp_fe(bundle)
+    details = _uw(comp["details"])
+
+    # The manifest wires: greet(Positive) → check_status.
+    # Find the first talk node (type=1) that has a wired Positive branch.
+    talk_nodes = [u for u, n in details.items() if n.get("type") == 1]
+    assert talk_nodes, "Expected at least one talk node"
+
+    # Find the talk node with a Positive out-edge (the "greet" node)
+    greet_uuid = None
+    for uuid in talk_nodes:
+        branches = {b for b, _ in fe.out_edges(uuid)}
+        if "Positive" in branches:
+            greet_uuid = uuid
+            break
+    assert greet_uuid is not None, "Expected a talk node with a wired Positive branch"
+
+    # Find a different target: the exit node (type=2)
+    exit_uuid = next(u for u, n in details.items() if n.get("type") == 2)
+
+    # Record current Positive target (should be check_status, not exit)
+    original_target = dict(fe.out_edges(greet_uuid))["Positive"]
+    assert original_target != exit_uuid
+
+    # Rewire Positive → exit
+    mutate.rewire_edge(bundle, {
+        "component": 0,
+        "from": {"uuid": greet_uuid},
+        "branch": "Positive",
+        "to": {"uuid": exit_uuid},
+    }, MINTER)
+
+    # Re-decode from bundle (flush must have written back)
+    comp2, fe2 = _comp_fe(bundle)
+    edges_after = dict(fe2.out_edges(greet_uuid))
+    assert edges_after["Positive"] == exit_uuid
+
+
+# ---------------------------------------------------------------------------
+# Test 2: rewire-edge on a goto node with to_component
+# ---------------------------------------------------------------------------
+
+
+def test_rewire_edge_goto_to_component(tmp_path):
+    """rewire-edge with to_component on a goto node updates appoint_node_id."""
+    doc = _build(tmp_path, "manifest_goto.yaml")
+    bundle = _bundle(doc)
+
+    # Component 0 = "1. A Canvas"; component 1 = "2. B Canvas"
+    comps = get_components(bundle)
+    assert len(comps) >= 2
+
+    # Find the goto node (type=4) in comp 0 with a non-empty appoint_node_id
+    comp0 = comps[0]
+    details0 = _uw(comp0["details"])
+    goto_uuid = next(
+        u for u, n in details0.items()
+        if n.get("type") == 4 and (n.get("data") or {}).get("appoint_node_id")
+    )
+
+    target_comp = comps[1]
+    target_uuid = target_comp["componentUuid"]
+    target_name = target_comp["name"]
+
+    mutate.rewire_edge(bundle, {
+        "component": 0,
+        "from": {"uuid": goto_uuid},
+        "branch": "Default",
+        "to_component": target_name,
+    }, MINTER)
+
+    # Re-read and confirm appoint_node_id on the goto node
+    comp0_after = get_components(bundle)[0]
+    details_after = _uw(comp0_after["details"])
+    goto_node = details_after[goto_uuid]
+    assert goto_node["data"]["appoint_node_id"] == target_uuid
+    assert goto_node["data"]["specificComponentName"] == target_name
+
+
+def test_rewire_edge_goto_unknown_component_raises(tmp_path):
+    """rewire-edge: unknown to_component raises ValueError."""
+    doc = _build(tmp_path, "manifest_goto.yaml")
+    bundle = _bundle(doc)
+
+    comp0 = get_components(bundle)[0]
+    details0 = _uw(comp0["details"])
+    goto_uuid = next(
+        u for u, n in details0.items()
+        if n.get("type") == 4 and (n.get("data") or {}).get("appoint_node_id")
+    )
+
+    with pytest.raises(ValueError, match="NoSuchCanvas|not found"):
+        mutate.rewire_edge(bundle, {
+            "component": 0,
+            "from": {"uuid": goto_uuid},
+            "branch": "Default",
+            "to_component": "NoSuchCanvas",
+        }, MINTER)
+
+
+# ---------------------------------------------------------------------------
+# Test 3: rewire-edge unknown to node ref raises; ambiguous label raises
+# ---------------------------------------------------------------------------
+
+
+def test_rewire_edge_unknown_to_raises(tmp_path):
+    """rewire-edge: unknown to uuid raises FlowEditError."""
+    doc = _build(tmp_path, "manifest_conditional_assign.yaml")
+    bundle = _bundle(doc)
+
+    comp, fe = _comp_fe(bundle)
+    details = _uw(comp["details"])
+    talk_uuid = next(u for u, n in details.items() if n.get("type") == 1)
+
+    with pytest.raises((FlowEditError, ValueError)):
+        mutate.rewire_edge(bundle, {
+            "component": 0,
+            "from": {"uuid": talk_uuid},
+            "branch": "Positive",
+            "to": {"uuid": "00000000-0000-0000-0000-000000000000"},
+        }, MINTER)
+
+
+def test_rewire_edge_ambiguous_label_raises(tmp_path):
+    """rewire-edge: ambiguous from-label raises FlowEditError."""
+    doc = _build(tmp_path, "manifest_conditional_assign.yaml")
+    # Patch: give two talk nodes the same label to create ambiguity
+    comps = _uw(doc["BizSpeechComponent"])
+    details = _uw(comps[0]["details"])
+
+    # Find the two talk nodes (type=1) and give both the same unique label
+    talk_uuids = [u for u, n in details.items() if n.get("type") == 1]
+    assert len(talk_uuids) >= 2, "Need at least two talk nodes to test ambiguity"
+    for uuid in talk_uuids:
+        details[uuid]["data"]["name"] = "SameName"  # create collision
+
+    comps[0]["details"] = json.dumps(details)
+    doc["BizSpeechComponent"] = json.dumps(comps)
+    bundle = _bundle(doc)
+
+    with pytest.raises(FlowEditError, match="ambiguous"):
+        mutate.rewire_edge(bundle, {
+            "component": 0,
+            "from": {"label": "SameName"},  # ambiguous
+            "branch": "Positive",
+            "to": {"label": "SameName"},
+        }, MINTER)
+
+
+# ---------------------------------------------------------------------------
+# Test 4: delete-edge drops the route, out-port still exists
+# ---------------------------------------------------------------------------
+
+
+def test_delete_edge_drops_route(tmp_path):
+    """delete-edge: branch route is removed; out-port stays in canvas.ports."""
+    doc = _build(tmp_path, "manifest_conditional_assign.yaml")
+    bundle = _bundle(doc)
+
+    comp, fe = _comp_fe(bundle)
+    details = _uw(comp["details"])
+
+    # Find the first talk node with a wired Positive branch (the "greet" node)
+    greet_uuid = None
+    for uuid, node in details.items():
+        if node.get("type") == 1:
+            branches = {b for b, _ in fe.out_edges(uuid)}
+            if "Positive" in branches:
+                greet_uuid = uuid
+                break
+    assert greet_uuid is not None, "Expected a talk node with a wired Positive branch"
+
+    mutate.delete_edge(bundle, {
+        "component": 0,
+        "from": {"uuid": greet_uuid},
+        "branch": "Positive",
+    }, MINTER)
+
+    # Re-decode
+    comp2, fe2 = _comp_fe(bundle)
+    # Branch no longer in out_edges (no route)
+    edges_after = dict(fe2.out_edges(greet_uuid))
+    assert "Positive" not in edges_after
+
+    # But the port must still exist in canvas.ports.items
+    details2 = _uw(comp2["details"])
+    node2 = details2[greet_uuid]
+    port_names = {
+        it["name"]
+        for it in (node2.get("canvas") or {}).get("ports", {}).get("items", [])
+    }
+    assert "Positive" in port_names
+
+
+# ---------------------------------------------------------------------------
+# Test 5: delete-edge / rewire-edge unknown branch raises
+# ---------------------------------------------------------------------------
+
+
+def test_delete_edge_unknown_branch_raises(tmp_path):
+    """delete-edge: unknown branch on from-node raises FlowEditError."""
+    doc = _build(tmp_path, "manifest_conditional_assign.yaml")
+    bundle = _bundle(doc)
+
+    comp, _ = _comp_fe(bundle)
+    details = _uw(comp["details"])
+    talk_uuid = next(u for u, n in details.items() if n.get("type") == 1)
+
+    with pytest.raises((FlowEditError, ValueError)):
+        mutate.delete_edge(bundle, {
+            "component": 0,
+            "from": {"uuid": talk_uuid},
+            "branch": "NoSuchBranch",
+        }, MINTER)
+
+
+def test_rewire_edge_unknown_branch_raises(tmp_path):
+    """rewire-edge: unknown branch on from-node raises FlowEditError."""
+    doc = _build(tmp_path, "manifest_conditional_assign.yaml")
+    bundle = _bundle(doc)
+
+    comp, _ = _comp_fe(bundle)
+    details = _uw(comp["details"])
+    talk_uuid = next(u for u, n in details.items() if n.get("type") == 1)
+    exit_uuid = next(u for u, n in details.items() if n.get("type") == 2)
+
+    with pytest.raises((FlowEditError, ValueError)):
+        mutate.rewire_edge(bundle, {
+            "component": 0,
+            "from": {"uuid": talk_uuid},
+            "branch": "NoSuchBranch",
+            "to": {"uuid": exit_uuid},
+        }, MINTER)
