@@ -257,6 +257,77 @@ def move_node(bundle: InputBundle, params: dict, minter) -> dict:  # noqa: ARG00
     }
 
 
+def complete_component(bundle: InputBundle, params: dict, minter) -> dict:
+    """Auto-complete a component to the M4 completeness rules.
+
+    Ensures:
+    - The component has at least one Exit node (type 2).
+    - Every talk node (type 1) has an Unclassified out-port.
+    - Every unconnected out-branch is wired to the Exit node.
+
+    params:
+        component    — BSC index (int)
+        exit_target  — (optional) {uuid: <uuid>} or {label: <name>} — reuse an
+                       existing node as the exit target instead of creating one.
+
+    Returns:
+        {
+            "added_exit":        bool   — True if a new Exit node was minted,
+            "wired_branches":    int    — number of branches wired to the exit,
+            "added_unclassified": int   — number of Unclassified ports added,
+        }
+
+    Idempotent: running on an already-complete component returns all-zero counts.
+
+    Raises:
+        FlowEditError  if exit_target ref is unresolvable or ambiguous.
+    """
+    comps = get_components(bundle)
+    comp = require_component(comps, params["component"])
+    fe = FlowEditor(comp)
+
+    # --- Step 1: determine / create the exit node ---
+    added_exit = False
+    exit_target = params.get("exit_target")
+
+    if exit_target is not None:
+        # Caller supplied an explicit target node to use as the exit.
+        exit_uuid = fe.resolve(exit_target)
+    elif fe.has_exit():
+        # Reuse the existing exit node.
+        exit_uuid = next(u for u, n in fe.details.items() if n.get("type") == 2)
+    else:
+        # Mint a new Exit node and append its SCS row to the export.
+        exit_uuid, scs_row = fe.add_exit_node(minter)
+        added_exit = True
+        scs: list[dict] = codec.decode(bundle.data.get("SentenceCutSpeech", "[]"))
+        scs.append(scs_row)
+        bundle.data["SentenceCutSpeech"] = codec.encode(scs)
+
+    # --- Step 2: ensure every talk node has an Unclassified out-port ---
+    # Do this BEFORE calling unconnected_branches() so newly-added ports are included.
+    added_unclassified = 0
+    for uuid, node in fe.details.items():
+        if node.get("type") == 1 and fe.ensure_unclassified(uuid):
+            added_unclassified += 1
+
+    # --- Step 3: wire every unconnected branch to the exit node ---
+    wired = 0
+    for node_uuid, branch in fe.unconnected_branches():
+        fe.set_edge_target(node_uuid, branch, exit_uuid)
+        wired += 1
+
+    # --- Step 4: flush and persist ---
+    fe.flush()
+    set_components(bundle, comps)
+
+    return {
+        "added_exit": added_exit,
+        "wired_branches": wired,
+        "added_unclassified": added_unclassified,
+    }
+
+
 def rename_node(bundle: InputBundle, params: dict, minter) -> None:  # noqa: ARG001
     """Set a new label and/or prompt text on a node.
 

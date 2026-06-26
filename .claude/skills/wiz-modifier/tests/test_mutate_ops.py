@@ -680,3 +680,142 @@ def test_move_node_no_duplicate_scs_rows(tmp_path):
     assert all_rows_for_node[0]["componentUuid"] != src_comp_uuid, (
         "SCS row for moved node must NOT reference the src componentUuid"
     )
+
+
+# ---------------------------------------------------------------------------
+# Task 8: complete-component tests
+# ---------------------------------------------------------------------------
+
+
+def _make_incomplete(tmp_path: Path) -> tuple[dict, InputBundle]:
+    """Build a deliberately-incomplete fixture.
+
+    Starting from manifest_conditional_assign.yaml (which has 2 talk nodes, 1
+    conditional, 1 assign, 1 exit), we:
+      1. Delete the "Positive" out-edge from greet_unpaid (one branch unconnected).
+      2. Do NOT ensure an Unclassified port on any talk node yet — the builder
+         does NOT add Unclassified unless there's a wired Unclassified branch, so
+         this is already incomplete in that regard.
+
+    After these deletions the component is missing:
+      - At least one wired branch (greet_unpaid.Positive dangling)
+    """
+    doc = _build(tmp_path, "manifest_conditional_assign.yaml")
+    bundle = _bundle(doc)
+
+    # Find greet_unpaid: the talk node with no outbound edges after setup
+    # (assign_amt.Default → done and greet_unpaid.Positive → done are the two talk→exit edges)
+    comp, fe = _comp_fe(bundle)
+    details = _uw(comp["details"])
+
+    # Find a talk node that has a wired "Positive" branch — delete it
+    victim = None
+    for uuid, node in details.items():
+        if node.get("type") == 1:
+            branches = {b for b, _ in fe.out_edges(uuid)}
+            if "Positive" in branches:
+                victim = uuid
+                break
+    assert victim is not None, "Setup: expected a talk node with wired Positive branch"
+
+    mutate.delete_edge(bundle, {
+        "component": 0,
+        "from": {"uuid": victim},
+        "branch": "Positive",
+    }, MINTER)
+
+    return doc, bundle
+
+
+def test_complete_component_wires_all_branches(tmp_path):
+    """complete-component: after the op, has_exit() is True and unconnected_branches() is empty."""
+    _doc, bundle = _make_incomplete(tmp_path)
+
+    result = mutate.complete_component(bundle, {"component": 0}, MINTER)
+
+    # Result is a dict with the three keys
+    assert "added_exit" in result
+    assert "wired_branches" in result
+    assert "added_unclassified" in result
+
+    comp, fe = _comp_fe(bundle)
+
+    # Exit must exist
+    assert fe.has_exit(), "Expected has_exit() True after complete-component"
+
+    # All branches must be wired
+    unconnected = fe.unconnected_branches()
+    assert unconnected == [], (
+        f"Expected no unconnected branches after complete-component, got {unconnected}"
+    )
+
+    # Every talk node must have an Unclassified port
+    details = _uw(comp["details"])
+    for uuid, node in details.items():
+        if node.get("type") == 1:
+            ports = fe._ports(uuid)
+            assert "Unclassified" in ports, (
+                f"Talk node {uuid!r} missing Unclassified port after complete-component"
+            )
+
+
+def test_complete_component_new_exit_scs_row(tmp_path):
+    """complete-component: when it adds a new exit node, the export SentenceCutSpeech
+    gains exactly one '(exit)' row whose id equals the new exit uuid."""
+    doc = _build(tmp_path, "manifest_conditional_assign.yaml")
+    bundle = _bundle(doc)
+
+    # Delete the existing exit node so the component has NO exit node at all.
+    comp, fe = _comp_fe(bundle)
+    details = _uw(comp["details"])
+    exit_uuid = next(u for u, n in details.items() if n.get("type") == 2)
+
+    mutate.delete_node(bundle, {
+        "component": 0,
+        "node": {"uuid": exit_uuid},
+    }, MINTER)
+
+    # Confirm no exit in the component before calling complete-component
+    comp2, fe2 = _comp_fe(bundle)
+    assert not fe2.has_exit(), "Setup: expected no exit node after delete-node"
+
+    result = mutate.complete_component(bundle, {"component": 0}, MINTER)
+
+    assert result["added_exit"] is True, "Expected added_exit=True when no exit existed"
+
+    # The export's SentenceCutSpeech gained at least one (exit) row
+    scs_after = json.loads(bundle.data.get("SentenceCutSpeech", "[]"))
+    # Find the new exit node uuid from the component
+    comp3, fe3 = _comp_fe(bundle)
+    assert fe3.has_exit(), "Expected has_exit() after complete-component"
+    new_exit_uuid = next(u for u, n in fe3.details.items() if n.get("type") == 2)
+
+    # There must be an SCS row whose id == new exit uuid
+    matching_rows = [r for r in scs_after if r.get("id") == new_exit_uuid]
+    assert len(matching_rows) == 1, (
+        f"Expected exactly 1 SCS row for new exit node {new_exit_uuid!r}, "
+        f"got {len(matching_rows)}"
+    )
+    assert matching_rows[0].get("sentenceText") == "(exit)", (
+        "Expected the new exit SCS row to have sentenceText='(exit)'"
+    )
+
+
+def test_complete_component_idempotent(tmp_path):
+    """complete-component: running it a second time returns all-zero counts."""
+    _doc, bundle = _make_incomplete(tmp_path)
+
+    # First run — makes changes
+    mutate.complete_component(bundle, {"component": 0}, MINTER)
+
+    # Second run — must be a no-op
+    result2 = mutate.complete_component(bundle, {"component": 0}, MINTER)
+
+    assert result2["added_exit"] is False, "Second run must not add a new exit"
+    assert result2["wired_branches"] == 0, "Second run must wire zero branches"
+    assert result2["added_unclassified"] == 0, "Second run must add zero Unclassified ports"
+
+    # Component still valid
+    comp, fe = _comp_fe(bundle)
+    assert fe.has_exit()
+    assert fe.unconnected_branches() == []
