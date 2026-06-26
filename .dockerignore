@@ -1,0 +1,22 @@
+# Keep the build context small + reproducible. Keep .claude/skills; drop everything else heavy.
+**/node_modules
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/.ruff_cache
+dashboard/frontend/dist
+dashboard/backend/static
+dashboard/backend/.sessions
+dashboard/backend/.session
+.git
+.github
+docs
+talkbot
+*.zip
+*.json.unpacked
+speech*.json
+.claude/worktrees
+.claude/skills/**/tests
+.claude/skills/**/__pycache__
+.env
+.env.deploy

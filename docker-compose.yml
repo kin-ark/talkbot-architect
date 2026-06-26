@@ -1,0 +1,14 @@
+# Single-instance deploy. One container, one worker, one attached volume.
+# Do NOT add replicas/scale — the backend holds a process-global active Session.
+services:
+  dashboard:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env.deploy            # DASHBOARD_PASSWORD=... (+ optional DASHBOARD_USER, LLM_PROVIDER, LLM_MODEL)
+    volumes:
+      - sessions:/app/dashboard/backend/.sessions
+    restart: unless-stopped
+volumes:
+  sessions:
