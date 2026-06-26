@@ -3,12 +3,18 @@ from __future__ import annotations
 
 import copy
 import threading
+import time
 
 from llm.base import Message
 
 
 class Session:
     def __init__(self) -> None:
+        self.id: str | None = None
+        self.name: str = "New session"
+        self.created: float = time.time()
+        self.updated: float = time.time()
+        self.usage: dict = {"input_tokens": 0, "output_tokens": 0, "turns": 0, "model": None}
         self._stack: list[dict] = []
         self._idx: int = -1
         self.transcript: list[Message] = []
@@ -32,6 +38,8 @@ class Session:
         speech_name: str = "speech_export.json",
         wavs: dict[str, bytes] | None = None,
     ) -> None:
+        # Keep id/name (slot identity); refresh updated timestamp
+        self.updated = time.time()
         self._stack = [copy.deepcopy(data)]
         self._idx = 0
         self.transcript = []
@@ -42,6 +50,8 @@ class Session:
 
     def reset(self) -> None:
         """Drop the loaded dialogue + transcript so the app returns to landing."""
+        # Keep id/name (same slot being emptied); zero usage
+        self.usage = {"input_tokens": 0, "output_tokens": 0, "turns": 0, "model": None}
         self._stack = []
         self._idx = -1
         self.transcript = []
