@@ -13,6 +13,7 @@ export function useSession() {
   const [sessions, setSessions] = useState([]);
   const [activeSessionId, setActiveSessionId] = useState(null);
   const [usage, setUsage] = useState(null);
+  const [botName, setBotName] = useState(null);
 
   const queue = useRef([]);
   const draining = useRef(false);
@@ -29,6 +30,7 @@ export function useSession() {
     setCanUndo(!!r.can_undo);
     setCanRedo(!!r.can_redo);
     setUsage(r.usage || null);
+    setBotName(r.bot_name ?? null);
     if (r.id !== undefined) setActiveSessionId(r.id);
   }, []);
 
@@ -53,6 +55,7 @@ export function useSession() {
         setCanUndo(!!r.can_undo);
         setCanRedo(!!r.can_redo);
         setUsage(r.usage || null);
+        setBotName(r.bot_name ?? null);
         if (r.id !== undefined) setActiveSessionId(r.id);
       }
       if (!cancelled) refreshSessions();
@@ -198,6 +201,13 @@ export function useSession() {
   const undo = useCallback(async () => refresh(await api.undo()), []);
   const redo = useCallback(async () => refresh(await api.redo()), []);
 
+  const renameBot = useCallback(async (name) => {
+    const r = await api.setSpeechName(name);
+    refresh(r);
+    setBotName(r.bot_name ?? null);
+    refreshSessions();
+  }, [refreshSessions]);
+
   // Clear backend + local state so the app returns to the upload/landing screen.
   // Without clearing the backend, a later reload would rehydrate the old session.
   const reset = useCallback(async () => {
@@ -210,7 +220,7 @@ export function useSession() {
   }, [refreshSessions]);
 
   return { summary, findings, transcript, proposal, canUndo, canRedo, loading, sending,
-           sessions, activeSessionId, usage,
+           sessions, activeSessionId, usage, botName,
            upload, startBlank, send, retry, apply, reject, undo, redo, cancel, reset,
-           refreshSessions, newSession, switchSession, renameSession, deleteSession };
+           refreshSessions, newSession, switchSession, renameSession, deleteSession, renameBot };
 }
