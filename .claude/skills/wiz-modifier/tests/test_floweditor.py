@@ -215,7 +215,8 @@ def test_set_edge_target_updates_route(tmp_path):
     assert any(p["uuid"] == exit_u for p in fe.inbound)
 
 
-def test_set_edge_target_conditional_updates_branch_to(tmp_path):
+def test_set_edge_target_conditional_rewires_via_routes(tmp_path):
+    """Conditional rewire is routes-only: no phantom data["branches"] injected."""
     doc = _build(tmp_path, "manifest_conditional_assign.yaml")
     comp = _uw(doc["BizSpeechComponent"])[0]
     fe = FlowEditor(comp)
@@ -223,12 +224,27 @@ def test_set_edge_target_conditional_updates_branch_to(tmp_path):
     cond = next(u for u, n in det.items() if n["type"] == 7)
     exit_u = next(u for u, n in det.items() if n["type"] == 2)
     branch = fe.out_edges(cond)[0][0]
+
+    # Snapshot condition rules before the rewire
+    data_before = fe.details[cond]["data"]
+    branch_rules_before = data_before.get("branch")
+    branch_list_before = data_before.get("branchList")
+
     fe.set_edge_target(cond, branch, exit_u)
+
+    # The route IS the binding — out_edges must reflect the new target
     assert dict(fe.out_edges(cond))[branch] == exit_u
-    # config branches[].to mirrors the new target
-    data = fe.details[cond]["data"]
-    tos = [b.get("to") for b in (data.get("branches") or data.get("branchList") or [])]
-    assert exit_u in tos
+
+    # No phantom field: data["branches"] must NOT exist in the emitted node data
+    data_after = fe.details[cond]["data"]
+    assert "branches" not in data_after, (
+        "data['branches'] is dead data — WIZ does not read it; "
+        "conditional branch→target lives only in routes"
+    )
+
+    # Condition rules (data["branch"]) and port name list (data["branchList"]) are untouched
+    assert data_after.get("branch") == branch_rules_before
+    assert data_after.get("branchList") == branch_list_before
 
 
 def test_remove_edge_clears_route_keeps_port(tmp_path):

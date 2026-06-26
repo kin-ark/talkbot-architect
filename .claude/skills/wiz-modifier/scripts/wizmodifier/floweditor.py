@@ -255,8 +255,6 @@ class FlowEditor:
         """Set (or overwrite) the route for `branch` on `from_uuid` to point at `to_uuid`.
 
         Raises FlowEditError if `branch` is not a declared port on `from_uuid`.
-        For conditional nodes (type 7) also updates the matching branch row's ``to``
-        in ``data["branches"]`` (creating the list if absent).
         Calls _rebuild_inbound() after every change.
         """
         ports = self._ports(from_uuid)
@@ -281,18 +279,12 @@ class FlowEditor:
         }
         self.routes.setdefault(from_uuid, {})[port_id] = edge
 
-        # For conditional nodes, mirror the target in data["branches"][].to
-        if self.details.get(from_uuid, {}).get("type") == 7:
-            self._set_conditional_branch_to(from_uuid, branch, to_uuid)
-
         self._rebuild_inbound()
 
     def remove_edge(self, from_uuid: str, branch: str) -> None:
         """Remove the route for `branch` on `from_uuid`.
 
         The out-port itself is left intact in canvas.ports.items.
-        For conditional nodes (type 7) also clears the matching branch row's ``to``
-        to ``""`` (the row itself is preserved).
         Calls _rebuild_inbound() after the change.
 
         Raises FlowEditError if `branch` is not a declared port on `from_uuid`.
@@ -305,9 +297,6 @@ class FlowEditor:
             )
 
         self.routes.get(from_uuid, {}).pop(port_id, None)
-
-        if self.details.get(from_uuid, {}).get("type") == 7:
-            self._set_conditional_branch_to(from_uuid, branch, "")
 
         self._rebuild_inbound()
 
@@ -329,27 +318,3 @@ class FlowEditor:
                     return dict(pd)
         return None
 
-    def _set_conditional_branch_to(
-        self, node_uuid: str, branch: str, to_uuid: str
-    ) -> None:
-        """Update (or create) the ``data["branches"]`` entry for *branch* on a type-7 node.
-
-        ``data["branches"]`` is a FlowEditor-maintained list of ``{name, to}`` dicts
-        that tracks per-branch targets on conditional nodes.  It is distinct from the
-        builder's ``data["branch"]`` list (condition rules) and ``data["branchList"]``
-        (string list of port names).
-
-        If an entry for *branch* already exists it is updated in-place; otherwise a new
-        one is appended.  When *to_uuid* is ``""`` the ``to`` field is set to ``""``
-        (the row is NOT removed, so ports remain discoverable).
-        """
-        data = self.details[node_uuid]["data"]
-        branches: list[dict] = data.get("branches") or []
-        for row in branches:
-            if row.get("name") == branch:
-                row["to"] = to_uuid
-                data["branches"] = branches
-                return
-        # Not found — append a new row.
-        branches.append({"name": branch, "to": to_uuid})
-        data["branches"] = branches
