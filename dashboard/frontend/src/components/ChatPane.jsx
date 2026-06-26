@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
@@ -100,13 +100,14 @@ export default function ChatPane({ transcript, proposal, sending, onSend, onRetr
   };
   const mentionMatch = input.startsWith('/') ? null : input.match(/@(\S*)$/);  // trailing @token; suppressed inside a slash command
   const mentionQuery = mentionMatch ? mentionMatch[1].toLowerCase() : null;
+  const entries = useMemo(() => mentionEntries(summary), [summary]);
   const mentionMatches = mentionQuery !== null
-    ? mentionEntries(summary).filter((e) => e.label.toLowerCase().includes(mentionQuery)).slice(0, 8)
+    ? entries.filter((e) => e.label.toLowerCase().includes(mentionQuery)).slice(0, 8)
     : [];
   const pickMention = (e) => {
     setInput(input.replace(/@(\S*)$/, `@${e.label} (${e.uuid}) `));
   };
-  const mdComponents = {
+  const mdComponents = useMemo(() => ({
     a: ({ href, children }) => {
       if (typeof href === 'string' && href.startsWith('#node:')) {
         const uuid = href.slice(6);            // '#node:'.length === 6
@@ -135,7 +136,7 @@ export default function ChatPane({ transcript, proposal, sending, onSend, onRetr
       return <code className="font-mono text-[0.85em] bg-surface-muted text-text rounded px-1 py-0.5">{children}</code>;
     },
     pre: ({ children }) => <CodeBlock>{children}</CodeBlock>,
-  };
+  }), [onSelectNode]);
   return (
     <div className="flex flex-col h-full" data-testid="chat-pane">
       <div ref={scrollRef} onScroll={onScroll} className="flex-1 overflow-y-auto p-4 space-y-3">
@@ -166,7 +167,7 @@ export default function ChatPane({ transcript, proposal, sending, onSend, onRetr
             )}
           </div>
         ))}
-        {transcript.length > 0 && transcript[transcript.length - 1].role === 'agent' && (
+        {!sending && transcript.length > 0 && transcript[transcript.length - 1].role === 'agent' && (
           <div className="text-left">
             <button type="button" onClick={onRetry}
               className="text-xs text-text-tertiary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded">↻ Regenerate</button>
@@ -180,11 +181,11 @@ export default function ChatPane({ transcript, proposal, sending, onSend, onRetr
         {proposal && <DiffCard proposal={proposal} onApply={onApply} onReject={onReject} onPreview={onPreview} />}
       </div>
       <div className="px-4 pb-1 flex gap-2" data-testid="chat-undo-row">
-          <button type="button" onClick={onUndo} disabled={!canUndo}
-            className="text-xs text-text-secondary disabled:opacity-40 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded">↶ Undo</button>
-          <button type="button" onClick={onRedo} disabled={!canRedo}
-            className="text-xs text-text-secondary disabled:opacity-40 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded">↷ Redo</button>
-        </div>
+        <button type="button" onClick={onUndo} disabled={!canUndo}
+          className="text-xs text-text-secondary disabled:opacity-40 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded">↶ Undo</button>
+        <button type="button" onClick={onRedo} disabled={!canRedo}
+          className="text-xs text-text-secondary disabled:opacity-40 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded">↷ Redo</button>
+      </div>
       <div className="px-4 pb-2"><ChipRow onSend={onSend} /></div>
       <form onSubmit={submit} data-testid="chat-form" className="p-4 border-t border-border bg-surface">
         <div className="relative flex gap-2">

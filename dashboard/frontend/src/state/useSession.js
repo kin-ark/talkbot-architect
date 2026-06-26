@@ -109,7 +109,8 @@ export function useSession() {
   const deleteSession = useCallback(async (id) => {
     const r = await api.deleteSession(id);
     if (id === activeSessionId && r?.active) {
-      await switchSession(r.active);
+      await switchSession(r.active);   // already calls refreshSessions; no need to repeat
+      return;
     } else if (id === activeSessionId && !r?.active) {
       // deleted the only session → blank landing
       setSummary(null); setFindings([]); setTranscript([]); setProposal(null);

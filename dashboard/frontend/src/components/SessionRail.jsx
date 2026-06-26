@@ -118,7 +118,7 @@ export default function SessionRail({ sessions = [], activeSessionId, onNew, onS
         </button>
         <button type="button" data-testid="rail-theme"
           aria-label="Toggle theme" title="Toggle light/dark"
-          onClick={onToggleTheme}
+          onClick={() => onToggleTheme?.()}
           className={`p-1.5 rounded-md text-text-secondary hover:bg-surface-muted hover:text-text ${collapsed ? '' : 'ml-auto'}`}>
           {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
         </button>

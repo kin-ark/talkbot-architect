@@ -386,14 +386,14 @@ def list_sessions_route():
 def create_session_slot():
     STORE.new()
     _S().load({"BizSpeechComponent": []})
-    return {"id": _S().id, **_active_payload()}
+    return _active_payload()   # already carries the new session's id
 
 
 @app.post("/sessions/{sid}/activate")
 def activate_session(sid: str):
     if not STORE.activate(sid):
         raise HTTPException(status_code=404, detail="session not found")
-    return {"id": sid, **_active_payload()}
+    return _active_payload()   # id == sid, carried by the payload
 
 
 @app.patch("/sessions/{sid}")
