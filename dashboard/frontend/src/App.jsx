@@ -6,6 +6,9 @@ import FlowCanvas from './components/FlowCanvas';
 import RightDock from './components/RightDock';
 import UploadZone from './components/UploadZone';
 import SettingsPopover from './components/SettingsPopover';
+import PageOverlay from './components/PageOverlay';
+import StatisticsPage from './components/StatisticsPage';
+import { useTheme } from './theme/useTheme';
 import { exportUrl } from './api';
 
 export default function App() {
@@ -22,6 +25,8 @@ export default function App() {
     try { localStorage.setItem('tb-rail-collapsed', next ? '1' : '0'); } catch { /* ignore */ }
     return next;
   });
+  const [leftPage, setLeftPage] = useState(null);
+  const { theme, toggle: toggleTheme } = useTheme();
   const onExport = () => window.open(exportUrl(), '_blank');
   const onNew = () => {
     setSelectedNode(null); setDockTab('chat'); setFocusComponentId(null); setPreview(null);
@@ -51,6 +56,16 @@ export default function App() {
     if (owner) setFocusComponentId(owner);
   };
 
+  const PAGE_TITLES = { stats: 'Statistics', docs: 'Documentation', settings: 'Settings' };
+  const pageOverlay = leftPage && (
+    <PageOverlay title={PAGE_TITLES[leftPage]} onClose={() => setLeftPage(null)}>
+      {leftPage === 'stats' && (
+        <StatisticsPage usage={s.usage} sessions={s.sessions} activeSessionId={s.activeSessionId} />
+      )}
+      {/* docs + settings pages added in later tasks */}
+    </PageOverlay>
+  );
+
   if (!s.summary) {
     const uploadCard = (
       <div className="flex-1 flex items-center justify-center -mt-12">
@@ -78,9 +93,11 @@ export default function App() {
             <SessionRail sessions={s.sessions} activeSessionId={s.activeSessionId}
               usage={s.usage} collapsed={railCollapsed} onToggleCollapse={toggleRail}
               onNew={s.newSession} onSwitch={s.switchSession}
-              onRename={s.renameSession} onDelete={s.deleteSession} />
+              onRename={s.renameSession} onDelete={s.deleteSession}
+              onOpenPage={setLeftPage} theme={theme} onToggleTheme={toggleTheme} />
             {uploadCard}
           </div>
+          {pageOverlay}
         </div>
       );
     }
@@ -91,6 +108,7 @@ export default function App() {
           <SettingsPopover />
         </div>
         {uploadCard}
+        {pageOverlay}
       </div>
     );
   }
@@ -118,7 +136,8 @@ export default function App() {
         <SessionRail sessions={s.sessions} activeSessionId={s.activeSessionId}
           usage={s.usage} collapsed={railCollapsed} onToggleCollapse={toggleRail}
           onNew={s.newSession} onSwitch={s.switchSession}
-          onRename={s.renameSession} onDelete={s.deleteSession} />
+          onRename={s.renameSession} onDelete={s.deleteSession}
+          onOpenPage={setLeftPage} theme={theme} onToggleTheme={toggleTheme} />
         <div className="flex-1 min-w-0 flex flex-col">
           {preview && (
             <div className="flex items-center gap-2 px-3 py-1.5 text-xs bg-warning-bg text-warning border-b border-warning">
@@ -137,6 +156,7 @@ export default function App() {
           selectedNode={selectedNode} onSelectNode={selectNode} chat={chat} onPreview={onPreview} onAskFix={onAskFix}
           onSelectComponent={setFocusComponentId} focusComponentId={focusComponentId} />
       </div>
+      {pageOverlay}
     </div>
   );
 }
