@@ -1,0 +1,12 @@
+/* highlight.js token colors for rehype-highlight output. Dark code surface in
+   both themes; .dark only nudges a couple of hues. */
+.hljs { color: var(--c-code-fg); background: transparent; }
+.hljs-comment, .hljs-quote { color: #8b95a7; font-style: italic; }
+.hljs-keyword, .hljs-selector-tag, .hljs-literal, .hljs-meta { color: #c792ea; }
+.hljs-string, .hljs-attr, .hljs-template-tag, .hljs-symbol { color: #c3e88d; }
+.hljs-number, .hljs-built_in, .hljs-type, .hljs-class .hljs-title { color: #f78c6c; }
+.hljs-title, .hljs-function .hljs-title, .hljs-section, .hljs-name { color: #82aaff; }
+.hljs-attribute, .hljs-variable, .hljs-tag { color: #ffcb6b; }
+.hljs-deletion { color: #ff5370; }
+.hljs-addition { color: #c3e88d; }
+.dark .hljs-comment, .dark .hljs-quote { color: #6b7280; }

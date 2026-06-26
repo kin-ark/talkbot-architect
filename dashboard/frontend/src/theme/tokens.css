@@ -25,6 +25,8 @@
   --c-edge-xcomp: #5B63E0;
   --c-kb-bg: #FEFCE8;
   --c-kb-border: #FBBF24;
+  --c-code-bg: #1E222A;
+  --c-code-fg: #E5E7EB;
 }
 
 .dark {
@@ -54,6 +56,8 @@
   --c-edge-xcomp: #8189F0;
   --c-kb-bg: #2A2510;
   --c-kb-border: #B8860B;
+  --c-code-bg: #0F1115;
+  --c-code-fg: #E5E7EB;
 }
 
 html, body, #root { height: 100%; }

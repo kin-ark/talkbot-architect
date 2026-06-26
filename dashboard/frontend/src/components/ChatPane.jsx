@@ -1,8 +1,36 @@
 import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import rehypeHighlight from 'rehype-highlight';
 import ToolChip from './ToolChip';
 import DiffCard from './DiffCard';
+
+function extractText(node) {
+  if (typeof node === 'string') return node;
+  if (Array.isArray(node)) return node.map(extractText).join('');
+  if (node?.props?.children) return extractText(node.props.children);
+  return '';
+}
+
+function CodeBlock({ children }) {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    const text = extractText(children);
+    navigator.clipboard?.writeText(text).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    }).catch(() => {});
+  };
+  return (
+    <div className="relative my-2 rounded-lg overflow-hidden" style={{ background: 'var(--c-code-bg)', color: 'var(--c-code-fg)' }}>
+      <button type="button" onClick={copy} data-testid="copy-code"
+        className="absolute top-1.5 right-1.5 text-xs px-2 py-0.5 rounded bg-black/30 text-white/80 hover:bg-black/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+        {copied ? 'Copied' : 'Copy'}
+      </button>
+      <pre className="overflow-x-auto p-3 text-[0.8rem] leading-relaxed m-0">{children}</pre>
+    </div>
+  );
+}
 
 function mentionEntries(summary) {
   const out = [];
@@ -95,6 +123,7 @@ export default function ChatPane({ transcript, proposal, sending, onSend, onRetr
       }
       return <code className="font-mono text-[0.85em] bg-surface-muted text-text rounded px-1 py-0.5">{children}</code>;
     },
+    pre: ({ children }) => <CodeBlock>{children}</CodeBlock>,
   };
   return (
     <div className="flex flex-col h-full" data-testid="chat-pane">
@@ -107,7 +136,7 @@ export default function ChatPane({ transcript, proposal, sending, onSend, onRetr
             <div className={`inline-block max-w-[80%] p-3 rounded-2xl text-sm ${bubbleClass(m.role)} ${m.role === 'user' || m.role === 'error' ? 'whitespace-pre-wrap' : 'prose prose-sm dark:prose-invert max-w-none prose-pre:p-0 prose-pre:bg-transparent'}`}>
               {m.role === 'user' || m.role === 'error'
                 ? m.text
-                : <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>{m.text || ''}</ReactMarkdown>}
+                : <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]} components={mdComponents}>{m.text || ''}</ReactMarkdown>}
             </div>
             {m.role === 'error' && (
               <div className="mt-1">
