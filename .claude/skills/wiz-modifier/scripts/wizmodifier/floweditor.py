@@ -473,7 +473,7 @@ class FlowEditor:
                 row["appoint_node_id"] = comp_uuid
                 row["specificComponentName"] = comp_name
 
-    def add_exit_node(self) -> str:
+    def add_exit_node(self, minter=None) -> tuple[str, dict]:
         """Mint and insert a new type-2 Exit node into this component.
 
         The uuid is deterministic::
@@ -487,7 +487,22 @@ class FlowEditor:
         Inserts into ``self.details``, sets ``self.routes[uuid] = {}`` (terminal),
         and appends the ``topFloorDetails`` row (``node_obj["data"]``).
 
-        Returns the minted uuid string.
+        Parameters
+        ----------
+        minter:
+            An ``IdMinter`` instance used to generate a stable ``sentenceCutId``
+            on the returned SCS row.  When ``None`` the row's ``sentenceCutId``
+            is derived from an empty manifest-hash seed (still a non-zero int, but
+            not collision-safe across components).  Pass a real minter in production
+            callers so the row is recording-complete on deploy.
+
+        Returns
+        -------
+        tuple[str, dict]
+            ``(uuid, scs_row)`` — the minted node uuid and the
+            ``SentenceCutSpeech`` row (``sentenceText="(exit)"``).  The caller is
+            responsible for appending ``scs_row`` to the export-level
+            ``SentenceCutSpeech`` list; ``FlowEditor`` does not own that list.
         """
         import sys as _sys
         from pathlib import Path as _Path
@@ -508,8 +523,8 @@ class FlowEditor:
                 f"{comp_uuid}:exit:{len(self.details)}",
             )
         )
-        spec = NodeSpec(id="exit", prompt="", type="exit")
-        node_obj, _scs = _build_exit_node(
+        spec = NodeSpec(id="exit", prompt="(exit)", type="exit")
+        node_obj, scs_row = _build_exit_node(
             spec,
             canvas_index=0,
             comp_uuid=comp_uuid,
@@ -523,7 +538,7 @@ class FlowEditor:
             },
             kb_ids=[],
             node_language="3",
-            minter=None,
+            minter=minter,
             sort_index=1,
             port_uuids={},
             node_uuid=node_uuid,
@@ -533,7 +548,7 @@ class FlowEditor:
         self.details[node_uuid] = node_obj
         self.routes[node_uuid] = {}
         self.tfd.append(node_obj["data"])
-        return node_uuid
+        return node_uuid, scs_row
 
     def ensure_unclassified(self, uuid: str) -> bool:
         """Ensure the node at ``uuid`` has an ``Unclassified`` out-port.

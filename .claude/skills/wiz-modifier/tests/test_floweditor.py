@@ -303,13 +303,28 @@ def test_remove_node_cleans_all_tables(tmp_path):
 
 
 def test_set_label_changes_data_name(tmp_path):
-    """set_label(uuid, text) must update details[uuid]['data']['name']."""
+    """set_label(uuid, text) must update details[uuid]['data']['name'].
+
+    For terminal nodes (exit/goto) that carry a tfd row, the row's 'name'
+    field must also be updated (set_label writes both).
+    """
     doc = _build(tmp_path, "manifest_conditional_assign.yaml")
     comp = _uw(doc["BizSpeechComponent"])[0]
     fe = FlowEditor(comp)
     talk = next(u for u, n in fe.details.items() if n["type"] == 1)
     fe.set_label(talk, "My New Label")
     assert fe.details[talk]["data"]["name"] == "My New Label"
+
+    # tfd-row branch: label a terminal node (type 2 exit) and verify the tfd row is updated.
+    exit_u = next((u for u, n in fe.details.items() if n["type"] == 2), None)
+    if exit_u is not None:
+        tfd_row = next((r for r in fe.tfd if r.get("id") == exit_u), None)
+        if tfd_row is not None and "name" in tfd_row:
+            fe.set_label(exit_u, "Renamed Exit")
+            assert fe.details[exit_u]["data"]["name"] == "Renamed Exit"
+            assert tfd_row["name"] == "Renamed Exit", (
+                "set_label must update the tfd row's 'name' field for terminal nodes"
+            )
 
 
 def test_set_prompt_updates_node_and_scs(tmp_path):
@@ -351,12 +366,15 @@ def test_set_goto_target_updates_node_and_tfd(tmp_path):
 
 
 def test_add_exit_node_inserts_type2_with_tfd(tmp_path):
-    """add_exit_node() mints a type-2 node with routes[uuid]={} and a tfd row."""
+    """add_exit_node(minter) mints a type-2 node, returns (uuid, scs_row), tfd row present."""
+    from wizbuilder.ids import IdMinter  # type: ignore[import]
+
     doc = _build(tmp_path, "manifest_conditional_assign.yaml")
     comp = _uw(doc["BizSpeechComponent"])[0]
     fe = FlowEditor(comp)
     before_count = len(fe.details)
-    uuid = fe.add_exit_node()
+    minter = IdMinter(manifest_hash="testhash")
+    uuid, scs_row = fe.add_exit_node(minter=minter)
     # inserted into details
     assert uuid in fe.details
     assert len(fe.details) == before_count + 1
@@ -367,6 +385,12 @@ def test_add_exit_node_inserts_type2_with_tfd(tmp_path):
     tfd_row = next((r for r in fe.tfd if r.get("id") == uuid), None)
     assert tfd_row is not None, "no tfd row for exit node"
     assert tfd_row["type"] == 2
+    # scs_row must carry the exit text and correct link fields
+    assert scs_row["sentenceText"] == "(exit)"
+    assert scs_row["id"] == uuid
+    assert scs_row["componentUuid"] == comp["componentUuid"]
+    # real minter produces a non-empty sentenceCutId
+    assert scs_row["sentenceCutId"], "sentenceCutId must be non-empty when a real minter is used"
 
 
 def test_ensure_unclassified_adds_port_when_missing(tmp_path):
