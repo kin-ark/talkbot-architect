@@ -23,7 +23,9 @@ class PasswordGateMiddleware(BaseHTTPMiddleware):
             try:
                 decoded = base64.b64decode(header[6:]).decode("utf-8")
                 got_user, _, got_pw = decoded.partition(":")
-                if hmac.compare_digest(got_user, user) and hmac.compare_digest(got_pw, password):
+                if hmac.compare_digest(got_user.encode(), user.encode()) and hmac.compare_digest(
+                    got_pw.encode(), password.encode()
+                ):
                     return await call_next(request)
             except Exception:
                 pass

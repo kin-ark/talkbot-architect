@@ -48,8 +48,9 @@ def test_spa_mount_absent_in_dev_is_noop(monkeypatch):
     import main, auth  # noqa
     importlib.reload(auth)
     importlib.reload(main)
-    # If static/ doesn't exist, no 'spa' mount is registered; app still works
+    # The 'spa' mount is registered IFF static/ exists. Assert the guard holds
+    # in BOTH directions (no tautology) — and that /health still works regardless.
+    static_dir = os.path.join(os.path.dirname(main.__file__), "static")
     route_names = [r.name for r in main.app.routes if hasattr(r, "name")]
-    assert "spa" not in route_names or os.path.isdir(
-        os.path.join(os.path.dirname(main.__file__), "static")
-    )
+    assert ("spa" in route_names) == os.path.isdir(static_dir)
+    assert TestClient(main.app).get("/health").status_code == 200
