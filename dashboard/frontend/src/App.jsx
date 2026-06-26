@@ -8,6 +8,7 @@ import UploadZone from './components/UploadZone';
 import SettingsPopover from './components/SettingsPopover';
 import PageOverlay from './components/PageOverlay';
 import StatisticsPage from './components/StatisticsPage';
+import DocumentationPage from './components/DocumentationPage';
 import { useTheme } from './theme/useTheme';
 import { exportUrl } from './api';
 
@@ -62,7 +63,7 @@ export default function App() {
       {leftPage === 'stats' && (
         <StatisticsPage usage={s.usage} sessions={s.sessions} activeSessionId={s.activeSessionId} />
       )}
-      {/* docs + settings pages added in later tasks */}
+      {leftPage === 'docs' && <DocumentationPage />}
     </PageOverlay>
   );
 
