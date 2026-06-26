@@ -38,7 +38,8 @@ def test_specs_have_all_tools():
     expected = {"validate", "summarize", "read_node", "get_facts",
                 "apply_mods", "set_path", "delete_path", "build", "scaffold_bot", "get_schema",
                 "add_component", "add_node", "add_intent", "add_variable", "connect_components",
-        "add_kb"}
+        "add_kb",
+        "rewire_edge", "delete_edge", "delete_node", "rename_node", "move_node", "complete_component"}
     assert names == expected
 
 
