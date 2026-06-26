@@ -23,6 +23,7 @@ CHECKER_CLI = PROJECT_ROOT / ".claude" / "skills" / "wiz-checker" / "scripts" / 
     "manifest_with_customs.yaml",
     "manifest_with_kb.yaml",
     "manifest_with_multiround_kb.yaml",
+    "manifest_goto_kb.yaml",
 ])
 def test_build_produces_checker_clean_output(manifest_name, tmp_path):
     out = tmp_path / "speech.json"

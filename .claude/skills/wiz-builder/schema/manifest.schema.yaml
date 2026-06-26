@@ -87,7 +87,7 @@ properties:
                 type: string
               type:
                 type: string
-                enum: [talk, exit, transfer, goto, conditional, assign, nested, exit_port]
+                enum: [talk, exit, transfer, goto, goto_kb, conditional, assign, nested, exit_port]
               config:
                 type: object
                 additionalProperties: true

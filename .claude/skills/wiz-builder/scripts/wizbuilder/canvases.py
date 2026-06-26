@@ -97,6 +97,14 @@ def apply_canvases(
             if kid_str not in kb_ids:
                 kb_ids.append(kid_str)
 
+    # Build kb_name_to_id for goto_kb target resolution.
+    # Merges baseline BizKnowledgeInfo (kdTitle→knowledgeId) with manifest-KB ids
+    # (kb_id_by_name: name→id pre-minted by compile.py).  goto_kb nodes in any
+    # canvas can resolve their config.target (a KB name) to the knowledgeId int.
+    kb_name_to_id: dict[str, int] = {k["kdTitle"]: k["knowledgeId"] for k in biz_kb}
+    if kb_id_by_name:
+        kb_name_to_id.update(kb_id_by_name)
+
     # Resolve node_language from manifest.language
     node_language = _LANGUAGE_MAP.get(manifest.language)
     if node_language is None:
@@ -210,6 +218,7 @@ def apply_canvases(
             nested_exit_map=nested_exit_map,
             parent_uuid=canvas_uuid_by_name.get(parent_of_child.get(canvas.name, ""), "0"),
             mr_target_names=mr_target_names,
+            kb_name_to_id=kb_name_to_id,
         )
         comp_by_ci[ci] = comp
         scs_by_ci[ci] = scs_rows
@@ -244,6 +253,7 @@ def apply_canvases(
             nested_exit_map=nested_exit_map,
             parent_uuid="0",
             mr_target_names=mr_target_names,
+            kb_name_to_id=kb_name_to_id,
         )
         comp_by_ci[ci] = comp
         scs_by_ci[ci] = scs_rows
@@ -281,6 +291,7 @@ def _build_component(
     nested_exit_map: dict[str, dict[str, str]] | None = None,
     parent_uuid: str = "0",
     mr_target_names: set[str] | None = None,
+    kb_name_to_id: dict[str, int] | None = None,
 ) -> tuple[dict[str, Any], list[dict]]:
     """Build a single BizSpeechComponent entry using render_component_nodes.
 
@@ -294,6 +305,17 @@ def _build_component(
             target_name = cfg.get("target", "")
             cfg["target_uuid"] = canvas_uuid_by_name.get(target_name, "")
             cfg["target_name"] = target_name
+        elif n.type == "goto_kb":
+            # Resolve config.target (a KB name) to the knowledgeId int.
+            target_kb_name = cfg.get("target", "")
+            target_kid = (kb_name_to_id or {}).get(target_kb_name)
+            if target_kid is None:
+                raise ValueError(
+                    f"goto_kb node {n.id!r} in canvas {canvas.name!r}: "
+                    f"config.target {target_kb_name!r} matches no KB "
+                    f"(known: {sorted((kb_name_to_id or {}).keys())})"
+                )
+            cfg["target_kid"] = target_kid
         elif n.type == "nested" and canvas_uuid_by_name:
             # Resolve config.target (a child canvas name) to the pre-minted componentUuid.
             target_name = cfg.get("target", "")

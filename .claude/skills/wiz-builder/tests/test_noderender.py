@@ -469,6 +469,122 @@ def test_goto_canvas_component_props_type():
 
 
 # ---------------------------------------------------------------------------
+# M2-T1: goto_kb (type 8) node builder
+# ---------------------------------------------------------------------------
+
+_TARGET_KID = 999001  # resolved knowledgeId (int → emitted as str to match real exports)
+
+
+def _render_goto_kb(**kw):
+    """Helper: render Talk(entry) -Unclassified-> goto_kb node pair.
+
+    The goto_kb NodeSpec carries a pre-resolved target_kid in config:
+      config["target_kid"]: the knowledgeId of the target KB (resolved by canvases.py).
+    """
+    goto_kb_spec = NodeSpec(
+        id="gkb",
+        prompt="",
+        type="goto_kb",
+        config={"target_kid": _TARGET_KID},
+    )
+    return render_component_nodes(
+        [NodeSpec(id="entry", prompt="Hello"), goto_kb_spec],
+        [EdgeSpec(src="entry", branch="Unclassified", dst="gkb")],
+        canvas_index=0,
+        comp_uuid="comp-uuid-0",
+        speech_id=8309,
+        branch_intent_ids=_BRANCH_IDS,
+        kb_ids=["kb1"],
+        node_language="3",
+        minter=IdMinter("h"),
+        **kw,
+    )
+
+
+def test_goto_kb_node_type_8_envelope():
+    """goto_kb node has envelope type=8 and data.type=8."""
+    r = _render_goto_kb()
+    kb_uuid = next(k for k, v in r.details.items() if v["type"] == 8)
+    node = r.details[kb_uuid]
+    assert node["type"] == 8
+    assert node["data"]["type"] == 8
+    assert node["data"]["is_transfer"] == 0
+
+
+def test_goto_kb_appoint_knowledge_id_is_string():
+    """data.appoint_knowledge_id is emitted as a string (matches real export: '183805')."""
+    r = _render_goto_kb()
+    kb_uuid = next(k for k, v in r.details.items() if v["type"] == 8)
+    val = r.details[kb_uuid]["data"]["appoint_knowledge_id"]
+    assert val == str(_TARGET_KID)
+    assert isinstance(val, str)
+
+
+def test_goto_kb_appoint_node_id_empty():
+    """data.appoint_node_id == '' (no component target)."""
+    r = _render_goto_kb()
+    kb_uuid = next(k for k, v in r.details.items() if v["type"] == 8)
+    assert r.details[kb_uuid]["data"]["appoint_node_id"] == ""
+
+
+def test_goto_kb_specific_component_name_empty():
+    """data.specificComponentName == '' (no component target)."""
+    r = _render_goto_kb()
+    kb_uuid = next(k for k, v in r.details.items() if v["type"] == 8)
+    assert r.details[kb_uuid]["data"]["specificComponentName"] == ""
+
+
+def test_goto_kb_multiple_appoint_id_empty():
+    """data.multiple_appoint_id == ''."""
+    r = _render_goto_kb()
+    kb_uuid = next(k for k, v in r.details.items() if v["type"] == 8)
+    assert r.details[kb_uuid]["data"]["multiple_appoint_id"] == ""
+
+
+def test_goto_kb_is_terminal_no_ports():
+    """goto_kb node canvas has NO 'ports' key (terminal)."""
+    r = _render_goto_kb()
+    kb_uuid = next(k for k, v in r.details.items() if v["type"] == 8)
+    assert "ports" not in r.details[kb_uuid]["canvas"]
+
+
+def test_goto_kb_routes_empty():
+    """goto_kb node has routes[uuid]={} — no outgoing edges."""
+    r = _render_goto_kb()
+    kb_uuid = next(k for k, v in r.details.items() if v["type"] == 8)
+    assert r.routes[kb_uuid] == {}
+
+
+def test_goto_kb_not_in_inbound_ports():
+    """goto_kb node must NOT appear in inbound_ports."""
+    r = _render_goto_kb()
+    kb_uuid = next(k for k, v in r.details.items() if v["type"] == 8)
+    inbound_uuids = [p["uuid"] for p in r.inbound_ports]
+    assert kb_uuid not in inbound_uuids
+
+
+def test_goto_kb_top_floor_details_row():
+    """goto_kb emits one topFloorDetails row (type 8) with appoint_knowledge_id set."""
+    r = _render_goto_kb()
+    kb_uuid = next(k for k, v in r.details.items() if v["type"] == 8)
+    assert len(r.top_floor_details) == 1
+    row = r.top_floor_details[0]
+    assert row["id"] == kb_uuid
+    assert row["type"] == 8
+    assert row["appoint_knowledge_id"] == str(_TARGET_KID)
+    assert row["appoint_node_id"] == ""
+
+
+def test_goto_kb_no_scs_row():
+    """Talk→goto_kb renders only 1 SCS row (for Talk); goto_kb has NO SentenceCutSpeech row."""
+    r = _render_goto_kb()
+    assert len(r.sentence_cut_speech) == 1
+    kb_uuid = next(k for k, v in r.details.items() if v["type"] == 8)
+    scs_ids = [row["id"] for row in r.sentence_cut_speech]
+    assert kb_uuid not in scs_ids
+
+
+# ---------------------------------------------------------------------------
 # Task 4 (noderender): conditional (type 7) + assign (type 10) builders
 # ---------------------------------------------------------------------------
 
