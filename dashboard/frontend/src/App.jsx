@@ -5,10 +5,11 @@ import SessionRail from './components/SessionRail';
 import FlowCanvas from './components/FlowCanvas';
 import RightDock from './components/RightDock';
 import UploadZone from './components/UploadZone';
-import SettingsPopover from './components/SettingsPopover';
 import PageOverlay from './components/PageOverlay';
 import StatisticsPage from './components/StatisticsPage';
 import DocumentationPage from './components/DocumentationPage';
+import SettingsPage from './components/SettingsPage';
+import { Settings as SettingsIcon, Sun, Moon } from 'lucide-react';
 import { useTheme } from './theme/useTheme';
 import { exportUrl } from './api';
 
@@ -64,7 +65,21 @@ export default function App() {
         <StatisticsPage usage={s.usage} sessions={s.sessions} activeSessionId={s.activeSessionId} />
       )}
       {leftPage === 'docs' && <DocumentationPage />}
+      {leftPage === 'settings' && <SettingsPage />}
     </PageOverlay>
+  );
+
+  const landingControls = (
+    <div className="flex items-center gap-1">
+      <button type="button" aria-label="Toggle theme" title="Toggle light/dark" onClick={toggleTheme}
+        className="p-2 rounded-md text-text-secondary hover:bg-surface-muted hover:text-text">
+        {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+      </button>
+      <button type="button" aria-label="Settings" title="Settings" onClick={() => setLeftPage('settings')}
+        className="p-2 rounded-md text-text-secondary hover:bg-surface-muted hover:text-text">
+        <SettingsIcon size={16} />
+      </button>
+    </div>
   );
 
   if (!s.summary) {
@@ -79,7 +94,7 @@ export default function App() {
             Start from scratch — describe a new bot
           </button>
           {s.loading && <p className="text-center mt-4 text-text-tertiary">Analyzing…</p>}
-          <p className="text-center mt-6 text-xs text-text-tertiary">Set your AI provider/key via ⚙ (top-right) or a backend <code>.env</code>.</p>
+          <p className="text-center mt-6 text-xs text-text-tertiary">Set your AI provider/key via Settings (top-right) or a backend <code>.env</code>.</p>
         </div>
       </div>
     );
@@ -88,7 +103,7 @@ export default function App() {
       return (
         <div className="h-screen flex flex-col bg-canvas">
           <div className="flex justify-end p-3">
-            <SettingsPopover />
+            {landingControls}
           </div>
           <div className="flex-1 flex overflow-hidden">
             <SessionRail sessions={s.sessions} activeSessionId={s.activeSessionId}
@@ -106,7 +121,7 @@ export default function App() {
     return (
       <div className="h-screen flex flex-col bg-canvas">
         <div className="flex justify-end p-3">
-          <SettingsPopover />
+          {landingControls}
         </div>
         {uploadCard}
         {pageOverlay}
