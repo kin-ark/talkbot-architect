@@ -634,3 +634,49 @@ def test_move_node_same_component_raises(tmp_path):
             "node": {"uuid": some_node},
             "to_component": src_name,
         }, MINTER)
+
+
+def test_move_node_no_duplicate_scs_rows(tmp_path):
+    """move-node: moving a talk node A→B leaves exactly ONE SCS row for the node,
+    belonging to the DEST component — no duplicate audio rows from the src."""
+    doc = _build_multi(tmp_path)
+    bundle = _bundle(doc)
+
+    comps = get_components(bundle)
+    fe0 = FlowEditor(comps[0])
+
+    # Use greet-root (has outbound edge) — a talk node, so it has an SCS row.
+    node_to_move = next(u for u in fe0.details if fe0.out_edges(u))
+
+    src_comp_uuid = comps[0]["componentUuid"]
+    dst_name = comps[1]["name"]
+    dst_comp_uuid = comps[1]["componentUuid"]
+
+    # Confirm there is at least one SCS row for this node in the src before the move.
+    scs_before = json.loads(doc.get("SentenceCutSpeech", "[]"))
+    scs_src_before = [
+        r for r in scs_before
+        if r.get("componentUuid") == src_comp_uuid and r.get("id") == node_to_move
+    ]
+    assert scs_src_before, "Expected at least one SCS row in src before move"
+
+    mutate.move_node(bundle, {
+        "node": {"uuid": node_to_move},
+        "to_component": dst_name,
+    }, MINTER)
+
+    scs_after = json.loads(bundle.data.get("SentenceCutSpeech", "[]"))
+
+    # Exactly ONE row must exist for the moved node across the whole export.
+    all_rows_for_node = [r for r in scs_after if r.get("id") == node_to_move]
+    assert len(all_rows_for_node) == 1, (
+        f"Expected exactly 1 SCS row for moved node, got {len(all_rows_for_node)}"
+    )
+
+    # That single row must belong to the DEST component, not the src.
+    assert all_rows_for_node[0]["componentUuid"] == dst_comp_uuid, (
+        "SCS row for moved node must reference the dest componentUuid"
+    )
+    assert all_rows_for_node[0]["componentUuid"] != src_comp_uuid, (
+        "SCS row for moved node must NOT reference the src componentUuid"
+    )

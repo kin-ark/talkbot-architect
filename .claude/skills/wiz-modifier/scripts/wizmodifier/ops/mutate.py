@@ -210,6 +210,20 @@ def move_node(bundle: InputBundle, params: dict, minter) -> dict:  # noqa: ARG00
 
     payload = fe_src.extract_node(uuid, scs, sck)
 
+    # --- Step 4b: remove src-component rows for the moved node ---
+    # extract_node deep-copies the rows into the payload but leaves the originals
+    # in scs/sck.  Prune them now so insert_node's rewritten copies are the only
+    # ones that remain (prevents duplicate audio rows in the final export).
+    src_comp_uuid = src_comp.get("componentUuid", "")
+    scs[:] = [
+        r for r in scs
+        if not (r.get("componentUuid") == src_comp_uuid and r.get("id") == uuid)
+    ]
+    sck[:] = [
+        r for r in sck
+        if not (r.get("componentUuid") == src_comp_uuid and r.get("id") == uuid)
+    ]
+
     # --- Step 5: insert into dest (rewriting componentUuid on SCS/SCK rows) ---
     fe_dst.insert_node(payload, scs, sck)
 
@@ -219,7 +233,7 @@ def move_node(bundle: InputBundle, params: dict, minter) -> dict:  # noqa: ARG00
     node_routes_in_dst = fe_dst.routes.get(uuid, {})
     # Build inverse port-id → branch-name map for the moved node in dst.
     # _ports reads from fe_dst.details (node was just inserted there).
-    ports_inv = {pid: branch for branch, pid in fe_dst._ports(uuid).items()}  # noqa: SLF001
+    ports_inv = {pid: branch for branch, pid in fe_dst._ports(uuid).items()}
     for port_id, edge in list(node_routes_in_dst.items()):
         target_uuid = (edge.get("target") or {}).get("uuid")
         if target_uuid and target_uuid not in fe_dst.details:
@@ -227,7 +241,7 @@ def move_node(bundle: InputBundle, params: dict, minter) -> dict:  # noqa: ARG00
             dropped_cross_edges.append((branch, target_uuid))
             del node_routes_in_dst[port_id]
     # Rebuild inbound in dst after potential route removal.
-    fe_dst._rebuild_inbound()  # noqa: SLF001
+    fe_dst._rebuild_inbound()
 
     # --- Step 7: write back ---
     bundle.data["SentenceCutSpeech"] = codec.encode(scs)
