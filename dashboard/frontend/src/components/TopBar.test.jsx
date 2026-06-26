@@ -34,4 +34,15 @@ describe('TopBar', () => {
     fireEvent.keyDown(input, { key: 'Enter' });
     expect(onRenameBot).toHaveBeenCalledWith('New Name');
   });
+
+  it('pressing Escape in the name input cancels edit without committing', () => {
+    const onRenameBot = vi.fn();
+    render(<TopBar {...base} botName="Old" onRenameBot={onRenameBot} />);
+    fireEvent.click(screen.getByTestId('bot-name'));
+    const input = screen.getByTestId('bot-name-input');
+    fireEvent.change(input, { target: { value: 'Changed' } });
+    fireEvent.keyDown(input, { key: 'Escape' });
+    fireEvent.blur(input);
+    expect(onRenameBot).not.toHaveBeenCalled();
+  });
 });

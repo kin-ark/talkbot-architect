@@ -21,7 +21,7 @@ export default function TopBar({ canUndo, canRedo, onUndo, onRedo, onExport, onN
         {editing ? (
           <input autoFocus data-testid="bot-name-input" value={draft}
             onChange={(e) => setDraft(e.target.value)} onBlur={commit}
-            onKeyDown={(e) => { if (e.key === 'Enter') commit(); else if (e.key === 'Escape') setEditing(false); }}
+            onKeyDown={(e) => { if (e.key === 'Enter') commit(); else if (e.key === 'Escape') { setDraft(display); setEditing(false); } }}
             className="min-w-0 bg-surface border border-border rounded px-1.5 py-0.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary" />
         ) : (
           <button type="button" data-testid="bot-name" onClick={start}
