@@ -302,6 +302,92 @@ class FlowEditor:
         self._rebuild_inbound()
 
     # ------------------------------------------------------------------
+    # Node removal
+    # ------------------------------------------------------------------
+
+    def remove_node(
+        self, uuid: str, all_scs: list[dict], all_sck: list[dict]
+    ) -> dict:
+        """Remove a node and cascade-clean all related tables.
+
+        Steps:
+        1. Unwire all inbound edges pointing at ``uuid`` (via remove_edge).
+        2. Delete the node from details/routes/tfd/inbound.
+        3. Remove SCS and SCK rows for this node from the shared lists (in-place).
+        4. Rebuild inbound bookkeeping.
+        5. Compute orphaned nodes: nodes in details (excluding entry node) that
+           now have zero inbound edges.
+
+        Returns:
+            {
+                "unwired_inbound": [(src_uuid, branch), ...],
+                "orphaned": [uuid, ...],
+                "removed_rows": <int>,   # total SCS + SCK rows deleted
+            }
+
+        The entry node is identified as the node whose ``inboundPorts`` entry has
+        ``is_default: True`` (set by the builder for the component's start node).
+        If no such node exists (e.g. an empty component), orphan detection is
+        conservative: all zero-inbound nodes are reported.
+        Does NOT cascade-delete orphans.
+        """
+        # Step 1: unwire all inbound edges targeting uuid
+        unwired: list[tuple[str, str]] = [
+            (src, branch) for (src, branch, _t) in self.in_edges(uuid)
+        ]
+        for src, branch in unwired:
+            self.remove_edge(src, branch)
+
+        # Identify entry node uuid (is_default=True in inboundPorts) BEFORE mutating inbound
+        entry_uuid: str | None = next(
+            (entry["uuid"] for entry in self.inbound if entry.get("is_default")),
+            None,
+        )
+
+        # Step 2: delete node from core tables
+        self.details.pop(uuid, None)
+        self.routes.pop(uuid, None)
+        self.tfd[:] = [row for row in self.tfd if row.get("id") != uuid]
+        self.inbound[:] = [entry for entry in self.inbound if entry.get("uuid") != uuid]
+
+        # Step 3: remove SCS rows from the shared list (in-place)
+        comp_uuid = self.comp.get("componentUuid", "")
+        removed_count = 0
+
+        scs_to_remove = {
+            id(row)
+            for row in all_scs
+            if row.get("componentUuid") == comp_uuid and row.get("id") == uuid
+        }
+        removed_count += len(scs_to_remove)
+        all_scs[:] = [row for row in all_scs if id(row) not in scs_to_remove]
+
+        # same id-link for SCK rows
+        sck_to_remove = {
+            id(row)
+            for row in all_sck
+            if row.get("componentUuid") == comp_uuid and row.get("id") == uuid
+        }
+        removed_count += len(sck_to_remove)
+        all_sck[:] = [row for row in all_sck if id(row) not in sck_to_remove]
+
+        # Step 4: rebuild inbound bookkeeping after direct table edits
+        self._rebuild_inbound()
+
+        # Step 5: compute orphaned nodes (zero inbound, not the entry node)
+        orphaned: list[str] = [
+            u
+            for u in self.details
+            if u != entry_uuid and not self.in_edges(u)
+        ]
+
+        return {
+            "unwired_inbound": unwired,
+            "orphaned": orphaned,
+            "removed_rows": removed_count,
+        }
+
+    # ------------------------------------------------------------------
     # Private helpers for edge mutation
     # ------------------------------------------------------------------
 

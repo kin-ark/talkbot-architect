@@ -265,3 +265,33 @@ def test_set_edge_unknown_branch_raises(tmp_path):
     import pytest
     with pytest.raises(FlowEditError, match="branch|port"):
         fe.set_edge_target(talk, "NoSuchBranch", talk)
+
+
+# ---------------------------------------------------------------------------
+# Task 3 — FM-T3: remove_node cascade cleanup
+# ---------------------------------------------------------------------------
+
+
+def test_remove_node_cleans_all_tables(tmp_path):
+    doc = _build(tmp_path, "manifest_conditional_assign.yaml")
+    comp = _uw(doc["BizSpeechComponent"])[0]
+    scs = _uw(doc["SentenceCutSpeech"])
+    sck = _uw(doc.get("SentenceCutKnowledge", "[]"))
+    fe = FlowEditor(comp)
+    det = _uw(comp["details"])
+    # pick a middle talk node that has an inbound edge
+    target = next(u for u, n in det.items() if n["type"] == 1 and fe.in_edges(u))
+    scs_count_before = len([r for r in scs if r.get("id") == target])
+    summary = fe.remove_node(target, scs, sck)
+    assert target not in fe.details
+    assert target not in fe.routes
+    assert not any(p["uuid"] == target for p in fe.inbound)
+    assert not any(r.get("id") == target for r in fe.tfd)
+    # inbound edges that pointed at it are reported as unwired
+    assert summary["unwired_inbound"]
+    # and those source routes no longer target it
+    for src, _branch in summary["unwired_inbound"]:
+        assert target not in [t for _b, t in fe.out_edges(src)]
+    # SCS rows for the deleted node were removed from the shared list
+    assert len([r for r in scs if r.get("id") == target]) == 0
+    assert summary["removed_rows"] == scs_count_before
