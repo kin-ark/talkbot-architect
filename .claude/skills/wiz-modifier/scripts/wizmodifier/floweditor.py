@@ -9,6 +9,11 @@ Each SentenceCutSpeech row carries an ``"id"`` field that equals the node uuid i
 ``details`` (i.e. ``scs_row["id"] == node_uuid``).  ``scs_rows_for(uuid, all_scs)``
 filters ``all_scs`` by ``componentUuid == comp["componentUuid"]`` and then by
 ``row["id"] == uuid``.  This rule is locked by ``test_scs_link_is_locked``.
+
+Content/goto/cross-component primitives (Task 4)
+-------------------------------------------------
+``set_label``, ``set_prompt``, ``set_goto_target``, ``add_exit_node``,
+``ensure_unclassified``, ``extract_node``, ``insert_node``.
 """
 
 from __future__ import annotations
@@ -386,6 +391,314 @@ class FlowEditor:
             "orphaned": orphaned,
             "removed_rows": removed_count,
         }
+
+    # ------------------------------------------------------------------
+    # Content mutation primitives (Task 4)
+    # ------------------------------------------------------------------
+
+    def set_label(self, uuid: str, text: str) -> None:
+        """Set the human-readable label of a node.
+
+        Updates ``details[uuid]["data"]["name"]``.  Also updates the ``name`` field
+        on any ``tfd`` row whose ``id`` matches the node uuid (exit/goto nodes
+        carry their data dict as a tfd row — the two dicts are independent copies
+        at this point, so both must be written).
+        """
+        node_obj = self.details.get(uuid)
+        if node_obj is None:
+            raise FlowEditError(f"no node with uuid {uuid!r}")
+        node_obj.setdefault("data", {})["name"] = text
+        for row in self.tfd:
+            if row.get("id") == uuid and "name" in row:
+                row["name"] = text
+
+    def set_prompt(self, uuid: str, text: str, all_scs: list[dict]) -> None:
+        """Update the spoken-text prompt of a talk or exit node.
+
+        Writes to both places where the text lives:
+
+        1. ``details[uuid]["data"]["dialog_list"]`` — rebuilds the single editorValue
+           entry with the builder's canonical shape::
+
+               {
+                 "xml":  '<speak xmlns:wiz="http://www.wiz.ai/develop/xml/tts">'
+                         '<wiz:express-as style="default">{text}</wiz:express-as></speak>',
+                 "html": "<p>{text}</p>",
+                 "text": "{text}",
+               }
+
+           The ``list`` convenience field (``data["list"]``) is also updated.
+
+        2. Every ``SentenceCutSpeech`` row in ``all_scs`` that belongs to this node
+           (``componentUuid == comp uuid`` AND ``id == uuid``) gets its
+           ``sentenceText`` set to ``text``.
+
+        Does NOT write tfd rows — tfd rows for exit nodes ARE the same data dict
+        (by reference in the builder), but here they are separate copies.  The tfd
+        row's text does not affect runtime playback; callers that need it in sync
+        should call ``set_label`` afterwards if the label should also change.
+        """
+        node_obj = self.details.get(uuid)
+        if node_obj is None:
+            raise FlowEditError(f"no node with uuid {uuid!r}")
+        xml = (
+            '<speak xmlns:wiz="http://www.wiz.ai/develop/xml/tts">'
+            f'<wiz:express-as style="default">{text}</wiz:express-as></speak>'
+        )
+        data = node_obj.setdefault("data", {})
+        data["dialog_list"] = [{"xml": xml, "html": f"<p>{text}</p>", "text": text}]
+        data["list"] = [text]
+        # Update SCS rows
+        comp_uuid = self.comp.get("componentUuid", "")
+        for row in all_scs:
+            if row.get("componentUuid") == comp_uuid and row.get("id") == uuid:
+                row["sentenceText"] = text
+
+    def set_goto_target(self, uuid: str, comp_uuid: str, comp_name: str) -> None:
+        """Update the cross-component jump target on a goto node (type 4).
+
+        Sets ``data["appoint_node_id"]`` and ``data["specificComponentName"]`` on the
+        node object, and also updates the matching ``tfd`` row (``row["id"] == uuid``).
+
+        Raises ``FlowEditError`` if the node does not exist.
+        """
+        node_obj = self.details.get(uuid)
+        if node_obj is None:
+            raise FlowEditError(f"no node with uuid {uuid!r}")
+        data = node_obj.setdefault("data", {})
+        data["appoint_node_id"] = comp_uuid
+        data["specificComponentName"] = comp_name
+        for row in self.tfd:
+            if row.get("id") == uuid:
+                row["appoint_node_id"] = comp_uuid
+                row["specificComponentName"] = comp_name
+
+    def add_exit_node(self) -> str:
+        """Mint and insert a new type-2 Exit node into this component.
+
+        The uuid is deterministic::
+
+            uuid5(NAMESPACE_URL, f"{componentUuid}:exit:{len(details)}")
+
+        The node body is built via the ``_build_exit_node`` builder from
+        ``wizbuilder.noderender`` (same path ``append_node`` uses) with an empty
+        prompt, empty kb_ids, and default IDN language ``"3"``.
+
+        Inserts into ``self.details``, sets ``self.routes[uuid] = {}`` (terminal),
+        and appends the ``topFloorDetails`` row (``node_obj["data"]``).
+
+        Returns the minted uuid string.
+        """
+        import sys as _sys
+        from pathlib import Path as _Path
+
+        # Cross-skill import: wiz-builder is a sibling package.
+        _builder_scripts = str(
+            _Path(__file__).resolve().parents[4] / "wiz-builder" / "scripts"
+        )
+        if _builder_scripts not in _sys.path:
+            _sys.path.insert(0, _builder_scripts)
+
+        from wizbuilder.noderender import NodeSpec, _build_exit_node  # type: ignore[import]
+
+        comp_uuid = self.comp.get("componentUuid", "")
+        node_uuid = str(
+            _uuid_mod.uuid5(
+                _uuid_mod.NAMESPACE_URL,
+                f"{comp_uuid}:exit:{len(self.details)}",
+            )
+        )
+        spec = NodeSpec(id="exit", prompt="", type="exit")
+        node_obj, _scs = _build_exit_node(
+            spec,
+            canvas_index=0,
+            comp_uuid=comp_uuid,
+            speech_id=0,
+            branch_intent_ids={
+                "Positive": 0,
+                "Negative": 0,
+                "Reject": 0,
+                "Unclassified": 0,
+                "No answer": 0,
+            },
+            kb_ids=[],
+            node_language="3",
+            minter=None,
+            sort_index=1,
+            port_uuids={},
+            node_uuid=node_uuid,
+            reccut_uuid="",
+            is_default=False,
+        )
+        self.details[node_uuid] = node_obj
+        self.routes[node_uuid] = {}
+        self.tfd.append(node_obj["data"])
+        return node_uuid
+
+    def ensure_unclassified(self, uuid: str) -> bool:
+        """Ensure the node at ``uuid`` has an ``Unclassified`` out-port.
+
+        If the port is already present, returns ``False`` (no-op).
+        If absent, appends a new port item to ``canvas.ports.items``, copying
+        the ``attrs`` and ``group`` from the first existing out-port item (or
+        using defaults if the node has no ports yet), and minting a deterministic
+        port uuid via::
+
+            uuid5(NAMESPACE_URL, f"{uuid}:port:Unclassified")
+
+        Returns ``True`` if the port was added.
+
+        Raises ``FlowEditError`` if the node does not exist.
+        """
+        node_obj = self.details.get(uuid)
+        if node_obj is None:
+            raise FlowEditError(f"no node with uuid {uuid!r}")
+        if "Unclassified" in self._ports(uuid):
+            return False
+        items = (
+            (node_obj.get("canvas") or {})
+            .get("ports", {})
+            .get("items", [])
+        )
+        # Copy attrs/group from an existing out-port; fall back to safe defaults.
+        _default_attrs = {
+            "fo": {"x": -37.67, "width": 70, "y": -30, "magnet": "true", "height": 24}
+        }
+        if items:
+            existing = items[0]
+            attrs = _copy.deepcopy(existing.get("attrs", _default_attrs))
+            group = existing.get("group", "out")
+        else:
+            attrs = _copy.deepcopy(_default_attrs)
+            group = "out"
+        new_port_id = str(
+            _uuid_mod.uuid5(_uuid_mod.NAMESPACE_URL, f"{uuid}:port:Unclassified")
+        )
+        items.append({"name": "Unclassified", "id": new_port_id, "attrs": attrs, "group": group})
+        # Ensure the items list is wired back into the node's canvas.
+        node_obj.setdefault("canvas", {}).setdefault("ports", {})["items"] = items
+        return True
+
+    # ------------------------------------------------------------------
+    # Cross-component move primitives (Task 4)
+    # ------------------------------------------------------------------
+
+    def extract_node(
+        self, uuid: str, all_scs: list[dict], all_sck: list[dict]
+    ) -> dict:
+        """Extract a node and its associated rows from this editor as a portable payload.
+
+        Like ``remove_node`` but the SCS/SCK rows that belong to the node are
+        NOT deleted from ``all_scs``/``all_sck`` — they are deep-copied into the
+        payload so the caller can insert them into another component.
+
+        Steps:
+        1. Collect deep-copies of the node's SCS and SCK rows.
+        2. Unwire all inbound edges pointing at ``uuid`` (via ``remove_edge``).
+        3. Remove the node from ``details``, ``routes``, ``tfd``, ``inbound`` (same as
+           ``remove_node``), BUT do NOT touch ``all_scs`` / ``all_sck``.
+        4. Rebuild inbound bookkeeping.
+
+        Returns a payload dict::
+
+            {
+                "node_obj":     <deep-copied node object>,
+                "routes_entry": <deep-copied routes sub-dict (or {})>,
+                "tfd_row":      <deep-copied tfd row, or None>,
+                "scs_rows":     [<deep-copied SCS rows>],
+                "sck_rows":     [<deep-copied SCK rows>],
+            }
+        """
+        if uuid not in self.details:
+            raise FlowEditError(f"no node with uuid {uuid!r}")
+        comp_uuid = self.comp.get("componentUuid", "")
+
+        # Step 1: collect deep-copies of the rows BEFORE touching the tables.
+        scs_rows = _copy.deepcopy([
+            row for row in all_scs
+            if row.get("componentUuid") == comp_uuid and row.get("id") == uuid
+        ])
+        sck_rows = _copy.deepcopy([
+            row for row in all_sck
+            if row.get("componentUuid") == comp_uuid and row.get("id") == uuid
+        ])
+        node_obj = _copy.deepcopy(self.details[uuid])
+        routes_entry = _copy.deepcopy(self.routes.get(uuid, {}))
+        tfd_row = _copy.deepcopy(
+            next((r for r in self.tfd if r.get("id") == uuid), None)
+        )
+
+        # Step 2: unwire inbound edges.
+        for src, branch in [(s, b) for (s, b, _t) in self.in_edges(uuid)]:
+            self.remove_edge(src, branch)
+
+        # Step 3: remove from core tables (do NOT touch all_scs / all_sck).
+        self.details.pop(uuid, None)
+        self.routes.pop(uuid, None)
+        self.tfd[:] = [row for row in self.tfd if row.get("id") != uuid]
+        self.inbound[:] = [entry for entry in self.inbound if entry.get("uuid") != uuid]
+
+        # Step 4: rebuild inbound.
+        self._rebuild_inbound()
+
+        return {
+            "node_obj": node_obj,
+            "routes_entry": routes_entry,
+            "tfd_row": tfd_row,
+            "scs_rows": scs_rows,
+            "sck_rows": sck_rows,
+        }
+
+    def insert_node(
+        self,
+        payload: dict,
+        dest_scs: list[dict],
+        dest_sck: list[dict],
+    ) -> None:
+        """Insert a node payload (from ``extract_node``) into this editor.
+
+        The node uuid is preserved exactly — no re-minting.
+
+        The ``componentUuid`` on every carried SCS/SCK row is rewritten to this
+        component's ``componentUuid`` before appending to ``dest_scs``/``dest_sck``.
+
+        Parameters
+        ----------
+        payload:
+            Dict produced by ``extract_node``:
+            ``{node_obj, routes_entry, tfd_row, scs_rows, sck_rows}``.
+        dest_scs:
+            The destination component's ``SentenceCutSpeech`` list (mutated
+            in-place).  Pass an empty list to ignore SCS rows.
+        dest_sck:
+            The destination component's ``SentenceCutKnowledge`` list (mutated
+            in-place).  Pass an empty list to ignore SCK rows.
+        """
+        node_obj = payload["node_obj"]
+        node_uuid: str = (node_obj.get("data") or {}).get("id") or ""
+        if not node_uuid:
+            # Fall back to scanning canvas id
+            node_uuid = (node_obj.get("canvas") or {}).get("id", "")
+        if not node_uuid:
+            raise FlowEditError("payload node_obj has no resolvable uuid (data.id / canvas.id)")
+
+        dest_comp_uuid = self.comp.get("componentUuid", "")
+
+        self.details[node_uuid] = _copy.deepcopy(node_obj)
+        self.routes[node_uuid] = _copy.deepcopy(payload.get("routes_entry") or {})
+        tfd_row = payload.get("tfd_row")
+        if tfd_row is not None:
+            self.tfd.append(_copy.deepcopy(tfd_row))
+        self._rebuild_inbound()
+
+        for row in payload.get("scs_rows") or []:
+            new_row = _copy.deepcopy(row)
+            new_row["componentUuid"] = dest_comp_uuid
+            dest_scs.append(new_row)
+        for row in payload.get("sck_rows") or []:
+            new_row = _copy.deepcopy(row)
+            new_row["componentUuid"] = dest_comp_uuid
+            dest_sck.append(new_row)
 
     # ------------------------------------------------------------------
     # Private helpers for edge mutation

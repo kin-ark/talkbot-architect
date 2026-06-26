@@ -295,3 +295,133 @@ def test_remove_node_cleans_all_tables(tmp_path):
     # SCS rows for the deleted node were removed from the shared list
     assert len([r for r in scs if r.get("id") == target]) == 0
     assert summary["removed_rows"] == scs_count_before
+
+
+# ---------------------------------------------------------------------------
+# Task 4 — FM-T4: content/goto/cross-component primitives
+# ---------------------------------------------------------------------------
+
+
+def test_set_label_changes_data_name(tmp_path):
+    """set_label(uuid, text) must update details[uuid]['data']['name']."""
+    doc = _build(tmp_path, "manifest_conditional_assign.yaml")
+    comp = _uw(doc["BizSpeechComponent"])[0]
+    fe = FlowEditor(comp)
+    talk = next(u for u, n in fe.details.items() if n["type"] == 1)
+    fe.set_label(talk, "My New Label")
+    assert fe.details[talk]["data"]["name"] == "My New Label"
+
+
+def test_set_prompt_updates_node_and_scs(tmp_path):
+    """set_prompt updates dialog_list editorValue AND the matching SCS sentenceText."""
+    doc = _build(tmp_path, "manifest_conditional_assign.yaml")
+    comp = _uw(doc["BizSpeechComponent"])[0]
+    scs = _uw(doc["SentenceCutSpeech"])
+    fe = FlowEditor(comp)
+    talk = next(u for u, n in fe.details.items() if n["type"] == 1)
+    new_text = "Updated prompt text"
+    fe.set_prompt(talk, new_text, scs)
+    # dialog_list entry must have the new text in all three fields
+    dl = fe.details[talk]["data"]["dialog_list"]
+    assert len(dl) == 1
+    assert dl[0]["text"] == new_text
+    assert dl[0]["html"] == f"<p>{new_text}</p>"
+    assert new_text in dl[0]["xml"]
+    # SCS row sentenceText must also be updated
+    rows = fe.scs_rows_for(talk, scs)
+    assert rows, "no SCS rows found for talk node"
+    for row in rows:
+        assert row["sentenceText"] == new_text
+
+
+def test_set_goto_target_updates_node_and_tfd(tmp_path):
+    """set_goto_target updates data appoint_node_id/specificComponentName AND tfd row."""
+    doc = _build(tmp_path, "manifest_goto.yaml")
+    comp = _uw(doc["BizSpeechComponent"])[0]
+    fe = FlowEditor(comp)
+    goto = next(u for u, n in fe.details.items() if n["type"] == 4)
+    fe.set_goto_target(goto, "new-comp-uuid", "3. New Canvas")
+    assert fe.details[goto]["data"]["appoint_node_id"] == "new-comp-uuid"
+    assert fe.details[goto]["data"]["specificComponentName"] == "3. New Canvas"
+    # tfd row must also be updated
+    tfd_row = next((r for r in fe.tfd if r.get("id") == goto), None)
+    assert tfd_row is not None, "no tfd row for goto node"
+    assert tfd_row["appoint_node_id"] == "new-comp-uuid"
+    assert tfd_row["specificComponentName"] == "3. New Canvas"
+
+
+def test_add_exit_node_inserts_type2_with_tfd(tmp_path):
+    """add_exit_node() mints a type-2 node with routes[uuid]={} and a tfd row."""
+    doc = _build(tmp_path, "manifest_conditional_assign.yaml")
+    comp = _uw(doc["BizSpeechComponent"])[0]
+    fe = FlowEditor(comp)
+    before_count = len(fe.details)
+    uuid = fe.add_exit_node()
+    # inserted into details
+    assert uuid in fe.details
+    assert len(fe.details) == before_count + 1
+    assert fe.details[uuid]["type"] == 2
+    # terminal: routes[uuid] must be {}
+    assert fe.routes.get(uuid) == {}
+    # tfd row must exist with id==uuid
+    tfd_row = next((r for r in fe.tfd if r.get("id") == uuid), None)
+    assert tfd_row is not None, "no tfd row for exit node"
+    assert tfd_row["type"] == 2
+
+
+def test_ensure_unclassified_adds_port_when_missing(tmp_path):
+    """ensure_unclassified returns True when Unclassified port is absent, and adds it."""
+    doc = _build(tmp_path, "manifest_conditional_assign.yaml")
+    comp = _uw(doc["BizSpeechComponent"])[0]
+    fe = FlowEditor(comp)
+    # Find a talk node that already has Unclassified (from manifest_conditional_assign)
+    # and manually remove it to set up the test.
+    talk = next(u for u, n in fe.details.items() if n["type"] == 1)
+    items = fe.details[talk]["canvas"]["ports"]["items"]
+    fe.details[talk]["canvas"]["ports"]["items"] = [
+        it for it in items if it["name"] != "Unclassified"
+    ]
+    assert "Unclassified" not in fe._ports(talk)
+    added = fe.ensure_unclassified(talk)
+    assert added is True
+    assert "Unclassified" in fe._ports(talk)
+
+
+def test_ensure_unclassified_noop_when_present(tmp_path):
+    """ensure_unclassified returns False when Unclassified port is already present."""
+    doc = _build(tmp_path, "manifest_conditional_assign.yaml")
+    comp = _uw(doc["BizSpeechComponent"])[0]
+    fe = FlowEditor(comp)
+    talk = next(u for u, n in fe.details.items() if n["type"] == 1)
+    # manifest_conditional_assign talk node has Unclassified
+    assert "Unclassified" in fe._ports(talk)
+    result = fe.ensure_unclassified(talk)
+    assert result is False
+
+
+def test_extract_and_insert_node_roundtrip(tmp_path):
+    """extract_node + insert_node round-trip a node between two FlowEditors preserving uuid."""
+    import copy
+    doc = _build(tmp_path, "manifest_conditional_assign.yaml")
+    # Build two independent FlowEditors from the SAME component (simulate two components)
+    comp_a = _uw(doc["BizSpeechComponent"])[0]
+    comp_b = copy.deepcopy(comp_a)
+    # Give comp_b a different componentUuid so SCS filtering works
+    comp_b["componentUuid"] = "dest-comp-uuid-0000"
+    scs = _uw(doc["SentenceCutSpeech"])
+    sck: list = []
+    fe_a = FlowEditor(comp_a)
+    fe_b = FlowEditor(comp_b)
+    # Pick a talk node to move from A to B
+    talk = next(u for u, n in fe_a.details.items() if n["type"] == 1)
+    payload = fe_a.extract_node(talk, scs, sck)
+    assert talk not in fe_a.details, "extract_node must remove from source"
+    assert payload["node_obj"] is not None
+    # insert into fe_b
+    dest_scs: list = []
+    dest_sck: list = []
+    fe_b.insert_node(payload, dest_scs, dest_sck)
+    assert talk in fe_b.details, "insert_node must add to dest"
+    # componentUuid should be rewritten on carried SCS rows
+    for row in dest_scs:
+        assert row["componentUuid"] == "dest-comp-uuid-0000"
