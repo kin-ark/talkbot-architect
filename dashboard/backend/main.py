@@ -106,9 +106,10 @@ def _active_payload() -> dict:
     """Return the rehydrate payload for the current active session."""
     s = _S()
     if not s._stack:
-        return {"summary": None}
+        return {"summary": None, "id": s.id}
     data = s.current()
     return {
+        "id": s.id,
         "summary": agents.summarize(data),
         "findings": agents.validate(data),
         "transcript": _reconstruct_transcript(s.transcript),
@@ -378,7 +379,7 @@ async def redo():
 
 @app.get("/sessions")
 def list_sessions_route():
-    return {"sessions": STORE.list()}
+    return {"sessions": STORE.list(), "active_id": persistence.read_active()}
 
 
 @app.post("/sessions")
