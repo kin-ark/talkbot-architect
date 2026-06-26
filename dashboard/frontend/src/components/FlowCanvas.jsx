@@ -56,6 +56,7 @@ export default function FlowCanvas({ summary, onSelectNode, focusComponentId, hi
   const [rf, setRf] = useState(null);
   const [hoverId, setHoverId] = useState(null);
   const [legendOpen, setLegendOpen] = useState(false);
+  const [search, setSearch] = useState('');
 
   // Reset to all-collapsed whenever a new summary loads.
   const summaryKey = summary ? JSON.stringify(summary.components?.map((c) => c.uuid)) : '';
@@ -78,6 +79,25 @@ export default function FlowCanvas({ summary, onSelectNode, focusComponentId, hi
     });
   }, []);
 
+  const { searchMatchIds, searchOwners } = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return { searchMatchIds: new Set(), searchOwners: new Set() };
+    const ids = new Set(); const owners = new Set();
+    for (const c of summary?.components || []) {
+      for (const n of Object.values(c.nodes || {})) {
+        if ((n.label || '').toLowerCase().includes(q)) { ids.add(n.uuid); owners.add(c.uuid); }
+      }
+    }
+    return { searchMatchIds: ids, searchOwners: owners };
+  }, [summary, search]);
+
+  // Auto-expand owner components of search matches so matched nodes are visible.
+  useEffect(() => {
+    if (searchOwners.size === 0) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- search-driven expansion so matched children render
+    setExpanded((prev) => { const next = new Set(prev); searchOwners.forEach((id) => next.add(id)); return next; });
+  }, [searchOwners]);
+
   const { nodes, edges, compIds } = useMemo(() => {
     if (!summary) return { nodes: [], edges: [], compIds: [] };
     const { nodes: rawNodes, edges: rawEdges } = buildGraph(summary);
@@ -91,9 +111,11 @@ export default function FlowCanvas({ summary, onSelectNode, focusComponentId, hi
           return { ...n, data: { ...n.data, expanded: expanded.has(n.id), onToggle: () => toggle(n.id) } };
         }
         if (n.data?.kbNode || n.data?.terminal) return n;
+        const isMatch = searchMatchIds.has(n.id);
         const added = highlight?.added_nodes?.includes(n.id);
         const changed = highlight?.changed_nodes?.includes(n.id);
-        const ring = added ? '0 0 0 2px var(--c-success)'
+        const ring = isMatch ? '0 0 0 2px var(--c-primary)'
+          : added ? '0 0 0 2px var(--c-success)'
           : changed ? '0 0 0 2px var(--c-warning)' : undefined;
         return {
           ...n,
@@ -127,7 +149,7 @@ export default function FlowCanvas({ summary, onSelectNode, focusComponentId, hi
         style: { ...e.style, pointerEvents: 'none' } });
     }
     return { nodes: visible, edges: rerouted, compIds: (summary?.components || []).map((c) => c.uuid) };
-  }, [summary, expanded, toggle, highlight]);
+  }, [summary, expanded, toggle, highlight, searchMatchIds]);
 
   const showMap = () => setExpanded(new Set());
   const showDetail = () => setExpanded(new Set(compIds));
@@ -159,6 +181,12 @@ export default function FlowCanvas({ summary, onSelectNode, focusComponentId, hi
           className="px-3 py-1 text-sm rounded-md border border-border text-text-secondary hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">Fit</button>
         <button type="button" onClick={() => setLegendOpen((v) => !v)} data-testid="legend-toggle"
           className={`px-3 py-1 text-sm rounded-md border border-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${legendOpen ? 'bg-primary text-primary-fg' : 'text-text-secondary hover:bg-surface-muted'}`}>Legend</button>
+        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search nodes…"
+          data-testid="node-search"
+          className="ml-2 w-40 border border-border rounded-md px-2 py-1 text-xs bg-surface text-text focus:outline-none focus:ring-2 focus:ring-primary" />
+        {search.trim() && (
+          <span data-testid="search-count" className="text-xs text-text-tertiary">{searchMatchIds.size} match{searchMatchIds.size === 1 ? '' : 'es'}</span>
+        )}
         <span className="ml-auto text-xs text-text-tertiary">{compIds.length} components</span>
       </div>
       <div className="flex-1 min-h-0 relative">
