@@ -166,10 +166,18 @@ def _validate_special_node(
         skip self when scanning for existing nested references (M2).
     """
     ntype = node.get("type")
-    if ntype not in ("conditional", "assign", "exit_port", "nested"):
+    if ntype not in ("conditional", "assign", "exit_port", "nested", "goto_kb", "goto"):
         return
     nid = node.get("id", "<no-id>")
     cfg = node.get("config") or {}
+
+    if ntype in ("goto", "goto_kb"):
+        target = cfg.get("target")
+        if not target:
+            raise ValueError(
+                f"{prefix} {ntype} node {nid!r} missing config.target"
+            )
+        return
 
     if ntype == "exit_port":
         name = cfg.get("name")
@@ -591,6 +599,22 @@ def append_node(bundle: InputBundle, params: dict, minter) -> None:
                 f"append-node: goto node {node['id']!r}: config.target {target_name!r} "
                 f"does not match any existing component name"
             )
+    elif node_type_str == "goto_kb":
+        target_name = cfg.get("target", "")
+        if not target_name:
+            raise ValueError(
+                f"append-node: goto_kb node {node['id']!r} missing config.target"
+            )
+        biz_kb_raw = bundle.data.get("BizKnowledgeInfo", "[]")
+        biz_kb = json.loads(biz_kb_raw) if isinstance(biz_kb_raw, str) else biz_kb_raw
+        kb_title_to_id: dict[str, int] = {
+            k["kdTitle"]: k["knowledgeId"] for k in biz_kb if k.get("kdTitle")
+        }
+        if target_name not in kb_title_to_id:
+            raise ValueError(
+                f"append-node: goto_kb target {target_name!r} not found in BizKnowledgeInfo"
+            )
+        cfg["target_kid"] = kb_title_to_id[target_name]
     elif node_type_str == "nested":
         target_name = cfg.get("target", "")
         cfg["target_uuid"] = comp_uuid_by_name.get(target_name, "")
@@ -607,7 +631,7 @@ def append_node(bundle: InputBundle, params: dict, minter) -> None:
 
     # Validate special nodes BEFORE rendering.
     current_comp_name = comp.get("name")
-    if node_type_str in ("conditional", "assign", "exit_port", "nested"):
+    if node_type_str in ("conditional", "assign", "exit_port", "nested", "goto", "goto_kb"):
         _validate_special_node(
             node,
             _declared_var_names(bundle),
@@ -674,10 +698,10 @@ def append_node(bundle: InputBundle, params: dict, minter) -> None:
     }
     _NODE_TYPE_INT = {
         "talk": 1, "exit": 2, "goto": 4, "exit_port": 4,
-        "conditional": 7, "assign": 10, "nested": 11, "transfer": 13,
+        "conditional": 7, "goto_kb": 8, "assign": 10, "nested": 11, "transfer": 13,
     }
-    # Terminal nodes (exit, transfer, goto, exit_port) are not added to inboundPorts.
-    _TERMINAL = frozenset({"exit", "transfer", "goto", "exit_port"})
+    # Terminal nodes (exit, transfer, goto, goto_kb, exit_port) are not added to inboundPorts.
+    _TERMINAL = frozenset({"exit", "transfer", "goto", "goto_kb", "exit_port"})
     if not has_incoming and node_type_str not in _TERMINAL:
         inbound.append({
             "name": _NODE_NAME.get(node_type_str, "Talk Node"),
@@ -686,8 +710,9 @@ def append_node(bundle: InputBundle, params: dict, minter) -> None:
             "is_default": True,
         })
 
-    # exit_port and goto contribute a topFloorDetails row (mirrors render_component_nodes).
-    if node_type_str in ("exit", "goto", "exit_port"):
+    # exit, goto, goto_kb, and exit_port contribute a topFloorDetails row
+    # (mirrors render_component_nodes). Transfer and nested do NOT.
+    if node_type_str in ("exit", "goto", "goto_kb", "exit_port"):
         top_floor.append(new_obj["data"])
 
     # Wire each edge onto its source node's branch port.
