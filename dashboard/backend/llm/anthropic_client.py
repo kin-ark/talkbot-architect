@@ -13,6 +13,7 @@ class AnthropicClient(LLMClient):
             kwargs["base_url"] = base_url
         self._client = anthropic.Anthropic(**kwargs)
         self._model = model
+        self.model = model
 
     def chat(self, messages: list[Message], tools: list[ToolSpec]) -> LLMResponse:
         sys_msgs = [m.content for m in messages if m.role == "system"]
@@ -53,7 +54,9 @@ class AnthropicClient(LLMClient):
                 text = (text or "") + block.text
             elif block.type == "tool_use":
                 calls.append(ToolCall(id=block.id, name=block.name, arguments=block.input))
-        yield StreamChunk(response=LLMResponse(text=text, tool_calls=calls))
+        u = getattr(final, "usage", None)
+        usage = {"input_tokens": getattr(u, "input_tokens", 0), "output_tokens": getattr(u, "output_tokens", 0)} if u else None
+        yield StreamChunk(response=LLMResponse(text=text, tool_calls=calls), usage=usage)
 
     @staticmethod
     def _to_anthropic_messages(messages: list[Message]) -> list[dict]:

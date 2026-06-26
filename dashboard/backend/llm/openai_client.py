@@ -14,6 +14,7 @@ class OpenAIClient(LLMClient):
             kwargs["base_url"] = base_url
         self._client = OpenAI(**kwargs)
         self._model = model
+        self.model = model
 
     def chat(self, messages: list[Message], tools: list[ToolSpec]) -> LLMResponse:
         api_tools = [{"type": "function", "function": {
@@ -32,10 +33,14 @@ class OpenAIClient(LLMClient):
             "name": t.name, "description": t.description, "parameters": t.parameters}} for t in tools]
         stream = self._client.chat.completions.create(
             model=self._model, messages=self._to_openai_messages(messages),
-            tools=api_tools or None, stream=True)
+            tools=api_tools or None, stream=True, stream_options={"include_usage": True})
         text = ""
         acc: dict[int, dict] = {}     # index -> {id, name, args}
+        usage_obj = None
         for chunk in stream:
+            usage_obj = getattr(chunk, "usage", None) or usage_obj
+            if not chunk.choices:
+                continue
             delta = chunk.choices[0].delta
             if getattr(delta, "content", None):
                 text += delta.content
@@ -50,7 +55,9 @@ class OpenAIClient(LLMClient):
                     slot["args"] += tc.function.arguments
         calls = [ToolCall(id=s["id"], name=s["name"], arguments=json.loads(s["args"] or "{}"))
                  for s in (acc[k] for k in sorted(acc)) if s["name"]]
-        yield StreamChunk(response=LLMResponse(text=text or None, tool_calls=calls))
+        usage = {"input_tokens": getattr(usage_obj, "prompt_tokens", 0),
+                 "output_tokens": getattr(usage_obj, "completion_tokens", 0)} if usage_obj else None
+        yield StreamChunk(response=LLMResponse(text=text or None, tool_calls=calls), usage=usage)
 
     @staticmethod
     def _to_openai_messages(messages: list[Message]) -> list[dict]:
