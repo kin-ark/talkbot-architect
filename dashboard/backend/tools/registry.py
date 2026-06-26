@@ -36,12 +36,14 @@ _SPECS = [
              "Proposes a full new doc (dry-run). Use after the user confirms an outline. "
              "languages: ENG, IDN (ZHO/THA pending verified language codes). "
              "Each node may include an optional type (talk/exit/transfer/goto/conditional/assign/"
-             "nested/exit_port; default: talk). goto nodes require config.target set to the name "
-             "of another canvas to jump to. nested nodes delegate to a child canvas (config.target "
-             "= child canvas name); their outgoing edges branch on the child canvas's exit_port "
-             "names. exit_port is a named terminal return inside a child canvas (config.name = the "
-             "port label). conditional nodes route by config.variable + config.branches (each "
-             "{name, op, value|value_var, to}); assign nodes set config.variable to config.value. "
+             "nested/exit_port/goto_kb; default: talk). goto nodes require config.target set to "
+             "the name of another canvas to jump to. nested nodes delegate to a child canvas "
+             "(config.target = child canvas name); their outgoing edges branch on the child "
+             "canvas's exit_port names. exit_port is a named terminal return inside a child canvas "
+             "(config.name = the port label). conditional nodes route by config.variable + "
+             "config.branches (each {name, op, value|value_var, to}); assign nodes set "
+             "config.variable to config.value. goto_kb is a terminal jump into a Knowledge Base "
+             "(config.target = a KB name). "
              "Optionally declare knowledge_bases (each has a name, triggering intents list, "
              "answer(s), and optional multi_round = a canvas name to delegate multi-turn Q&A into).",
              {"type": "object",
@@ -76,7 +78,7 @@ _SPECS = [
                                   "type": {"type": "string",
                                            "enum": ["talk", "exit", "transfer", "goto",
                                                     "conditional", "assign",
-                                                    "nested", "exit_port"]},
+                                                    "nested", "exit_port", "goto_kb"]},
                                   "config": {"type": "object", "properties": {
                                       "target": {"type": "string"},
                                       "name": {"type": "string"},
@@ -106,13 +108,14 @@ _SPECS = [
     ToolSpec("add_component",
              "Add a new component (optionally with nodes+edges) to the current dialogue. Proposes a dry-run. "
              "Each node may include an optional type (talk/exit/transfer/goto/conditional/assign/"
-             "nested/exit_port; default: talk). "
+             "nested/exit_port/goto_kb; default: talk). "
              "goto nodes require config.target set to the name of another component to jump to. "
              "nested nodes delegate to a child canvas (config.target = child canvas name); their "
              "outgoing edges branch on the child canvas's exit_port names. exit_port is a named "
              "terminal return inside a child canvas (config.name = the port label). "
              "conditional nodes route by config.variable + config.branches (each {name, op, value|value_var, to}); "
-             "assign nodes set config.variable to config.value.",
+             "assign nodes set config.variable to config.value. "
+             "goto_kb is a terminal jump into a Knowledge Base (config.target = a KB name).",
              {"type": "object", "properties": {
                  "name": {"type": "string"},
                  "nodes": {"type": "array", "items": {"type": "object", "properties": {
@@ -120,7 +123,7 @@ _SPECS = [
                      "prompt": {"type": "string"},
                      "type": {"type": "string", "enum": ["talk", "exit", "transfer", "goto",
                                                          "conditional", "assign",
-                                                         "nested", "exit_port"]},
+                                                         "nested", "exit_port", "goto_kb"]},
                      "config": {"type": "object", "properties": {
                          "target": {"type": "string"},
                          "name": {"type": "string"},
@@ -143,7 +146,7 @@ _SPECS = [
                      "to": {"type": "string"}}, "required": ["from", "branch", "to"]}}},
               "required": ["name"]}),
     ToolSpec("add_node",
-             "Add a node (talk/exit/transfer/goto/conditional/assign/nested/exit_port) to an existing "
+             "Add a node (talk/exit/transfer/goto/conditional/assign/nested/exit_port/goto_kb) to an existing "
              "component (by index), optionally wiring edges. Edge endpoints: the new node's id, or an "
              "existing node's uuid. goto requires config.target = another component's name. "
              "nested delegates to a child canvas (config.target = child canvas name); outgoing edges "
@@ -151,6 +154,7 @@ _SPECS = [
              "exit_port is a named terminal return inside a child canvas (config.name = port label). "
              "conditional nodes route by config.variable + config.branches (each {name, op, value|value_var, to}). "
              "assign nodes set config.variable to config.value; assign continue-edges use branch: \"Default\". "
+             "goto_kb is a terminal jump into a Knowledge Base (config.target = a KB name). "
              "Proposes a dry-run.",
              {"type": "object", "properties": {
                  "component": {"type": "integer"},
@@ -158,7 +162,7 @@ _SPECS = [
                  "prompt": {"type": "string"},
                  "type": {"type": "string", "enum": ["talk", "exit", "transfer", "goto",
                                                      "conditional", "assign",
-                                                     "nested", "exit_port"]},
+                                                     "nested", "exit_port", "goto_kb"]},
                  "config": {"type": "object", "properties": {
                      "target": {"type": "string"},
                      "name": {"type": "string"},

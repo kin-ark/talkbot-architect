@@ -132,7 +132,7 @@ def test_connect_components(two_component_doc):
 
 
 _EXPECTED_NODE_TYPES = {"talk", "exit", "transfer", "goto", "conditional", "assign",
-                        "nested", "exit_port"}
+                        "nested", "exit_port", "goto_kb"}
 
 
 # ---------------------------------------------------------------------------
@@ -237,6 +237,18 @@ def test_node_type_enum_includes_conditional_and_assign():
     assert "name" in sb_cfg, "scaffold_bot config must advertise 'name'"
     _assert_free_string_branch(
         sb_canvas_item_props["edges"]["items"]["properties"]["branch"], "scaffold_bot"
+    )
+
+
+def test_scaffold_bot_node_type_enum_includes_goto_kb():
+    """scaffold_bot node type enum must include goto_kb (Task 4)."""
+    specs = {s.name: s for s in registry.tool_specs()}
+    sb_canvas_item_props = (
+        specs["scaffold_bot"].parameters["properties"]["canvases"]["items"]["properties"]
+    )
+    node_type_enum = sb_canvas_item_props["nodes"]["items"]["properties"]["type"]["enum"]
+    assert "goto_kb" in node_type_enum, (
+        f"scaffold_bot node type enum missing 'goto_kb'; found: {node_type_enum}"
     )
 
 
