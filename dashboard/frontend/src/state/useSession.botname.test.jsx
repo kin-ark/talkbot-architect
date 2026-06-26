@@ -39,4 +39,38 @@ describe('useSession bot name', () => {
     expect(result.current.botName).toBe('Survey Bot');
     expect(result.current.canUndo).toBe(true);
   });
+
+  it('apply updates botName from the response bot_name', async () => {
+    api.getSession.mockResolvedValue({
+      id: 's1', bot_name: 'Old Bot',
+      summary: { components: [], knowledge_bases: [] }, findings: [],
+      transcript: [], proposal: { proposed_data: {} }, can_undo: false, can_redo: false,
+    });
+    api.applyPending.mockResolvedValue({
+      applied: true, bot_name: 'Built Bot',
+      summary: { components: [], knowledge_bases: [] }, findings: [],
+      can_undo: true, can_redo: false,
+    });
+    const { result } = renderHook(() => useSession());
+    await waitFor(() => expect(result.current.botName).toBe('Old Bot'));
+    await act(async () => { await result.current.apply(); });
+    expect(result.current.botName).toBe('Built Bot');
+  });
+
+  it('undo updates botName from the response bot_name', async () => {
+    api.getSession.mockResolvedValue({
+      id: 's1', bot_name: 'New Name',
+      summary: { components: [], knowledge_bases: [] }, findings: [],
+      transcript: [], proposal: null, can_undo: true, can_redo: false,
+    });
+    api.undo.mockResolvedValue({
+      ok: true, bot_name: 'Old',
+      summary: { components: [], knowledge_bases: [] }, findings: [],
+      can_undo: false, can_redo: true,
+    });
+    const { result } = renderHook(() => useSession());
+    await waitFor(() => expect(result.current.botName).toBe('New Name'));
+    await act(async () => { await result.current.undo(); });
+    expect(result.current.botName).toBe('Old');
+  });
 });

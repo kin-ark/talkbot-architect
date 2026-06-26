@@ -354,6 +354,7 @@ async def apply_pending():
         STORE.rename(_S().id, nm)
     return {
         "applied": True,
+        "bot_name": nm,
         "summary": agents.summarize(_S().current()),
         "findings": agents.validate(_S().current()),
         "can_undo": _S().can_undo(),
@@ -365,8 +366,12 @@ async def apply_pending():
 async def undo():
     _require_session()
     ok = _S().undo()
+    nm = speechname.read_speech_name(_S().current())
+    if nm and _S().id:
+        STORE.rename(_S().id, nm)
     return {
         "ok": ok,
+        "bot_name": nm,
         "summary": agents.summarize(_S().current()),
         "findings": agents.validate(_S().current()),
         "can_undo": _S().can_undo(),
@@ -378,8 +383,12 @@ async def undo():
 async def redo():
     _require_session()
     ok = _S().redo()
+    nm = speechname.read_speech_name(_S().current())
+    if nm and _S().id:
+        STORE.rename(_S().id, nm)
     return {
         "ok": ok,
+        "bot_name": nm,
         "summary": agents.summarize(_S().current()),
         "findings": agents.validate(_S().current()),
         "can_undo": _S().can_undo(),

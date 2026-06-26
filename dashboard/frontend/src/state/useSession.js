@@ -196,10 +196,25 @@ export function useSession() {
     setSummary(r.summary); setFindings(r.findings);
     setCanUndo(r.can_undo); setCanRedo(r.can_redo); setProposal(null);
   };
-  const apply = useCallback(async () => refresh(await api.applyPending()), []);
+  const apply = useCallback(async () => {
+    const r = await api.applyPending();
+    refresh(r);
+    if (r.bot_name !== undefined) setBotName(r.bot_name ?? null);
+    refreshSessions();
+  }, [refreshSessions]);
   const reject = useCallback(() => setProposal(null), []);
-  const undo = useCallback(async () => refresh(await api.undo()), []);
-  const redo = useCallback(async () => refresh(await api.redo()), []);
+  const undo = useCallback(async () => {
+    const r = await api.undo();
+    refresh(r);
+    if (r.bot_name !== undefined) setBotName(r.bot_name ?? null);
+    refreshSessions();
+  }, [refreshSessions]);
+  const redo = useCallback(async () => {
+    const r = await api.redo();
+    refresh(r);
+    if (r.bot_name !== undefined) setBotName(r.bot_name ?? null);
+    refreshSessions();
+  }, [refreshSessions]);
 
   const renameBot = useCallback(async (name) => {
     const r = await api.setSpeechName(name);
