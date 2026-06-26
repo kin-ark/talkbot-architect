@@ -15,12 +15,14 @@ from fastapi import Depends, FastAPI, File, HTTPException, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.requests import Request
 from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 import agents
 import config_store
 import persistence
 import speechname
+from auth import PasswordGateMiddleware
 from config_store import CONFIG, any_override, effective_key_set
 from llm.base import LLMClient
 from llm.factory import LLMConfigError, make_client
@@ -29,7 +31,13 @@ from session_store import SessionStore
 from wizmodifier.io import InputBundle
 
 app = FastAPI(title="Talkbot Architect API")
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+_cors_origins = (
+    os.environ.get("CORS_ORIGINS", "").split(",")
+    if os.environ.get("CORS_ORIGINS")
+    else []
+)
+app.add_middleware(CORSMiddleware, allow_origins=_cors_origins, allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(PasswordGateMiddleware)
 
 
 def _error_body(exc: Exception) -> dict:
@@ -442,3 +450,13 @@ def rename_session(sid: str, body: RenameRequest):
 def delete_session_route(sid: str):
     STORE.delete(sid)
     return {"ok": True, "active": _S().id}
+
+
+# ---------------------------------------------------------------------------
+# SPA mount — must come LAST so all API routes take precedence.
+# Guarded on dir existence so dev (no built frontend) still runs.
+# ---------------------------------------------------------------------------
+
+_STATIC = os.path.join(os.path.dirname(__file__), "static")
+if os.path.isdir(_STATIC):
+    app.mount("/", StaticFiles(directory=_STATIC, html=True), name="spa")

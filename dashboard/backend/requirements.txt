@@ -5,3 +5,7 @@ pydantic
 openai
 anthropic
 python-dotenv
+networkx>=3.0
+rich>=13.0
+pyyaml>=6.0
+jsonschema>=4.0
