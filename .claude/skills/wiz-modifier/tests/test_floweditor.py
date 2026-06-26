@@ -211,8 +211,15 @@ def test_set_edge_target_updates_route(tmp_path):
     exit_u = next(u for u, n in det.items() if n["type"] == 2)
     fe.set_edge_target(talk, "Positive", exit_u)
     assert dict(fe.out_edges(talk))["Positive"] == exit_u
-    # inbound bookkeeping: exit node now appears in inboundPorts
-    assert any(p["uuid"] == exit_u for p in fe.inbound)
+    # C1 fix: inboundPorts = entry node only (is_default=True, non-terminal).
+    # Terminal nodes (type 2 = exit) must NOT appear in inboundPorts.
+    assert not any(p["uuid"] == exit_u for p in fe.inbound), (
+        "terminal (exit) node must not appear in inboundPorts — "
+        "inboundPorts is the entry node only, not route targets"
+    )
+    # The entry node (is_default, talk) must still be in inboundPorts.
+    entry_uuids = {p["uuid"] for p in fe.inbound}
+    assert entry_uuids, "inboundPorts must not be empty after rewire"
 
 
 def test_set_edge_target_conditional_rewires_via_routes(tmp_path):
@@ -449,3 +456,232 @@ def test_extract_and_insert_node_roundtrip(tmp_path):
     # componentUuid should be rewritten on carried SCS rows
     for row in dest_scs:
         assert row["componentUuid"] == "dest-comp-uuid-0000"
+
+
+# ---------------------------------------------------------------------------
+# Final-review regression tests — C1 / C2 / I1 / I2
+# ---------------------------------------------------------------------------
+
+
+def test_c1_inbound_is_entry_node_only_after_mutation(tmp_path):
+    """C1: after edge mutation on a multi-node component, inboundPorts must
+    be exactly the is_default entry node — NOT one entry per route target.
+
+    Verifies:
+    - length is 1 (exactly one entry node in a simple component);
+    - the entry uuid is the node with data.is_default=True;
+    - terminal nodes (type 2 exit) that are wired as edge targets do NOT appear;
+    - shape matches the builder's field set: name/type/uuid/is_default.
+    """
+    doc = _build(tmp_path, "manifest_multi_canvas.yaml")
+    comp = _uw(doc["BizSpeechComponent"])[0]
+    fe = FlowEditor(comp)
+
+    # Identify the builder-minted entry node (is_default=True, non-terminal).
+    entry_uuid = next(
+        u for u, n in fe.details.items()
+        if (n.get("data") or {}).get("is_default") and n.get("type") not in (2, 4, 13)
+    )
+
+    # Identify a non-entry node to rewire an edge to (force new route targets).
+    other_uuids = [u for u in fe.details if u != entry_uuid]
+    assert other_uuids, "need at least a second node for this test"
+    target_uuid = other_uuids[0]
+
+    # Perform an edge mutation so _rebuild_inbound is called.
+    talk_uuid = next(u for u, n in fe.details.items() if n.get("type") == 1)
+    branches = list(fe._ports(talk_uuid).keys())
+    if branches:
+        fe.set_edge_target(talk_uuid, branches[0], target_uuid)
+
+    # Invariant: inboundPorts == exactly the entry node.
+    assert len(fe.inbound) == 1, (
+        f"expected inboundPorts length 1; got {len(fe.inbound)}: {fe.inbound}"
+    )
+    assert fe.inbound[0]["uuid"] == entry_uuid, (
+        f"inboundPorts entry must be the is_default entry node {entry_uuid!r}; "
+        f"got {fe.inbound[0]['uuid']!r}"
+    )
+    assert fe.inbound[0]["is_default"] is True
+    # Field shape: all four keys present.
+    for key in ("name", "type", "uuid", "is_default"):
+        assert key in fe.inbound[0], f"inboundPorts entry missing key {key!r}"
+
+    # Terminal nodes must never appear in inboundPorts even when wired as targets.
+    terminal_uuids = {u for u, n in fe.details.items() if n.get("type") in (2, 4, 13)}
+    inbound_uuids = {p["uuid"] for p in fe.inbound}
+    assert inbound_uuids.isdisjoint(terminal_uuids), (
+        f"terminal node(s) {terminal_uuids & inbound_uuids} must not appear in inboundPorts"
+    )
+
+
+def test_c2_nested_out_edge_source_type_3(tmp_path):
+    """C2: rewiring a nested (type-11) node's out-edge must produce source.type=3;
+    a talk node's rewired route must still have source.type=1.
+    """
+    doc = _build(tmp_path, "manifest_nested.yaml")
+    comps = _uw(doc["BizSpeechComponent"])
+    # "Parent" canvas has the nested node; it's the component with parentUuid "0"
+    # that is NOT the child (children have parentUuid != "0").
+    parent_comp = next(
+        c for c in comps
+        if c.get("parentUuid", "0") == "0"
+        and any(n.get("type") == 11 for n in _uw(c["details"]).values())
+    )
+    fe = FlowEditor(parent_comp)
+
+    # Locate the nested node (type 11) and one of its out-edges.
+    nested_uuid = next(u for u, n in fe.details.items() if n.get("type") == 11)
+    nested_branches = list(fe._ports(nested_uuid).keys())
+    assert nested_branches, "nested node must have out-ports"
+
+    # Locate any non-terminal node to rewire to (avoid dead-ends for this test).
+    any_target = next(
+        u for u in fe.details
+        if u != nested_uuid and fe.details[u].get("type") not in (2, 4, 13)
+    )
+
+    fe.set_edge_target(nested_uuid, nested_branches[0], any_target)
+
+    # The route for this nested edge must have source.type == 3.
+    port_id = fe._ports(nested_uuid)[nested_branches[0]]
+    route = fe.routes[nested_uuid][port_id]
+    assert route["source"]["type"] == 3, (
+        f"nested out-edge source.type must be 3 (port-origin); got {route['source']['type']}"
+    )
+
+    # Talk node rewire must still produce source.type == 1.
+    talk_uuid = next(u for u, n in fe.details.items() if n.get("type") == 1)
+    talk_branches = list(fe._ports(talk_uuid).keys())
+    if talk_branches:
+        fe.set_edge_target(talk_uuid, talk_branches[0], any_target)
+        talk_port_id = fe._ports(talk_uuid)[talk_branches[0]]
+        talk_route = fe.routes[talk_uuid][talk_port_id]
+        assert talk_route["source"]["type"] == 1, (
+            f"talk out-edge source.type must be 1; got {talk_route['source']['type']}"
+        )
+
+
+def test_i1_set_edge_target_produces_distinct_port_detail_ids(tmp_path):
+    """I1: running set_edge_target on N branches produces N distinct portDetail.id values.
+
+    Uses the conditional_assign manifest (multiple branches on the greet talk node)
+    to exercise the sampled-shape path (routes already exist after the first call).
+    """
+    doc = _build(tmp_path, "manifest_conditional_assign.yaml")
+    comp = _uw(doc["BizSpeechComponent"])[0]
+    fe = FlowEditor(comp)
+
+    # The exit node is a safe target for all branches.
+    exit_uuid = next(u for u, n in fe.details.items() if n.get("type") == 2)
+    talk_uuid = next(u for u, n in fe.details.items() if n.get("type") == 1)
+    branches = list(fe._ports(talk_uuid).keys())
+    assert len(branches) >= 2, "need at least 2 branches to test uniqueness"
+
+    # Wire all branches to the exit node (exercises sampled-shape path from 2nd call on).
+    for branch in branches:
+        fe.set_edge_target(talk_uuid, branch, exit_uuid)
+
+    # Collect portDetail.id for every newly wired edge.
+    port_detail_ids = []
+    for port_id in fe._ports(talk_uuid).values():
+        edge = fe.routes.get(talk_uuid, {}).get(port_id)
+        if edge:
+            pd_id = (edge.get("portDetail") or {}).get("id")
+            if pd_id:
+                port_detail_ids.append(pd_id)
+
+    assert len(port_detail_ids) == len(branches), (
+        f"expected {len(branches)} wired edges; got {len(port_detail_ids)}"
+    )
+    assert len(set(port_detail_ids)) == len(port_detail_ids), (
+        f"duplicate portDetail.id values found: {port_detail_ids}"
+    )
+
+
+def test_i2_remove_node_unwires_two_ports_targeting_same_node(tmp_path):
+    """I2: if two out-ports on one source node both target the same node,
+    remove_node must delete BOTH routes — not leave one dangling via branch-name
+    round-trip.
+
+    Hand-builds the FlowEditor state so the fixture need not produce this topology.
+    """
+    import uuid as _uuid
+
+    # Minimal component: source → target (via two ports), plus entry node.
+    entry_uuid = str(_uuid.uuid4())
+    src_uuid = str(_uuid.uuid4())
+    target_uuid = str(_uuid.uuid4())
+    port_a_id = str(_uuid.uuid4())
+    port_b_id = str(_uuid.uuid4())
+
+    comp = {
+        "componentUuid": "test-comp-uuid",
+        "parentUuid": "0",
+        "details": json.dumps({
+            entry_uuid: {
+                "type": 1,
+                "data": {"name": "Entry", "is_default": True, "id": entry_uuid},
+                "canvas": {"id": entry_uuid, "ports": {"items": [
+                    {"name": "Default", "id": str(_uuid.uuid4()), "attrs": {}, "group": "out"},
+                ]}},
+            },
+            src_uuid: {
+                "type": 1,
+                "data": {"name": "Source", "is_default": False, "id": src_uuid},
+                "canvas": {"id": src_uuid, "ports": {"items": [
+                    {"name": "PortA", "id": port_a_id, "attrs": {}, "group": "out"},
+                    {"name": "PortB", "id": port_b_id, "attrs": {}, "group": "out"},
+                ]}},
+            },
+            target_uuid: {
+                "type": 1,
+                "data": {"name": "Target", "is_default": False, "id": target_uuid},
+                "canvas": {"id": target_uuid, "ports": {"items": []}},
+            },
+        }),
+        "routes": json.dumps({
+            entry_uuid: {},
+            src_uuid: {
+                port_a_id: {"source": {"type": 1, "uuid": port_a_id},
+                            "target": {"type": 1, "uuid": target_uuid},
+                            "portDetail": {"id": "pd-a", "zIndex": 3}},
+                port_b_id: {"source": {"type": 1, "uuid": port_b_id},
+                            "target": {"type": 1, "uuid": target_uuid},
+                            "portDetail": {"id": "pd-b", "zIndex": 3}},
+            },
+            target_uuid: {},
+        }),
+        "inboundPorts": json.dumps([
+            {"name": "Entry", "type": 1, "uuid": entry_uuid, "is_default": True}
+        ]),
+        "topFloorDetails": json.dumps([]),
+    }
+
+    fe = FlowEditor(comp)
+    scs: list = []
+    sck: list = []
+
+    # Confirm both ports target the deleted node BEFORE removal.
+    assert fe.routes[src_uuid][port_a_id]["target"]["uuid"] == target_uuid
+    assert fe.routes[src_uuid][port_b_id]["target"]["uuid"] == target_uuid
+
+    result = fe.remove_node(target_uuid, scs, sck)
+
+    # Both routes must be gone — not just one.
+    src_routes = fe.routes.get(src_uuid, {})
+    assert port_a_id not in src_routes, "PortA route still targets deleted node"
+    assert port_b_id not in src_routes, "PortB route still targets deleted node"
+
+    # No route anywhere should target the deleted uuid.
+    for pm in fe.routes.values():
+        if isinstance(pm, dict):
+            for edge in pm.values():
+                assert (edge.get("target") or {}).get("uuid") != target_uuid, (
+                    "dangling route to deleted node found"
+                )
+
+    # The report must mention both unwired routes.
+    assert len(result["unwired_inbound"]) == 2, (
+        f"expected 2 unwired entries; got {result['unwired_inbound']}"
+    )

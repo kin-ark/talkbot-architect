@@ -228,30 +228,39 @@ class FlowEditor:
     # Inbound rebuild
     # ------------------------------------------------------------------
 
-    def _rebuild_inbound(self) -> None:
-        """Recompute self.inbound from scratch by scanning all route targets.
+    # Terminal int types: exit(2), transfer(13), goto/exit_port(4).
+    # Entry nodes must not be terminal — mirrors the builder's
+    # "is_default and not is_terminal" guard (noderender.py ~line 1235).
+    _TERMINAL_TYPE_INTS: frozenset[int] = frozenset({2, 4, 13})
 
-        Produces exactly one entry per distinct target node uuid that exists in
-        self.details.  Fields mirror the inboundPorts shape:
-            {"name": <data.name>, "type": <node type int>, "uuid": <target_uuid>,
-             "is_default": <bool from data.is_default>}
+    def _rebuild_inbound(self) -> None:
+        """Recompute self.inbound from the component's entry node(s).
+
+        The builder emits ``inboundPorts`` as exactly the single node with
+        ``data.is_default == True`` that is *not* a terminal type.  Mutations do
+        not change the entry node, so we replicate the same rule here:
+
+          • scan ``self.details`` for nodes where ``data.get("is_default")`` is
+            truthy AND ``node["type"]`` not in {2, 4, 13};
+          • emit one entry per such node (in practice exactly one);
+          • field shape matches the builder exactly:
+            ``{"name": <data.name>, "type": <int>, "uuid": <uuid>, "is_default": True}``.
+
+        Do NOT key off route targets — that was wrong: a multi-node component
+        with several route targets would emit one entry per target, which is
+        inconsistent with every real deploy-verified build.
         """
-        seen: dict[str, dict] = {}
-        for port_map in self.routes.values():
-            if not isinstance(port_map, dict):
-                continue
-            for edge in port_map.values():
-                t_uuid = (edge.get("target") or {}).get("uuid", "")
-                if t_uuid and t_uuid in self.details and t_uuid not in seen:
-                    node_obj = self.details[t_uuid]
-                    data = node_obj.get("data") or {}
-                    seen[t_uuid] = {
-                        "name": data.get("name", ""),
-                        "type": node_obj.get("type", 0),
-                        "uuid": t_uuid,
-                        "is_default": bool(data.get("is_default", False)),
-                    }
-        self.inbound = list(seen.values())
+        result: list[dict] = []
+        for node_uuid, node_obj in self.details.items():
+            data = node_obj.get("data") or {}
+            if data.get("is_default") and node_obj.get("type", 0) not in self._TERMINAL_TYPE_INTS:
+                result.append({
+                    "name": data.get("name", ""),
+                    "type": node_obj.get("type", 0),
+                    "uuid": node_uuid,
+                    "is_default": True,
+                })
+        self.inbound = result
 
     # ------------------------------------------------------------------
     # Edge mutation primitives
@@ -270,16 +279,25 @@ class FlowEditor:
                 f"no port for branch {branch!r} on node {from_uuid!r}"
             )
 
-        # Determine portDetail: reuse from an existing route in this component, else mint one.
+        # Determine portDetail: reuse shape from an existing route, else mint one.
+        # ALWAYS overwrite the id with a deterministic per-edge value so every
+        # edge in the component has a unique portDetail.id (I1 fix).
         port_detail = self._sample_port_detail()
+        det_uuid = str(
+            _uuid_mod.uuid5(_uuid_mod.NAMESPACE_URL, f"{from_uuid}:{branch}")
+        )
         if port_detail is None:
-            det_uuid = str(
-                _uuid_mod.uuid5(_uuid_mod.NAMESPACE_URL, f"{from_uuid}:{branch}")
-            )
             port_detail = {"id": det_uuid, "zIndex": 3}
+        else:
+            port_detail["id"] = det_uuid
+
+        # C2 fix: nested (type-11) out-edges need source.type=3 so the
+        # deployed port→target link is intact.  All other node types use 1.
+        # Mirrors noderender.py ~line 1260: src_type_int = 3 if nested else 1.
+        src_type = 3 if self.details.get(from_uuid, {}).get("type") == 11 else 1
 
         edge = {
-            "source": {"type": 1, "uuid": port_id},
+            "source": {"type": src_type, "uuid": port_id},
             "target": {"type": 1, "uuid": to_uuid},
             "portDetail": port_detail,
         }
@@ -336,12 +354,23 @@ class FlowEditor:
         conservative: all zero-inbound nodes are reported.
         Does NOT cascade-delete orphans.
         """
-        # Step 1: unwire all inbound edges targeting uuid
-        unwired: list[tuple[str, str]] = [
-            (src, branch) for (src, branch, _t) in self.in_edges(uuid)
-        ]
-        for src, branch in unwired:
-            self.remove_edge(src, branch)
+        # I2 fix: unwire by iterating actual route port-ids, not branch-name
+        # round-trip.  Two ports on the same source could both target `uuid`; a
+        # branch-name round-trip via _ports() would resolve only one of them and
+        # leave the other dangling.  Direct port-id deletion is unambiguous.
+        unwired: list[tuple[str, str]] = []  # (src_uuid, branch_name) for report
+        for src_uuid, port_map in list(self.routes.items()):
+            if not isinstance(port_map, dict):
+                continue
+            # Build inverse port-id→branch map for reporting only.
+            ports_inv = {v: k for k, v in self._ports(src_uuid).items()}
+            for port_id in [
+                pid for pid, edge in port_map.items()
+                if (edge.get("target") or {}).get("uuid") == uuid
+            ]:
+                port_map.pop(port_id, None)
+                branch_name = ports_inv.get(port_id, port_id)
+                unwired.append((src_uuid, branch_name))
 
         # Identify entry node uuid (is_default=True in inboundPorts) BEFORE mutating inbound
         entry_uuid: str | None = next(
@@ -643,9 +672,15 @@ class FlowEditor:
             next((r for r in self.tfd if r.get("id") == uuid), None)
         )
 
-        # Step 2: unwire inbound edges.
-        for src, branch in [(s, b) for (s, b, _t) in self.in_edges(uuid)]:
-            self.remove_edge(src, branch)
+        # Step 2: unwire inbound edges by port-id (I2 fix — same as remove_node).
+        for _src_uuid, port_map in list(self.routes.items()):
+            if not isinstance(port_map, dict):
+                continue
+            for port_id in [
+                pid for pid, edge in port_map.items()
+                if (edge.get("target") or {}).get("uuid") == uuid
+            ]:
+                port_map.pop(port_id, None)
 
         # Step 3: remove from core tables (do NOT touch all_scs / all_sck).
         self.details.pop(uuid, None)
