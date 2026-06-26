@@ -195,3 +195,57 @@ def test_flush_produces_compact_json(tmp_path):
     details_rt = json.loads(comp["details"])
     assert isinstance(details_rt, dict)
     assert len(details_rt) == len(fe.details)
+
+
+# ---------------------------------------------------------------------------
+# Task 2 — FM-T2: edge mutation primitives
+# ---------------------------------------------------------------------------
+
+
+def test_set_edge_target_updates_route(tmp_path):
+    doc = _build(tmp_path, "manifest_conditional_assign.yaml")
+    comp = _uw(doc["BizSpeechComponent"])[0]
+    fe = FlowEditor(comp)
+    det = _uw(comp["details"])
+    talk = next(u for u, n in det.items() if n["type"] == 1)
+    exit_u = next(u for u, n in det.items() if n["type"] == 2)
+    fe.set_edge_target(talk, "Positive", exit_u)
+    assert dict(fe.out_edges(talk))["Positive"] == exit_u
+    # inbound bookkeeping: exit node now appears in inboundPorts
+    assert any(p["uuid"] == exit_u for p in fe.inbound)
+
+
+def test_set_edge_target_conditional_updates_branch_to(tmp_path):
+    doc = _build(tmp_path, "manifest_conditional_assign.yaml")
+    comp = _uw(doc["BizSpeechComponent"])[0]
+    fe = FlowEditor(comp)
+    det = _uw(comp["details"])
+    cond = next(u for u, n in det.items() if n["type"] == 7)
+    exit_u = next(u for u, n in det.items() if n["type"] == 2)
+    branch = fe.out_edges(cond)[0][0]
+    fe.set_edge_target(cond, branch, exit_u)
+    assert dict(fe.out_edges(cond))[branch] == exit_u
+    # config branches[].to mirrors the new target
+    data = fe.details[cond]["data"]
+    tos = [b.get("to") for b in (data.get("branches") or data.get("branchList") or [])]
+    assert exit_u in tos
+
+
+def test_remove_edge_clears_route_keeps_port(tmp_path):
+    doc = _build(tmp_path, "manifest_conditional_assign.yaml")
+    comp = _uw(doc["BizSpeechComponent"])[0]
+    fe = FlowEditor(comp)
+    talk = next(u for u, n in _uw(comp["details"]).items() if n["type"] == 1)
+    fe.remove_edge(talk, "Positive")
+    assert "Positive" not in dict(fe.out_edges(talk))
+    assert "Positive" in fe._ports(talk)          # port still present
+
+
+def test_set_edge_unknown_branch_raises(tmp_path):
+    doc = _build(tmp_path, "manifest_conditional_assign.yaml")
+    comp = _uw(doc["BizSpeechComponent"])[0]
+    fe = FlowEditor(comp)
+    talk = next(u for u, n in _uw(comp["details"]).items() if n["type"] == 1)
+    import pytest
+    with pytest.raises(FlowEditError, match="branch|port"):
+        fe.set_edge_target(talk, "NoSuchBranch", talk)

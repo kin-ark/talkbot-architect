@@ -14,6 +14,7 @@ filters ``all_scs`` by ``componentUuid == comp["componentUuid"]`` and then by
 from __future__ import annotations
 
 import json
+import uuid as _uuid_mod
 from typing import Any
 
 
@@ -216,3 +217,139 @@ class FlowEditor:
             row for row in all_scs
             if row.get("componentUuid") == comp_uuid and row.get("id") == uuid
         ]
+
+    # ------------------------------------------------------------------
+    # Inbound rebuild
+    # ------------------------------------------------------------------
+
+    def _rebuild_inbound(self) -> None:
+        """Recompute self.inbound from scratch by scanning all route targets.
+
+        Produces exactly one entry per distinct target node uuid that exists in
+        self.details.  Fields mirror the inboundPorts shape:
+            {"name": <data.name>, "type": <node type int>, "uuid": <target_uuid>,
+             "is_default": <bool from data.is_default>}
+        """
+        seen: dict[str, dict] = {}
+        for port_map in self.routes.values():
+            if not isinstance(port_map, dict):
+                continue
+            for edge in port_map.values():
+                t_uuid = (edge.get("target") or {}).get("uuid", "")
+                if t_uuid and t_uuid in self.details and t_uuid not in seen:
+                    node_obj = self.details[t_uuid]
+                    data = node_obj.get("data") or {}
+                    seen[t_uuid] = {
+                        "name": data.get("name", ""),
+                        "type": node_obj.get("type", 0),
+                        "uuid": t_uuid,
+                        "is_default": bool(data.get("is_default", False)),
+                    }
+        self.inbound = list(seen.values())
+
+    # ------------------------------------------------------------------
+    # Edge mutation primitives
+    # ------------------------------------------------------------------
+
+    def set_edge_target(self, from_uuid: str, branch: str, to_uuid: str) -> None:
+        """Set (or overwrite) the route for `branch` on `from_uuid` to point at `to_uuid`.
+
+        Raises FlowEditError if `branch` is not a declared port on `from_uuid`.
+        For conditional nodes (type 7) also updates the matching branch row's ``to``
+        in ``data["branches"]`` (creating the list if absent).
+        Calls _rebuild_inbound() after every change.
+        """
+        ports = self._ports(from_uuid)
+        port_id = ports.get(branch)
+        if port_id is None:
+            raise FlowEditError(
+                f"no port for branch {branch!r} on node {from_uuid!r}"
+            )
+
+        # Determine portDetail: reuse from an existing route in this component, else mint one.
+        port_detail = self._sample_port_detail()
+        if port_detail is None:
+            det_uuid = str(
+                _uuid_mod.uuid5(_uuid_mod.NAMESPACE_URL, f"{from_uuid}:{branch}")
+            )
+            port_detail = {"id": det_uuid, "zIndex": 3}
+
+        edge = {
+            "source": {"type": 1, "uuid": port_id},
+            "target": {"type": 1, "uuid": to_uuid},
+            "portDetail": port_detail,
+        }
+        self.routes.setdefault(from_uuid, {})[port_id] = edge
+
+        # For conditional nodes, mirror the target in data["branches"][].to
+        if self.details.get(from_uuid, {}).get("type") == 7:
+            self._set_conditional_branch_to(from_uuid, branch, to_uuid)
+
+        self._rebuild_inbound()
+
+    def remove_edge(self, from_uuid: str, branch: str) -> None:
+        """Remove the route for `branch` on `from_uuid`.
+
+        The out-port itself is left intact in canvas.ports.items.
+        For conditional nodes (type 7) also clears the matching branch row's ``to``
+        to ``""`` (the row itself is preserved).
+        Calls _rebuild_inbound() after the change.
+
+        Raises FlowEditError if `branch` is not a declared port on `from_uuid`.
+        """
+        ports = self._ports(from_uuid)
+        port_id = ports.get(branch)
+        if port_id is None:
+            raise FlowEditError(
+                f"no port for branch {branch!r} on node {from_uuid!r}"
+            )
+
+        self.routes.get(from_uuid, {}).pop(port_id, None)
+
+        if self.details.get(from_uuid, {}).get("type") == 7:
+            self._set_conditional_branch_to(from_uuid, branch, "")
+
+        self._rebuild_inbound()
+
+    # ------------------------------------------------------------------
+    # Private helpers for edge mutation
+    # ------------------------------------------------------------------
+
+    def _sample_port_detail(self) -> dict | None:
+        """Return a copy of the first portDetail found in any route of this component.
+
+        Returns None if no routes exist yet.
+        """
+        for port_map in self.routes.values():
+            if not isinstance(port_map, dict):
+                continue
+            for edge in port_map.values():
+                pd = edge.get("portDetail")
+                if pd and isinstance(pd, dict):
+                    return dict(pd)
+        return None
+
+    def _set_conditional_branch_to(
+        self, node_uuid: str, branch: str, to_uuid: str
+    ) -> None:
+        """Update (or create) the ``data["branches"]`` entry for *branch* on a type-7 node.
+
+        ``data["branches"]`` is a FlowEditor-maintained list of ``{name, to}`` dicts
+        that tracks per-branch targets on conditional nodes.  It is distinct from the
+        builder's ``data["branch"]`` list (condition rules) and ``data["branchList"]``
+        (string list of port names).
+
+        If an entry for *branch* already exists it is updated in-place; otherwise a new
+        one is appended.  When *to_uuid* is ``""`` the ``to`` field is set to ``""``
+        (the row is NOT removed, so ports remain discoverable).
+        """
+        data = self.details[node_uuid]["data"]
+        branches: list[dict] = data.get("branches") or []
+        for row in branches:
+            if row.get("name") == branch:
+                row["to"] = to_uuid
+                data["branches"] = branches
+                return
+        # Not found — append a new row.
+        branches.append({"name": branch, "to": to_uuid})
+        data["branches"] = branches
