@@ -21,6 +21,11 @@ export async function clearConfig() { return (await axios.post(`${BASE}/config/c
 export async function startBlank() { return (await axios.post(`${BASE}/session/blank`)).data; }
 export async function getSession() { return (await axios.get(`${BASE}/session`)).data; }
 export async function clearSession() { return (await axios.post(`${BASE}/session/clear`)).data; }
+export async function listSessions() { return (await axios.get(`${BASE}/sessions`)).data; }
+export async function createSession() { return (await axios.post(`${BASE}/sessions`)).data; }
+export async function activateSession(id) { return (await axios.post(`${BASE}/sessions/${id}/activate`)).data; }
+export async function renameSession(id, name) { return (await axios.patch(`${BASE}/sessions/${id}`, { name })).data; }
+export async function deleteSession(id) { return (await axios.delete(`${BASE}/sessions/${id}`)).data; }
 
 export async function streamChat(message, { onEvent, signal } = {}) {
   let resp;

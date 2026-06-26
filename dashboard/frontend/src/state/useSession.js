@@ -10,6 +10,9 @@ export function useSession() {
   const [canRedo, setCanRedo] = useState(false);
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
+  const [sessions, setSessions] = useState([]);
+  const [activeSessionId, setActiveSessionId] = useState(null);
+  const [usage, setUsage] = useState(null);
 
   const queue = useRef([]);
   const draining = useRef(false);
@@ -17,6 +20,26 @@ export function useSession() {
   const turnSeq = useRef(0);
   const touched = useRef(false);
   const lastSent = useRef(null);
+
+  const _applyPayload = useCallback((r) => {
+    setSummary(r.summary || null);
+    setFindings(r.findings || []);
+    setTranscript(r.transcript || []);
+    setProposal(r.proposal || null);
+    setCanUndo(!!r.can_undo);
+    setCanRedo(!!r.can_redo);
+    setUsage(r.usage || null);
+    if (r.id !== undefined) setActiveSessionId(r.id);
+  }, []);
+
+  const refreshSessions = useCallback(async () => {
+    try {
+      const r = await api.listSessions();
+      setSessions(r.sessions || []);
+      if (r.active_id !== undefined && r.active_id !== null) setActiveSessionId(r.active_id);
+      return r;
+    } catch { return null; }
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -28,9 +51,12 @@ export function useSession() {
       setProposal(r.proposal || null);
       setCanUndo(!!r.can_undo);
       setCanRedo(!!r.can_redo);
+      setUsage(r.usage || null);
+      if (r.id !== undefined) setActiveSessionId(r.id);
     }).catch(() => {});
+    refreshSessions();
     return () => { cancelled = true; };
-  }, []);
+  }, [refreshSessions]);
 
   const upload = useCallback(async (file) => {
     touched.current = true;
@@ -39,8 +65,9 @@ export function useSession() {
       const r = await api.uploadSession(file);
       setSummary(r.summary); setFindings(r.findings);
       setTranscript([{ role: 'agent', text: `Loaded. ${r.findings.filter(f => f.severity === 'error').length} errors, ${r.findings.filter(f => f.severity === 'warning').length} warnings. What do you want to do?` }]);
+      await refreshSessions();
     } finally { setLoading(false); }
-  }, []);
+  }, [refreshSessions]);
 
   const startBlank = useCallback(async () => {
     touched.current = true;
@@ -49,8 +76,45 @@ export function useSession() {
       const r = await api.startBlank();
       setSummary(r.summary); setFindings(r.findings);
       setTranscript([{ role: 'agent', text: "Blank canvas. Describe the bot you want — e.g. \"make me a Debt Collector talkbot\"." }]);
+      await refreshSessions();
     } finally { setLoading(false); }
-  }, []);
+  }, [refreshSessions]);
+
+  const switchSession = useCallback(async (id) => {
+    touched.current = true;
+    queue.current = [];
+    if (ctrl.current) ctrl.current.abort();
+    const r = await api.activateSession(id);
+    _applyPayload(r);
+    await refreshSessions();
+  }, [_applyPayload, refreshSessions]);
+
+  const newSession = useCallback(async () => {
+    touched.current = true;
+    queue.current = [];
+    if (ctrl.current) ctrl.current.abort();
+    const r = await api.createSession();
+    _applyPayload(r);
+    setTranscript([{ role: 'agent', text: "Blank canvas. Describe the bot you want — e.g. \"make me a Debt Collector talkbot\"." }]);
+    await refreshSessions();
+  }, [_applyPayload, refreshSessions]);
+
+  const renameSession = useCallback(async (id, name) => {
+    await api.renameSession(id, name);
+    await refreshSessions();
+  }, [refreshSessions]);
+
+  const deleteSession = useCallback(async (id) => {
+    const r = await api.deleteSession(id);
+    if (id === activeSessionId && r?.active) {
+      await switchSession(r.active);
+    } else if (id === activeSessionId && !r?.active) {
+      // deleted the only session → blank landing
+      setSummary(null); setFindings([]); setTranscript([]); setProposal(null);
+      setCanUndo(false); setCanRedo(false); setUsage(null); setActiveSessionId(null);
+    }
+    await refreshSessions();
+  }, [activeSessionId, switchSession, refreshSessions]);
 
   const errText = (e) =>
     e?.response?.data?.detail
@@ -79,6 +143,7 @@ export function useSession() {
               if (e.type === 'token') patch((m) => ({ ...m, text: m.text + e.delta }));
               else if (e.type === 'tool_start') patch((m) => ({ ...m, tool_trace: [...m.tool_trace, { name: e.name, arguments: e.args, status: 'running' }] }));
               else if (e.type === 'tool_result') patch((m) => ({ ...m, tool_trace: m.tool_trace.map((tt, i) => (i === m.tool_trace.length - 1 ? { ...tt, status: 'done', summary: e.summary } : tt)) }));
+              else if (e.type === 'usage') setUsage({ input_tokens: e.input_tokens, output_tokens: e.output_tokens, turns: e.turns, model: e.model });
               else if (e.type === 'proposal') setProposal(e.proposal);
               else if (e.type === 'error') setTranscript((t) => [...t, { role: 'error', text: e.message }]);
               else if (e.type === 'done' && e.text) patch((m) => ({ ...m, text: e.text }));
@@ -95,8 +160,9 @@ export function useSession() {
       draining.current = false;
       setSending(false);
       ctrl.current = null;
+      refreshSessions();
     }
-  }, []);
+  }, [refreshSessions]);
 
   const send = useCallback(async (message) => {
     touched.current = true;
@@ -136,9 +202,12 @@ export function useSession() {
     if (ctrl.current) ctrl.current.abort();
     try { await api.clearSession(); } catch { /* best-effort */ }
     setSummary(null); setFindings([]); setTranscript([]); setProposal(null);
-    setCanUndo(false); setCanRedo(false);
-  }, []);
+    setCanUndo(false); setCanRedo(false); setUsage(null); setActiveSessionId(null);
+    await refreshSessions();
+  }, [refreshSessions]);
 
   return { summary, findings, transcript, proposal, canUndo, canRedo, loading, sending,
-           upload, startBlank, send, retry, apply, reject, undo, redo, cancel, reset };
+           sessions, activeSessionId, usage,
+           upload, startBlank, send, retry, apply, reject, undo, redo, cancel, reset,
+           refreshSessions, newSession, switchSession, renameSession, deleteSession };
 }
