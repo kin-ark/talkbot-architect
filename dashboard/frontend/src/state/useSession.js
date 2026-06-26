@@ -121,7 +121,7 @@ export function useSession() {
   const errText = (e) =>
     e?.response?.data?.detail
     || e?.response?.data?.error?.message
-    || (e?.response?.status === 503 ? 'No AI key configured — open ⚙ to set a provider and key.' : null)
+    || (e?.response?.status === 503 ? 'No AI key configured — open Settings to set a provider and key.' : null)
     || e?.message || 'Request failed.';
 
   const drain = useCallback(async () => {
