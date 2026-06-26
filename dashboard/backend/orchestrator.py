@@ -60,6 +60,7 @@ def run_turn_stream(client, session, user_message: str) -> Iterator[dict]:
     messages = [Message(role="system", content=_SYSTEM), *session.transcript]
     proposal: dict | None = None
     text_acc = ""
+    turn_usage: dict = {"input_tokens": 0, "output_tokens": 0}
 
     def _rollback():
         del session.transcript[mark:]
@@ -83,6 +84,9 @@ def run_turn_stream(client, session, user_message: str) -> Iterator[dict]:
                 yield {"type": "token", "delta": chunk.text_delta}
             if chunk.response is not None:
                 resp = chunk.response
+            if chunk.usage:
+                turn_usage["input_tokens"] += chunk.usage.get("input_tokens", 0)
+                turn_usage["output_tokens"] += chunk.usage.get("output_tokens", 0)
         if resp is None:                       # defensive: empty stream
             resp = LLMResponse(text=turn_text or None, tool_calls=[])
 
@@ -94,6 +98,11 @@ def run_turn_stream(client, session, user_message: str) -> Iterator[dict]:
 
         if not resp.tool_calls:
             session.cancel_requested = False
+            session.usage["input_tokens"] += turn_usage["input_tokens"]
+            session.usage["output_tokens"] += turn_usage["output_tokens"]
+            session.usage["turns"] += 1
+            session.usage["model"] = getattr(client, "model", session.usage.get("model"))
+            yield {"type": "usage", **session.usage}
             yield {"type": "done", "canceled": False, "text": text_acc}
             return
 
@@ -116,6 +125,11 @@ def run_turn_stream(client, session, user_message: str) -> Iterator[dict]:
             session.transcript.append(tool_msg)
 
     session.cancel_requested = False
+    session.usage["input_tokens"] += turn_usage["input_tokens"]
+    session.usage["output_tokens"] += turn_usage["output_tokens"]
+    session.usage["turns"] += 1
+    session.usage["model"] = getattr(client, "model", session.usage.get("model"))
+    yield {"type": "usage", **session.usage}
     yield {"type": "done", "canceled": False, "text": text_acc or "(stopped after tool-iteration limit)"}
 
 
@@ -125,6 +139,7 @@ def run_turn(client: LLMClient, session: Session, user_message: str) -> dict:
     tool_trace: list[dict] = []
     proposal: dict | None = None
     canceled = False
+    usage: dict = {}
     for ev in run_turn_stream(client, session, user_message):
         t = ev["type"]
         if t == "token":
@@ -138,7 +153,10 @@ def run_turn(client: LLMClient, session: Session, user_message: str) -> dict:
                 tool_trace.append({"name": ev["name"], "arguments": {}, "result": ev["result"]})
         elif t == "proposal":
             proposal = ev["proposal"]
+        elif t == "usage":
+            usage = {k: ev[k] for k in ("input_tokens", "output_tokens", "turns", "model")}
         elif t == "done":
             text = ev["text"]
             canceled = ev["canceled"]
-    return {"text": text, "tool_trace": tool_trace, "proposal": proposal, "canceled": canceled}
+    return {"text": text, "tool_trace": tool_trace, "proposal": proposal, "canceled": canceled,
+            "usage": usage}

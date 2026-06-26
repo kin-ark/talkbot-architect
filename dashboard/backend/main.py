@@ -24,7 +24,7 @@ from config_store import CONFIG, any_override, effective_key_set
 from llm.base import LLMClient
 from llm.factory import LLMConfigError, make_client
 from orchestrator import run_turn, run_turn_stream
-from session import Session
+from session_store import SessionStore
 from wizmodifier.io import InputBundle
 
 app = FastAPI(title="Talkbot Architect API")
@@ -48,13 +48,18 @@ async def _provider_error(request: Request, exc: LLMProviderError):
 async def _unhandled(request: Request, exc: Exception):
     return JSONResponse(status_code=500, content=_error_body(exc))
 
-SESSION = Session()
+STORE = SessionStore()
+SESSION = STORE.active()        # module alias — the live active object
+
+
+def _S():
+    """Return the currently active Session (read at call time, not import time)."""
+    return STORE.active()
 
 
 @app.on_event("startup")
 def _load_persisted_session() -> None:
-    if not SESSION._stack:
-        persistence.load_session(SESSION)
+    STORE.boot()
 
 
 # ---------------------------------------------------------------------------
@@ -72,13 +77,17 @@ class ConfigUpdate(BaseModel):
     api_key: Optional[str] = None
 
 
+class RenameRequest(BaseModel):
+    name: str
+
+
 # ---------------------------------------------------------------------------
 # Helpers / dependencies
 # ---------------------------------------------------------------------------
 
 def _require_session() -> None:
-    """Raise 503 if no data has been loaded into SESSION yet."""
-    if not SESSION._stack:
+    """Raise 503 if no data has been loaded into the active session yet."""
+    if not _S()._stack:
         raise HTTPException(status_code=503, detail="no session loaded")
 
 
@@ -91,6 +100,24 @@ def _reconstruct_transcript(messages) -> list[dict]:
         elif m.role == "assistant" and m.content:
             out.append({"role": "agent", "text": m.content})
     return out
+
+
+def _active_payload() -> dict:
+    """Return the rehydrate payload for the current active session."""
+    s = _S()
+    if not s._stack:
+        return {"summary": None, "id": s.id}
+    data = s.current()
+    return {
+        "id": s.id,
+        "summary": agents.summarize(data),
+        "findings": agents.validate(data),
+        "transcript": _reconstruct_transcript(s.transcript),
+        "proposal": s.pending,
+        "can_undo": s.can_undo(),
+        "can_redo": s.can_redo(),
+        "usage": s.usage,
+    }
 
 
 def _parse_or_400(content: bytes) -> dict:
@@ -179,27 +206,17 @@ async def clear_config():
 
 @app.get("/export")
 async def export_current(_: None = Depends(_require_session)):
-    payload = json.dumps(SESSION.current(), ensure_ascii=False, separators=(",", ":"))
+    payload = json.dumps(_S().current(), ensure_ascii=False, separators=(",", ":"))
     return Response(
         content=payload,
         media_type="application/json",
-        headers={"Content-Disposition": f"attachment; filename={SESSION.speech_name}"},
+        headers={"Content-Disposition": f"attachment; filename={_S().speech_name}"},
     )
 
 
 @app.get("/session")
 def get_session():
-    if not SESSION._stack:
-        return {"summary": None}
-    data = SESSION.current()
-    return {
-        "summary": agents.summarize(data),
-        "findings": agents.validate(data),
-        "transcript": _reconstruct_transcript(SESSION.transcript),
-        "proposal": SESSION.pending,
-        "can_undo": SESSION.can_undo(),
-        "can_redo": SESSION.can_redo(),
-    }
+    return _active_payload()
 
 
 @app.post("/session")
@@ -221,11 +238,18 @@ async def create_session(file: UploadFile = File(...)):
         finally:
             tmp_path.unlink(missing_ok=True)
         data = bundle.data
-        SESSION.load(data, speech_name=bundle.speech_name, wavs=bundle.wavs)
+        stem = Path(filename).stem or "Imported bot"
+        STORE.new(name=stem)
+        _S().load(data, speech_name=bundle.speech_name, wavs=bundle.wavs)
+        _S().name = stem
     else:
         data = _parse_or_400(raw)
-        SESSION.load(data)
+        stem = Path(filename).stem or "Imported bot"
+        STORE.new(name=stem)
+        _S().load(data)
+        _S().name = stem
 
+    _S()._autosave()
     # Validate only once; reuse the result for the response.
     findings = agents.validate(data)
     return {"summary": agents.summarize(data), "findings": findings}
@@ -233,34 +257,35 @@ async def create_session(file: UploadFile = File(...)):
 
 @app.post("/session/blank")
 def create_blank_session():
-    SESSION.load({"BizSpeechComponent": []})
-    data = SESSION.current()
+    STORE.new(name="New session")
+    _S().load({"BizSpeechComponent": []})
+    data = _S().current()
     return {"summary": agents.summarize(data), "findings": agents.validate(data)}
 
 
 @app.post("/session/clear")
 def clear_session():
     """Drop the current session so the dashboard returns to the upload/landing screen."""
-    SESSION.reset()
+    _S().reset()
     return {"cleared": True}
 
 
 @app.get("/summary")
 async def get_summary():
     _require_session()
-    return agents.summarize(SESSION.current())
+    return agents.summarize(_S().current())
 
 
 @app.get("/findings")
 async def get_findings():
     _require_session()
-    return agents.validate(SESSION.current())
+    return agents.validate(_S().current())
 
 
 @app.get("/node/{uuid}")
 async def get_node(uuid: str):
     _require_session()
-    node = agents.read_node(SESSION.current(), uuid)
+    node = agents.read_node(_S().current(), uuid)
     if node is None:
         raise HTTPException(status_code=404, detail="node not found")
     return node
@@ -272,13 +297,13 @@ def chat(req: ChatRequest, client: LLMClient = Depends(get_client)):
     # /chat/cancel while this turn holds the lock.
     _require_session()
     try:
-        with SESSION._lock:
-            result = run_turn(client, SESSION, req.message)
+        with _S()._lock:
+            result = run_turn(client, _S(), req.message)
     except HTTPException:
         raise
     except Exception as e:
         raise LLMProviderError(f"LLM provider error: {e}") from e
-    SESSION._autosave()
+    _S()._autosave()
     return result
 
 
@@ -287,15 +312,15 @@ def chat_stream(req: ChatRequest, client: LLMClient = Depends(get_client)):
     _require_session()
 
     def _gen():
-        with SESSION._lock:
+        with _S()._lock:
             try:
-                for ev in run_turn_stream(client, SESSION, req.message):
+                for ev in run_turn_stream(client, _S(), req.message):
                     yield f"data: {json.dumps(ev, ensure_ascii=False, default=str)}\n\n"
             except Exception as e:  # surface provider/tool failure as an SSE error, not a 500
                 yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
                 yield f"data: {json.dumps({'type': 'done', 'canceled': False, 'text': ''})}\n\n"
             finally:
-                SESSION._autosave()
+                _S()._autosave()
 
     return StreamingResponse(_gen(), media_type="text/event-stream")
 
@@ -303,46 +328,82 @@ def chat_stream(req: ChatRequest, client: LLMClient = Depends(get_client)):
 @app.post("/chat/cancel")
 def chat_cancel():
     # Must NOT take the lock — it runs while a turn holds it.
-    SESSION.cancel_requested = True
+    _S().cancel_requested = True
     return {"canceling": True}
 
 
 @app.post("/apply")
 async def apply_pending():
     _require_session()
-    if SESSION.pending is None:
+    if _S().pending is None:
         raise HTTPException(status_code=409, detail="no pending proposal")
-    SESSION.apply(SESSION.pending["proposed_data"])
+    _S().apply(_S().pending["proposed_data"])
     return {
         "applied": True,
-        "summary": agents.summarize(SESSION.current()),
-        "findings": agents.validate(SESSION.current()),
-        "can_undo": SESSION.can_undo(),
-        "can_redo": SESSION.can_redo(),
+        "summary": agents.summarize(_S().current()),
+        "findings": agents.validate(_S().current()),
+        "can_undo": _S().can_undo(),
+        "can_redo": _S().can_redo(),
     }
 
 
 @app.post("/undo")
 async def undo():
     _require_session()
-    ok = SESSION.undo()
+    ok = _S().undo()
     return {
         "ok": ok,
-        "summary": agents.summarize(SESSION.current()),
-        "findings": agents.validate(SESSION.current()),
-        "can_undo": SESSION.can_undo(),
-        "can_redo": SESSION.can_redo(),
+        "summary": agents.summarize(_S().current()),
+        "findings": agents.validate(_S().current()),
+        "can_undo": _S().can_undo(),
+        "can_redo": _S().can_redo(),
     }
 
 
 @app.post("/redo")
 async def redo():
     _require_session()
-    ok = SESSION.redo()
+    ok = _S().redo()
     return {
         "ok": ok,
-        "summary": agents.summarize(SESSION.current()),
-        "findings": agents.validate(SESSION.current()),
-        "can_undo": SESSION.can_undo(),
-        "can_redo": SESSION.can_redo(),
+        "summary": agents.summarize(_S().current()),
+        "findings": agents.validate(_S().current()),
+        "can_undo": _S().can_undo(),
+        "can_redo": _S().can_redo(),
     }
+
+
+# ---------------------------------------------------------------------------
+# Multi-session management routes
+# ---------------------------------------------------------------------------
+
+@app.get("/sessions")
+def list_sessions_route():
+    return {"sessions": STORE.list(), "active_id": persistence.read_active()}
+
+
+@app.post("/sessions")
+def create_session_slot():
+    STORE.new()
+    _S().load({"BizSpeechComponent": []})
+    return {"id": _S().id, **_active_payload()}
+
+
+@app.post("/sessions/{sid}/activate")
+def activate_session(sid: str):
+    if not STORE.activate(sid):
+        raise HTTPException(status_code=404, detail="session not found")
+    return {"id": sid, **_active_payload()}
+
+
+@app.patch("/sessions/{sid}")
+def rename_session(sid: str, body: RenameRequest):
+    if not STORE.rename(sid, body.name):
+        raise HTTPException(status_code=404, detail="session not found")
+    return {"ok": True}
+
+
+@app.delete("/sessions/{sid}")
+def delete_session_route(sid: str):
+    STORE.delete(sid)
+    return {"ok": True, "active": _S().id}

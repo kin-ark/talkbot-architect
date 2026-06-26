@@ -63,6 +63,7 @@ class LLMResponse:
 class StreamChunk:
     text_delta: str | None = None       # incremental assistant text
     response: LLMResponse | None = None  # set once, on the final chunk
+    usage: dict | None = None
 
 
 class LLMClient(ABC):
@@ -77,8 +78,9 @@ class LLMClient(ABC):
 class FakeLLMClient(LLMClient):
     """Returns scripted responses in order. For tests, no network."""
 
-    def __init__(self, script: list[LLMResponse]):
+    def __init__(self, script: list[LLMResponse], usage=None):
         self._script = list(script)
+        self._usage = list(usage) if usage else None
         self._i = 0
 
     def chat(self, messages: list[Message], tools: list[ToolSpec]) -> LLMResponse:
@@ -88,9 +90,10 @@ class FakeLLMClient(LLMClient):
 
     def stream_chat(self, messages: list[Message], tools: list[ToolSpec]) -> Iterator[StreamChunk]:
         r = self._script[self._i]
+        u = (self._usage[self._i] if self._usage and self._i < len(self._usage)
+             else {"input_tokens": 0, "output_tokens": 0})
         self._i += 1
         if r.text:
-            words = r.text.split(" ")
-            for k, w in enumerate(words):
+            for k, w in enumerate(r.text.split(" ")):
                 yield StreamChunk(text_delta=(w if k == 0 else " " + w))
-        yield StreamChunk(response=r)
+        yield StreamChunk(response=r, usage=u)

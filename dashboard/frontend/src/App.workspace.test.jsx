@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 beforeEach(() => { global.ResizeObserver = class { observe(){} unobserve(){} disconnect(){} }; });
 vi.mock('./api');
 import { useSession } from './state/useSession';
@@ -15,17 +15,22 @@ beforeEach(() => {
   useSession.mockReturnValue({
     summary: SUMMARY, findings: [], transcript: [{ role: 'agent', text: 'ready' }],
     proposal: null, canUndo: false, canRedo: false, loading: false, sending: false,
+    sessions: [], activeSessionId: null, usage: null,
     upload: vi.fn(), startBlank: vi.fn(), send: vi.fn(), apply: vi.fn(), reject: vi.fn(),
-    undo: vi.fn(), redo: vi.fn(), cancel: vi.fn(),
+    undo: vi.fn(), redo: vi.fn(), cancel: vi.fn(), reset: vi.fn(),
+    newSession: vi.fn(), switchSession: vi.fn(), renameSession: vi.fn(), deleteSession: vi.fn(),
   });
 });
 
 describe('App three-pane workspace', () => {
-  it('renders rail + graph + dock when a session is loaded', () => {
+  it('renders session rail + graph + dock when a session is loaded', () => {
     render(<App />);
-    expect(screen.getByTestId('components-rail')).toBeInTheDocument();
+    expect(screen.getByTestId('session-rail')).toBeInTheDocument();
     expect(screen.getByTestId('flow-canvas')).toBeInTheDocument();
     expect(screen.getByTestId('right-dock')).toBeInTheDocument();
+    // component outline now lives behind the dock Components tab
+    fireEvent.click(screen.getByText('Components'));
+    expect(screen.getByTestId('components-rail')).toBeInTheDocument();
   });
   it('dock defaults to Chat', () => {
     render(<App />);
