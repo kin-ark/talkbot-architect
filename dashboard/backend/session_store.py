@@ -49,8 +49,9 @@ class SessionStore:
             if remaining:
                 self.activate(remaining[0]["id"])
             else:
+                self._active.id = None   # null id first so reset()'s autosave is a no-op
                 self._active.reset()
-                self._active.id = None
+                persistence.ACTIVE_PATH.unlink(missing_ok=True)
 
     def list(self) -> list[dict]:
         return persistence.list_sessions()
