@@ -80,6 +80,21 @@ export default function ChatPane({ transcript, proposal, sending, onSend, onRetr
       }
       return <a href={href} target="_blank" rel="noreferrer" className="text-primary underline">{children}</a>;
     },
+    table: ({ children }) => (
+      <div className="overflow-x-auto my-2" data-testid="md-table-scroll">
+        <table className="w-full text-sm border border-border">{children}</table>
+      </div>
+    ),
+    th: ({ children }) => <th className="border border-border bg-surface-muted px-2 py-1 text-left">{children}</th>,
+    td: ({ children }) => <td className="border border-border px-2 py-1 align-top">{children}</td>,
+    code: ({ inline, className, children, ...props }) => {
+      // Block code (fenced) carries a language- className and is handled by `pre`'s child;
+      // render it untouched so the `pre` renderer (Task 2) + rehype-highlight classes survive.
+      if (className || inline === false) {
+        return <code className={className} {...props}>{children}</code>;
+      }
+      return <code className="font-mono text-[0.85em] bg-surface-muted text-text rounded px-1 py-0.5">{children}</code>;
+    },
   };
   return (
     <div className="flex flex-col h-full" data-testid="chat-pane">
@@ -89,7 +104,7 @@ export default function ChatPane({ transcript, proposal, sending, onSend, onRetr
             {m.tool_trace?.length > 0 && (
               <div className="mb-1">{m.tool_trace.map((t, j) => <ToolChip key={j} name={t.name} args={t.arguments} status={t.status} summary={t.summary} />)}</div>
             )}
-            <div className={`inline-block max-w-[80%] p-3 rounded-2xl text-sm ${bubbleClass(m.role)} ${m.role === 'user' || m.role === 'error' ? 'whitespace-pre-wrap' : 'prose prose-sm max-w-none prose-pre:bg-surface-muted prose-pre:text-text'}`}>
+            <div className={`inline-block max-w-[80%] p-3 rounded-2xl text-sm ${bubbleClass(m.role)} ${m.role === 'user' || m.role === 'error' ? 'whitespace-pre-wrap' : 'prose prose-sm dark:prose-invert max-w-none prose-pre:p-0 prose-pre:bg-transparent'}`}>
               {m.role === 'user' || m.role === 'error'
                 ? m.text
                 : <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>{m.text || ''}</ReactMarkdown>}
