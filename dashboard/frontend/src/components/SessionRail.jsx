@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Pencil, Trash2, PanelLeftClose, PanelLeftOpen, MessageSquare } from 'lucide-react';
+import { Plus, Pencil, Trash2, PanelLeftClose, PanelLeftOpen, MessageSquare, BarChart3, BookOpen, Settings, Sun, Moon } from 'lucide-react';
 
 function fmtUsage(u) {
   if (!u) return null;
@@ -67,7 +67,7 @@ function SessionRow({ s, active, onSwitch, onRename, onDelete, collapsed }) {
 }
 
 export default function SessionRail({ sessions = [], activeSessionId, onNew, onSwitch,
-  onRename, onDelete, usage, collapsed, onToggleCollapse }) {
+  onRename, onDelete, usage, collapsed, onToggleCollapse, onOpenPage, theme, onToggleTheme }) {
   const widthCls = collapsed ? 'w-12' : 'w-60';
   return (
     <div data-testid="session-rail"
@@ -98,6 +98,30 @@ export default function SessionRail({ sessions = [], activeSessionId, onNew, onS
         {sessions.length === 0 && !collapsed && (
           <p className="px-2 py-3 text-xs text-text-tertiary">No sessions yet.</p>
         )}
+      </div>
+
+      <div className={`border-t border-divider p-2 flex ${collapsed ? 'flex-col items-center gap-1' : 'items-center gap-1'}`}>
+        <button type="button" data-testid="rail-stats" aria-label="Statistics" title="Statistics"
+          onClick={() => onOpenPage?.('stats')}
+          className="p-1.5 rounded-md text-text-secondary hover:bg-surface-muted hover:text-text">
+          <BarChart3 size={16} />
+        </button>
+        <button type="button" data-testid="rail-docs" aria-label="Documentation" title="Documentation"
+          onClick={() => onOpenPage?.('docs')}
+          className="p-1.5 rounded-md text-text-secondary hover:bg-surface-muted hover:text-text">
+          <BookOpen size={16} />
+        </button>
+        <button type="button" data-testid="rail-settings" aria-label="Settings" title="Settings"
+          onClick={() => onOpenPage?.('settings')}
+          className="p-1.5 rounded-md text-text-secondary hover:bg-surface-muted hover:text-text">
+          <Settings size={16} />
+        </button>
+        <button type="button" data-testid="rail-theme"
+          aria-label="Toggle theme" title="Toggle light/dark"
+          onClick={onToggleTheme}
+          className={`p-1.5 rounded-md text-text-secondary hover:bg-surface-muted hover:text-text ${collapsed ? '' : 'ml-auto'}`}>
+          {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+        </button>
       </div>
 
       {!collapsed && (

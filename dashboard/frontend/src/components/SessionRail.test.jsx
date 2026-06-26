@@ -12,7 +12,8 @@ function setup(over = {}) {
   const props = {
     sessions: SESSIONS, activeSessionId: 's1',
     onNew: vi.fn(), onSwitch: vi.fn(), onRename: vi.fn(), onDelete: vi.fn(),
-    usage: USAGE, collapsed: false, onToggleCollapse: vi.fn(), ...over,
+    usage: USAGE, collapsed: false, onToggleCollapse: vi.fn(),
+    onOpenPage: vi.fn(), theme: 'light', onToggleTheme: vi.fn(), ...over,
   };
   render(<SessionRail {...props} />);
   return props;
@@ -85,5 +86,35 @@ describe('SessionRail', () => {
     expect(p.onNew).toHaveBeenCalled();
     fireEvent.click(screen.getAllByTestId('session-row')[1]);
     expect(p.onSwitch).toHaveBeenCalledWith('s2');
+  });
+});
+
+describe('SessionRail footer', () => {
+  it('Statistics button fires onOpenPage("stats")', () => {
+    const p = setup();
+    fireEvent.click(screen.getByTestId('rail-stats'));
+    expect(p.onOpenPage).toHaveBeenCalledWith('stats');
+  });
+  it('Documentation button fires onOpenPage("docs")', () => {
+    const p = setup();
+    fireEvent.click(screen.getByTestId('rail-docs'));
+    expect(p.onOpenPage).toHaveBeenCalledWith('docs');
+  });
+  it('Settings button fires onOpenPage("settings")', () => {
+    const p = setup();
+    fireEvent.click(screen.getByTestId('rail-settings'));
+    expect(p.onOpenPage).toHaveBeenCalledWith('settings');
+  });
+  it('theme toggle fires onToggleTheme', () => {
+    const p = setup();
+    fireEvent.click(screen.getByTestId('rail-theme'));
+    expect(p.onToggleTheme).toHaveBeenCalled();
+  });
+  it('footer buttons render in collapsed mode too', () => {
+    const p = setup({ collapsed: true });
+    fireEvent.click(screen.getByTestId('rail-stats'));
+    fireEvent.click(screen.getByTestId('rail-settings'));
+    expect(p.onOpenPage).toHaveBeenCalledWith('stats');
+    expect(p.onOpenPage).toHaveBeenCalledWith('settings');
   });
 });
