@@ -1,7 +1,8 @@
-"""Mutation ops: rewire-edge (incl. goto retarget) and delete-edge."""
+"""Mutation ops: rewire-edge, delete-edge, delete-node, rename-node."""
 
 from __future__ import annotations
 
+from wizmodifier import codec
 from wizmodifier.floweditor import FlowEditor
 from wizmodifier.io import InputBundle
 from wizmodifier.ops._bsc import get_components, require_component, set_components
@@ -78,6 +79,87 @@ def delete_edge(bundle: InputBundle, params: dict, minter) -> None:  # noqa: ARG
 
     from_uuid = fe.resolve(params["from"])
     fe.remove_edge(from_uuid, params["branch"])
+
+    fe.flush()
+    set_components(bundle, comps)
+
+
+def delete_node(bundle: InputBundle, params: dict, minter) -> dict:  # noqa: ARG001
+    """Remove a node and cascade-clean all related tables.
+
+    params:
+        component — BSC index (int)
+        node      — {uuid: <uuid>} or {label: <name>}
+
+    Decodes SentenceCutSpeech / SentenceCutKnowledge from the export-level
+    bundle.data, delegates to FlowEditor.remove_node() which mutates those lists
+    in-place, then writes the updated lists back via codec.encode().
+
+    Returns the summary dict from remove_node:
+        {
+            "unwired_inbound": [(src_uuid, branch), ...],
+            "orphaned":        [uuid, ...],
+            "removed_rows":    <int>,
+        }
+
+    Raises:
+        FlowEditError   if the node ref is unresolvable or ambiguous
+    """
+    comps = get_components(bundle)
+    comp = require_component(comps, params["component"])
+    fe = FlowEditor(comp)
+
+    uuid = fe.resolve(params["node"])
+
+    scs: list[dict] = codec.decode(bundle.data.get("SentenceCutSpeech", "[]"))
+    sck: list[dict] = codec.decode(bundle.data.get("SentenceCutKnowledge", "[]"))
+
+    summary = fe.remove_node(uuid, scs, sck)
+
+    bundle.data["SentenceCutSpeech"] = codec.encode(scs)
+    bundle.data["SentenceCutKnowledge"] = codec.encode(sck)
+    fe.flush()
+    set_components(bundle, comps)
+
+    return summary
+
+
+def rename_node(bundle: InputBundle, params: dict, minter) -> None:  # noqa: ARG001
+    """Set a new label and/or prompt text on a node.
+
+    params:
+        component — BSC index (int)
+        node      — {uuid: <uuid>} or {label: <name>}
+        label     — (optional str) new human-readable label (data.name)
+        prompt    — (optional str) new spoken-text prompt (dialog_list + SCS)
+
+    At least one of `label` or `prompt` must be supplied.
+
+    When `prompt` is given, decodes SentenceCutSpeech from bundle.data, calls
+    fe.set_prompt() (which mutates the list in-place), and writes it back.
+
+    Raises:
+        ValueError      if neither `label` nor `prompt` is present
+        FlowEditError   if the node ref is unresolvable or ambiguous
+    """
+    label: str | None = params.get("label")
+    prompt: str | None = params.get("prompt")
+    if label is None and prompt is None:
+        raise ValueError("rename-node requires 'label' or 'prompt' (or both)")
+
+    comps = get_components(bundle)
+    comp = require_component(comps, params["component"])
+    fe = FlowEditor(comp)
+
+    uuid = fe.resolve(params["node"])
+
+    if label is not None:
+        fe.set_label(uuid, label)
+
+    if prompt is not None:
+        scs: list[dict] = codec.decode(bundle.data.get("SentenceCutSpeech", "[]"))
+        fe.set_prompt(uuid, prompt, scs)
+        bundle.data["SentenceCutSpeech"] = codec.encode(scs)
 
     fe.flush()
     set_components(bundle, comps)

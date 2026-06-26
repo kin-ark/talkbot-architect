@@ -23,6 +23,8 @@ OP_REGISTRY: dict[str, Callable] = {
     "add-kb": content.add_kb,
     "rewire-edge": mutate.rewire_edge,
     "delete-edge": mutate.delete_edge,
+    "delete-node": mutate.delete_node,
+    "rename-node": mutate.rename_node,
     "set-path": generic.set_path,
     "delete-path": generic.delete_path,
 }

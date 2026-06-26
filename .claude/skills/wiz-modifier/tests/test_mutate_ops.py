@@ -293,3 +293,176 @@ def test_rewire_edge_unknown_branch_raises(tmp_path):
             "branch": "NoSuchBranch",
             "to": {"uuid": exit_uuid},
         }, MINTER)
+
+
+# ---------------------------------------------------------------------------
+# Task 6: delete-node tests
+# ---------------------------------------------------------------------------
+
+
+def test_delete_node_removes_from_flow(tmp_path):
+    """delete-node: removes node from details/routes; inbound re-wires are cleared;
+    SentenceCutSpeech row count drops for the deleted node's rows."""
+    doc = _build(tmp_path, "manifest_conditional_assign.yaml")
+    bundle = _bundle(doc)
+
+    comp, fe = _comp_fe(bundle)
+    details = _uw(comp["details"])
+
+    # Find the conditional node (type=7) and its "Default" branch target.
+    # The Default branch points at the second talk node ("greet_unpaid").
+    conditional_uuid = next(u for u, n in details.items() if n.get("type") == 7)
+    # The Default branch target: scan fe routes for the conditional node
+    default_target = None
+    for branch, tgt in fe.out_edges(conditional_uuid):
+        if branch == "Default":
+            default_target = tgt
+            break
+    assert default_target is not None, "Expected a Default branch on conditional node"
+
+    # Confirm the target is a talk node with an SCS row
+    assert details[default_target].get("type") == 1
+
+    # Count SCS rows before
+    scs_before = json.loads(doc.get("SentenceCutSpeech", "[]"))
+    comp_uuid = comp["componentUuid"]
+    scs_node_before = [
+        r for r in scs_before
+        if r.get("componentUuid") == comp_uuid and r.get("id") == default_target
+    ]
+    assert scs_node_before, "Expected at least one SCS row for target node before delete"
+
+    mutate.delete_node(bundle, {
+        "component": 0,
+        "node": {"uuid": default_target},
+    }, MINTER)
+
+    # Re-parse details from bundle
+    comp2, fe2 = _comp_fe(bundle)
+    details2 = _uw(comp2["details"])
+
+    # Node must be gone from details
+    assert default_target not in details2
+
+    # Node must be gone from routes
+    routes2 = json.loads(comp2["routes"])
+    assert default_target not in routes2
+
+    # No route in any other node should still target the deleted node
+    for port_map in routes2.values():
+        if not isinstance(port_map, dict):
+            continue
+        for edge in port_map.values():
+            target_uuid = (edge.get("target") or {}).get("uuid")
+            assert target_uuid != default_target, (
+                "Expected no remaining route targeting deleted node"
+            )
+
+    # SCS rows for this node must be gone from bundle
+    scs_after = json.loads(bundle.data.get("SentenceCutSpeech", "[]"))
+    scs_node_after = [
+        r for r in scs_after
+        if r.get("componentUuid") == comp_uuid and r.get("id") == default_target
+    ]
+    assert len(scs_node_after) == 0, "Expected SCS rows removed after delete-node"
+    assert len(scs_after) < len(scs_before), "Expected total SCS count to drop"
+
+
+def test_delete_node_unknown_raises(tmp_path):
+    """delete-node: unknown node ref raises FlowEditError."""
+    doc = _build(tmp_path, "manifest_conditional_assign.yaml")
+    bundle = _bundle(doc)
+
+    with pytest.raises((FlowEditError, ValueError)):
+        mutate.delete_node(bundle, {
+            "component": 0,
+            "node": {"uuid": "00000000-0000-0000-0000-000000000000"},
+        }, MINTER)
+
+
+# ---------------------------------------------------------------------------
+# Task 6: rename-node tests
+# ---------------------------------------------------------------------------
+
+
+def test_rename_node_label_changes_data_name(tmp_path):
+    """rename-node with label: data.name is updated in the re-parsed export."""
+    doc = _build(tmp_path, "manifest_conditional_assign.yaml")
+    bundle = _bundle(doc)
+
+    comp, fe = _comp_fe(bundle)
+    details = _uw(comp["details"])
+
+    # Target: the first talk node (type=1) — it has a wired Positive branch
+    talk_uuid = next(u for u, n in details.items() if n.get("type") == 1)
+
+    mutate.rename_node(bundle, {
+        "component": 0,
+        "node": {"uuid": talk_uuid},
+        "label": "renamed_talk_node",
+    }, MINTER)
+
+    comp2, _ = _comp_fe(bundle)
+    details2 = _uw(comp2["details"])
+    assert details2[talk_uuid]["data"]["name"] == "renamed_talk_node"
+
+
+def test_rename_node_prompt_updates_dialog_and_scs(tmp_path):
+    """rename-node with prompt: editorValue text + SCS sentenceText updated."""
+    doc = _build(tmp_path, "manifest_conditional_assign.yaml")
+    bundle = _bundle(doc)
+
+    comp, _ = _comp_fe(bundle)
+    details = _uw(comp["details"])
+
+    # Target: the first talk node (type=1) which has an SCS row
+    talk_uuid = next(u for u, n in details.items() if n.get("type") == 1)
+    comp_uuid = comp["componentUuid"]
+
+    # Confirm it has an SCS row before rename
+    scs_before = json.loads(doc.get("SentenceCutSpeech", "[]"))
+    scs_talk = [
+        r for r in scs_before
+        if r.get("componentUuid") == comp_uuid and r.get("id") == talk_uuid
+    ]
+    assert scs_talk, "Expected SCS row for talk node before rename"
+
+    new_prompt = "Updated greeting text for rename test"
+    mutate.rename_node(bundle, {
+        "component": 0,
+        "node": {"uuid": talk_uuid},
+        "prompt": new_prompt,
+    }, MINTER)
+
+    # Check details — dialog_list text
+    comp2, _ = _comp_fe(bundle)
+    details2 = _uw(comp2["details"])
+    node2 = details2[talk_uuid]
+    dialog_list = (node2.get("data") or {}).get("dialog_list", [])
+    assert dialog_list, "Expected dialog_list to be present after rename"
+    assert dialog_list[0]["text"] == new_prompt
+
+    # Check SCS row
+    scs_after = json.loads(bundle.data.get("SentenceCutSpeech", "[]"))
+    scs_rows = [
+        r for r in scs_after
+        if r.get("componentUuid") == comp_uuid and r.get("id") == talk_uuid
+    ]
+    assert scs_rows, "Expected SCS row to exist after rename"
+    assert scs_rows[0]["sentenceText"] == new_prompt
+
+
+def test_rename_node_neither_raises(tmp_path):
+    """rename-node with neither label nor prompt raises ValueError."""
+    doc = _build(tmp_path, "manifest_conditional_assign.yaml")
+    bundle = _bundle(doc)
+
+    comp, _ = _comp_fe(bundle)
+    details = _uw(comp["details"])
+    talk_uuid = next(u for u, n in details.items() if n.get("type") == 1)
+
+    with pytest.raises(ValueError, match="label.*prompt|prompt.*label"):
+        mutate.rename_node(bundle, {
+            "component": 0,
+            "node": {"uuid": talk_uuid},
+        }, MINTER)
