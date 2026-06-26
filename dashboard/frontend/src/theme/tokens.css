@@ -27,6 +27,14 @@
   --c-kb-border: #FBBF24;
   --c-code-bg: #1E222A;
   --c-code-fg: #E5E7EB;
+  --c-node-talk: #3B82F6;
+  --c-node-conditional: #8B5CF6;
+  --c-node-assign: #10B981;
+  --c-node-exit: #0EA5E9;
+  --c-node-llm: #F59E0B;
+  --c-node-nested: #F97316;
+  --c-node-exit-port: #14B8A6;
+  --c-node-unknown: #94A3B8;
 }
 
 .dark {
@@ -58,6 +66,14 @@
   --c-kb-border: #B8860B;
   --c-code-bg: #0F1115;
   --c-code-fg: #E5E7EB;
+  --c-node-talk: #60A5FA;
+  --c-node-conditional: #A78BFA;
+  --c-node-assign: #34D399;
+  --c-node-exit: #38BDF8;
+  --c-node-llm: #FBBF24;
+  --c-node-nested: #FB923C;
+  --c-node-exit-port: #2DD4BF;
+  --c-node-unknown: #94A3B8;
 }
 
 html, body, #root { height: 100%; }

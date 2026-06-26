@@ -5,10 +5,23 @@ import { buildGraph } from '../flow/buildGraph';
 import { layoutComponents } from '../flow/componentLayout';
 
 const TYPE_COLOR = {
-  talk: '#3b82f6', conditional: '#8b5cf6', variable_assignment: '#10b981',
-  exit: '#0ea5e9', llm: '#f59e0b', unknown: '#94a3b8',
-  nested_component: '#f97316', exit_port: '#14b8a6',
+  talk: 'var(--c-node-talk)', conditional: 'var(--c-node-conditional)',
+  variable_assignment: 'var(--c-node-assign)', exit: 'var(--c-node-exit)',
+  llm: 'var(--c-node-llm)', unknown: 'var(--c-node-unknown)',
+  nested_component: 'var(--c-node-nested)', exit_port: 'var(--c-node-exit-port)',
 };
+
+const LEGEND_EDGES = [
+  ['intent', 'var(--c-edge-intent)'], ['condition', 'var(--c-edge-condition)'],
+  ['next', 'var(--c-edge-next)'], ['exit', 'var(--c-edge-exit)'],
+  ['default', 'var(--c-edge-default)'], ['cross-component', 'var(--c-edge-xcomp)'],
+];
+const LEGEND_NODES = [
+  ['talk', 'var(--c-node-talk)'], ['conditional', 'var(--c-node-conditional)'],
+  ['assign', 'var(--c-node-assign)'], ['exit', 'var(--c-node-exit)'],
+  ['llm', 'var(--c-node-llm)'], ['nested', 'var(--c-node-nested)'],
+  ['exit_port', 'var(--c-node-exit-port)'], ['unknown', 'var(--c-node-unknown)'],
+];
 
 function ComponentNode({ data }) {
   return (
@@ -42,6 +55,7 @@ export default function FlowCanvas({ summary, onSelectNode, focusComponentId, hi
   const [expanded, setExpanded] = useState(() => new Set());
   const [rf, setRf] = useState(null);
   const [hoverId, setHoverId] = useState(null);
+  const [legendOpen, setLegendOpen] = useState(false);
 
   // Reset to all-collapsed whenever a new summary loads.
   const summaryKey = summary ? JSON.stringify(summary.components?.map((c) => c.uuid)) : '';
@@ -85,7 +99,7 @@ export default function FlowCanvas({ summary, onSelectNode, focusComponentId, hi
           ...n,
           style: {
             ...n.style, background: 'var(--c-surface)', border: '1px solid var(--c-border)',
-            borderLeft: `4px solid ${TYPE_COLOR[n.data?.node_type] || '#94a3b8'}`,
+            borderLeft: `4px solid ${TYPE_COLOR[n.data?.node_type] || 'var(--c-node-unknown)'}`,
             borderRadius: 8, padding: 8, fontSize: 12, width: 200, color: 'var(--c-text)',
             ...(ring ? { boxShadow: ring } : {}),
           },
@@ -143,12 +157,37 @@ export default function FlowCanvas({ summary, onSelectNode, focusComponentId, hi
         </div>
         <button type="button" onClick={fit}
           className="px-3 py-1 text-sm rounded-md border border-border text-text-secondary hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">Fit</button>
+        <button type="button" onClick={() => setLegendOpen((v) => !v)} data-testid="legend-toggle"
+          className={`px-3 py-1 text-sm rounded-md border border-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${legendOpen ? 'bg-primary text-primary-fg' : 'text-text-secondary hover:bg-surface-muted'}`}>Legend</button>
         <span className="ml-auto text-xs text-text-tertiary">{compIds.length} components</span>
       </div>
       <div className="flex-1 min-h-0 relative">
         {compIds.length === 0 && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
             <p className="text-sm text-text-tertiary">No components yet — describe a bot in Chat.</p>
+          </div>
+        )}
+        {legendOpen && (
+          <div data-testid="graph-legend"
+            className="absolute top-2 right-2 z-20 rounded-lg border border-border bg-surface shadow-card p-3 text-xs space-y-2 max-w-[14rem]">
+            <div>
+              <div className="font-semibold text-text-secondary mb-1">Edges</div>
+              {LEGEND_EDGES.map(([label, color]) => (
+                <div key={label} className="flex items-center gap-2">
+                  <span className="inline-block w-4 h-0.5 rounded" style={{ background: color }} />
+                  <span className="text-text">{label}</span>
+                </div>
+              ))}
+            </div>
+            <div>
+              <div className="font-semibold text-text-secondary mb-1">Node types</div>
+              {LEGEND_NODES.map(([label, color]) => (
+                <div key={label} className="flex items-center gap-2">
+                  <span className="inline-block w-3 h-3 rounded-sm" style={{ background: color }} />
+                  <span className="text-text">{label}</span>
+                </div>
+              ))}
+            </div>
           </div>
         )}
         <ReactFlow
