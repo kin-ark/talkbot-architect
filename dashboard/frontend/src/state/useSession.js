@@ -215,7 +215,7 @@ export function useSession() {
     if (ctrl.current) ctrl.current.abort();
     try { await api.clearSession(); } catch { /* best-effort */ }
     setSummary(null); setFindings([]); setTranscript([]); setProposal(null);
-    setCanUndo(false); setCanRedo(false); setUsage(null); setActiveSessionId(null);
+    setCanUndo(false); setCanRedo(false); setUsage(null); setBotName(null); setActiveSessionId(null);
     await refreshSessions();
   }, [refreshSessions]);
 
