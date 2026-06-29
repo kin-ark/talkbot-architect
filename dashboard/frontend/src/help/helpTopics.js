@@ -1,4 +1,4 @@
-// Bundled help content rendered by DocumentationPage. Plain markdown strings.
+// Bundled help content rendered by DocsPage. Markdown strings + a lucide icon and optional @@fig:<id>@@ figure sentinels per topic.
 import {
   Rocket, PanelsTopLeft, Bot, Workflow, BookOpen, ShieldCheck,
   MousePointerClick, Download, GitBranch, MessagesSquare, KeyRound,
