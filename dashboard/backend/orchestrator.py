@@ -36,9 +36,26 @@ _SYSTEM = (
     "link of the form [label](#node:<uuid>) using the node's uuid (from summarize "
     "or read_node) — the dashboard turns these into clickable links that open the "
     "node. Only link nodes that exist in the current dialogue."
+    "\n\nWIZ best-practice — author conformant flows:\n"
+    "- Every flow path must END in an Exit (hangup) or Transfer node. Each component needs its own Exit.\n"
+    "- Every Talk node needs a connected \"Unclassified\" answer branch (the catch-all) plus its answer branches.\n"
+    "- Declare intents (add_intent) BEFORE a KB that triggers on them; assign a variable (assign node) "
+    "BEFORE a conditional reads it.\n"
+    "- IDN language only. Use only supported node types (talk, exit, transfer, goto, goto_kb, conditional, "
+    "assign, nested, exit_port).\n"
+    "- Call get_schema (and get_facts when unsure) BEFORE authoring scaffold_bot params or ops.\n\n"
+    "Fix loop — never present a broken proposal:\n"
+    "- Every edit/build/scaffold result has a checker_delta and, when problems exist, a `findings` list "
+    "(code, severity, id, message).\n"
+    "- If a proposal's result has any severity:\"error\" findings, FIX them — call the right tool to revise "
+    "(e.g. complete_component to add an Exit + wire branches, connect_components/rewire_edge to fix routes) "
+    "and re-propose — before finishing your turn. Never end with an error-carrying proposal.\n"
+    "- severity:\"warning\" findings (missing Unclassified branch, no component Exit) are best-practice "
+    "nudges: address when sensible; they don't block."
 )
 
 _MAX_TOOL_ITERS = 8
+_MAX_FIX_BACKSTOPS = 2
 
 
 def _summarize_tool_result(name: str, result) -> str:
@@ -61,6 +78,7 @@ def run_turn_stream(client, session, user_message: str) -> Iterator[dict]:
     proposal: dict | None = None
     text_acc = ""
     turn_usage: dict = {"input_tokens": 0, "output_tokens": 0}
+    fix_rounds = 0
 
     def _rollback():
         del session.transcript[mark:]
@@ -97,6 +115,16 @@ def run_turn_stream(client, session, user_message: str) -> Iterator[dict]:
             text_acc = resp.text
 
         if not resp.tool_calls:
+            errs = [f for f in (proposal or {}).get("findings", []) if f.get("severity") == "error"]
+            if errs and fix_rounds < _MAX_FIX_BACKSTOPS:
+                fix_rounds += 1
+                note = (f"The current proposal still has {len(errs)} "
+                        f"error{'s' if len(errs) != 1 else ''} and cannot be applied as-is:\n"
+                        + "\n".join(f"- {e['code']} ({e.get('id') or '-'}): {e['message']}" for e in errs[:10])
+                        + "\nFix these (call the right tool to revise) and re-propose before finishing.")
+                messages.append(Message(role="user", content=note))   # messages-only, NOT session.transcript
+                yield {"type": "autofix", "count": len(errs), "round": fix_rounds}
+                continue
             session.cancel_requested = False
             session.usage["input_tokens"] += turn_usage["input_tokens"]
             session.usage["output_tokens"] += turn_usage["output_tokens"]
