@@ -55,4 +55,28 @@ def check_intents(wf: WizFile) -> list[Finding]:
                     ),
                 ))
 
+    # WIZ303: goto_kb node targets a knowledgeId present in BizKnowledgeInfo
+    if wf.flow_model is not None:
+        known_kb_ids = set(wf.knowledge_bases.keys())
+        for comp in wf.flow_model.components:
+            for node in comp.nodes.values():
+                if node.node_type != "goto_kb":
+                    continue
+                for branch in node.branches:
+                    tgt = branch.target_kb
+                    if tgt is not None and tgt not in known_kb_ids:
+                        out.append(Finding(
+                            code="WIZ303",
+                            severity=Severity.ERROR,
+                            location=Location(
+                                entity="FlowNode",
+                                id=node.uuid,
+                                field=None,
+                            ),
+                            message=(
+                                f"goto_kb node {node.uuid!r} targets knowledgeId {tgt} "
+                                f"which is not present in BizKnowledgeInfo (dangling KB jump)."
+                            ),
+                        ))
+
     return out
