@@ -1,13 +1,13 @@
 import { useState } from 'react';
-import { Pencil } from 'lucide-react';
+import { Pencil, Undo2, Redo2 } from 'lucide-react';
 import Button from './ui/Button';
 
-export default function TopBar({ canUndo, canRedo, onUndo, onRedo, onExport, onNew, botName, onRenameBot }) {
+export default function TopBar({ hasDoc, canUndo, canRedo, onUndo, onRedo, onExport, botName, onRenameBot }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
   const display = botName && botName !== 'Empty Dialogue' ? botName : '';
 
-  const start = () => { setDraft(display); setEditing(true); };
+  const start = () => { if (!hasDoc) return; setDraft(display); setEditing(true); };
   const commit = () => {
     setEditing(false);
     const next = draft.trim();
@@ -17,8 +17,10 @@ export default function TopBar({ canUndo, canRedo, onUndo, onRedo, onExport, onN
   return (
     <div className="h-12 border-b border-border bg-surface flex items-center justify-between px-4">
       <div className="flex items-center gap-2 min-w-0">
-        <span className="text-xs font-semibold uppercase tracking-wide text-text-tertiary shrink-0">Talkbot Architect</span>
-        {editing ? (
+        <img src="/favicon.svg" alt="" className="w-5 h-5 shrink-0" />
+        {!hasDoc ? (
+          <span data-testid="bot-name" className="text-sm font-semibold text-text-tertiary truncate">Talkbot Architect</span>
+        ) : editing ? (
           <input autoFocus data-testid="bot-name-input" value={draft}
             onChange={(e) => setDraft(e.target.value)} onBlur={commit}
             onKeyDown={(e) => { if (e.key === 'Enter') commit(); else if (e.key === 'Escape') { setDraft(display); setEditing(false); } }}
@@ -31,11 +33,16 @@ export default function TopBar({ canUndo, canRedo, onUndo, onRedo, onExport, onN
           </button>
         )}
       </div>
-      <div className="flex items-center gap-2">
-        <Button variant="secondary" onClick={onNew}>New / Upload</Button>
-        <Button variant="secondary" onClick={onUndo} disabled={!canUndo}>Undo</Button>
-        <Button variant="secondary" onClick={onRedo} disabled={!canRedo}>Redo</Button>
-        <Button variant="secondary" onClick={onExport}>Export</Button>
+      <div className="flex items-center gap-1">
+        <button type="button" aria-label="Undo" title="Undo" onClick={onUndo} disabled={!hasDoc || !canUndo}
+          className="p-2 rounded-md text-text-secondary hover:bg-surface-muted hover:text-text disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-text-secondary">
+          <Undo2 size={16} />
+        </button>
+        <button type="button" aria-label="Redo" title="Redo" onClick={onRedo} disabled={!hasDoc || !canRedo}
+          className="p-2 rounded-md text-text-secondary hover:bg-surface-muted hover:text-text disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-text-secondary">
+          <Redo2 size={16} />
+        </button>
+        <Button variant="secondary" onClick={onExport} disabled={!hasDoc} className="ml-1">Export</Button>
       </div>
     </div>
   );
