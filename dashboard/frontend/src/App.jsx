@@ -29,7 +29,11 @@ export default function App() {
   });
   const [leftPage, setLeftPage] = useState(null);
   const { theme, toggle: toggleTheme } = useTheme();
-  const onExport = () => window.open(exportUrl(), '_blank');
+  const onExport = () => {
+    const errs = s.findings.filter((f) => f.severity === 'error').length;
+    if (errs > 0 && !window.confirm(`${errs} error${errs > 1 ? 's' : ''} found — export anyway?`)) return;
+    window.open(exportUrl(), '_blank');
+  };
   const onNew = () => {
     setSelectedNode(null); setDockTab('chat'); setFocusComponentId(null); setPreview(null);
     s.reset();           // clears backend + session state -> returns to landing
