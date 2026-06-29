@@ -416,6 +416,10 @@ def _as_proposal(p: dict) -> dict:
     for k in ("proposed_summary", "change_set", "change_summary"):
         if k in p:
             proposal[k] = p[k]
-    return {"result": {"ok": True, "diff": p["diff"], "checker_delta": p["checker_delta"],
-                       "change_summary": p.get("change_summary")},
-            "proposal": proposal}
+    findings = agents.validate(p["proposed_data"])
+    proposal["findings"] = findings
+    result = {"ok": True, "diff": p["diff"], "checker_delta": p["checker_delta"],
+              "change_summary": p.get("change_summary")}
+    if findings:
+        result["findings"] = findings
+    return {"result": result, "proposal": proposal}
