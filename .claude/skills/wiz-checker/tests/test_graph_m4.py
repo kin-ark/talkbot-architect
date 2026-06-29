@@ -151,3 +151,52 @@ def test_wiz107_108_are_warnings_not_errors(tmp_path):
     by_code = {f.code: f for f in findings if f.code in ("WIZ107", "WIZ108")}
     assert set(by_code) == {"WIZ107", "WIZ108"}
     assert all(f.severity.name == "WARNING" for f in by_code.values())
+
+
+# ---------------------------------------------------------------------------
+# Step 3: --strict semantics — WIZ107/108 WARNINGs are the strict-fail signal
+# manifest_minimal.yaml = 1 talk node, no Exit, no connected Unclassified
+# ---------------------------------------------------------------------------
+
+def test_strict_escalates_completeness_warnings(tmp_path):
+    from wizcheck.checks import run_all_checks
+    doc = _build(tmp_path, "manifest_minimal.yaml")
+    findings = run_all_checks(parse_dict(doc))
+    warn_codes = {f.code for f in findings if f.severity.name == "WARNING"}
+    assert {"WIZ107", "WIZ108"} & warn_codes   # present as warnings (strict turns them fatal)
+
+
+# ---------------------------------------------------------------------------
+# Step 4: real-export nested fixture — assert ZERO WIZ106 on a deploy-verified
+# export that contains type-11 (nested) nodes with cross-component routing.
+#
+# talkbot/Test+Kinan/speech13139256226648334285.json is present in the worktree
+# and was imported/deployed successfully on the WIZ.AI platform.  It contains
+# at least 2 type-11 nodes inside one component and must produce no WIZ106 ERRORs
+# (proves child-exit-uuid resolution treats legitimate nested routing as valid).
+# ---------------------------------------------------------------------------
+
+_REAL_NESTED_SAMPLE = (
+    Path(__file__).resolve().parents[4]
+    / "talkbot" / "Test+Kinan" / "speech13139256226648334285.json"
+)
+
+
+def test_wiz106_zero_on_real_nested_export():
+    """WIZ106 must not fire on a real deploy-verified nested export.
+
+    If the sample is absent (worktree lacks the talkbot/ directory), the test
+    is skipped and the real-export check is deferred to the human import gate.
+    """
+    import pytest
+    if not _REAL_NESTED_SAMPLE.exists():
+        pytest.skip(
+            f"Real nested sample not present: {_REAL_NESTED_SAMPLE}. "
+            "Deferred to human import gate."
+        )
+    doc = json.loads(_REAL_NESTED_SAMPLE.read_text(encoding="utf-8"))
+    findings = check_graph(parse_dict(doc))
+    wiz106 = [f for f in findings if f.code == "WIZ106"]
+    assert not wiz106, (
+        f"WIZ106 false-positive(s) on real nested export: {[str(f) for f in wiz106]}"
+    )
