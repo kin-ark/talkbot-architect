@@ -85,6 +85,17 @@ export function useSession() {
     } finally { setLoading(false); }
   }, [refreshSessions]);
 
+  const loadSample = useCallback(async (id) => {
+    touched.current = true;
+    setLoading(true);
+    try {
+      const r = await api.loadSample(id);
+      setSummary(r.summary); setFindings(r.findings);
+      setTranscript([{ role: 'agent', text: `Loaded the ${r.summary?.components?.[0]?.name || 'sample'} sample — explore the graph, or ask me to change it.` }]);
+      await refreshSessions();
+    } finally { setLoading(false); }
+  }, [refreshSessions]);
+
   const switchSession = useCallback(async (id) => {
     touched.current = true;
     queue.current = [];
@@ -242,6 +253,6 @@ export function useSession() {
 
   return { summary, findings, transcript, proposal, canUndo, canRedo, loading, sending,
            sessions, activeSessionId, usage, botName,
-           upload, startBlank, send, retry, apply, reject, undo, redo, cancel, reset,
+           upload, startBlank, loadSample, send, retry, apply, reject, undo, redo, cancel, reset,
            refreshSessions, newSession, switchSession, renameSession, deleteSession, renameBot, editNodeText };
 }
