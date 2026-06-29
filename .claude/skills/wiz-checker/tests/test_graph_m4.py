@@ -147,3 +147,7 @@ def test_wiz107_108_are_warnings_not_errors(tmp_path):
     findings = run_all_checks(wf)
     errs = [f for f in findings if f.severity.name == "ERROR"]
     assert not any(f.code in ("WIZ107", "WIZ108") for f in errs)
+    # Not vacuous: both codes must actually fire (as WARNING) on this incomplete build.
+    by_code = {f.code: f for f in findings if f.code in ("WIZ107", "WIZ108")}
+    assert set(by_code) == {"WIZ107", "WIZ108"}
+    assert all(f.severity.name == "WARNING" for f in by_code.values())
