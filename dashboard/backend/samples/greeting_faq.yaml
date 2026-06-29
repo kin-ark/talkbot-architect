@@ -1,0 +1,13 @@
+name: "Greeting & FAQ"
+branch: dev
+language: IDN
+canvases:
+  - name: "1. Greeting"
+    nodes:
+      - id: greet
+        prompt: "Hello! Thanks for calling. How can I help you today?"
+      - id: bye
+        prompt: "Thanks for calling. Goodbye!"
+        type: exit
+    edges:
+      - {from: greet, branch: Unclassified, to: bye}
