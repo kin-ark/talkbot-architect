@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from wizmodifier.ops import content, generic, identity, mutate, structure
+from wizmodifier.ops import content, generic, identity, kb_edit, mutate, structure
 
 OP_REGISTRY: dict[str, Callable] = {
     "set-speech-id": identity.set_speech_id,
@@ -21,6 +21,8 @@ OP_REGISTRY: dict[str, Callable] = {
     "add-variable": content.add_variable,
     "add-intent": content.add_intent,
     "add-kb": content.add_kb,
+    "rename-kb": kb_edit.rename_kb,
+    "set-kb-intents": kb_edit.set_kb_intents,
     "rewire-edge": mutate.rewire_edge,
     "delete-edge": mutate.delete_edge,
     "delete-node": mutate.delete_node,
