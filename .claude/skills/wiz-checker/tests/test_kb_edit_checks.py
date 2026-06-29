@@ -19,7 +19,7 @@ def test_wiz303_clean_goto_kb_passes(tmp_path):
     assert "WIZ303" not in codes
 
 
-def test_wiz303_dangling_goto_kb_errors(tmp_path):
+def test_wiz303_dangling_goto_kb_warns(tmp_path):
     doc = _doc(tmp_path, "manifest_goto_kb.yaml")
     # remove the KB the goto_kb targets, leaving a dangling appoint_knowledge_id
     comps = json.loads(doc["BizSpeechComponent"])
@@ -34,4 +34,11 @@ def test_wiz303_dangling_goto_kb_errors(tmp_path):
     bk = [k for k in json.loads(doc["BizKnowledgeInfo"]) if str(k["knowledgeId"]) != str(target)]
     doc["BizKnowledgeInfo"] = json.dumps(bk)
     findings = [f for f in check_intents(parse_dict(doc)) if f.code == "WIZ303"]
-    assert findings and all(f.severity.name == "ERROR" for f in findings)
+    # WARNING (not ERROR) — an absent KB id may be a legitimate library/external ref,
+    # so a dangling jump imports fine; it is a DEPLOY_BLOCKER_CODE (--deploy flags it).
+    assert findings and all(f.severity.name == "WARNING" for f in findings)
+
+
+def test_wiz303_is_a_deploy_blocker_code():
+    from wizcheck.report import DEPLOY_BLOCKER_CODES
+    assert "WIZ303" in DEPLOY_BLOCKER_CODES

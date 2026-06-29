@@ -23,7 +23,7 @@ class Severity(StrEnum):
 # Codes that block deployment even though WIZ accepts the import (code:0).
 # `check.py --deploy` exits non-zero if any finding carries one of these,
 # regardless of that finding's severity.
-DEPLOY_BLOCKER_CODES = frozenset({"WIZ101", "WIZ107", "WIZ108", "WIZ109"})
+DEPLOY_BLOCKER_CODES = frozenset({"WIZ101", "WIZ107", "WIZ108", "WIZ109", "WIZ303"})
 
 
 @dataclass(frozen=True)

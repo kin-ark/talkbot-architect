@@ -55,7 +55,11 @@ def check_intents(wf: WizFile) -> list[Finding]:
                     ),
                 ))
 
-    # WIZ303: goto_kb node targets a knowledgeId present in BizKnowledgeInfo
+    # WIZ303: goto_kb node targets a knowledgeId not present in BizKnowledgeInfo.
+    # WARNING, not ERROR: an absent KB id may be a legitimate library/external KB
+    # reference (the shipped goto_kb tolerance), so it imports fine — but a dangling
+    # in-export jump is a deploy concern. It is in DEPLOY_BLOCKER_CODES, so --deploy
+    # / --strict flag it while a plain check tolerates it.
     if wf.flow_model is not None:
         known_kb_ids = set(wf.knowledge_bases.keys())
         for comp in wf.flow_model.components:
@@ -67,7 +71,7 @@ def check_intents(wf: WizFile) -> list[Finding]:
                     if tgt is not None and tgt not in known_kb_ids:
                         out.append(Finding(
                             code="WIZ303",
-                            severity=Severity.ERROR,
+                            severity=Severity.WARNING,
                             location=Location(
                                 entity="FlowNode",
                                 id=node.uuid,
@@ -75,7 +79,8 @@ def check_intents(wf: WizFile) -> list[Finding]:
                             ),
                             message=(
                                 f"goto_kb node {node.uuid!r} targets knowledgeId {tgt} "
-                                f"which is not present in BizKnowledgeInfo (dangling KB jump)."
+                                f"which is not present in BizKnowledgeInfo (dangling KB jump "
+                                f"or external/library KB)."
                             ),
                         ))
 
