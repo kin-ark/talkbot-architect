@@ -214,6 +214,60 @@ _SPECS = [
                  "answers": {"type": "array", "items": {"type": "string"}},
                  "multi_round": {"type": "string"}},
               "required": ["name", "intents"]}),
+    ToolSpec("rename_kb",
+             "Rename an existing Knowledge Base. Proposes a dry-run.",
+             {"type": "object", "properties": {
+                 "name": {"type": "string"},
+                 "new_name": {"type": "string"}},
+              "required": ["name", "new_name"]}),
+    ToolSpec("set_kb_intents",
+             "Replace the triggering intents of a Knowledge Base. "
+             "Each intent name must already exist in SpeechIntent. Proposes a dry-run.",
+             {"type": "object", "properties": {
+                 "name": {"type": "string"},
+                 "intents": {"type": "array", "items": {"type": "string"}}},
+              "required": ["name", "intents"]}),
+    ToolSpec("add_kb_answer",
+             "Append a new answer text to a Knowledge Base. Proposes a dry-run.",
+             {"type": "object", "properties": {
+                 "name": {"type": "string"},
+                 "text": {"type": "string"},
+                 "after": {"type": "string", "enum": ["wait", "hangup"],
+                          "description": "what happens after the answer: 'wait' (default) or 'hangup'"}},
+              "required": ["name", "text"]}),
+    ToolSpec("edit_kb_answer",
+             "Edit an existing answer in a Knowledge Base, located by old_text or 0-based index. "
+             "Proposes a dry-run.",
+             {"type": "object", "properties": {
+                 "name": {"type": "string"},
+                 "new_text": {"type": "string"},
+                 "old_text": {"type": "string"},
+                 "index": {"type": "integer"},
+                 "after": {"type": "string", "enum": ["wait", "hangup"],
+                          "description": "what happens after the answer: 'wait' (default) or 'hangup'"}},
+              "required": ["name", "new_text"]}),
+    ToolSpec("remove_kb_answer",
+             "Remove an answer from a Knowledge Base, located by text or 0-based index. "
+             "The KB must keep at least one response. Proposes a dry-run.",
+             {"type": "object", "properties": {
+                 "name": {"type": "string"},
+                 "text": {"type": "string"},
+                 "index": {"type": "integer"}},
+              "required": ["name"]}),
+    ToolSpec("set_kb_multiround",
+             "Set or remove multi-round delegation for a Knowledge Base. "
+             "Pass target_component = a canvas/component name to enable, or null to remove. "
+             "Proposes a dry-run.",
+             {"type": "object", "properties": {
+                 "name": {"type": "string"},
+                 "target_component": {"type": ["string", "null"]}},
+              "required": ["name"]}),
+    ToolSpec("delete_kb",
+             "Delete a user-created Knowledge Base (isInit=0). "
+             "Refuses if the KB is referenced by goto_kb nodes. Proposes a dry-run.",
+             {"type": "object", "properties": {
+                 "name": {"type": "string"}},
+              "required": ["name"]}),
     ToolSpec("rewire_edge",
              "Set or replace an edge route for a branch on a node. Proposes a dry-run.",
              {"type": "object", "properties": {
@@ -296,6 +350,15 @@ def dispatch(name: str, args: dict, data: dict) -> dict:
         built = agents.propose_build(args["manifest_yaml"])
         if not built["ok"]:
             return {"result": {"ok": False, "error": built["error"]}, "proposal": None}
+        import yaml as _yaml
+        import speechname as _sn
+        try:
+            _mani = _yaml.safe_load(args["manifest_yaml"])
+            _nm = _mani.get("name") if isinstance(_mani, dict) else None
+        except Exception:
+            _nm = None
+        if _nm:
+            built["proposed_data"] = _sn.set_speech_name(built["proposed_data"], _nm)
         # Enrich via propose_scaffold path: compute summary/change_set from the built doc
         after_summary = agents.summarize(built["proposed_data"])
         import proposal_meta as _pm
@@ -308,6 +371,9 @@ def dispatch(name: str, args: dict, data: dict) -> dict:
         return _as_proposal(p)
     if name == "scaffold_bot":
         p = agents.propose_scaffold(args)
+        if p.get("ok") and args.get("name"):
+            import speechname as _sn
+            p["proposed_data"] = _sn.set_speech_name(p["proposed_data"], args["name"])
         return _as_proposal(p)
     if name == "get_schema":
         return {"result": agents.get_schema(), "proposal": None}
@@ -346,6 +412,47 @@ def dispatch(name: str, args: dict, data: dict) -> dict:
               "answers": args.get("answers", [])}
         if args.get("multi_round"):
             op["multi_round"] = args["multi_round"]
+        return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
+    if name == "rename_kb":
+        import yaml
+        op = {"op": "rename-kb", "name": args["name"], "new_name": args["new_name"]}
+        return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
+    if name == "set_kb_intents":
+        import yaml
+        op = {"op": "set-kb-intents", "name": args["name"], "intents": args["intents"]}
+        return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
+    if name == "add_kb_answer":
+        import yaml
+        op = {"op": "add-kb-answer", "name": args["name"], "text": args["text"]}
+        if args.get("after") is not None:
+            op["after"] = args["after"]
+        return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
+    if name == "edit_kb_answer":
+        import yaml
+        op = {"op": "edit-kb-answer", "name": args["name"], "new_text": args["new_text"]}
+        if args.get("old_text") is not None:
+            op["old_text"] = args["old_text"]
+        if args.get("index") is not None:
+            op["index"] = args["index"]
+        if args.get("after") is not None:
+            op["after"] = args["after"]
+        return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
+    if name == "remove_kb_answer":
+        import yaml
+        op = {"op": "remove-kb-answer", "name": args["name"]}
+        if args.get("text") is not None:
+            op["text"] = args["text"]
+        if args.get("index") is not None:
+            op["index"] = args["index"]
+        return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
+    if name == "set_kb_multiround":
+        import yaml
+        op = {"op": "set-kb-multiround", "name": args["name"],
+              "target_component": args.get("target_component")}
+        return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
+    if name == "delete_kb":
+        import yaml
+        op = {"op": "delete-kb", "name": args["name"]}
         return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
     if name == "connect_components":
         import yaml
@@ -404,6 +511,10 @@ def _as_proposal(p: dict) -> dict:
     for k in ("proposed_summary", "change_set", "change_summary"):
         if k in p:
             proposal[k] = p[k]
-    return {"result": {"ok": True, "diff": p["diff"], "checker_delta": p["checker_delta"],
-                       "change_summary": p.get("change_summary")},
-            "proposal": proposal}
+    findings = agents.validate(p["proposed_data"])
+    proposal["findings"] = findings
+    result = {"ok": True, "diff": p["diff"], "checker_delta": p["checker_delta"],
+              "change_summary": p.get("change_summary")}
+    if findings:
+        result["findings"] = findings
+    return {"result": result, "proposal": proposal}

@@ -22,6 +22,7 @@ class InputBundle:
     data: dict
     speech_name: str
     wavs: dict[str, bytes] = field(default_factory=dict)
+    warnings: list[str] = field(default_factory=list)
 
     @classmethod
     def load(cls, path: Path) -> InputBundle:

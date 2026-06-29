@@ -428,14 +428,23 @@ class FlowEditor:
     def set_label(self, uuid: str, text: str) -> None:
         """Set the human-readable label of a node.
 
-        Updates ``details[uuid]["data"]["name"]``.  Also updates the ``name`` field
+        Updates ``details[uuid]["name"]`` (envelope-level) and
+        ``details[uuid]["data"]["name"]``.  Also updates the ``name`` field
         on any ``tfd`` row whose ``id`` matches the node uuid (exit/goto nodes
         carry their data dict as a tfd row — the two dicts are independent copies
         at this point, so both must be written).
+
+        Both the envelope-level and data-level name are updated so that
+        FlowModel (which prefers envelope["name"]) and the canvas UI (which
+        reads data["name"]) both see the new label.
         """
         node_obj = self.details.get(uuid)
         if node_obj is None:
             raise FlowEditError(f"no node with uuid {uuid!r}")
+        # Update envelope-level name (FlowModel reads this first)
+        if "name" in node_obj:
+            node_obj["name"] = text
+        # Update data-level name (canvas UI reads this)
         node_obj.setdefault("data", {})["name"] = text
         for row in self.tfd:
             if row.get("id") == uuid and "name" in row:

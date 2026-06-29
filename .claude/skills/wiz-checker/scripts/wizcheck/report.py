@@ -20,6 +20,12 @@ class Severity(StrEnum):
     WARNING = "warning"
 
 
+# Codes that block deployment even though WIZ accepts the import (code:0).
+# `check.py --deploy` exits non-zero if any finding carries one of these,
+# regardless of that finding's severity.
+DEPLOY_BLOCKER_CODES = frozenset({"WIZ101", "WIZ107", "WIZ108", "WIZ109", "WIZ303", "WIZ304"})
+
+
 @dataclass(frozen=True)
 class Location:
     """Where in the file the finding applies."""

@@ -13,6 +13,7 @@ export function useSession() {
   const [sessions, setSessions] = useState([]);
   const [activeSessionId, setActiveSessionId] = useState(null);
   const [usage, setUsage] = useState(null);
+  const [botName, setBotName] = useState(null);
 
   const queue = useRef([]);
   const draining = useRef(false);
@@ -29,6 +30,7 @@ export function useSession() {
     setCanUndo(!!r.can_undo);
     setCanRedo(!!r.can_redo);
     setUsage(r.usage || null);
+    setBotName(r.bot_name ?? null);
     if (r.id !== undefined) setActiveSessionId(r.id);
   }, []);
 
@@ -53,6 +55,7 @@ export function useSession() {
         setCanUndo(!!r.can_undo);
         setCanRedo(!!r.can_redo);
         setUsage(r.usage || null);
+        setBotName(r.bot_name ?? null);
         if (r.id !== undefined) setActiveSessionId(r.id);
       }
       if (!cancelled) refreshSessions();
@@ -78,6 +81,17 @@ export function useSession() {
       const r = await api.startBlank();
       setSummary(r.summary); setFindings(r.findings);
       setTranscript([{ role: 'agent', text: "Blank canvas. Describe the bot you want — e.g. \"make me a Debt Collector talkbot\"." }]);
+      await refreshSessions();
+    } finally { setLoading(false); }
+  }, [refreshSessions]);
+
+  const loadSample = useCallback(async (id) => {
+    touched.current = true;
+    setLoading(true);
+    try {
+      const r = await api.loadSample(id);
+      setSummary(r.summary); setFindings(r.findings);
+      setTranscript([{ role: 'agent', text: `Loaded the ${r.summary?.components?.[0]?.name || 'sample'} sample — explore the graph, or ask me to change it.` }]);
       await refreshSessions();
     } finally { setLoading(false); }
   }, [refreshSessions]);
@@ -193,10 +207,38 @@ export function useSession() {
     setSummary(r.summary); setFindings(r.findings);
     setCanUndo(r.can_undo); setCanRedo(r.can_redo); setProposal(null);
   };
-  const apply = useCallback(async () => refresh(await api.applyPending()), []);
+  const apply = useCallback(async () => {
+    const r = await api.applyPending();
+    refresh(r);
+    if (r.bot_name !== undefined) setBotName(r.bot_name ?? null);
+    refreshSessions();
+  }, [refreshSessions]);
   const reject = useCallback(() => setProposal(null), []);
-  const undo = useCallback(async () => refresh(await api.undo()), []);
-  const redo = useCallback(async () => refresh(await api.redo()), []);
+  const undo = useCallback(async () => {
+    const r = await api.undo();
+    refresh(r);
+    if (r.bot_name !== undefined) setBotName(r.bot_name ?? null);
+    refreshSessions();
+  }, [refreshSessions]);
+  const redo = useCallback(async () => {
+    const r = await api.redo();
+    refresh(r);
+    if (r.bot_name !== undefined) setBotName(r.bot_name ?? null);
+    refreshSessions();
+  }, [refreshSessions]);
+
+  const renameBot = useCallback(async (name) => {
+    const r = await api.setSpeechName(name);
+    refresh(r);
+    setBotName(r.bot_name ?? null);
+    refreshSessions();
+  }, [refreshSessions]);
+
+  const editNodeText = useCallback(async (uuid, fields) => {
+    const r = await api.editNodeText(uuid, fields);
+    refresh(r);   // summary/findings/canUndo/canRedo, clears proposal
+    return r;
+  }, []);
 
   // Clear backend + local state so the app returns to the upload/landing screen.
   // Without clearing the backend, a later reload would rehydrate the old session.
@@ -205,12 +247,23 @@ export function useSession() {
     if (ctrl.current) ctrl.current.abort();
     try { await api.clearSession(); } catch { /* best-effort */ }
     setSummary(null); setFindings([]); setTranscript([]); setProposal(null);
-    setCanUndo(false); setCanRedo(false); setUsage(null); setActiveSessionId(null);
+    setCanUndo(false); setCanRedo(false); setUsage(null); setBotName(null); setActiveSessionId(null);
     await refreshSessions();
   }, [refreshSessions]);
 
+  // Return to the empty-state center WITHOUT clearing the backend or the
+  // session list — the user picks a start method (upload/sample/blank) next,
+  // and that creates the slot. Contrast reset(), which clears the backend
+  // and nulls the active session.
+  const startNew = useCallback(() => {
+    queue.current = [];
+    if (ctrl.current) ctrl.current.abort();
+    setSummary(null); setFindings([]); setTranscript([]); setProposal(null);
+    setCanUndo(false); setCanRedo(false); setBotName(null);
+  }, []);
+
   return { summary, findings, transcript, proposal, canUndo, canRedo, loading, sending,
-           sessions, activeSessionId, usage,
-           upload, startBlank, send, retry, apply, reject, undo, redo, cancel, reset,
-           refreshSessions, newSession, switchSession, renameSession, deleteSession };
+           sessions, activeSessionId, usage, botName,
+           upload, startBlank, loadSample, send, retry, apply, reject, undo, redo, cancel, reset, startNew,
+           refreshSessions, newSession, switchSession, renameSession, deleteSession, renameBot, editNodeText };
 }

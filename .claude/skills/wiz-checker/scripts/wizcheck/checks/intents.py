@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import yaml
@@ -54,5 +55,67 @@ def check_intents(wf: WizFile) -> list[Finding]:
                         f" intent id {iid} which is not declared in SpeechIntent."
                     ),
                 ))
+
+    # WIZ303: goto_kb node targets a knowledgeId not present in BizKnowledgeInfo.
+    # WARNING, not ERROR: an absent KB id may be a legitimate library/external KB
+    # reference (the shipped goto_kb tolerance), so it imports fine — but a dangling
+    # in-export jump is a deploy concern. It is in DEPLOY_BLOCKER_CODES, so --deploy
+    # / --strict flag it while a plain check tolerates it.
+    if wf.flow_model is not None:
+        known_kb_ids = set(wf.knowledge_bases.keys())
+        for comp in wf.flow_model.components:
+            for node in comp.nodes.values():
+                if node.node_type != "goto_kb":
+                    continue
+                for branch in node.branches:
+                    tgt = branch.target_kb
+                    if tgt is not None and tgt not in known_kb_ids:
+                        out.append(Finding(
+                            code="WIZ303",
+                            severity=Severity.WARNING,
+                            location=Location(
+                                entity="FlowNode",
+                                id=node.uuid,
+                                field=None,
+                            ),
+                            message=(
+                                f"goto_kb node {node.uuid!r} targets knowledgeId {tgt} "
+                                f"which is not present in BizKnowledgeInfo (dangling KB jump "
+                                f"or external/library KB)."
+                            ),
+                        ))
+
+    # WIZ304: a user-created (isInit=0), non-deleted KB with no Default Response
+    # (no non-empty Single-Sentence answer AND no Multi-Round delegate) is incomplete.
+    # System KBs (isInit=1, e.g. background/monitor KBs) are legitimately empty -> exempt.
+    for kb in wf.knowledge_bases.values():
+        raw = getattr(kb, "raw", {}) or {}
+        if raw.get("isInit", 0) != 0 or raw.get("isDelete", 0) != 0:
+            continue
+        kd = raw.get("kdInfo", "[]")
+        try:
+            items = json.loads(kd) if isinstance(kd, str) else (kd or [])
+        except (ValueError, TypeError):
+            continue  # malformed kdInfo — never crash the checker; other checks may flag it
+        if not isinstance(items, list):
+            continue
+        has_answer = any(
+            it.get("answerType") == 1 and (it.get("answer") or "").strip() for it in items
+        )
+        has_delegate = any(it.get("answerType") == 2 for it in items)
+        if not has_answer and not has_delegate:
+            out.append(Finding(
+                code="WIZ304",
+                severity=Severity.WARNING,
+                location=Location(
+                    entity="BizKnowledgeInfo",
+                    id=str(kb.knowledge_id),
+                    field="kdInfo"
+                ),
+                message=(
+                    f"Knowledge base {kb.title!r} (id {kb.knowledge_id}) has no Default Response "
+                    f"(no Single-Sentence answer and no Multi-Round delegate) — incomplete."
+                ),
+            ))
 
     return out

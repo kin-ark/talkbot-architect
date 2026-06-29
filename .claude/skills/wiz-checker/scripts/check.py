@@ -1,11 +1,11 @@
 """CLI entry point for wiz-checker.
 
 Usage:
-    python scripts/check.py <file.json> [--json] [--strict] [--only PREFIX]
+    python scripts/check.py <file.json> [--json] [--strict] [--deploy] [--only PREFIX]
 
 Exit codes:
     0  clean (no errors; warnings allowed unless --strict)
-    1  errors present, or warnings under --strict
+    1  errors present; warnings under --strict; or deploy-blockers under --deploy
     2  reserved (in v1 collapses to 0)
     3  fatal parse error
 """
@@ -23,7 +23,7 @@ if str(_HERE) not in sys.path:
 
 from wizcheck.checks import REGISTRY  # noqa: E402
 from wizcheck.parser import ParseError, parse_file  # noqa: E402
-from wizcheck.report import Report  # noqa: E402
+from wizcheck.report import DEPLOY_BLOCKER_CODES, Report  # noqa: E402
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -36,6 +36,9 @@ def _build_parser() -> argparse.ArgumentParser:
                    help="Emit machine-readable JSON report to stdout.")
     p.add_argument("--strict", action="store_true",
                    help="Treat warnings as errors (exit 1 if any warning).")
+    p.add_argument("--deploy", action="store_true",
+                   help="Fail if any deploy-blocker (orphan / unreachable / missing-Exit / "
+                        "unconnected Unclassified) is present — the pre-deploy readiness gate.")
     p.add_argument("--only", default=None,
                    help="Run only findings whose code starts with this prefix (e.g. WIZ1).")
     return p
@@ -72,6 +75,8 @@ def main(argv: list[str] | None = None) -> int:
     if errors > 0:
         return 1
     if args.strict and warnings > 0:
+        return 1
+    if args.deploy and any(f.code in DEPLOY_BLOCKER_CODES for f in report.findings):
         return 1
     return 0
 

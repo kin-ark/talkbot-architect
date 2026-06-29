@@ -21,6 +21,7 @@ from pydantic import BaseModel
 import agents
 import config_store
 import persistence
+import samples
 import speechname
 from auth import PasswordGateMiddleware
 from config_store import CONFIG, any_override, effective_key_set
@@ -28,7 +29,7 @@ from llm.base import LLMClient
 from llm.factory import LLMConfigError, make_client
 from orchestrator import run_turn, run_turn_stream
 from session_store import SessionStore
-from wizmodifier.io import InputBundle
+from wizmodifier.io import InputBundle, write_output
 
 app = FastAPI(title="Talkbot Architect API")
 _cors_origins = (
@@ -94,6 +95,11 @@ class BotNameRequest(BaseModel):
     name: str
 
 
+class NodeTextRequest(BaseModel):
+    label: Optional[str] = None
+    prompt: Optional[str] = None
+
+
 # ---------------------------------------------------------------------------
 # Helpers / dependencies
 # ---------------------------------------------------------------------------
@@ -113,6 +119,17 @@ def _reconstruct_transcript(messages) -> list[dict]:
         elif m.role == "assistant" and m.content:
             out.append({"role": "agent", "text": m.content})
     return out
+
+
+def _component_index_of(data: dict, uuid: str) -> Optional[int]:
+    """Return the BizSpeechComponent list index of the component whose
+    decoded details contain *uuid*, or None if no component contains it."""
+    comps = agents.unwrap(data.get("BizSpeechComponent")) or []
+    for i, comp in enumerate(comps):
+        details = agents.unwrap(comp.get("details"))
+        if isinstance(details, dict) and uuid in details:
+            return i
+    return None
 
 
 def _active_payload() -> dict:
@@ -220,13 +237,35 @@ async def clear_config():
 
 @app.get("/export")
 async def export_current(_: None = Depends(_require_session)):
-    payload = json.dumps(_S().current(), ensure_ascii=False, separators=(",", ":"))
-    nm = speechname.read_speech_name(_S().current())
-    filename = speechname.slugify_filename(nm) if nm else _S().speech_name
+    data = _S().current()
+    nm = speechname.read_speech_name(data)
+    base = speechname.slugify_filename(nm).removesuffix(".json") if nm else "speech_export"
+    # Internal entry MUST be a speech*.json (WIZ + InputBundle.load require it);
+    # the slugged <base> is only the download filename, never the zip entry.
+    sn = _S().speech_name if (_S().speech_name.startswith("speech")
+                              and _S().speech_name.endswith(".json")) else "speech_export.json"
+
+    if _S().wavs:  # has audio → import-ready ZIP via the engine writer
+        bundle = InputBundle(data=data, speech_name=sn, wavs=_S().wavs)
+        with tempfile.NamedTemporaryFile(suffix=".zip", delete=False) as tmp:
+            tmp_path = Path(tmp.name)
+        try:
+            write_output(bundle, tmp_path, fmt="zip")
+            payload = tmp_path.read_bytes()
+        finally:
+            tmp_path.unlink(missing_ok=True)
+        return Response(
+            content=payload,
+            media_type="application/zip",
+            headers={"Content-Disposition": f'attachment; filename="{base}.zip"'},
+        )
+
+    # no audio → JSON (current behavior)
+    payload = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
     return Response(
         content=payload,
         media_type="application/json",
-        headers={"Content-Disposition": f"attachment; filename={filename}"},
+        headers={"Content-Disposition": f'attachment; filename="{base}.json"'},
     )
 
 
@@ -274,6 +313,28 @@ async def create_session(file: UploadFile = File(...)):
     return {"summary": agents.summarize(data), "findings": findings}
 
 
+@app.get("/samples")
+def list_samples_route():
+    return samples.list_samples()
+
+
+@app.post("/samples/{sample_id}")
+def load_sample(sample_id: str):
+    manifest = samples.load_manifest(sample_id)
+    if manifest is None:
+        raise HTTPException(status_code=404, detail="unknown sample")
+    built = agents.propose_build(manifest)
+    if not built["ok"]:
+        raise HTTPException(status_code=500, detail=f"sample build failed: {built.get('error')}")
+    title = samples.title_of(sample_id)
+    STORE.new(name=title)
+    _S().load(built["proposed_data"])
+    _S().name = title
+    _S()._autosave()
+    data = _S().current()
+    return {"summary": agents.summarize(data), "findings": agents.validate(data)}
+
+
 @app.post("/session/blank")
 def create_blank_session():
     STORE.new(name="New session")
@@ -308,6 +369,36 @@ async def get_node(uuid: str):
     if node is None:
         raise HTTPException(status_code=404, detail="node not found")
     return node
+
+
+@app.put("/node/{uuid}/text")
+def edit_node_text(uuid: str, body: NodeTextRequest):
+    import yaml
+    _require_session()
+    label = (body.label or "").strip()
+    prompt = (body.prompt or "").strip()
+    if not label and not prompt:
+        raise HTTPException(status_code=400, detail="label or prompt required")
+    idx = _component_index_of(_S().current(), uuid)
+    if idx is None:
+        raise HTTPException(status_code=404, detail="node not found")
+    op = {"op": "rename-node", "component": idx, "node": {"uuid": uuid}}
+    if label:
+        op["label"] = label
+    if prompt:
+        op["prompt"] = prompt
+    r = agents.propose_mods(_S().current(), yaml.safe_dump([op]))
+    if not r["ok"]:
+        raise HTTPException(status_code=400, detail=r["error"])
+    _S().apply(r["proposed_data"])   # new undoable version + autosave + clears pending
+    return {
+        "ok": True,
+        "summary": agents.summarize(_S().current()),
+        "findings": agents.validate(_S().current()),
+        "can_undo": _S().can_undo(),
+        "can_redo": _S().can_redo(),
+        "node": agents.read_node(_S().current(), uuid),
+    }
 
 
 @app.post("/chat")
@@ -362,6 +453,7 @@ async def apply_pending():
         STORE.rename(_S().id, nm)
     return {
         "applied": True,
+        "bot_name": nm,
         "summary": agents.summarize(_S().current()),
         "findings": agents.validate(_S().current()),
         "can_undo": _S().can_undo(),
@@ -373,8 +465,12 @@ async def apply_pending():
 async def undo():
     _require_session()
     ok = _S().undo()
+    nm = speechname.read_speech_name(_S().current())
+    if nm and _S().id:
+        STORE.rename(_S().id, nm)
     return {
         "ok": ok,
+        "bot_name": nm,
         "summary": agents.summarize(_S().current()),
         "findings": agents.validate(_S().current()),
         "can_undo": _S().can_undo(),
@@ -386,8 +482,12 @@ async def undo():
 async def redo():
     _require_session()
     ok = _S().redo()
+    nm = speechname.read_speech_name(_S().current())
+    if nm and _S().id:
+        STORE.rename(_S().id, nm)
     return {
         "ok": ok,
+        "bot_name": nm,
         "summary": agents.summarize(_S().current()),
         "findings": agents.validate(_S().current()),
         "can_undo": _S().can_undo(),

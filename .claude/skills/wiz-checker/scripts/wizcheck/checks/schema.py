@@ -47,7 +47,7 @@ def check_schema(wf: WizFile) -> list[Finding]:
 
 
 def check_empty_wait_scripts(wf: WizFile) -> list[Finding]:
-    """WIZ106: warn when a Wait or Exit node has the sentence text 'blank' or empty string.
+    """WIZ007: warn when a Wait or Exit node has the sentence text 'blank' or empty string.
 
     Reads from wf.flow_model (FlowModelNode.label + FlowModelNode.data['sentenceText']).
     Returns [] when wf.flow_model is None.
@@ -61,7 +61,7 @@ def check_empty_wait_scripts(wf: WizFile) -> list[Finding]:
                 text = node.data.get("sentenceText")
                 if text == "blank" or text == "":
                     out.append(Finding(
-                        code="WIZ106",
+                        code="WIZ007",
                         severity=Severity.WARNING,
                         location=Location(entity="FlowNode", id=node.uuid, field="sentenceText"),
                         message=f"{node.label} node has explicit 'blank' or empty script.",
@@ -70,12 +70,12 @@ def check_empty_wait_scripts(wf: WizFile) -> list[Finding]:
 
 
 def check_truncated_scripts(wf: WizFile) -> list[Finding]:
-    """WIZ107: warn if any text string ends with '...'."""
+    """WIZ008: warn if any text string ends with '...'."""
     out: list[Finding] = []
     for u in wf.utterances:
         if u.text and u.text.endswith("..."):
             out.append(Finding(
-                code="WIZ107",
+                code="WIZ008",
                 severity=Severity.WARNING,
                 location=Location(entity="Utterance", id=str(u.id), field="text"),
                 message="Utterance text ends with '...' (truncated).",

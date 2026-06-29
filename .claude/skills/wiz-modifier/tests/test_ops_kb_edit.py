@@ -1,0 +1,327 @@
+"""Tests for KB edit ops — rename, set intents."""
+
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+import pytest
+
+_SK = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(_SK / "wiz-builder" / "scripts"))
+sys.path.insert(0, str(_SK / "wiz-modifier" / "scripts"))
+
+from wizbuilder.compile import compile_manifest  # noqa: E402
+from wizbuilder.ids import IdMinter  # noqa: E402
+from wizmodifier import codec  # noqa: E402
+from wizmodifier.io import InputBundle  # noqa: E402
+from wizmodifier.ops.kb_edit import (  # noqa: E402
+    add_kb_answer,
+    delete_kb,
+    edit_kb_answer,
+    remove_kb_answer,
+    rename_kb,
+    set_kb_intents,
+    set_kb_multiround,
+)
+
+_FIX = _SK / "wiz-builder" / "tests" / "fixtures"
+
+
+def _bundle(tmp_path, manifest="manifest_with_kb.yaml"):
+    out = tmp_path / "s.json"
+    compile_manifest(_FIX / manifest, out)
+    data = json.loads(out.read_text(encoding="utf-8"))
+    return InputBundle(data=data, speech_name="s.json")
+
+
+def _minter(b=None):
+    return IdMinter(manifest_hash="test-kb-edit")
+
+
+def test_rename_kb(tmp_path):
+    b = _bundle(tmp_path)
+    rename_kb(b, {"name": "Payment FAQ", "new_name": "Payments"}, _minter())
+    titles = [k["kdTitle"] for k in codec.decode(b.data["BizKnowledgeInfo"])]
+    assert "Payments" in titles and "Payment FAQ" not in titles
+
+
+def test_rename_kb_dedup_guard(tmp_path):
+    b = _bundle(tmp_path)
+    # rename to a name that already exists -> error. Use the baseline's existing KB title.
+    existing = codec.decode(b.data["BizKnowledgeInfo"])[0]["kdTitle"]
+    with pytest.raises(ValueError):
+        rename_kb(b, {"name": "Payment FAQ", "new_name": existing}, _minter())
+
+
+def test_set_kb_intents_resolves(tmp_path):
+    b = _bundle(tmp_path)
+    # 'AskPayment' is declared in manifest_with_kb.yaml
+    set_kb_intents(b, {"name": "Payment FAQ", "intents": ["AskPayment"]}, _minter())
+    kb = next(k for k in codec.decode(b.data["BizKnowledgeInfo"]) if k["kdTitle"] == "Payment FAQ")
+    intents = codec.decode(kb["intents"])
+    assert [i["intentName"] for i in intents] == ["AskPayment"]
+
+
+def test_set_kb_intents_unknown_raises(tmp_path):
+    b = _bundle(tmp_path)
+    with pytest.raises(ValueError):
+        set_kb_intents(b, {"name": "Payment FAQ", "intents": ["NoSuchIntent"]}, _minter())
+
+
+def _editor_value(text):
+    return {
+        "xml": f'<speak xmlns:wiz="http://www.wiz.ai/develop/xml/tts">{text}</speak>',
+        "html": f"<p>{text}</p>",
+        "text": text,
+    }
+
+
+def test_add_kb_answer_adds_item_and_sck(tmp_path):
+    b = _bundle(tmp_path)
+    add_kb_answer(b, {"name": "Payment FAQ", "text": "Brand new answer"}, _minter(b))
+    kb = next(k for k in codec.decode(b.data["BizKnowledgeInfo"]) if k["kdTitle"] == "Payment FAQ")
+    items = codec.decode(kb["kdInfo"])
+    assert any(it.get("answer") == "Brand new answer" for it in items if it.get("answerType") == 1)
+    sck = [r for r in codec.decode(b.data["SentenceCutKnowledge"])
+           if r["knowledgeId"] == kb["knowledgeId"] and r["sentenceText"] == "Brand new answer"]
+    assert len(sck) == 1
+
+
+def test_edit_kb_answer_syncs_and_resets_audio(tmp_path):
+    b = _bundle(tmp_path)
+    kb0 = next(k for k in codec.decode(b.data["BizKnowledgeInfo"]) if k["kdTitle"] == "Payment FAQ")
+    old_text = codec.decode(kb0["kdInfo"])[0]["answer"]
+    # Simulate a recorded export: give the matching SCK row a non-empty audio url.
+    sck = codec.decode(b.data["SentenceCutKnowledge"])
+    item0_id = codec.decode(kb0["kdInfo"])[0]["id"]
+    for r in sck:
+        if r["id"] == item0_id:
+            r["sentenceTextUrl"] = "https://audio/old.wav"
+    b.data["SentenceCutKnowledge"] = codec.encode(sck)
+
+    edit_kb_answer(b, {"name": "Payment FAQ", "old_text": old_text, "new_text": "Updated!"},
+                   _minter(b))
+
+    kb = next(k for k in codec.decode(b.data["BizKnowledgeInfo"]) if k["kdTitle"] == "Payment FAQ")
+    item = codec.decode(kb["kdInfo"])[0]
+    assert item["answer"] == "Updated!" and item["editorValue"] == _editor_value("Updated!")
+    row = next(r for r in codec.decode(b.data["SentenceCutKnowledge"]) if r["id"] == item0_id)
+    assert row["sentenceText"] == "Updated!" and row["sentenceTextUrl"] == ""   # audio reset
+
+
+def test_remove_kb_answer_drops_item_and_sck(tmp_path):
+    b = _bundle(tmp_path)
+    def _answers():
+        bk = codec.decode(b.data["BizKnowledgeInfo"])
+        kb = next(k for k in bk if k["kdTitle"] == "Payment FAQ")
+        items = [it for it in codec.decode(kb["kdInfo"]) if it.get("answerType") == 1]
+        return kb["knowledgeId"], items
+
+    kid, items0 = _answers()
+    # ensure >1 answer so removal is allowed
+    if len(items0) < 2:
+        add_kb_answer(b, {"name": "Payment FAQ", "text": "Second"}, _minter(b))
+        kid, items0 = _answers()
+    target_text = items0[0]["answer"]
+    remove_kb_answer(b, {"name": "Payment FAQ", "text": target_text}, _minter(b))
+    kb = next(k for k in codec.decode(b.data["BizKnowledgeInfo"]) if k["kdTitle"] == "Payment FAQ")
+    items = [it for it in codec.decode(kb["kdInfo"]) if it.get("answerType") == 1]
+    assert all(it["answer"] != target_text for it in items)
+    # the matching SCK row must also be gone
+    sck_remaining = [r for r in codec.decode(b.data["SentenceCutKnowledge"])
+                     if r.get("knowledgeId") == kid]
+    assert all(r.get("sentenceText") != target_text for r in sck_remaining)
+
+
+def test_remove_last_answer_raises(tmp_path):
+    b = _bundle(tmp_path)
+    kb0 = next(k for k in codec.decode(b.data["BizKnowledgeInfo"]) if k["kdTitle"] == "Payment FAQ")
+    answers = [it for it in codec.decode(kb0["kdInfo"]) if it.get("answerType") == 1]
+    # remove down to one, then the last removal must raise
+    for it in answers[1:]:
+        remove_kb_answer(b, {"name": "Payment FAQ", "text": it["answer"]}, _minter(b))
+    last = [it for it in codec.decode(
+        next(k for k in codec.decode(b.data["BizKnowledgeInfo"]) if k["kdTitle"] == "Payment FAQ")["kdInfo"])
+        if it.get("answerType") == 1][0]
+    with pytest.raises(ValueError):
+        remove_kb_answer(b, {"name": "Payment FAQ", "text": last["answer"]}, _minter(b))
+
+
+def test_set_multiround_adds_delegate_and_sets_category(tmp_path):
+    b = _bundle(tmp_path, "manifest_with_multiround_kb.yaml")
+    set_kb_multiround(
+        b, {"name": "Due Date KB", "target_component": "Handler"},
+        _minter(b)
+    )
+    kb = next(
+        k for k in codec.decode(b.data["BizKnowledgeInfo"])
+        if k["kdTitle"] == "Due Date KB"
+    )
+    items = codec.decode(kb["kdInfo"])
+    assert items[-1]["answerType"] == 2 and items[-1]["multipleAppointId"]
+    target = next(
+        c for c in codec.decode(b.data["BizSpeechComponent"])
+        if c.get("name") == "Handler"
+    )
+    assert target["category"] == 2
+
+
+def test_set_multiround_remove_leaves_old_and_warns(tmp_path):
+    b = _bundle(tmp_path, "manifest_with_multiround_kb.yaml")
+    set_kb_multiround(
+        b, {"name": "Due Date KB", "target_component": None},
+        _minter(b)
+    )
+    kb = next(
+        k for k in codec.decode(b.data["BizKnowledgeInfo"])
+        if k["kdTitle"] == "Due Date KB"
+    )
+    items = codec.decode(kb["kdInfo"])
+    assert all(it.get("answerType") != 2 for it in items)
+    assert b.warnings
+
+
+def test_set_multiround_delegate_stays_last(tmp_path):
+    b = _bundle(tmp_path, "manifest_with_multiround_kb.yaml")
+    set_kb_multiround(
+        b, {"name": "Due Date KB", "target_component": "Handler"},
+        _minter(b)
+    )
+    kb = next(
+        k for k in codec.decode(b.data["BizKnowledgeInfo"])
+        if k["kdTitle"] == "Due Date KB"
+    )
+    items = codec.decode(kb["kdInfo"])
+    assert items[-1]["answerType"] == 2
+
+
+def test_set_multiround_fresh_add_on_delegateless_kb(tmp_path):
+    # Strip "Due Date KB"'s builder-supplied delegate so we exercise the FRESH-ADD
+    # path (a plain KB gaining its first delegate), not the replace path.
+    b = _bundle(tmp_path, "manifest_with_multiround_kb.yaml")
+    bk = codec.decode(b.data["BizKnowledgeInfo"])
+    kb = next(k for k in bk if k["kdTitle"] == "Due Date KB")
+    items = [it for it in codec.decode(kb["kdInfo"]) if it.get("answerType") != 2]
+    kb["kdInfo"] = codec.encode(items)
+    b.data["BizKnowledgeInfo"] = codec.encode(bk)
+    # delegate-less now
+    assert all(it.get("answerType") != 2 for it in codec.decode(kb["kdInfo"]))
+
+    set_kb_multiround(b, {"name": "Due Date KB", "target_component": "Handler"}, _minter(b))
+
+    kb2 = next(k for k in codec.decode(b.data["BizKnowledgeInfo"]) if k["kdTitle"] == "Due Date KB")
+    out = codec.decode(kb2["kdInfo"])
+    delegates = [it for it in out if it.get("answerType") == 2]
+    assert len(delegates) == 1 and out[-1]["answerType"] == 2  # exactly one, and last
+    bsc = codec.decode(b.data["BizSpeechComponent"])
+    target = next(c for c in bsc if c.get("name") == "Handler")
+    assert target["category"] == 2
+
+
+def test_add_kb_answer_respects_delegate(tmp_path):
+    b = _bundle(tmp_path, "manifest_with_multiround_kb.yaml")
+    set_kb_multiround(
+        b, {"name": "Due Date KB", "target_component": "Handler"},
+        _minter(b)
+    )
+    add_kb_answer(
+        b,
+        {"name": "Due Date KB", "text": "Tanggal jatuh tempo tambahan."},
+        _minter(b)
+    )
+    kb = next(
+        k for k in codec.decode(b.data["BizKnowledgeInfo"])
+        if k["kdTitle"] == "Due Date KB"
+    )
+    items = codec.decode(kb["kdInfo"])
+    assert items[-1]["answerType"] == 2
+
+
+def test_delete_kb_blocked_on_system_kb(tmp_path):
+    b = _bundle(tmp_path)
+    # a baseline/template KB carries isInit=1
+    sys_kb = next(k for k in codec.decode(b.data["BizKnowledgeInfo"])
+                  if k.get("isInit") == 1)
+    with pytest.raises(ValueError):
+        delete_kb(b, {"name": sys_kb["kdTitle"]}, _minter(b))
+
+
+def test_delete_kb_blocked_on_goto_ref(tmp_path):
+    b = _bundle(tmp_path, "manifest_goto_kb.yaml")
+    kb = next(k for k in codec.decode(b.data["BizKnowledgeInfo"])
+              if k.get("isInit") == 0)
+    with pytest.raises(ValueError) as e:
+        delete_kb(b, {"name": kb["kdTitle"]}, _minter(b))
+    assert "goto_kb" in str(e.value).lower() or "referenc" in str(
+        e.value).lower()
+
+
+def test_delete_kb_succeeds_when_unreferenced(tmp_path):
+    b = _bundle(tmp_path)
+    kb = next(k for k in codec.decode(b.data["BizKnowledgeInfo"])
+              if k.get("isInit") == 0 and k["kdTitle"] == "Payment FAQ")
+    kid = kb["knowledgeId"]
+    delete_kb(b, {"name": "Payment FAQ"}, _minter(b))
+    assert all(k["kdTitle"] != "Payment FAQ"
+               for k in codec.decode(b.data["BizKnowledgeInfo"]))
+    assert all(r["knowledgeId"] != kid
+               for r in codec.decode(b.data["SentenceCutKnowledge"]))
+
+
+def test_set_multiround_remove_on_delegate_only_kb_raises(tmp_path):
+    # "Installment KB" in manifest_with_multiround_kb.yaml delegates with NO answerType:1 answer
+    b = _bundle(tmp_path, "manifest_with_multiround_kb.yaml")
+    with pytest.raises(ValueError):
+        set_kb_multiround(b, {"name": "Installment KB", "target_component": None}, _minter(b))
+
+
+def test_set_multiround_remove_ok_when_answers_remain(tmp_path):
+    # "Due Date KB" has answers + a delegate -> removing the delegate is allowed
+    b = _bundle(tmp_path, "manifest_with_multiround_kb.yaml")
+    set_kb_multiround(b, {"name": "Due Date KB", "target_component": None}, _minter(b))
+    kb = next(k for k in codec.decode(b.data["BizKnowledgeInfo"]) if k["kdTitle"] == "Due Date KB")
+    items = codec.decode(kb["kdInfo"])
+    assert all(it.get("answerType") != 2 for it in items)
+    assert any(it.get("answerType") == 1 for it in items)
+
+
+def test_add_kb_answer_after_hangup(tmp_path):
+    b = _bundle(tmp_path)
+    add_kb_answer(b, {"name": "Payment FAQ", "text": "Selesai, terima kasih.", "after": "hangup"},
+                  _minter(b))
+    kb = next(k for k in codec.decode(b.data["BizKnowledgeInfo"]) if k["kdTitle"] == "Payment FAQ")
+    it = next(i for i in codec.decode(kb["kdInfo"]) if i.get("answer") == "Selesai, terima kasih.")
+    assert it["afterSentence"] == 1
+
+
+def test_add_kb_answer_after_defaults_wait(tmp_path):
+    b = _bundle(tmp_path)
+    add_kb_answer(b, {"name": "Payment FAQ", "text": "Baik."}, _minter(b))
+    kb = next(k for k in codec.decode(b.data["BizKnowledgeInfo"]) if k["kdTitle"] == "Payment FAQ")
+    it = next(i for i in codec.decode(kb["kdInfo"]) if i.get("answer") == "Baik.")
+    assert it["afterSentence"] == 0
+
+
+def test_edit_kb_answer_after_flips_and_omit_preserves(tmp_path):
+    b = _bundle(tmp_path)
+    kb0 = next(k for k in codec.decode(b.data["BizKnowledgeInfo"]) if k["kdTitle"] == "Payment FAQ")
+    a0 = [it["answer"] for it in codec.decode(kb0["kdInfo"]) if it.get("answerType") == 1][0]
+    # set hangup
+    edit_kb_answer(b, {"name": "Payment FAQ", "old_text": a0, "new_text": "X1", "after": "hangup"},
+                   _minter(b))
+    kb = next(k for k in codec.decode(b.data["BizKnowledgeInfo"]) if k["kdTitle"] == "Payment FAQ")
+    it = next(i for i in codec.decode(kb["kdInfo"]) if i.get("answer") == "X1")
+    assert it["afterSentence"] == 1
+    # omit -> unchanged (still 1)
+    edit_kb_answer(b, {"name": "Payment FAQ", "old_text": "X1", "new_text": "X2"}, _minter(b))
+    kb = next(k for k in codec.decode(b.data["BizKnowledgeInfo"]) if k["kdTitle"] == "Payment FAQ")
+    it = next(i for i in codec.decode(kb["kdInfo"]) if i.get("answer") == "X2")
+    assert it["afterSentence"] == 1
+
+
+def test_after_bad_value_raises(tmp_path):
+    b = _bundle(tmp_path)
+    with pytest.raises(ValueError):
+        add_kb_answer(b, {"name": "Payment FAQ", "text": "Z", "after": "explode"}, _minter(b))

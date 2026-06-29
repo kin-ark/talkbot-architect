@@ -59,3 +59,44 @@ def test_apply_syncs_session_label_from_doc(tmp_path, monkeypatch):
         s.pending = {"proposed_data": _doc("Survey Bot")}
         client.post("/apply")
         assert any(e["name"] == "Survey Bot" for e in client.get("/sessions").json()["sessions"])
+
+
+def test_apply_returns_bot_name_in_response(tmp_path, monkeypatch):
+    """POST /apply must return bot_name from the applied doc's speechName."""
+    _isolate(tmp_path, monkeypatch)
+    with TestClient(main.app) as client:
+        client.post("/sessions")
+        s = main.STORE.active()
+        main.SESSION = s
+        s.load(_doc("Empty Dialogue"))
+        s.pending = {"proposed_data": _doc("Built Bot")}
+        r = client.post("/apply")
+        assert r.status_code == 200
+        assert r.json()["bot_name"] == "Built Bot"
+
+
+def test_undo_returns_reverted_bot_name_and_re_mirrors_label(tmp_path, monkeypatch):
+    """After PUT /speech-name then POST /undo, the undo response carries the prior name
+    and GET /sessions shows the session label reverted (re-mirrored)."""
+    _isolate(tmp_path, monkeypatch)
+    with TestClient(main.app) as client:
+        client.post("/sessions")
+        s = main.STORE.active()
+        main.SESSION = s
+        s.load(_doc("Empty Dialogue"))
+
+        # rename to "New Name" — this pushes an undoable state
+        r = client.put("/speech-name", json={"name": "New Name"})
+        assert r.status_code == 200
+        assert r.json()["bot_name"] == "New Name"
+
+        # undo the rename — doc reverts to "Empty Dialogue"
+        r_undo = client.post("/undo")
+        assert r_undo.status_code == 200
+        data = r_undo.json()
+        assert "bot_name" in data
+        assert data["bot_name"] == "Empty Dialogue"
+
+        # rail label should be re-mirrored to the reverted name
+        listed = client.get("/sessions").json()["sessions"]
+        assert any(e["name"] == "Empty Dialogue" for e in listed)

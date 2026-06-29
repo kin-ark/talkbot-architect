@@ -819,3 +819,38 @@ def test_complete_component_idempotent(tmp_path):
     comp, fe = _comp_fe(bundle)
     assert fe.has_exit()
     assert fe.unconnected_branches() == []
+
+
+def test_complete_component_skips_nested_node(tmp_path):
+    """complete-component must NOT wire a nested (type-11) node's ports.
+
+    A nested node's out-ports mirror the child canvas's exit_port nodes and are
+    routed by child-exit-uuid, not by the parent's canvas.ports.items ids. Wiring
+    them fabricates bogus routes keyed by non-routing port ids, which breaks WIZ
+    import ("Invalid JSON ... routes"). Regression for that corruption.
+    """
+    doc = _build(tmp_path, "manifest_nested.yaml")
+    comps = _uw(doc["BizSpeechComponent"])
+    pidx = next(
+        i for i, c in enumerate(comps)
+        if any(n.get("type") == 11 for n in _uw(c["details"]).values())
+    )
+
+    def _nested_route_keys(b):
+        c = get_components(b)[pidx]
+        det = _uw(c["details"])
+        routes = _uw(c["routes"])
+        nk = next(u for u, n in det.items() if n.get("type") == 11)
+        return set(routes.get(nk, {}))
+
+    bundle = _bundle(doc)
+    before = _nested_route_keys(bundle)
+    mutate.complete_component(bundle, {"component": pidx}, MINTER)
+    after = _nested_route_keys(bundle)
+
+    assert after == before, (
+        f"complete-component must not touch nested-node routes; added {after - before}"
+    )
+    # And no route port-key on the nested node is a phantom (not in its canvas ports
+    # AND not a child-exit-uuid it was built with) — i.e. the op added nothing.
+    assert not (after - before)
