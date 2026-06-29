@@ -86,6 +86,11 @@ class BotNameRequest(BaseModel):
     name: str
 
 
+class NodeTextRequest(BaseModel):
+    label: Optional[str] = None
+    prompt: Optional[str] = None
+
+
 # ---------------------------------------------------------------------------
 # Helpers / dependencies
 # ---------------------------------------------------------------------------
@@ -105,6 +110,17 @@ def _reconstruct_transcript(messages) -> list[dict]:
         elif m.role == "assistant" and m.content:
             out.append({"role": "agent", "text": m.content})
     return out
+
+
+def _component_index_of(data: dict, uuid: str) -> Optional[int]:
+    """Return the BizSpeechComponent list index of the component whose
+    decoded details contain *uuid*, or None if no component contains it."""
+    comps = agents.unwrap(data.get("BizSpeechComponent")) or []
+    for i, comp in enumerate(comps):
+        details = agents.unwrap(comp.get("details"))
+        if isinstance(details, dict) and uuid in details:
+            return i
+    return None
 
 
 def _active_payload() -> dict:
@@ -300,6 +316,36 @@ async def get_node(uuid: str):
     if node is None:
         raise HTTPException(status_code=404, detail="node not found")
     return node
+
+
+@app.put("/node/{uuid}/text")
+def edit_node_text(uuid: str, body: NodeTextRequest):
+    import yaml
+    _require_session()
+    label = (body.label or "").strip()
+    prompt = (body.prompt or "").strip()
+    if not label and not prompt:
+        raise HTTPException(status_code=400, detail="label or prompt required")
+    idx = _component_index_of(_S().current(), uuid)
+    if idx is None:
+        raise HTTPException(status_code=404, detail="node not found")
+    op = {"op": "rename-node", "component": idx, "node": {"uuid": uuid}}
+    if label:
+        op["label"] = label
+    if prompt:
+        op["prompt"] = prompt
+    r = agents.propose_mods(_S().current(), yaml.safe_dump([op]))
+    if not r["ok"]:
+        raise HTTPException(status_code=400, detail=r["error"])
+    _S().apply(r["proposed_data"])   # new undoable version + autosave + clears pending
+    return {
+        "ok": True,
+        "summary": agents.summarize(_S().current()),
+        "findings": agents.validate(_S().current()),
+        "can_undo": _S().can_undo(),
+        "can_redo": _S().can_redo(),
+        "node": agents.read_node(_S().current(), uuid),
+    }
 
 
 @app.post("/chat")
