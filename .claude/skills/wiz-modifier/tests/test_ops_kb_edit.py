@@ -111,16 +111,26 @@ def test_edit_kb_answer_syncs_and_resets_audio(tmp_path):
 
 def test_remove_kb_answer_drops_item_and_sck(tmp_path):
     b = _bundle(tmp_path)
-    kb0 = next(k for k in codec.decode(b.data["BizKnowledgeInfo"]) if k["kdTitle"] == "Payment FAQ")
-    items0 = [it for it in codec.decode(kb0["kdInfo"]) if it.get("answerType") == 1]
-    # ensure >1 answer so removal is allowed; add one first if the fixture has only one
+    def _answers():
+        bk = codec.decode(b.data["BizKnowledgeInfo"])
+        kb = next(k for k in bk if k["kdTitle"] == "Payment FAQ")
+        items = [it for it in codec.decode(kb["kdInfo"]) if it.get("answerType") == 1]
+        return kb["knowledgeId"], items
+
+    kid, items0 = _answers()
+    # ensure >1 answer so removal is allowed
     if len(items0) < 2:
         add_kb_answer(b, {"name": "Payment FAQ", "text": "Second"}, _minter(b))
-    target_text = "Second" if len(items0) < 2 else items0[0]["answer"]
+        kid, items0 = _answers()
+    target_text = items0[0]["answer"]
     remove_kb_answer(b, {"name": "Payment FAQ", "text": target_text}, _minter(b))
     kb = next(k for k in codec.decode(b.data["BizKnowledgeInfo"]) if k["kdTitle"] == "Payment FAQ")
     items = [it for it in codec.decode(kb["kdInfo"]) if it.get("answerType") == 1]
     assert all(it["answer"] != target_text for it in items)
+    # the matching SCK row must also be gone
+    sck_remaining = [r for r in codec.decode(b.data["SentenceCutKnowledge"])
+                     if r.get("knowledgeId") == kid]
+    assert all(r.get("sentenceText") != target_text for r in sck_remaining)
 
 
 def test_remove_last_answer_raises(tmp_path):
