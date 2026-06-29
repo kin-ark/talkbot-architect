@@ -121,3 +121,29 @@ def test_wiz106_routes_on_node_with_no_ports_errors(tmp_path):
     doc["BizSpeechComponent"] = json.dumps(comps)
     findings = [f for f in check_graph(parse_dict(doc)) if f.code == "WIZ106"]
     assert findings and all(f.severity.name == "ERROR" for f in findings)
+
+
+# ---------------------------------------------------------------------------
+# WIZ107 + WIZ108: completeness warnings (M4-T2)
+# manifest_minimal.yaml = 1 talk node, no Exit, no connected Unclassified
+# ---------------------------------------------------------------------------
+
+def test_wiz107_component_without_exit_warns(tmp_path):
+    doc = _build(tmp_path, "manifest_minimal.yaml")   # 1 talk node, no terminal
+    findings = [f for f in check_graph(parse_dict(doc)) if f.code == "WIZ107"]
+    assert findings and all(f.severity.name == "WARNING" for f in findings)
+
+
+def test_wiz108_talk_without_connected_unclassified_warns(tmp_path):
+    doc = _build(tmp_path, "manifest_minimal.yaml")
+    findings = [f for f in check_graph(parse_dict(doc)) if f.code == "WIZ108"]
+    assert findings and all(f.severity.name == "WARNING" for f in findings)
+
+
+def test_wiz107_108_are_warnings_not_errors(tmp_path):
+    from wizcheck.checks import run_all_checks
+    doc = _build(tmp_path, "manifest_minimal.yaml")
+    wf = parse_dict(doc)
+    findings = run_all_checks(wf)
+    errs = [f for f in findings if f.severity.name == "ERROR"]
+    assert not any(f.code in ("WIZ107", "WIZ108") for f in errs)

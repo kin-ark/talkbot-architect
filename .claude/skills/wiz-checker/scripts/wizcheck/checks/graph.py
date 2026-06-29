@@ -154,6 +154,67 @@ def _check_routes_validity(wf: WizFile) -> list[Finding]:
     return out
 
 
+_TERMINAL_NODE_TYPES = frozenset({
+    "exit",
+    "transfer",
+    "goto_component",
+    "goto_kb",
+    "exit_port",   # type-4 with empty appoint fields — distinct from goto_component
+})
+
+
+def _check_component_exit(wf: WizFile) -> list[Finding]:
+    """WIZ107: a component with >=1 non-terminal node must contain >=1 terminal node."""
+    fm = wf.flow_model
+    assert fm is not None
+    out: list[Finding] = []
+    for comp in fm.components:
+        types = [n.node_type for n in comp.nodes.values()]
+        if not types:
+            continue
+        has_nonterminal = any(t not in _TERMINAL_NODE_TYPES for t in types)
+        has_terminal = any(t in _TERMINAL_NODE_TYPES for t in types)
+        if has_nonterminal and not has_terminal:
+            out.append(Finding(
+                code="WIZ107", severity=Severity.WARNING,
+                location=Location(entity="BizSpeechComponent", id=comp.uuid, field=None),
+                message=(
+                    f"Component {comp.name!r} ({comp.uuid!r}) has no terminal node "
+                    f"(Exit/Transfer/Goto) — the flow cannot end."
+                ),
+            ))
+    return out
+
+
+def _check_talk_unclassified(wf: WizFile) -> list[Finding]:
+    """WIZ108: every talk node must have an Unclassified branch that is connected."""
+    fm = wf.flow_model
+    assert fm is not None
+    out: list[Finding] = []
+    for comp in fm.components:
+        for node in comp.nodes.values():
+            if node.node_type != "talk":
+                continue
+            unc = [b for b in node.branches if b.label == "Unclassified"]
+            connected = any(
+                (b.target_uuid or b.target_component or b.target_kb or b.terminal)
+                for b in unc
+            )
+            if not connected:
+                why = (
+                    "has no Unclassified branch" if not unc
+                    else "Unclassified branch is unconnected"
+                )
+                out.append(Finding(
+                    code="WIZ108", severity=Severity.WARNING,
+                    location=Location(entity="FlowNode", id=node.uuid, field=None),
+                    message=(
+                        f"Talk node {node.uuid!r} (label={node.label!r}) {why}."
+                    ),
+                ))
+    return out
+
+
 def check_graph(wf: WizFile) -> list[Finding]:
     findings: list[Finding] = []
     # WIZ106 reads raw component data only — runs even when flow_model is None.
@@ -166,6 +227,8 @@ def check_graph(wf: WizFile) -> list[Finding]:
     findings.extend(_check_cycles(wf))
     findings.extend(_check_library_refs_rollup(wf))
     findings.extend(_check_null_branches(wf))
+    findings.extend(_check_component_exit(wf))
+    findings.extend(_check_talk_unclassified(wf))
     return findings
 
 
