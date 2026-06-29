@@ -8,6 +8,7 @@ vi.mock('./api', () => ({
   getConfig: vi.fn().mockResolvedValue({}),
   exportUrl: vi.fn(() => '/export'),
   getSession: vi.fn().mockResolvedValue(null),
+  listSamples: vi.fn().mockResolvedValue([]),
 }));
 import App from './App';
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from './state/useSession';
 import TopBar from './components/TopBar';
 import SessionRail from './components/SessionRail';
@@ -9,9 +9,11 @@ import PageOverlay from './components/PageOverlay';
 import StatisticsPage from './components/StatisticsPage';
 import DocumentationPage from './components/DocumentationPage';
 import SettingsPage from './components/SettingsPage';
+import WelcomeCard from './components/WelcomeCard';
+import SampleGallery from './components/SampleGallery';
 import { Settings as SettingsIcon, Sun, Moon } from 'lucide-react';
 import { useTheme } from './theme/useTheme';
-import { exportUrl } from './api';
+import { exportUrl, getConfig } from './api';
 
 export default function App() {
   const s = useSession();
@@ -29,6 +31,13 @@ export default function App() {
   });
   const [leftPage, setLeftPage] = useState(null);
   const { theme, toggle: toggleTheme } = useTheme();
+  const [keySet, setKeySet] = useState(true);   // assume set until known (no false flash)
+  useEffect(() => {
+    if (s.summary) return;                       // only probe on the landing screen
+    let off = false;
+    getConfig().then((c) => { if (!off) setKeySet(!!c.key_set); }).catch(() => {});
+    return () => { off = true; };
+  }, [s.summary]);
   const onExport = () => {
     const errs = s.findings.filter((f) => f.severity === 'error').length;
     if (errs > 0 && !window.confirm(`${errs} error${errs > 1 ? 's' : ''} found — export anyway?`)) return;
@@ -90,6 +99,14 @@ export default function App() {
     const uploadCard = (
       <div className="flex-1 flex items-center justify-center -mt-12">
         <div className="max-w-md w-full">
+          <WelcomeCard />
+          {!keySet && (
+            <div data-testid="key-nudge" className="mb-4 rounded-lg border border-warning bg-warning-bg text-warning px-3 py-2 text-xs flex items-center gap-2">
+              <span>No AI key set — the chat agent needs one.</span>
+              <button type="button" onClick={() => setLeftPage('settings')}
+                className="ml-auto text-primary hover:underline">Open Settings</button>
+            </div>
+          )}
           <h2 className="text-2xl font-semibold mb-4 text-center text-text">Talkbot Architect</h2>
           <p className="text-center text-text-secondary mb-6 text-sm">Upload a WIZ dialogue JSON or ZIP to begin.</p>
           <UploadZone onUpload={s.upload} />
@@ -98,7 +115,7 @@ export default function App() {
             Start from scratch — describe a new bot
           </button>
           {s.loading && <p className="text-center mt-4 text-text-tertiary">Analyzing…</p>}
-          <p className="text-center mt-6 text-xs text-text-tertiary">Set your AI provider/key via Settings (top-right) or a backend <code>.env</code>.</p>
+          <SampleGallery onPick={s.loadSample} />
         </div>
       </div>
     );
