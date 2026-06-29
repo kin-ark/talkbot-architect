@@ -55,6 +55,20 @@ def _editor_value(text: str) -> dict:
     }
 
 
+_AFTER_MAP = {"wait": 0, "hangup": 1}
+
+
+def _after_value(params: dict, default: int | None = 0) -> int | None:
+    """Map the `after` param to an afterSentence int. Returns `default` when `after`
+    is absent (None default = "leave unchanged" for edit)."""
+    if "after" not in params or params["after"] is None:
+        return default
+    v = params["after"]
+    if v not in _AFTER_MAP:
+        raise ValueError(f"after must be one of {sorted(_AFTER_MAP)}, got {v!r}")
+    return _AFTER_MAP[v]
+
+
 def _find_answer_item(items: list[dict], params: dict) -> int:
     """Index into `items` of the answerType:1 item matched by `index` or `old_text`/`text`."""
     answer_idxs = [i for i, it in enumerate(items) if it.get("answerType") == 1]
@@ -78,7 +92,7 @@ def add_kb_answer(bundle: InputBundle, params: dict, minter) -> None:
     items = ed.kd_items(kb)
     new_id = str(minter.uuid(f"kb-answer:{name}:{text}"))
     new_item = {
-        "afterSentence": 0, "answer": text, "answerType": 1,
+        "afterSentence": _after_value(params, default=0), "answer": text, "answerType": 1,
         "editorValue": _editor_value(text), "id": new_id,
     }
     # insert before any trailing answerType:2 delegate item
@@ -109,6 +123,9 @@ def edit_kb_answer(bundle: InputBundle, params: dict, minter) -> None:
     item_id = items[idx]["id"]
     items[idx]["answer"] = new_text
     items[idx]["editorValue"] = _editor_value(new_text)
+    after = _after_value(params, default=None)
+    if after is not None:
+        items[idx]["afterSentence"] = after
     ed.set_kd_items(kb, items)
     # sync SCK row + reset audio so it re-synthesizes
     for row in ed.sck:
@@ -152,7 +169,13 @@ def set_kb_multiround(bundle: InputBundle, params: dict, minter) -> None:
 
     if target_component is None:
         if old_delegate is not None:
-            items = [it for it in items if it.get("answerType") != 2]
+            remaining = [it for it in items if it.get("answerType") != 2]
+            if not KbEditor.answer_items(remaining):
+                raise ValueError(
+                    f"set-kb-multiround: removing the delegate would leave KB {name!r} with no "
+                    f"Default Response (no Single-Sentence answer); add an answer first or retarget"
+                )
+            items = remaining
             ed.set_kd_items(kb, items)
             ed.warn(
                 f"set-kb-multiround: removed delegate from KB {name!r}; old target "
