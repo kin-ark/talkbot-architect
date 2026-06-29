@@ -59,16 +59,17 @@ export default function DocsPage({ onClose }) {
           })}
         </nav>
         <div className="flex-1 overflow-y-auto">
-          <article data-testid="doc-content"
-            className="max-w-3xl mx-auto px-8 py-8 prose prose-sm dark:prose-invert max-w-none text-text">
-            {segments.map((seg, i) => {
-              if (seg.type === 'md') {
-                return <ReactMarkdown key={i} remarkPlugins={[remarkGfm]}>{seg.text}</ReactMarkdown>;
-              }
-              const Fig = figures[seg.id];
-              return Fig ? <Fig key={i} /> : null;
-            })}
-          </article>
+          <div className="max-w-3xl mx-auto px-8 py-8">
+            <article data-testid="doc-content" className="prose prose-sm dark:prose-invert max-w-none text-text">
+              {segments.map((seg, i) => {
+                if (seg.type === 'md') {
+                  return <ReactMarkdown key={i} remarkPlugins={[remarkGfm]}>{seg.text}</ReactMarkdown>;
+                }
+                const Fig = figures[seg.id];
+                return Fig ? <Fig key={i} /> : null;
+              })}
+            </article>
+          </div>
         </div>
       </div>
     </div>
