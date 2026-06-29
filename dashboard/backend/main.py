@@ -20,6 +20,7 @@ from pydantic import BaseModel
 import agents
 import config_store
 import persistence
+import samples
 import speechname
 from config_store import CONFIG, any_override, effective_key_set
 from llm.base import LLMClient
@@ -302,6 +303,28 @@ async def create_session(file: UploadFile = File(...)):
     # Validate only once; reuse the result for the response.
     findings = agents.validate(data)
     return {"summary": agents.summarize(data), "findings": findings}
+
+
+@app.get("/samples")
+def list_samples_route():
+    return samples.list_samples()
+
+
+@app.post("/samples/{sample_id}")
+def load_sample(sample_id: str):
+    manifest = samples.load_manifest(sample_id)
+    if manifest is None:
+        raise HTTPException(status_code=404, detail="unknown sample")
+    built = agents.propose_build(manifest)
+    if not built["ok"]:
+        raise HTTPException(status_code=500, detail=f"sample build failed: {built.get('error')}")
+    title = samples.title_of(sample_id)
+    STORE.new(name=title)
+    _S().load(built["proposed_data"])
+    _S().name = title
+    _S()._autosave()
+    data = _S().current()
+    return {"summary": agents.summarize(data), "findings": agents.validate(data)}
 
 
 @app.post("/session/blank")
