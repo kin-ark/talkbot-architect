@@ -7,7 +7,7 @@ import KBPlane from './KBPlane';
 import FlowCanvas from './FlowCanvas';
 import ComponentsRail from './ComponentsRail';
 
-export default function RightDock({ activeTab, onTabChange, summary, findings, selectedNode, onSelectNode, chat, onPreview, onAskFix, onSelectComponent, focusComponentId }) {
+export default function RightDock({ activeTab, onTabChange, summary, findings, selectedNode, onSelectNode, chat, onPreview, onAskFix, onSelectComponent, focusComponentId, onEditNode }) {
   const [drill, setDrill] = useState(null);
   const [width, setWidth] = useState(() => {
     const saved = Number(localStorage.getItem('tb-dock-w'));
@@ -53,7 +53,7 @@ export default function RightDock({ activeTab, onTabChange, summary, findings, s
             canUndo={chat.canUndo} canRedo={chat.canRedo} onUndo={chat.onUndo} onRedo={chat.onRedo} />
         )}
         {activeTab === 'findings' && <FindingList findings={findings} onSelect={onSelectNode} onAskFix={onAskFix} />}
-        {activeTab === 'properties' && <NodePropertiesPanel node={selectedNode} summary={summary} />}
+        {activeTab === 'properties' && <NodePropertiesPanel node={selectedNode} summary={summary} onEditNode={onEditNode} />}
         {activeTab === 'kb' && !drill && (
           <KBPlane knowledgeBases={summary?.knowledge_bases || []} onDrillIn={setDrill} />
         )}

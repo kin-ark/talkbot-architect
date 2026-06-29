@@ -170,8 +170,9 @@ export default function App() {
           </div>
         </div>
         <RightDock activeTab={dockTab} onTabChange={setDockTab} summary={s.summary} findings={s.findings}
-          selectedNode={selectedNode} onSelectNode={selectNode} chat={chat} onPreview={onPreview} onAskFix={onAskFix}
-          onSelectComponent={setFocusComponentId} focusComponentId={focusComponentId} />
+          selectedNode={selectedNode ? resolveNode(selectedNode) : null} onSelectNode={selectNode} chat={chat} onPreview={onPreview} onAskFix={onAskFix}
+          onSelectComponent={setFocusComponentId} focusComponentId={focusComponentId}
+          onEditNode={(uuid, fields) => s.editNodeText(uuid, fields)} />
       </div>
       {pageOverlay}
     </div>
