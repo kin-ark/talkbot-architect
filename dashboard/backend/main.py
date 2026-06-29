@@ -26,7 +26,7 @@ from llm.base import LLMClient
 from llm.factory import LLMConfigError, make_client
 from orchestrator import run_turn, run_turn_stream
 from session_store import SessionStore
-from wizmodifier.io import InputBundle
+from wizmodifier.io import InputBundle, write_output
 
 app = FastAPI(title="Talkbot Architect API")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
@@ -228,13 +228,35 @@ async def clear_config():
 
 @app.get("/export")
 async def export_current(_: None = Depends(_require_session)):
-    payload = json.dumps(_S().current(), ensure_ascii=False, separators=(",", ":"))
-    nm = speechname.read_speech_name(_S().current())
-    filename = speechname.slugify_filename(nm) if nm else _S().speech_name
+    data = _S().current()
+    nm = speechname.read_speech_name(data)
+    base = speechname.slugify_filename(nm).removesuffix(".json") if nm else "speech_export"
+    # Internal entry MUST be a speech*.json (WIZ + InputBundle.load require it);
+    # the slugged <base> is only the download filename, never the zip entry.
+    sn = _S().speech_name if (_S().speech_name.startswith("speech")
+                              and _S().speech_name.endswith(".json")) else "speech_export.json"
+
+    if _S().wavs:  # has audio → import-ready ZIP via the engine writer
+        bundle = InputBundle(data=data, speech_name=sn, wavs=_S().wavs)
+        with tempfile.NamedTemporaryFile(suffix=".zip", delete=False) as tmp:
+            tmp_path = Path(tmp.name)
+        try:
+            write_output(bundle, tmp_path, fmt="zip")
+            payload = tmp_path.read_bytes()
+        finally:
+            tmp_path.unlink(missing_ok=True)
+        return Response(
+            content=payload,
+            media_type="application/zip",
+            headers={"Content-Disposition": f'attachment; filename="{base}.zip"'},
+        )
+
+    # no audio → JSON (current behavior)
+    payload = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
     return Response(
         content=payload,
         media_type="application/json",
-        headers={"Content-Disposition": f"attachment; filename={filename}"},
+        headers={"Content-Disposition": f'attachment; filename="{base}.json"'},
     )
 
 
