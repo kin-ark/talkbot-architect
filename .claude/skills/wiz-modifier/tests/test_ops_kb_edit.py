@@ -22,6 +22,7 @@ from wizmodifier.ops.kb_edit import (  # noqa: E402
     add_kb_answer,
     edit_kb_answer,
     remove_kb_answer,
+    set_kb_multiround,
 )
 
 _FIX = _SK / "wiz-builder" / "tests" / "fixtures"
@@ -145,3 +146,70 @@ def test_remove_last_answer_raises(tmp_path):
         if it.get("answerType") == 1][0]
     with pytest.raises(ValueError):
         remove_kb_answer(b, {"name": "Payment FAQ", "text": last["answer"]}, _minter(b))
+
+
+def test_set_multiround_adds_delegate_and_sets_category(tmp_path):
+    b = _bundle(tmp_path, "manifest_with_multiround_kb.yaml")
+    set_kb_multiround(
+        b, {"name": "Due Date KB", "target_component": "Handler"},
+        _minter(b)
+    )
+    kb = next(
+        k for k in codec.decode(b.data["BizKnowledgeInfo"])
+        if k["kdTitle"] == "Due Date KB"
+    )
+    items = codec.decode(kb["kdInfo"])
+    assert items[-1]["answerType"] == 2 and items[-1]["multipleAppointId"]
+    target = next(
+        c for c in codec.decode(b.data["BizSpeechComponent"])
+        if c.get("name") == "Handler"
+    )
+    assert target["category"] == 2
+
+
+def test_set_multiround_remove_leaves_old_and_warns(tmp_path):
+    b = _bundle(tmp_path, "manifest_with_multiround_kb.yaml")
+    set_kb_multiround(
+        b, {"name": "Installment KB", "target_component": None},
+        _minter(b)
+    )
+    kb = next(
+        k for k in codec.decode(b.data["BizKnowledgeInfo"])
+        if k["kdTitle"] == "Installment KB"
+    )
+    items = codec.decode(kb["kdInfo"])
+    assert all(it.get("answerType") != 2 for it in items)
+    assert b.warnings
+
+
+def test_set_multiround_delegate_stays_last(tmp_path):
+    b = _bundle(tmp_path, "manifest_with_multiround_kb.yaml")
+    set_kb_multiround(
+        b, {"name": "Due Date KB", "target_component": "Handler"},
+        _minter(b)
+    )
+    kb = next(
+        k for k in codec.decode(b.data["BizKnowledgeInfo"])
+        if k["kdTitle"] == "Due Date KB"
+    )
+    items = codec.decode(kb["kdInfo"])
+    assert items[-1]["answerType"] == 2
+
+
+def test_add_kb_answer_respects_delegate(tmp_path):
+    b = _bundle(tmp_path, "manifest_with_multiround_kb.yaml")
+    set_kb_multiround(
+        b, {"name": "Due Date KB", "target_component": "Handler"},
+        _minter(b)
+    )
+    add_kb_answer(
+        b,
+        {"name": "Due Date KB", "text": "Tanggal jatuh tempo tambahan."},
+        _minter(b)
+    )
+    kb = next(
+        k for k in codec.decode(b.data["BizKnowledgeInfo"])
+        if k["kdTitle"] == "Due Date KB"
+    )
+    items = codec.decode(kb["kdInfo"])
+    assert items[-1]["answerType"] == 2

@@ -134,3 +134,61 @@ def remove_kb_answer(bundle: InputBundle, params: dict, minter) -> None:
     ed.sck = [r for r in ed.sck
               if not (r.get("knowledgeId") == kb["knowledgeId"] and r.get("id") == item_id)]
     ed.flush()
+
+
+def set_kb_multiround(bundle: InputBundle, params: dict, minter) -> None:
+    """Set or remove multi-round delegation for a KB.
+
+    params:
+        name              — KB kdTitle
+        target_component  — component name to delegate to; None to remove delegate
+    """
+    name = params["name"]
+    target_component = params.get("target_component")
+    ed = KbEditor(bundle, minter)
+    kb = ed.find_kb(name)
+    items = ed.kd_items(kb)
+    old_delegate = next((it for it in items if it.get("answerType") == 2), None)
+
+    if target_component is None:
+        if old_delegate is not None:
+            items = [it for it in items if it.get("answerType") != 2]
+            ed.set_kd_items(kb, items)
+            ed.warn(
+                f"set-kb-multiround: removed delegate from KB {name!r}; old target "
+                f"{old_delegate.get('multipleAppointId')!r} left as-is (category not reverted)"
+            )
+        ed.flush()
+        return
+
+    target = next((c for c in ed.bsc()
+                   if c.get("name", "") == target_component and c.get("componentUuid")),
+                  None)
+    if target is None:
+        raise ValueError(
+            f"set-kb-multiround: target component {target_component!r} not found"
+        )
+    new_uuid = target["componentUuid"]
+    delegate = {
+        "answerType": 2,
+        "editorValue": {
+            "xml": '<speak xmlns:wiz="http://www.wiz.ai/develop/xml/tts"></speak>',
+            "html": "<p></p>",
+            "text": "",
+        },
+        "id": str(minter.uuid(f"kb-delegate:{name}")),
+        "multipleAppointId": new_uuid,
+    }
+    if old_delegate is not None:
+        old_uuid = old_delegate.get("multipleAppointId")
+        items = [it for it in items if it.get("answerType") != 2]
+        if old_uuid and old_uuid != new_uuid:
+            ed.warn(
+                f"set-kb-multiround: retargeted KB {name!r}; old target {old_uuid!r} "
+                f"left as-is (category not reverted)"
+            )
+    items.append(delegate)
+    ed.set_kd_items(kb, items)
+    target["category"] = 2
+    ed.mark_bsc_dirty()
+    ed.flush()
