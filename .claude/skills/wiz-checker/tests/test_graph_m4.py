@@ -93,3 +93,31 @@ def test_wiz106_terminal_node_with_nonempty_routes_errors(tmp_path):
     c["routes"] = json.dumps(routes)
     doc["BizSpeechComponent"] = json.dumps(comps)
     assert "WIZ106" in _codes(check_graph(parse_dict(doc)))
+
+
+# ---------------------------------------------------------------------------
+# Test 4: non-terminal node with routes but NO canvas ports -> WIZ106 ERROR
+# Regression for the empty-`valid` false-negative — an empty port set must flag
+# every routed key as a phantom, not silently let them through.
+# ---------------------------------------------------------------------------
+
+def test_wiz106_routes_on_node_with_no_ports_errors(tmp_path):
+    doc = _build(tmp_path, "manifest_conditional_assign.yaml")
+    comps = _uw(doc["BizSpeechComponent"])
+    c = comps[0]
+    det = _uw(c["details"])
+    routes = _uw(c["routes"])
+    talk_u = next(u for u, n in det.items() if n.get("type") == 1)
+    det[talk_u].setdefault("canvas", {}).setdefault("ports", {})["items"] = []
+    routes[talk_u] = {
+        "ghost-port": {
+            "source": {"type": 1, "uuid": "ghost-port"},
+            "target": {"type": 1, "uuid": talk_u},
+            "portDetail": {"id": "x", "zIndex": 3},
+        }
+    }
+    c["details"] = json.dumps(det)
+    c["routes"] = json.dumps(routes)
+    doc["BizSpeechComponent"] = json.dumps(comps)
+    findings = [f for f in check_graph(parse_dict(doc)) if f.code == "WIZ106"]
+    assert findings and all(f.severity.name == "ERROR" for f in findings)

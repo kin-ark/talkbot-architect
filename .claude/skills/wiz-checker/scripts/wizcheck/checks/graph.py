@@ -133,8 +133,12 @@ def _check_routes_validity(wf: WizFile) -> list[Finding]:
                     for it in (node.get("canvas") or {}).get("ports", {}).get("items", [])
                 }
 
+            # `valid` is a (possibly empty) set here — the unresolvable nested/library
+            # case already `continue`d above. An empty set means the node declares NO
+            # real out-ports, so any routed port-key is a phantom (do NOT short-circuit
+            # on empty, which would let phantoms through).
             for port_key in portmap:
-                if valid and port_key not in valid:
+                if port_key not in valid:
                     out.append(Finding(
                         code="WIZ106",
                         severity=Severity.ERROR,
