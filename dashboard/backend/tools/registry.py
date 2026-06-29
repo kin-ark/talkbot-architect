@@ -214,6 +214,56 @@ _SPECS = [
                  "answers": {"type": "array", "items": {"type": "string"}},
                  "multi_round": {"type": "string"}},
               "required": ["name", "intents"]}),
+    ToolSpec("rename_kb",
+             "Rename an existing Knowledge Base. Proposes a dry-run.",
+             {"type": "object", "properties": {
+                 "name": {"type": "string"},
+                 "new_name": {"type": "string"}},
+              "required": ["name", "new_name"]}),
+    ToolSpec("set_kb_intents",
+             "Replace the triggering intents of a Knowledge Base. "
+             "Each intent name must already exist in SpeechIntent. Proposes a dry-run.",
+             {"type": "object", "properties": {
+                 "name": {"type": "string"},
+                 "intents": {"type": "array", "items": {"type": "string"}}},
+              "required": ["name", "intents"]}),
+    ToolSpec("add_kb_answer",
+             "Append a new answer text to a Knowledge Base. Proposes a dry-run.",
+             {"type": "object", "properties": {
+                 "name": {"type": "string"},
+                 "text": {"type": "string"}},
+              "required": ["name", "text"]}),
+    ToolSpec("edit_kb_answer",
+             "Edit an existing answer in a Knowledge Base, located by old_text or 0-based index. "
+             "Proposes a dry-run.",
+             {"type": "object", "properties": {
+                 "name": {"type": "string"},
+                 "new_text": {"type": "string"},
+                 "old_text": {"type": "string"},
+                 "index": {"type": "integer"}},
+              "required": ["name", "new_text"]}),
+    ToolSpec("remove_kb_answer",
+             "Remove an answer from a Knowledge Base, located by text or 0-based index. "
+             "The KB must keep at least one response. Proposes a dry-run.",
+             {"type": "object", "properties": {
+                 "name": {"type": "string"},
+                 "text": {"type": "string"},
+                 "index": {"type": "integer"}},
+              "required": ["name"]}),
+    ToolSpec("set_kb_multiround",
+             "Set or remove multi-round delegation for a Knowledge Base. "
+             "Pass target_component = a canvas/component name to enable, or null to remove. "
+             "Proposes a dry-run.",
+             {"type": "object", "properties": {
+                 "name": {"type": "string"},
+                 "target_component": {"type": "string"}},
+              "required": ["name"]}),
+    ToolSpec("delete_kb",
+             "Delete a user-created Knowledge Base (isInit=0). "
+             "Refuses if the KB is referenced by goto_kb nodes. Proposes a dry-run.",
+             {"type": "object", "properties": {
+                 "name": {"type": "string"}},
+              "required": ["name"]}),
     ToolSpec("rewire_edge",
              "Set or replace an edge route for a branch on a node. Proposes a dry-run.",
              {"type": "object", "properties": {
@@ -358,6 +408,43 @@ def dispatch(name: str, args: dict, data: dict) -> dict:
               "answers": args.get("answers", [])}
         if args.get("multi_round"):
             op["multi_round"] = args["multi_round"]
+        return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
+    if name == "rename_kb":
+        import yaml
+        op = {"op": "rename-kb", "name": args["name"], "new_name": args["new_name"]}
+        return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
+    if name == "set_kb_intents":
+        import yaml
+        op = {"op": "set-kb-intents", "name": args["name"], "intents": args["intents"]}
+        return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
+    if name == "add_kb_answer":
+        import yaml
+        op = {"op": "add-kb-answer", "name": args["name"], "text": args["text"]}
+        return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
+    if name == "edit_kb_answer":
+        import yaml
+        op = {"op": "edit-kb-answer", "name": args["name"], "new_text": args["new_text"]}
+        if args.get("old_text") is not None:
+            op["old_text"] = args["old_text"]
+        if args.get("index") is not None:
+            op["index"] = args["index"]
+        return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
+    if name == "remove_kb_answer":
+        import yaml
+        op = {"op": "remove-kb-answer", "name": args["name"]}
+        if args.get("text") is not None:
+            op["text"] = args["text"]
+        if args.get("index") is not None:
+            op["index"] = args["index"]
+        return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
+    if name == "set_kb_multiround":
+        import yaml
+        op = {"op": "set-kb-multiround", "name": args["name"],
+              "target_component": args.get("target_component")}
+        return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
+    if name == "delete_kb":
+        import yaml
+        op = {"op": "delete-kb", "name": args["name"]}
         return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
     if name == "connect_components":
         import yaml
