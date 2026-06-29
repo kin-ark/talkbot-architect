@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Pencil } from 'lucide-react';
 
 function Field({ label, children }) {
@@ -14,17 +14,21 @@ function Field({ label, children }) {
 function EditableLabel({ value, onSave }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
-  const start = () => { setDraft(value || ''); setEditing(true); };
+  const done = useRef(false);
+  const start = () => { done.current = false; setDraft(value || ''); setEditing(true); };
   const commit = () => {
+    if (done.current) return;
+    done.current = true;
     setEditing(false);
     const next = draft.trim();
     if (next && next !== (value || '')) onSave(next);
   };
+  const cancel = () => { done.current = true; setEditing(false); };
   if (editing) {
     return (
       <input autoFocus data-testid="label-input" value={draft}
         onChange={(e) => setDraft(e.target.value)} onBlur={commit}
-        onKeyDown={(e) => { if (e.key === 'Enter') commit(); else if (e.key === 'Escape') setEditing(false); }}
+        onKeyDown={(e) => { if (e.key === 'Enter') commit(); else if (e.key === 'Escape') cancel(); }}
         className="w-full bg-surface border border-border rounded px-1.5 py-0.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary" />
     );
   }

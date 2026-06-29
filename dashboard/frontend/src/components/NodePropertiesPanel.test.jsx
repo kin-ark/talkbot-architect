@@ -42,6 +42,27 @@ describe('NodePropertiesPanel', () => {
     expect(onEditNode).not.toHaveBeenCalled();
   });
 
+  it('Esc after typing cancels without saving', () => {
+    const onEditNode = vi.fn();
+    render(<NodePropertiesPanel node={NODE} summary={{ knowledge_bases: [] }} onEditNode={onEditNode} />);
+    fireEvent.click(screen.getByTestId('edit-label'));
+    const input = screen.getByTestId('label-input');
+    fireEvent.change(input, { target: { value: 'Changed' } });
+    fireEvent.keyDown(input, { key: 'Escape' });
+    fireEvent.blur(input);
+    expect(onEditNode).not.toHaveBeenCalled();
+  });
+
+  it('unchanged value is a no-op', () => {
+    const onEditNode = vi.fn();
+    render(<NodePropertiesPanel node={NODE} summary={{ knowledge_bases: [] }} onEditNode={onEditNode} />);
+    fireEvent.click(screen.getByTestId('edit-label'));
+    const input = screen.getByTestId('label-input');
+    fireEvent.change(input, { target: { value: 'Greet' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(onEditNode).not.toHaveBeenCalled();
+  });
+
   it('hides the dialogue editor for a node with no text', () => {
     const noText = { uuid: 'e1', label: 'Exit', node_type: 'exit', branches: [] };
     render(<NodePropertiesPanel node={noText} summary={{ knowledge_bases: [] }} onEditNode={() => {}} />);
