@@ -5,7 +5,7 @@ Usage:
 
 Exit codes:
     0  clean (no errors; warnings allowed unless --strict)
-    1  errors present, or warnings under --strict
+    1  errors present; warnings under --strict; or deploy-blockers under --deploy
     2  reserved (in v1 collapses to 0)
     3  fatal parse error
 """

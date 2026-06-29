@@ -162,8 +162,8 @@ def test_wiz006_skipped_when_canvas_has_nodes():
 
 
 
-def test_wiz107_truncated_script_is_warning():
-    """WIZ107 warns if Utterance text ends with '...'"""
+def test_wiz008_truncated_script_is_warning():
+    """WIZ008 warns if Utterance text ends with '...'"""
     u = Utterance(
         id=UUID(int=200), component_uuid=UUID(int=3), text="This is truncated...",
         referenced_vars=(), raw={}
@@ -171,7 +171,7 @@ def test_wiz107_truncated_script_is_warning():
     wf = _wf(utterances=(u,))
     findings = check_schema(wf)
 
-    f = next((x for x in findings if x.code == "WIZ107"), None)
+    f = next((x for x in findings if x.code == "WIZ008"), None)
     assert f is not None
     assert f.severity is Severity.WARNING
 
@@ -247,8 +247,8 @@ def test_wiz006_raised_for_empty_component():
 
 
 # ---------------------------------------------------------------------------
-# WIZ106: FlowModel-based tests — parse_dict so flow_model is populated.
-# Verify WIZ106 fires correctly when reading from FlowModelNode.data.
+# WIZ007: FlowModel-based tests — parse_dict so flow_model is populated.
+# Verify WIZ007 fires correctly when reading from FlowModelNode.data.
 # ---------------------------------------------------------------------------
 
 
@@ -293,35 +293,35 @@ def _export_with_node(node_name: str, node_type: int, sentence_text: str | None)
     }
 
 
-def test_wiz106_flowmodel_wait_blank_fires():
-    """WIZ106 (new source): Wait node with sentenceText='blank' → WIZ106."""
+def test_wiz007_flowmodel_wait_blank_fires():
+    """WIZ007: Wait node with sentenceText='blank' → WIZ007."""
     wf = parse_dict(_export_with_node("Wait", 1, "blank"))
     findings = check_schema(wf)
-    f = next((x for x in findings if x.code == "WIZ106"), None)
-    assert f is not None, f"Expected WIZ106 but got: {[x.code for x in findings]}"
+    f = next((x for x in findings if x.code == "WIZ007"), None)
+    assert f is not None, f"Expected WIZ007 but got: {[x.code for x in findings]}"
     assert f.severity is Severity.WARNING
     assert "Wait" in f.message
 
 
-def test_wiz106_flowmodel_exit_empty_fires():
-    """WIZ106 (new source): Exit node with sentenceText='' → WIZ106."""
+def test_wiz007_flowmodel_exit_empty_fires():
+    """WIZ007: Exit node with sentenceText='' → WIZ007."""
     wf = parse_dict(_export_with_node("Exit", 2, ""))
     findings = check_schema(wf)
-    f = next((x for x in findings if x.code == "WIZ106"), None)
-    assert f is not None, f"Expected WIZ106 but got: {[x.code for x in findings]}"
+    f = next((x for x in findings if x.code == "WIZ007"), None)
+    assert f is not None, f"Expected WIZ007 but got: {[x.code for x in findings]}"
     assert f.severity is Severity.WARNING
     assert "Exit" in f.message
 
 
-def test_wiz106_flowmodel_wait_with_real_script_no_fire():
-    """WIZ106 (new source): Wait node with a real script → no WIZ106."""
+def test_wiz007_flowmodel_wait_with_real_script_no_fire():
+    """WIZ007: Wait node with a real script → no WIZ007."""
     wf = parse_dict(_export_with_node("Wait", 1, "Please hold on."))
     findings = check_schema(wf)
-    assert not any(x.code == "WIZ106" for x in findings)
+    assert not any(x.code == "WIZ007" for x in findings)
 
 
-def test_wiz106_flowmodel_other_node_name_no_fire():
-    """WIZ106 (new source): node with sentenceText='blank' but not named Wait/Exit → no WIZ106."""
+def test_wiz007_flowmodel_other_node_name_no_fire():
+    """WIZ007: node with sentenceText='blank' but not named Wait/Exit → no WIZ007."""
     wf = parse_dict(_export_with_node("Greeting", 1, "blank"))
     findings = check_schema(wf)
-    assert not any(x.code == "WIZ106" for x in findings)
+    assert not any(x.code == "WIZ007" for x in findings)

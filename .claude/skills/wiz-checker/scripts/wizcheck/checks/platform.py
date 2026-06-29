@@ -9,9 +9,10 @@ from __future__ import annotations
 
 from functools import lru_cache
 
+from wizfacts import load_facts
+
 from wizcheck.ir import WizFile
 from wizcheck.report import Finding, Location, Severity
-from wizfacts import load_facts
 
 
 @lru_cache(maxsize=1)
