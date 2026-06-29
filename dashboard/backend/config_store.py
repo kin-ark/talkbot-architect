@@ -1,13 +1,13 @@
-"""Runtime LLM configuration store.
+"""Per-client runtime LLM configuration.
 
-Holds in-memory overrides for provider/model/base_url/api_key.
-The api_key is NEVER persisted, logged, or returned in any response —
-only a boolean ``key_set`` is ever exposed to callers.
+Each client (browser cookie id) gets its own RuntimeConfig. The api_key is
+NEVER persisted, logged, or returned — only a boolean ``key_set`` is exposed.
 """
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass, field
+import threading
+from dataclasses import dataclass
 
 
 @dataclass
@@ -18,16 +18,18 @@ class RuntimeConfig:
     api_key: str | None = None  # in-memory only; never persisted/logged/returned
 
 
-# Module-global singleton — imported by main.py and tests.
-CONFIG = RuntimeConfig()
+_CONFIGS: dict[str, RuntimeConfig] = {}
+_lock = threading.Lock()
 
 
-def effective_key_set(provider: str | None) -> bool:
-    """Return True if an API key is available for the resolved provider.
+def config_for(cid: str) -> RuntimeConfig:
+    with _lock:
+        return _CONFIGS.setdefault(cid, RuntimeConfig())
 
-    Checks CONFIG.api_key first, then the relevant provider env var.
-    """
-    if CONFIG.api_key:
+
+def effective_key_set(provider: str | None, cfg: RuntimeConfig) -> bool:
+    """True if an API key is available for the resolved provider (this client)."""
+    if cfg.api_key:
         return True
     resolved = (provider or os.environ.get("LLM_PROVIDER") or "anthropic").lower()
     if resolved == "anthropic":
@@ -37,6 +39,5 @@ def effective_key_set(provider: str | None) -> bool:
     return False
 
 
-def any_override() -> bool:
-    """Return True if any CONFIG field is non-None/non-empty."""
-    return any([CONFIG.provider, CONFIG.model, CONFIG.base_url, CONFIG.api_key])
+def any_override(cfg: RuntimeConfig) -> bool:
+    return any([cfg.provider, cfg.model, cfg.base_url, cfg.api_key])
