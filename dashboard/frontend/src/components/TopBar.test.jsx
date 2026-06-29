@@ -2,23 +2,44 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { vi, describe, it, expect } from 'vitest';
 import TopBar from './TopBar';
 
-const base = { canUndo: false, canRedo: true, onUndo: () => {}, onRedo: () => {}, onExport: () => {}, onNew: () => {} };
+const base = { hasDoc: true, canUndo: false, canRedo: true, onUndo: () => {}, onRedo: () => {}, onExport: () => {} };
 
 describe('TopBar', () => {
+  it('renders iconified undo/redo and no New button', () => {
+    render(<TopBar {...base} />);
+    expect(screen.getByLabelText('Undo')).toBeInTheDocument();
+    expect(screen.getByLabelText('Redo')).toBeInTheDocument();
+    expect(screen.queryByText('New / Upload')).toBeNull();
+  });
+
   it('disables undo when canUndo is false and fires onExport', () => {
     const onExport = vi.fn();
     render(<TopBar {...base} onExport={onExport} />);
-    expect(screen.getByText('Undo').closest('button')).toBeDisabled();
+    expect(screen.getByLabelText('Undo')).toBeDisabled();
     fireEvent.click(screen.getByText('Export'));
     expect(onExport).toHaveBeenCalled();
   });
 
-  it('renders the bot name', () => {
+  it('greys all doc-actions when hasDoc is false (even if canUndo/canRedo true)', () => {
+    render(<TopBar {...base} hasDoc={false} canUndo canRedo />);
+    expect(screen.getByLabelText('Undo')).toBeDisabled();
+    expect(screen.getByLabelText('Redo')).toBeDisabled();
+    expect(screen.getByText('Export').closest('button')).toBeDisabled();
+  });
+
+  it('shows the "Talkbot Architect" placeholder (non-editable) when hasDoc is false', () => {
+    render(<TopBar {...base} hasDoc={false} botName={null} onRenameBot={() => {}} />);
+    expect(screen.getByTestId('bot-name').textContent).toMatch(/Talkbot Architect/);
+    fireEvent.click(screen.getByTestId('bot-name'));
+    expect(screen.queryByTestId('bot-name-input')).toBeNull();   // not editable on empty
+  });
+
+  it('renders the bot name when hasDoc', () => {
     render(<TopBar {...base} botName="Debt Collector" onRenameBot={() => {}} />);
     expect(screen.getByTestId('bot-name').textContent).toMatch(/Debt Collector/);
   });
 
-  it('shows "Untitled bot" placeholder for null or "Empty Dialogue"', () => {
+  it('shows "Untitled bot" placeholder for null or "Empty Dialogue" when hasDoc', () => {
     const { rerender } = render(<TopBar {...base} botName={null} onRenameBot={() => {}} />);
     expect(screen.getByTestId('bot-name').textContent).toMatch(/Untitled bot/);
     rerender(<TopBar {...base} botName="Empty Dialogue" onRenameBot={() => {}} />);

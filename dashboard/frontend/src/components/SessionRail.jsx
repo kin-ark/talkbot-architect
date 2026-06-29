@@ -84,7 +84,9 @@ export default function SessionRail({ sessions = [], activeSessionId, onNew, onS
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             onClick={onToggleCollapse}
-            className="p-1.5 rounded-md text-text-secondary hover:bg-surface-muted hover:text-text">
+            className={`p-1.5 rounded-md hover:bg-surface-muted ${collapsed
+              ? 'text-primary bg-surface-muted ring-1 ring-border hover:text-primary'
+              : 'text-text-secondary hover:text-text'}`}>
             {collapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
           </button>
         </div>

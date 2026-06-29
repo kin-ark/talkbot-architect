@@ -1,0 +1,39 @@
+name: "Appointment Booking"
+branch: dev
+language: IDN
+custom_variables:
+  - name: SLOT_CHOICE
+canvases:
+  - name: "1. Main"
+    nodes:
+      - id: greet
+        type: talk
+        prompt: "Would you like a morning or afternoon appointment?"
+      - id: set_slot
+        type: assign
+        prompt: "(record choice)"
+        config:
+          variable: SLOT_CHOICE
+          value: "morning"
+      - id: route
+        type: conditional
+        prompt: "(route on choice)"
+        config:
+          variable: SLOT_CHOICE
+          branches:
+            - name: Morning
+              op: "="
+              value: "morning"
+              to: confirm
+            - name: Default
+              to: confirm
+      - id: confirm
+        type: talk
+        prompt: "Great, your appointment is booked. Anything else?"
+      - id: bye
+        type: exit
+        prompt: "Thanks, see you then. Goodbye!"
+    edges:
+      - {from: greet, branch: Unclassified, to: set_slot}
+      - {from: set_slot, branch: Default, to: route}
+      - {from: confirm, branch: Unclassified, to: bye}

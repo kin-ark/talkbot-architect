@@ -85,6 +85,17 @@ export function useSession() {
     } finally { setLoading(false); }
   }, [refreshSessions]);
 
+  const loadSample = useCallback(async (id) => {
+    touched.current = true;
+    setLoading(true);
+    try {
+      const r = await api.loadSample(id);
+      setSummary(r.summary); setFindings(r.findings);
+      setTranscript([{ role: 'agent', text: `Loaded the ${r.summary?.components?.[0]?.name || 'sample'} sample — explore the graph, or ask me to change it.` }]);
+      await refreshSessions();
+    } finally { setLoading(false); }
+  }, [refreshSessions]);
+
   const switchSession = useCallback(async (id) => {
     touched.current = true;
     queue.current = [];
@@ -240,8 +251,19 @@ export function useSession() {
     await refreshSessions();
   }, [refreshSessions]);
 
+  // Return to the empty-state center WITHOUT clearing the backend or the
+  // session list — the user picks a start method (upload/sample/blank) next,
+  // and that creates the slot. Contrast reset(), which clears the backend
+  // and nulls the active session.
+  const startNew = useCallback(() => {
+    queue.current = [];
+    if (ctrl.current) ctrl.current.abort();
+    setSummary(null); setFindings([]); setTranscript([]); setProposal(null);
+    setCanUndo(false); setCanRedo(false); setBotName(null);
+  }, []);
+
   return { summary, findings, transcript, proposal, canUndo, canRedo, loading, sending,
            sessions, activeSessionId, usage, botName,
-           upload, startBlank, send, retry, apply, reject, undo, redo, cancel, reset,
+           upload, startBlank, loadSample, send, retry, apply, reject, undo, redo, cancel, reset, startNew,
            refreshSessions, newSession, switchSession, renameSession, deleteSession, renameBot, editNodeText };
 }

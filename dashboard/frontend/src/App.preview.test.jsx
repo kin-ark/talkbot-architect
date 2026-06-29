@@ -22,6 +22,7 @@ beforeEach(() => {
     upload: vi.fn(), startBlank: vi.fn(), send: vi.fn(), apply: vi.fn(), reject: vi.fn(),
     undo: vi.fn(), redo: vi.fn(), cancel: vi.fn(), reset: vi.fn(),
     newSession: vi.fn(), switchSession: vi.fn(), renameSession: vi.fn(), deleteSession: vi.fn(),
+    startNew: vi.fn(),
   });
 });
 
