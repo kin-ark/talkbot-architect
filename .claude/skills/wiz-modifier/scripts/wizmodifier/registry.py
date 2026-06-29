@@ -27,6 +27,7 @@ OP_REGISTRY: dict[str, Callable] = {
     "edit-kb-answer": kb_edit.edit_kb_answer,
     "remove-kb-answer": kb_edit.remove_kb_answer,
     "set-kb-multiround": kb_edit.set_kb_multiround,
+    "delete-kb": kb_edit.delete_kb,
     "rewire-edge": mutate.rewire_edge,
     "delete-edge": mutate.delete_edge,
     "delete-node": mutate.delete_node,

@@ -17,11 +17,12 @@ from wizbuilder.ids import IdMinter  # noqa: E402
 from wizmodifier import codec  # noqa: E402
 from wizmodifier.io import InputBundle  # noqa: E402
 from wizmodifier.ops.kb_edit import (  # noqa: E402
-    rename_kb,
-    set_kb_intents,
     add_kb_answer,
+    delete_kb,
     edit_kb_answer,
     remove_kb_answer,
+    rename_kb,
+    set_kb_intents,
     set_kb_multiround,
 )
 
@@ -236,3 +237,34 @@ def test_add_kb_answer_respects_delegate(tmp_path):
     )
     items = codec.decode(kb["kdInfo"])
     assert items[-1]["answerType"] == 2
+
+
+def test_delete_kb_blocked_on_system_kb(tmp_path):
+    b = _bundle(tmp_path)
+    # a baseline/template KB carries isInit=1
+    sys_kb = next(k for k in codec.decode(b.data["BizKnowledgeInfo"])
+                  if k.get("isInit") == 1)
+    with pytest.raises(ValueError):
+        delete_kb(b, {"name": sys_kb["kdTitle"]}, _minter(b))
+
+
+def test_delete_kb_blocked_on_goto_ref(tmp_path):
+    b = _bundle(tmp_path, "manifest_goto_kb.yaml")
+    kb = next(k for k in codec.decode(b.data["BizKnowledgeInfo"])
+              if k.get("isInit") == 0)
+    with pytest.raises(ValueError) as e:
+        delete_kb(b, {"name": kb["kdTitle"]}, _minter(b))
+    assert "goto_kb" in str(e.value).lower() or "referenc" in str(
+        e.value).lower()
+
+
+def test_delete_kb_succeeds_when_unreferenced(tmp_path):
+    b = _bundle(tmp_path)
+    kb = next(k for k in codec.decode(b.data["BizKnowledgeInfo"])
+              if k.get("isInit") == 0 and k["kdTitle"] == "Payment FAQ")
+    kid = kb["knowledgeId"]
+    delete_kb(b, {"name": "Payment FAQ"}, _minter(b))
+    assert all(k["kdTitle"] != "Payment FAQ"
+               for k in codec.decode(b.data["BizKnowledgeInfo"]))
+    assert all(r["knowledgeId"] != kid
+               for r in codec.decode(b.data["SentenceCutKnowledge"]))

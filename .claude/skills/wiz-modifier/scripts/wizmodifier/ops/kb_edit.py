@@ -192,3 +192,43 @@ def set_kb_multiround(bundle: InputBundle, params: dict, minter) -> None:
     target["category"] = 2
     ed.mark_bsc_dirty()
     ed.flush()
+
+
+def delete_kb(bundle: InputBundle, params: dict, minter) -> None:
+    """Delete a user-created knowledge base.
+
+    Refuses to delete system/template KBs (isInit!=0) or KBs referenced by
+    goto_kb nodes. Removes BizKnowledgeInfo entry and all SentenceCutKnowledge
+    rows for that KB.
+
+    params:
+        name  — KB kdTitle
+    """
+    name = params["name"]
+    ed = KbEditor(bundle, minter)
+    kb = ed.find_kb(name)
+    if kb.get("isInit", 0) != 0:
+        raise ValueError(
+            f"delete-kb: cannot delete system/template KB {name!r} (isInit="
+            f"{kb.get('isInit')}); only user-generated KBs (isInit=0) are "
+            f"deletable"
+        )
+    kid = kb["knowledgeId"]
+    refs = ed.goto_kb_refs(kid)
+    if refs:
+        raise ValueError(
+            f"delete-kb: KB {name!r} (id {kid}) is referenced by goto_kb "
+            f"node(s) {refs}; rewire or delete those nodes first "
+            f"(flow-mutation ops)"
+        )
+    delegate = next((it for it in ed.kd_items(kb)
+                     if it.get("answerType") == 2), None)
+    ed.bk = [k for k in ed.bk if k.get("knowledgeId") != kid]
+    ed.sck = [r for r in ed.sck if r.get("knowledgeId") != kid]
+    if delegate is not None and delegate.get("multipleAppointId"):
+        ed.warn(
+            f"delete-kb: KB {name!r} delegated to component "
+            f"{delegate['multipleAppointId']!r}; left as-is "
+            f"(category not reverted)"
+        )
+    ed.flush()
