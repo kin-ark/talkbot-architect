@@ -312,8 +312,15 @@ def complete_component(bundle: InputBundle, params: dict, minter) -> dict:
             added_unclassified += 1
 
     # --- Step 3: wire every unconnected branch to the exit node ---
+    # SKIP nested (type-11) nodes: their out-ports mirror the child canvas's exit_port
+    # nodes and are routed by child-exit-uuid, NOT by the parent canvas's port ids. The
+    # nested node's canvas.ports.items use display ids that differ from its routes keys,
+    # so unconnected_branches() mis-reports those ports as unwired — wiring them fabricates
+    # bogus routes keyed by non-routing port ids that break WIZ import (malformed `routes`).
     wired = 0
     for node_uuid, branch in fe.unconnected_branches():
+        if fe.node_type(node_uuid) == 11:
+            continue
         fe.set_edge_target(node_uuid, branch, exit_uuid)
         wired += 1
 
