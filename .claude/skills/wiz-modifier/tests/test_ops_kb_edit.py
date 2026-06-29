@@ -196,6 +196,29 @@ def test_set_multiround_delegate_stays_last(tmp_path):
     assert items[-1]["answerType"] == 2
 
 
+def test_set_multiround_fresh_add_on_delegateless_kb(tmp_path):
+    # Strip "Due Date KB"'s builder-supplied delegate so we exercise the FRESH-ADD
+    # path (a plain KB gaining its first delegate), not the replace path.
+    b = _bundle(tmp_path, "manifest_with_multiround_kb.yaml")
+    bk = codec.decode(b.data["BizKnowledgeInfo"])
+    kb = next(k for k in bk if k["kdTitle"] == "Due Date KB")
+    items = [it for it in codec.decode(kb["kdInfo"]) if it.get("answerType") != 2]
+    kb["kdInfo"] = codec.encode(items)
+    b.data["BizKnowledgeInfo"] = codec.encode(bk)
+    # delegate-less now
+    assert all(it.get("answerType") != 2 for it in codec.decode(kb["kdInfo"]))
+
+    set_kb_multiround(b, {"name": "Due Date KB", "target_component": "Handler"}, _minter(b))
+
+    kb2 = next(k for k in codec.decode(b.data["BizKnowledgeInfo"]) if k["kdTitle"] == "Due Date KB")
+    out = codec.decode(kb2["kdInfo"])
+    delegates = [it for it in out if it.get("answerType") == 2]
+    assert len(delegates) == 1 and out[-1]["answerType"] == 2  # exactly one, and last
+    bsc = codec.decode(b.data["BizSpeechComponent"])
+    target = next(c for c in bsc if c.get("name") == "Handler")
+    assert target["category"] == 2
+
+
 def test_add_kb_answer_respects_delegate(tmp_path):
     b = _bundle(tmp_path, "manifest_with_multiround_kb.yaml")
     set_kb_multiround(
