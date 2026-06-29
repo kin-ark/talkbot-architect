@@ -215,6 +215,42 @@ def _check_talk_unclassified(wf: WizFile) -> list[Finding]:
     return out
 
 
+def _check_orphan_nodes(wf: WizFile) -> list[Finding]:
+    """WIZ109: a non-entry node with zero inbound same-component edges (true orphan).
+
+    Catches deploy-blocking orphans even in components WIZ101 skips (no declared
+    entry/root). WARNING — an orphan is an incompleteness, not a malformed export.
+    """
+    fm = wf.flow_model
+    assert fm is not None
+    out: list[Finding] = []
+    for comp in fm.components:
+        # Real-flow guard: a lone stub in a root-less component is not an orphan
+        # (WIZ107 covers its incompleteness).
+        if len(comp.nodes) <= 1 and not comp.root_uuids:
+            continue
+        inbound = {
+            b.target_uuid
+            for n in comp.nodes.values()
+            for b in n.branches
+            if b.target_uuid is not None and b.target_uuid in comp.nodes
+        }
+        for node_uuid, node in comp.nodes.items():
+            if node_uuid in comp.root_uuids:
+                continue            # entry node is legitimately inbound-less
+            if node_uuid in inbound:
+                continue
+            out.append(Finding(
+                code="WIZ109", severity=Severity.WARNING,
+                location=Location(entity="FlowNode", id=node_uuid, field=None),
+                message=(
+                    f"Node {node_uuid!r} (label={node.label!r}) in component "
+                    f"{comp.name!r} has no inbound edge — orphaned (unreachable at deploy)."
+                ),
+            ))
+    return out
+
+
 def check_graph(wf: WizFile) -> list[Finding]:
     findings: list[Finding] = []
     # WIZ106 reads raw component data only — runs even when flow_model is None.
@@ -229,6 +265,7 @@ def check_graph(wf: WizFile) -> list[Finding]:
     findings.extend(_check_null_branches(wf))
     findings.extend(_check_component_exit(wf))
     findings.extend(_check_talk_unclassified(wf))
+    findings.extend(_check_orphan_nodes(wf))
     return findings
 
 
