@@ -93,7 +93,12 @@ def check_intents(wf: WizFile) -> list[Finding]:
         if raw.get("isInit", 0) != 0 or raw.get("isDelete", 0) != 0:
             continue
         kd = raw.get("kdInfo", "[]")
-        items = json.loads(kd) if isinstance(kd, str) else (kd or [])
+        try:
+            items = json.loads(kd) if isinstance(kd, str) else (kd or [])
+        except (ValueError, TypeError):
+            continue  # malformed kdInfo — never crash the checker; other checks may flag it
+        if not isinstance(items, list):
+            continue
         has_answer = any(
             it.get("answerType") == 1 and (it.get("answer") or "").strip() for it in items
         )
