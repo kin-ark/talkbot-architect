@@ -165,3 +165,17 @@ def test_remove_kb_answer_dispatch(kb_doc):
     assert out["result"]["ok"] is True, out["result"].get("error")
     assert out["proposal"] is not None
     assert isinstance(out["proposal"]["proposed_data"], dict)
+
+
+def test_set_kb_multiround_remove_dispatch(kb_doc):
+    """set_kb_multiround with target_component=None exercises the remove path."""
+    # First set a delegate so there is something to remove
+    set_out = registry.dispatch("set_kb_multiround",
+                                {"name": "FAQ", "target_component": "2. Multi"}, kb_doc)
+    assert set_out["result"]["ok"] is True, set_out["result"].get("error")
+    doc2 = set_out["proposal"]["proposed_data"]
+    # Now remove it (null target)
+    out = registry.dispatch("set_kb_multiround",
+                            {"name": "FAQ", "target_component": None}, doc2)
+    assert out["result"]["ok"] is True, out["result"].get("error")
+    assert isinstance(out["proposal"]["proposed_data"], dict)

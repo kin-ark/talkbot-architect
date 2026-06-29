@@ -256,7 +256,7 @@ _SPECS = [
              "Proposes a dry-run.",
              {"type": "object", "properties": {
                  "name": {"type": "string"},
-                 "target_component": {"type": "string"}},
+                 "target_component": {"type": ["string", "null"]}},
               "required": ["name"]}),
     ToolSpec("delete_kb",
              "Delete a user-created Knowledge Base (isInit=0). "
