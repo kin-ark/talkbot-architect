@@ -138,9 +138,17 @@ A KB can be **multi-round** — instead of a single answer, it delegates into a 
 
 @@fig:kb-flow@@
 
-### Editing a KB *(in progress)*
+### Editing a KB
 
-> **Coming soon.** In-place **KB editing** — changing a KB's intents, answers, or multi-round target after creation — is being built on the engine side (the "Ethan Engine" workstream). Today you can **add** KBs through Chat; full edit support will land in a future update. Until then, to change a KB you can recreate it or use the raw-ops escape hatch.`,
+In-place **KB editing** is live — ask the agent in Chat (each is a proposed, reviewable change):
+
+- **Rename** a KB, or **rebind its intents** (the new intents must be declared).
+- **Add / edit / remove an answer.** Editing an answer's text **resets its recording** so WIZ re-synthesizes it on deploy — after import, run **Batch Audio Process** to re-record, then deploy.
+- **After the answer:** each answer ends with *Wait for the user's response* (default) or *Hang up* — ask for "hangup" when the answer should end the call.
+- **Multi-round:** point a KB at a different component, or remove the delegation (a KB can't be left with **no answer and no multi-round** — give it a single sentence first).
+- **Delete** a KB — only **user-created** KBs (system/template KBs are protected), and only when **no Goto-KB node still jumps to it** (rewire those first).
+
+A user-created KB with **no answer and no multi-round** is incomplete — the checker flags it **WIZ304** and the export gate (deploy mode) blocks on it.`,
   },
   {
     id: 'findings',

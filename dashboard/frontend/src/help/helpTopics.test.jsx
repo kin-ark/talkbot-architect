@@ -22,9 +22,11 @@ describe('helpTopics', () => {
     expect(byId['knowledge-bases']).toContain('@@fig:kb-flow@@');
   });
 
-  it('keeps the in-progress KB editing section', () => {
+  it('documents in-place KB editing (rename / answers / multi-round / delete)', () => {
     const kb = helpTopics.find((t) => t.id === 'knowledge-bases');
     expect(kb.body).toMatch(/Editing a KB/);
-    expect(kb.body).toMatch(/in progress/i);
+    expect(kb.body).toMatch(/Rename/);
+    expect(kb.body).toMatch(/Hang up/);
+    expect(kb.body).toMatch(/WIZ304/);
   });
 });

@@ -37,6 +37,23 @@ Applies transformations to an existing WIZ.AI export. Two modes:
 | `set-path` | `key`, `pointer: [...]`, `value`, optional `create` |
 | `delete-path` | `key`, `pointer: [...]` |
 
+## Knowledge-Base ops
+
+A KB's Default Response = **Single Sentence** (`kdInfo` `answerType:1` answers) OR **Multi-Round** (an `answerType:2` delegate → component). `after` = "After The Answers": `wait` (afterSentence 0, default) | `hangup` (1).
+
+| Op | Params | Notes |
+|----|--------|-------|
+| `add-kb` | `name`, `intents:[..]`, `answers:[..]`, optional `multi_round` | create; intents must be declared (else WIZ302) |
+| `rename-kb` | `name`, `new_name` | dedup-guarded |
+| `set-kb-intents` | `name`, `intents:[..]` | replace; each must exist in SpeechIntent |
+| `add-kb-answer` | `name`, `text`, optional `after` | appends an answer + SCK row |
+| `edit-kb-answer` | `name`, `new_text`, `old_text`\|`index`, optional `after` | **resets audio** (`sentenceTextUrl=""`) → re-synth on deploy; `after` omitted = unchanged |
+| `remove-kb-answer` | `name`, `text`\|`index` | guards ≥1 response remains |
+| `set-kb-multiround` | `name`, `target_component`\|`null` | set → target `category=2`; remove guards against emptying the KB; leave-old+warn |
+| `delete-kb` | `name` | **user-created only** (`isInit=0`); **blocks** if a goto_kb node references it |
+
+KB-edit ops route through a shared `KbEditor` (decode→mutate→flush, ids preserved). Checker side: `WIZ302` (intent declared), `WIZ303` (goto_kb → missing KB, WARNING+deploy-blocker, library-tolerant), `WIZ304` (user KB with no Default Response, WARNING+deploy-blocker, system KBs exempt). The 6 flow-mutation ops (`rewire-edge`, `delete-edge`, `delete-node`, `move-node`, `rename-node`, `complete-component`) live alongside these.
+
 ## Mod-manifest format
 
 ```yaml
