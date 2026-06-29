@@ -1,14 +1,15 @@
 """Flow-graph integrity checks (WIZ100..WIZ199).
 
-WIZ100-WIZ104 run against wf.flow_model. When wf.flow_model is None all
-checks return an empty list — use parse_dict() to get a populated WizFile.
+WIZ100-WIZ105 run against wf.flow_model. When wf.flow_model is None those
+checks are skipped — use parse_dict() to get a populated WizFile.
 
-WIZ105 (Conditional Judgment missing Null branch on date field) reads from
-FlowModelNode.data['branch'] via wf.flow_model.
+WIZ106 (phantom routes port-key) reads from component.raw only, so it always
+runs regardless of whether wf.flow_model is populated.
 """
 
 from __future__ import annotations
 
+import json
 import re
 from pathlib import Path
 
@@ -33,10 +34,128 @@ def _load_rules() -> dict:
 _RULES = _load_rules()
 
 
+# ---------------------------------------------------------------------------
+# WIZ106 helpers — raw-IR read, no flow_model required
+# ---------------------------------------------------------------------------
+
+# Terminal node types: routes must be empty.
+# type 4 = goto_component OR exit_port — both terminal.
+_TERMINAL_TYPE_INTS = frozenset({2, 4, 8, 13})
+
+
+def _decode(raw: object) -> dict:
+    """Decode an escaped-JSON field (or return {} on failure)."""
+    if raw is None or raw in ("", "null"):
+        return {}
+    try:
+        return json.loads(raw) if isinstance(raw, str) else raw  # type: ignore[return-value]
+    except (ValueError, TypeError):
+        return {}
+
+
+def _child_exit_uuids(all_details_by_comp: dict[str, dict], sub_uuid: str) -> set[str] | None:
+    """Return the child component's exit_port node uuids, or None if child absent.
+
+    exit_port = type-4 with EMPTY appoint_node_id AND specificComponentName.
+    Returns None when the child component is not in the export (external/library).
+    """
+    det = all_details_by_comp.get(sub_uuid)
+    if det is None:
+        return None
+    out: set[str] = set()
+    for u, n in det.items():
+        d = n.get("data", {})
+        if (
+            n.get("type") == 4
+            and not d.get("appoint_node_id")
+            and not d.get("specificComponentName")
+        ):
+            out.add(u)
+    return out
+
+
+def _check_routes_validity(wf: WizFile) -> list[Finding]:
+    """WIZ106: every routes port-key must reference a real out-port of the node.
+
+    - talk/conditional/assign -> a canvas.ports.items id.
+    - nested (type 11) -> a child-exit-node uuid (resolved from the child component's
+      exit_port nodes). If the child is absent (external/library), tolerate.
+    - terminal (type 2/4/8/13) -> routes must be {}.
+    A port-key matching none = phantom route (import-breaker) -> ERROR.
+    """
+    out: list[Finding] = []
+    # Build componentUuid -> decoded details map (needed for nested child resolution).
+    details_by_comp: dict[str, dict] = {}
+    for comp in wf.components.values():
+        cu = comp.raw.get("componentUuid", "")
+        details_by_comp[cu] = _decode(comp.raw.get("details"))
+
+    for comp in wf.components.values():
+        cu = comp.raw.get("componentUuid", "")
+        details = details_by_comp.get(cu, {})
+        routes = _decode(comp.raw.get("routes"))
+        if not isinstance(routes, dict):
+            continue
+
+        for node_uuid, portmap in routes.items():
+            node = details.get(node_uuid)
+            if node is None:
+                continue  # routes key for an unknown node — left to other checks
+            ntype = node.get("type")
+            if ntype in _TERMINAL_TYPE_INTS:
+                if portmap:  # terminal nodes must have empty routes
+                    out.append(Finding(
+                        code="WIZ106",
+                        severity=Severity.ERROR,
+                        location=Location(
+                            entity="BizSpeechComponent", id=cu, field="routes"
+                        ),
+                        message=(
+                            f"Terminal node {node_uuid!r} (type {ntype}) in component "
+                            f"{cu!r} has non-empty routes; terminal nodes must not route."
+                        ),
+                    ))
+                continue
+
+            if not isinstance(portmap, dict):
+                continue
+
+            if ntype == 11:
+                # nested node — valid port keys are the child's exit_port uuids
+                sub = node.get("data", {}).get("subComponentUuid", "")
+                valid = _child_exit_uuids(details_by_comp, sub)
+                if valid is None:
+                    continue  # external/library child — cannot resolve; tolerate
+            else:
+                # talk / conditional / assign — valid keys are canvas.ports.items ids
+                valid = {
+                    it.get("id")
+                    for it in (node.get("canvas") or {}).get("ports", {}).get("items", [])
+                }
+
+            for port_key in portmap:
+                if valid and port_key not in valid:
+                    out.append(Finding(
+                        code="WIZ106",
+                        severity=Severity.ERROR,
+                        location=Location(
+                            entity="BizSpeechComponent", id=cu, field="routes"
+                        ),
+                        message=(
+                            f"Node {node_uuid!r} (type {ntype}) in component {cu!r} has a "
+                            f"routes port-key {port_key!r} that is not a real out-port "
+                            f"(phantom route — breaks WIZ import)."
+                        ),
+                    ))
+    return out
+
+
 def check_graph(wf: WizFile) -> list[Finding]:
-    if wf.flow_model is None:
-        return []
     findings: list[Finding] = []
+    # WIZ106 reads raw component data only — runs even when flow_model is None.
+    findings.extend(_check_routes_validity(wf))
+    if wf.flow_model is None:
+        return findings
     findings.extend(_check_orphan_refs(wf))
     findings.extend(_check_unreachable(wf))
     findings.extend(_check_dead_ends(wf))
