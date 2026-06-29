@@ -7,7 +7,7 @@ import RightDock from './components/RightDock';
 import EmptyState from './components/EmptyState';
 import PageOverlay from './components/PageOverlay';
 import StatisticsPage from './components/StatisticsPage';
-import DocumentationPage from './components/DocumentationPage';
+import DocsPage from './components/DocsPage';
 import SettingsPage from './components/SettingsPage';
 import { useTheme } from './theme/useTheme';
 import { exportUrl, getConfig } from './api';
@@ -70,13 +70,12 @@ export default function App() {
     if (owner) setFocusComponentId(owner);
   };
 
-  const PAGE_TITLES = { stats: 'Statistics', docs: 'Documentation', settings: 'Settings' };
-  const pageOverlay = leftPage && (
+  const PAGE_TITLES = { stats: 'Statistics', settings: 'Settings' };
+  const pageOverlay = leftPage && leftPage !== 'docs' && (
     <PageOverlay title={PAGE_TITLES[leftPage]} onClose={() => setLeftPage(null)}>
       {leftPage === 'stats' && (
         <StatisticsPage usage={s.usage} sessions={s.sessions} activeSessionId={s.activeSessionId} />
       )}
-      {leftPage === 'docs' && <DocumentationPage />}
       {leftPage === 'settings' && <SettingsPage />}
     </PageOverlay>
   );
@@ -96,6 +95,10 @@ export default function App() {
     onSend: s.send, onRetry: s.retry, onApply: applyAndExit, onReject: rejectAndExit, onCancel: s.cancel,
     canUndo: s.canUndo, canRedo: s.canRedo, onUndo: s.undo, onRedo: s.redo,
   };
+
+  if (leftPage === 'docs') {
+    return <DocsPage onClose={() => setLeftPage(null)} />;
+  }
 
   return (
     <div className="h-screen flex flex-col bg-canvas">

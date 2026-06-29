@@ -1,4 +1,4 @@
-// Bundled help content rendered by DocumentationPage. Plain markdown strings.
+// Bundled help content rendered by DocsPage. Markdown strings + a lucide icon and optional @@fig:<id>@@ figure sentinels per topic.
 import {
   Rocket, PanelsTopLeft, Bot, Workflow, BookOpen, ShieldCheck,
   MousePointerClick, Download, GitBranch, MessagesSquare, KeyRound,
@@ -140,11 +140,7 @@ A KB can be **multi-round** — instead of a single answer, it delegates into a 
 
 ### Editing a KB *(in progress)*
 
-> **Coming soon.** In-place **KB editing** — changing a KB's intents, answers, or multi-round target after creation — is being built on the engine side (the "Ethan Engine" workstream). Today you can **add** KBs through Chat; full edit support will land in a future update. Until then, to change a KB you can recreate it or use the raw-ops escape hatch.
-
-### After import
-
-A freshly imported KB or multi-round bot may show its nodes as *recording-pending* on the platform. Use **Batch Audio Process** in WIZ.AI to fill the audio, then deploy.`,
+> **Coming soon.** In-place **KB editing** — changing a KB's intents, answers, or multi-round target after creation — is being built on the engine side (the "Ethan Engine" workstream). Today you can **add** KBs through Chat; full edit support will land in a future update. Until then, to change a KB you can recreate it or use the raw-ops escape hatch.`,
   },
   {
     id: 'findings',
@@ -214,9 +210,7 @@ The session label in the rail mirrors the bot name, but you can also rename the 
 - **No audio** → a \`.json\` file (the dialogue export).
 - **Has audio** (uploaded as a ZIP) → an import-ready **\`.zip\`** containing the \`speech*.json\` plus the WAV files.
 
-The download is named after your bot. If there are **error-level findings**, Export asks for confirmation first. (Warnings don't block — many clean builds carry advisory warnings.)
-
-> Built bots land their nodes as recording-pending on the platform; run **Batch Audio Process** in WIZ.AI to TTS-fill audio before deploying.`,
+The download is named after your bot. If there are **error-level findings**, Export asks for confirmation first. (Warnings don't block — many clean builds carry advisory warnings.)`,
   },
   {
     id: 'graph',
