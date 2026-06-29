@@ -1,8 +1,14 @@
 // Bundled help content rendered by DocumentationPage. Plain markdown strings.
+import {
+  Rocket, PanelsTopLeft, Bot, Workflow, BookOpen, ShieldCheck,
+  MousePointerClick, Download, GitBranch, MessagesSquare, KeyRound,
+} from 'lucide-react';
+
 export const helpTopics = [
   {
     id: 'getting-started',
     title: 'Getting Started',
+    icon: Rocket,
     body: `## Getting Started
 
 Talkbot Architect helps you read, build, validate, and edit **WIZ.AI dialogue exports** (the \`speech*.json\` files you import into the WIZ.AI platform) — without hand-editing raw JSON.
@@ -20,6 +26,8 @@ Talkbot Architect helps you read, build, validate, and edit **WIZ.AI dialogue ex
 - **Center** — the **flow graph** of your bot (or the start screen when nothing is loaded).
 - **Right dock** — tabs for **Chat**, **Findings**, **Properties**, **KB**, and **Components**.
 
+@@fig:layout@@
+
 ### How editing works
 
 Every change the agent makes is a **proposal** — you see a diff and how it affects the validation findings *before* anything is applied. Review it, then **Apply** (or reject). Applied changes are **undoable**. Your work is saved automatically as a session.`,
@@ -27,6 +35,7 @@ Every change the agent makes is a **proposal** — you see a diff and how it aff
   {
     id: 'sessions',
     title: 'Sessions & the rail',
+    icon: PanelsTopLeft,
     body: `## Sessions & the rail
 
 Each bot you work on is a **session** — its own document, chat history, undo stack, and token usage. Sessions live in the left rail.
@@ -49,9 +58,12 @@ Sessions and your active selection are remembered across reloads.`,
   {
     id: 'agent',
     title: 'What the agent can do',
+    icon: Bot,
     body: `## What the agent can do
 
 The Chat agent operates on the **single export in the active session**. It works in tools, and **every edit tool is dry-run**: it returns a diff plus a checker delta as a **proposal**. Nothing changes until you **Apply**; **Undo** / **Redo** step through applied changes.
+
+@@fig:proposal-flow@@
 
 ### Read / understand
 - **Validate** the export and **summarize** the flow.
@@ -79,6 +91,7 @@ When a proposed change would leave **error-level** findings, the agent sees them
   {
     id: 'node-types',
     title: 'Node types & limits',
+    icon: Workflow,
     body: `## Node types & limits
 
 **Nine** node types are supported:
@@ -95,6 +108,8 @@ When a proposed change would leave **error-level** findings, the agent sees them
 | **nested** | Delegates to a child canvas; its out-ports mirror the child's **exit_port**s. |
 | **exit_port** | A named terminal return inside a child canvas (surfaces as a port on the parent nested node). |
 
+@@fig:node-types@@
+
 ### Authoring rules to know
 
 - **IDN only** today (Indonesian). Other languages are not yet enabled.
@@ -105,6 +120,7 @@ When a proposed change would leave **error-level** findings, the agent sees them
   {
     id: 'knowledge-bases',
     title: 'Knowledge Bases & Multi-Round',
+    icon: BookOpen,
     body: `## Knowledge Bases & Multi-Round
 
 A **Knowledge Base (KB)** binds one or more **triggering intents** to an answer. When the caller says something matching an intent, the KB fires its answer — useful for FAQs and interruptions.
@@ -120,6 +136,8 @@ Ask the agent to add a knowledge base with its name, the **intents** that trigge
 
 A KB can be **multi-round** — instead of a single answer, it delegates into a component for a short multi-turn sub-conversation. Name the target component when creating the KB and the engine wires it as a Multi-Round Dialogue.
 
+@@fig:kb-flow@@
+
 ### Editing a KB *(in progress)*
 
 > **Coming soon.** In-place **KB editing** — changing a KB's intents, answers, or multi-round target after creation — is being built on the engine side (the "Ethan Engine" workstream). Today you can **add** KBs through Chat; full edit support will land in a future update. Until then, to change a KB you can recreate it or use the raw-ops escape hatch.
@@ -131,6 +149,7 @@ A freshly imported KB or multi-round bot may show its nodes as *recording-pendin
   {
     id: 'findings',
     title: 'Findings & validation',
+    icon: ShieldCheck,
     body: `## Findings & validation
 
 The **Findings** tab runs the read-only checker over your bot and lists what it finds. The checker never changes your file.
@@ -139,6 +158,8 @@ The **Findings** tab runs the read-only checker over your bot and lists what it 
 
 - **Error** — the export is malformed and would **break import** into WIZ.AI. Fix these.
 - **Warning** — the bot imports, but something is **incomplete and may break on deploy** (e.g. a flow with no way to end, or a talk node missing its Unclassified branch).
+
+@@fig:severity@@
 
 ### Common codes
 
@@ -156,6 +177,7 @@ The **Findings** tab runs the read-only checker over your bot and lists what it 
   {
     id: 'inspect-edit',
     title: 'Inspecting & editing nodes',
+    icon: MousePointerClick,
     body: `## Inspecting & editing nodes
 
 ### Selecting
@@ -176,6 +198,7 @@ Other attributes (branches, targets, variables, types) are read-only here — ch
   {
     id: 'naming-export',
     title: 'Naming & export',
+    icon: Download,
     body: `## Naming & export
 
 ### Naming the bot
@@ -198,6 +221,7 @@ The download is named after your bot. If there are **error-level findings**, Exp
   {
     id: 'graph',
     title: 'The flow graph',
+    icon: GitBranch,
     body: `## The flow graph
 
 The center pane renders your bot as a flow graph, laid out automatically.
@@ -213,6 +237,7 @@ Orphan nodes (referenced but not defined in this export — usually links to WIZ
   {
     id: 'chat-tips',
     title: 'Chat tips',
+    icon: MessagesSquare,
     body: `## Chat tips
 
 - **Slash commands** — type \`/\` at the start of the box for quick actions.
@@ -226,6 +251,7 @@ Orphan nodes (referenced but not defined in this export — usually links to WIZ
   {
     id: 'settings',
     title: 'AI settings & keys',
+    icon: KeyRound,
     body: `## AI settings & keys
 
 The Chat agent needs an LLM provider and API key. Open **Settings** from the rail footer.
