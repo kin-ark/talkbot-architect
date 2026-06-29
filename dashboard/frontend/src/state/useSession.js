@@ -223,6 +223,12 @@ export function useSession() {
     refreshSessions();
   }, [refreshSessions]);
 
+  const editNodeText = useCallback(async (uuid, fields) => {
+    const r = await api.editNodeText(uuid, fields);
+    refresh(r);   // summary/findings/canUndo/canRedo, clears proposal
+    return r;
+  }, []);
+
   // Clear backend + local state so the app returns to the upload/landing screen.
   // Without clearing the backend, a later reload would rehydrate the old session.
   const reset = useCallback(async () => {
@@ -237,5 +243,5 @@ export function useSession() {
   return { summary, findings, transcript, proposal, canUndo, canRedo, loading, sending,
            sessions, activeSessionId, usage, botName,
            upload, startBlank, send, retry, apply, reject, undo, redo, cancel, reset,
-           refreshSessions, newSession, switchSession, renameSession, deleteSession, renameBot };
+           refreshSessions, newSession, switchSession, renameSession, deleteSession, renameBot, editNodeText };
 }
