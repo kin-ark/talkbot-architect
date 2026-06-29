@@ -42,3 +42,37 @@ def test_wiz303_dangling_goto_kb_warns(tmp_path):
 def test_wiz303_is_a_deploy_blocker_code():
     from wizcheck.report import DEPLOY_BLOCKER_CODES
     assert "WIZ303" in DEPLOY_BLOCKER_CODES
+
+
+def test_wiz304_empty_user_kb_warns(tmp_path):
+    doc = _doc(tmp_path, "manifest_with_kb.yaml")
+    bk = json.loads(doc["BizKnowledgeInfo"])
+    # empty a user-created KB: clear its kdInfo answers, ensure isInit=0
+    target = next(k for k in bk if k.get("isInit", 0) == 0)
+    target["kdInfo"] = json.dumps([])
+    doc["BizKnowledgeInfo"] = json.dumps(bk)
+    findings = [f for f in check_intents(parse_dict(doc)) if f.code == "WIZ304"]
+    assert findings and all(f.severity.name == "WARNING" for f in findings)
+
+
+def test_wiz304_exempts_system_kb(tmp_path):
+    doc = _doc(tmp_path, "manifest_with_kb.yaml")
+    bk = json.loads(doc["BizKnowledgeInfo"])
+    # an isInit=1 system KB with empty kdInfo must NOT warn
+    sysk = next((k for k in bk if k.get("isInit") == 1), None)
+    if sysk is None:
+        import pytest; pytest.skip("no system KB in fixture")
+    sysk["kdInfo"] = json.dumps([])
+    doc["BizKnowledgeInfo"] = json.dumps(bk)
+    codes = [f.code for f in check_intents(parse_dict(doc))]
+    assert "WIZ304" not in [c for c in codes]  # exempt
+
+
+def test_wiz304_clean_bot_passes(tmp_path):
+    doc = _doc(tmp_path, "manifest_with_kb.yaml")
+    assert "WIZ304" not in [f.code for f in check_intents(parse_dict(doc))]
+
+
+def test_wiz304_is_a_deploy_blocker_code():
+    from wizcheck.report import DEPLOY_BLOCKER_CODES
+    assert "WIZ304" in DEPLOY_BLOCKER_CODES
