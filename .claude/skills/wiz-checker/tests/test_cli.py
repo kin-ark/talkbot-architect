@@ -7,6 +7,15 @@ import subprocess
 import sys
 from pathlib import Path
 
+_SKILLS = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(_SKILLS / "wiz-builder" / "scripts"))
+from wizbuilder.compile import compile_manifest  # noqa: E402
+_FIX = _SKILLS / "wiz-builder" / "tests" / "fixtures"
+
+# Add scripts dir to path for direct main import
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+from check import main  # noqa: E402
+
 SKILL_DIR = Path(__file__).resolve().parents[1]
 CLI = SKILL_DIR / "scripts" / "check.py"
 
@@ -86,3 +95,23 @@ def test_cli_strict_promotes_warnings_to_failures(tmp_path):
     # With --strict: exit 1 (warnings promoted to errors)
     r2 = _run(str(p), "--strict")
     assert r2.returncode == 1
+
+
+def test_cli_deploy_blocks_incomplete_bot(tmp_path):
+    p = tmp_path / "bot.json"
+    compile_manifest(_FIX / "manifest_minimal.yaml", p)   # no Exit + unconnected Unclassified
+    assert main([str(p)]) == 0                  # plain: warnings non-fatal
+    assert main([str(p), "--deploy"]) == 1      # deploy: WIZ107/108 are blockers
+
+
+def test_cli_deploy_ignores_nonblocker_warnings(tmp_path):
+    p = tmp_path / "bot.json"
+    compile_manifest(_FIX / "manifest_minimal.yaml", p)
+    # Filter to the variables family (WIZ2xx) — none are deploy-blockers here.
+    assert main([str(p), "--deploy", "--only", "WIZ2"]) == 0
+
+
+def test_cli_strict_unchanged_by_deploy(tmp_path):
+    p = tmp_path / "bot.json"
+    compile_manifest(_FIX / "manifest_minimal.yaml", p)
+    assert main([str(p), "--strict"]) == 1      # blunt strict still fails on any warning
