@@ -4,14 +4,11 @@ import TopBar from './components/TopBar';
 import SessionRail from './components/SessionRail';
 import FlowCanvas from './components/FlowCanvas';
 import RightDock from './components/RightDock';
-import UploadZone from './components/UploadZone';
+import EmptyState from './components/EmptyState';
 import PageOverlay from './components/PageOverlay';
 import StatisticsPage from './components/StatisticsPage';
 import DocumentationPage from './components/DocumentationPage';
 import SettingsPage from './components/SettingsPage';
-import WelcomeCard from './components/WelcomeCard';
-import SampleGallery from './components/SampleGallery';
-import { Settings as SettingsIcon, Sun, Moon } from 'lucide-react';
 import { useTheme } from './theme/useTheme';
 import { exportUrl, getConfig } from './api';
 
@@ -33,19 +30,21 @@ export default function App() {
   const { theme, toggle: toggleTheme } = useTheme();
   const [keySet, setKeySet] = useState(true);   // assume set until known (no false flash)
   useEffect(() => {
-    if (s.summary) return;                       // only probe on the landing screen
+    if (s.summary) return;                       // only probe on the empty state
     let off = false;
     getConfig().then((c) => { if (!off) setKeySet(!!c.key_set); }).catch(() => {});
     return () => { off = true; };
   }, [s.summary]);
+
   const onExport = () => {
     const errs = s.findings.filter((f) => f.severity === 'error').length;
     if (errs > 0 && !window.confirm(`${errs} error${errs > 1 ? 's' : ''} found — export anyway?`)) return;
     window.open(exportUrl(), '_blank');
   };
-  const onNew = () => {
+
+  const onStartNew = () => {
     setSelectedNode(null); setDockTab('chat'); setFocusComponentId(null); setPreview(null);
-    s.reset();           // clears backend + session state -> returns to landing
+    s.startNew();          // empty-state center; keeps backend + session list
   };
 
   const ownerComponentOf = (uuid) => {
@@ -82,74 +81,6 @@ export default function App() {
     </PageOverlay>
   );
 
-  const landingControls = (
-    <div className="flex items-center gap-1">
-      <button type="button" aria-label="Toggle theme" title="Toggle light/dark" onClick={toggleTheme}
-        className="p-2 rounded-md text-text-secondary hover:bg-surface-muted hover:text-text">
-        {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-      </button>
-      <button type="button" aria-label="Settings" title="Settings" onClick={() => setLeftPage('settings')}
-        className="p-2 rounded-md text-text-secondary hover:bg-surface-muted hover:text-text">
-        <SettingsIcon size={16} />
-      </button>
-    </div>
-  );
-
-  if (!s.summary) {
-    const uploadCard = (
-      <div className="flex-1 flex items-center justify-center -mt-12">
-        <div className="max-w-md w-full">
-          <WelcomeCard />
-          {!keySet && (
-            <div data-testid="key-nudge" className="mb-4 rounded-lg border border-warning bg-warning-bg text-warning px-3 py-2 text-xs flex items-center gap-2">
-              <span>No AI key set — the chat agent needs one.</span>
-              <button type="button" onClick={() => setLeftPage('settings')}
-                className="ml-auto text-primary hover:underline">Open Settings</button>
-            </div>
-          )}
-          <h2 className="text-2xl font-semibold mb-4 text-center text-text">Talkbot Architect</h2>
-          <p className="text-center text-text-secondary mb-6 text-sm">Upload a WIZ dialogue JSON or ZIP to begin.</p>
-          <UploadZone onUpload={s.upload} />
-          <button onClick={s.startBlank}
-            className="mt-4 w-full border border-border rounded-xl py-2 text-sm text-text-secondary hover:bg-surface-muted">
-            Start from scratch — describe a new bot
-          </button>
-          {s.loading && <p className="text-center mt-4 text-text-tertiary">Analyzing…</p>}
-          <SampleGallery onPick={s.loadSample} />
-        </div>
-      </div>
-    );
-
-    if (s.sessions?.length > 0) {
-      return (
-        <div className="h-screen flex flex-col bg-canvas">
-          <div className="flex justify-end p-3">
-            {landingControls}
-          </div>
-          <div className="flex-1 flex overflow-hidden">
-            <SessionRail sessions={s.sessions} activeSessionId={s.activeSessionId}
-              usage={s.usage} collapsed={railCollapsed} onToggleCollapse={toggleRail}
-              onNew={s.newSession} onSwitch={s.switchSession}
-              onRename={s.renameSession} onDelete={s.deleteSession}
-              onOpenPage={setLeftPage} theme={theme} onToggleTheme={toggleTheme} />
-            {uploadCard}
-          </div>
-          {pageOverlay}
-        </div>
-      );
-    }
-
-    return (
-      <div className="h-screen flex flex-col bg-canvas">
-        <div className="flex justify-end p-3">
-          {landingControls}
-        </div>
-        {uploadCard}
-        {pageOverlay}
-      </div>
-    );
-  }
-
   const onAskFix = (f) => {
     setDockTab('chat');
     s.send(`Fix finding ${f.code}${f.id ? ' on node ' + f.id : ''}: ${f.message}`);
@@ -168,32 +99,44 @@ export default function App() {
 
   return (
     <div className="h-screen flex flex-col bg-canvas">
-      <TopBar canUndo={s.canUndo} canRedo={s.canRedo} onUndo={s.undo} onRedo={s.redo} onExport={onExport} onNew={onNew}
+      <TopBar hasDoc={!!s.summary} canUndo={s.canUndo} canRedo={s.canRedo}
+        onUndo={s.undo} onRedo={s.redo} onExport={onExport}
         botName={s.botName} onRenameBot={s.renameBot} />
       <div className="flex-1 flex overflow-hidden">
         <SessionRail sessions={s.sessions} activeSessionId={s.activeSessionId}
           usage={s.usage} collapsed={railCollapsed} onToggleCollapse={toggleRail}
-          onNew={s.newSession} onSwitch={s.switchSession}
+          onNew={onStartNew} onSwitch={s.switchSession}
           onRename={s.renameSession} onDelete={s.deleteSession}
           onOpenPage={setLeftPage} theme={theme} onToggleTheme={toggleTheme} />
         <div className="flex-1 min-w-0 flex flex-col">
-          {preview && (
-            <div className="flex items-center gap-2 px-3 py-1.5 text-xs bg-warning-bg text-warning border-b border-warning">
-              <span>Previewing proposed change — added/changed nodes highlighted.</span>
-              <button type="button" onClick={exitPreview}
-                className="ml-auto text-primary hover:underline">Exit preview</button>
-            </div>
+          {s.summary ? (
+            <>
+              {preview && (
+                <div className="flex items-center gap-2 px-3 py-1.5 text-xs bg-warning-bg text-warning border-b border-warning">
+                  <span>Previewing proposed change — added/changed nodes highlighted.</span>
+                  <button type="button" onClick={exitPreview}
+                    className="ml-auto text-primary hover:underline">Exit preview</button>
+                </div>
+              )}
+              <div className="flex-1 min-h-0">
+                <FlowCanvas summary={preview ? preview.summary : s.summary}
+                  onSelectNode={selectNode} focusComponentId={focusComponentId}
+                  highlight={preview ? preview.changeSet : null} />
+              </div>
+            </>
+          ) : (
+            <EmptyState keySet={keySet} loading={s.loading}
+              onUpload={s.upload} onStartBlank={s.startBlank} onLoadSample={s.loadSample}
+              onOpenSettings={() => setLeftPage('settings')} />
           )}
-          <div className="flex-1 min-h-0">
-            <FlowCanvas summary={preview ? preview.summary : s.summary}
-              onSelectNode={selectNode} focusComponentId={focusComponentId}
-              highlight={preview ? preview.changeSet : null} />
-          </div>
         </div>
-        <RightDock activeTab={dockTab} onTabChange={setDockTab} summary={s.summary} findings={s.findings}
-          selectedNode={selectedNode ? resolveNode(selectedNode) : null} onSelectNode={selectNode} chat={chat} onPreview={onPreview} onAskFix={onAskFix}
-          onSelectComponent={setFocusComponentId} focusComponentId={focusComponentId}
-          onEditNode={(uuid, fields) => s.editNodeText(uuid, fields)} />
+        {s.summary && (
+          <RightDock activeTab={dockTab} onTabChange={setDockTab} summary={s.summary} findings={s.findings}
+            selectedNode={selectedNode ? resolveNode(selectedNode) : null} onSelectNode={selectNode} chat={chat}
+            onPreview={onPreview} onAskFix={onAskFix}
+            onSelectComponent={setFocusComponentId} focusComponentId={focusComponentId}
+            onEditNode={(uuid, fields) => s.editNodeText(uuid, fields)} />
+        )}
       </div>
       {pageOverlay}
     </div>
