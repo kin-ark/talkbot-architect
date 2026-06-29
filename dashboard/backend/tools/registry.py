@@ -231,7 +231,9 @@ _SPECS = [
              "Append a new answer text to a Knowledge Base. Proposes a dry-run.",
              {"type": "object", "properties": {
                  "name": {"type": "string"},
-                 "text": {"type": "string"}},
+                 "text": {"type": "string"},
+                 "after": {"type": "string", "enum": ["wait", "hangup"],
+                          "description": "what happens after the answer: 'wait' (default) or 'hangup'"}},
               "required": ["name", "text"]}),
     ToolSpec("edit_kb_answer",
              "Edit an existing answer in a Knowledge Base, located by old_text or 0-based index. "
@@ -240,7 +242,9 @@ _SPECS = [
                  "name": {"type": "string"},
                  "new_text": {"type": "string"},
                  "old_text": {"type": "string"},
-                 "index": {"type": "integer"}},
+                 "index": {"type": "integer"},
+                 "after": {"type": "string", "enum": ["wait", "hangup"],
+                          "description": "what happens after the answer: 'wait' (default) or 'hangup'"}},
               "required": ["name", "new_text"]}),
     ToolSpec("remove_kb_answer",
              "Remove an answer from a Knowledge Base, located by text or 0-based index. "
@@ -420,6 +424,8 @@ def dispatch(name: str, args: dict, data: dict) -> dict:
     if name == "add_kb_answer":
         import yaml
         op = {"op": "add-kb-answer", "name": args["name"], "text": args["text"]}
+        if args.get("after") is not None:
+            op["after"] = args["after"]
         return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
     if name == "edit_kb_answer":
         import yaml
@@ -428,6 +434,8 @@ def dispatch(name: str, args: dict, data: dict) -> dict:
             op["old_text"] = args["old_text"]
         if args.get("index") is not None:
             op["index"] = args["index"]
+        if args.get("after") is not None:
+            op["after"] = args["after"]
         return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
     if name == "remove_kb_answer":
         import yaml

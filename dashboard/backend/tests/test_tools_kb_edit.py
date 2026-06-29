@@ -87,18 +87,24 @@ def test_kb_edit_tool_schemas():
     assert si["properties"]["intents"]["items"]["type"] == "string"
     assert set(si.get("required", [])) >= {"name", "intents"}
 
-    # add_kb_answer: name(str, required), text(str, required)
+    # add_kb_answer: name(str, required), text(str, required), after?(str, enum)
     aa = specs["add_kb_answer"].parameters
     assert aa["properties"]["name"]["type"] == "string"
     assert aa["properties"]["text"]["type"] == "string"
+    assert "after" in aa["properties"]
+    assert aa["properties"]["after"]["type"] == "string"
+    assert set(aa["properties"]["after"].get("enum", [])) >= {"wait", "hangup"}
     assert set(aa.get("required", [])) >= {"name", "text"}
 
-    # edit_kb_answer: name(str, required), new_text(str, required), old_text?(str), index?(int)
+    # edit_kb_answer: name(str, required), new_text(str, required), old_text?(str), index?(int), after?(str, enum)
     ea = specs["edit_kb_answer"].parameters
     assert ea["properties"]["name"]["type"] == "string"
     assert ea["properties"]["new_text"]["type"] == "string"
     assert "old_text" in ea["properties"]
     assert "index" in ea["properties"]
+    assert "after" in ea["properties"]
+    assert ea["properties"]["after"]["type"] == "string"
+    assert set(ea["properties"]["after"].get("enum", [])) >= {"wait", "hangup"}
     assert set(ea.get("required", [])) >= {"name", "new_text"}
 
     # remove_kb_answer: name(str, required), text?(str), index?(int)
@@ -129,8 +135,11 @@ def test_kb_edit_tool_schemas():
     ("rename_kb",         {"name": "FAQ", "new_name": "FAQ-renamed"}),
     ("set_kb_intents",    {"name": "FAQ", "intents": ["Positive"]}),
     ("add_kb_answer",     {"name": "FAQ", "text": "Tentu saja bisa."}),
+    ("add_kb_answer",     {"name": "FAQ", "text": "Tentu saja bisa.", "after": "hangup"}),
     ("edit_kb_answer",    {"name": "FAQ", "new_text": "Bisa bantu Anda.",
                            "old_text": "Ya, kami bisa membantu."}),
+    ("edit_kb_answer",    {"name": "FAQ", "new_text": "Bisa bantu Anda.",
+                           "old_text": "Ya, kami bisa membantu.", "after": "wait"}),
     ("set_kb_multiround", {"name": "FAQ", "target_component": "2. Multi"}),
     ("delete_kb",         {"name": "FAQ"}),
 ])
