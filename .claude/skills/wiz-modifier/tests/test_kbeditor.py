@@ -109,8 +109,27 @@ def test_kbeditor_bsc_dirty_flag(tmp_path):
     # With no dirty flag, the original BSC string should remain unchanged
     assert b.data.get("BizSpeechComponent") == before_bsc
 
-    # Now mark dirty — flush should re-encode it
+    # Now mark dirty — flush should re-encode the in-memory bsc value (not just be non-None)
     ed.mark_bsc_dirty()
     ed.flush()
-    # After dirty flush, it should be the re-encoded value (which may differ only in whitespace)
-    assert b.data.get("BizSpeechComponent") is not None
+    assert codec.decode(b.data["BizSpeechComponent"]) == ed._bsc
+
+
+def test_goto_kb_refs_finds_referencing_node(tmp_path):
+    # manifest_goto_kb.yaml builds a KB + a goto_kb (type-8) node referencing it.
+    b = _bundle(tmp_path, "manifest_goto_kb.yaml")
+    ed = KbEditor(b, _minter())
+    # find the user-created KB and confirm a goto_kb node references its id
+    user_kb = next(k for k in ed.bk if k.get("isInit") == 0)
+    refs = ed.goto_kb_refs(user_kb["knowledgeId"])
+    assert refs, "expected a goto_kb node referencing the KB"
+    # a knowledgeId that no node targets returns no refs
+    assert ed.goto_kb_refs(99999999) == []
+
+
+def test_goto_kb_refs_tolerates_null_details(tmp_path):
+    b = _bundle(tmp_path)
+    ed = KbEditor(b, _minter())
+    # inject a component whose details is the literal "null" string — must not crash
+    ed.bsc().append({"componentUuid": "x", "name": "empty", "details": "null"})
+    assert ed.goto_kb_refs(12345) == []

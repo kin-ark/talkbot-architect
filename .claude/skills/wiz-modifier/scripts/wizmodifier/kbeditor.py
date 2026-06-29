@@ -55,7 +55,13 @@ class KbEditor:
         return [r for r in self.sck if r.get("knowledgeId") == knowledge_id]
 
     def intent_id_by_name(self) -> dict[str, int]:
-        return {i["intentName"]: i["intentId"] for i in self.si}
+        # Skip malformed SpeechIntent rows (missing name/id) rather than KeyError —
+        # this is a general read helper that may see partial exports.
+        return {
+            i["intentName"]: i["intentId"]
+            for i in self.si
+            if i.get("intentName") is not None and i.get("intentId") is not None
+        }
 
     def goto_kb_refs(self, knowledge_id) -> list[str]:
         """Node uuids of goto_kb (type-8) nodes whose appoint_knowledge_id == knowledge_id.
