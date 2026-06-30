@@ -17,7 +17,7 @@ def _use_fake(script):
 
 
 def setup_function():
-    main.SESSION.load({"BizSpeechComponent": "[]"})
+    pass
 
 
 def teardown_function():
@@ -27,6 +27,9 @@ def teardown_function():
 def test_chat_stream_emits_token_and_done():
     _use_fake([LLMResponse(text="all good", tool_calls=[])])
     with TestClient(main.app) as client:
+        client.get("/health")  # mint tbid
+        tbid = client.cookies["tbid"]
+        main.REGISTRY.store(tbid).active().load({"BizSpeechComponent": "[]"})
         r = client.post("/chat/stream", json={"message": "hi"})
         assert r.status_code == 200
         assert r.headers["content-type"].startswith("text/event-stream")
@@ -43,6 +46,9 @@ def test_chat_stream_emits_tool_and_proposal():
         LLMResponse(text="done", tool_calls=[]),
     ])
     with TestClient(main.app) as client:
+        client.get("/health")  # mint tbid
+        tbid = client.cookies["tbid"]
+        main.REGISTRY.store(tbid).active().load({"BizSpeechComponent": "[]"})
         events = _events_from_sse(client.post("/chat/stream", json={"message": "check"}).text)
     types = [e["type"] for e in events]
     assert "tool_start" in types and "tool_result" in types

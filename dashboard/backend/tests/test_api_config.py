@@ -1,32 +1,12 @@
-"""Tests for GET /config and PUT /config endpoints (Task FA1)."""
+"""Tests for GET /config and PUT /config endpoints (per-client model)."""
 from __future__ import annotations
 
-import pytest
 from fastapi.testclient import TestClient
 
-import config_store
 import main
 from main import app
 
 http = TestClient(app)
-
-
-# ---------------------------------------------------------------------------
-# autouse fixture: reset CONFIG between every test
-# ---------------------------------------------------------------------------
-
-@pytest.fixture(autouse=True)
-def _reset_config():
-    """Reset the in-memory RuntimeConfig before each test."""
-    config_store.CONFIG.provider = None
-    config_store.CONFIG.model = None
-    config_store.CONFIG.base_url = None
-    config_store.CONFIG.api_key = None
-    yield
-    config_store.CONFIG.provider = None
-    config_store.CONFIG.model = None
-    config_store.CONFIG.base_url = None
-    config_store.CONFIG.api_key = None
 
 
 # ---------------------------------------------------------------------------
@@ -99,11 +79,12 @@ def test_put_config_source_becomes_override():
 
 def test_put_config_empty_api_key_does_not_clear_existing():
     """An empty-string api_key in PUT should not overwrite an existing key."""
-    config_store.CONFIG.api_key = "already-set"
+    # Pre-set the key via a proper PUT
+    http.put("/config", json={"api_key": "already-set"})
     r = http.put("/config", json={"api_key": ""})
     assert r.status_code == 200
-    # existing key should still be in CONFIG
-    assert config_store.CONFIG.api_key == "already-set"
+    # The config should still report key_set=True (key still present)
+    assert r.json()["key_set"] is True
 
 
 def test_put_config_key_value_never_in_response():
@@ -142,17 +123,18 @@ def test_get_config_after_put_shows_override(monkeypatch):
 # ---------------------------------------------------------------------------
 
 def test_config_clear_resets_to_env(monkeypatch):
-    """POST /config/clear should reset CONFIG and return source='env'."""
+    """POST /config/clear should reset config and return source='env'."""
     monkeypatch.delenv("LLM_PROVIDER", raising=False)
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
-    config_store.CONFIG.provider = "openai"
-    config_store.CONFIG.api_key = "sk-x"
+    # First set some overrides
+    http.put("/config", json={"provider": "openai", "api_key": "sk-x"})
     r = http.post("/config/clear")
     assert r.status_code == 200
     body = r.json()
     assert body["source"] == "env"
-    assert config_store.CONFIG.provider is None
-    assert config_store.CONFIG.api_key is None
+    # Verify the GET also reflects cleared state
+    r2 = http.get("/config")
+    assert r2.json()["source"] == "env"
 
 
 # ---------------------------------------------------------------------------
@@ -160,7 +142,7 @@ def test_config_clear_resets_to_env(monkeypatch):
 # ---------------------------------------------------------------------------
 
 def test_get_client_uses_config_override(monkeypatch):
-    """get_client() should build client from CONFIG override when set."""
+    """get_client() should build client from config override when set."""
     captured = {}
 
     def fake_make_client(provider, api_key, model, base_url=None):
@@ -173,15 +155,22 @@ def test_get_client_uses_config_override(monkeypatch):
 
     monkeypatch.setattr("main.make_client", fake_make_client)
 
-    config_store.CONFIG.provider = "openai"
-    config_store.CONFIG.model = "gpt-4o"
-    config_store.CONFIG.base_url = "http://lite"
-    config_store.CONFIG.api_key = "sk-override"
+    # Set config via API (using the shared http client's tbid)
+    http.put("/config", json={
+        "provider": "openai",
+        "model": "gpt-4o",
+        "base_url": "http://lite",
+        "api_key": "sk-override",
+    })
 
-    client = main.get_client()  # type: ignore[call-arg]
+    # Get the cid from the shared client's cookie
+    tbid = http.cookies.get("tbid", "_legacy")
+
+    # Directly invoke get_client with the cid (bypassing FastAPI dependency injection)
+    client_obj = main.get_client(cid=tbid)
 
     assert captured["provider"] == "openai"
     assert captured["model"] == "gpt-4o"
     assert captured["base_url"] == "http://lite"
     assert captured["api_key"] == "sk-override"
-    _ = client  # used
+    _ = client_obj  # used

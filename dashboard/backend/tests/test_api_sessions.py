@@ -1,15 +1,10 @@
 import persistence
 from fastapi.testclient import TestClient
-from session import Session
 import main
 
 
 def _isolate(tmp_path, monkeypatch):
     monkeypatch.setattr(persistence, "SESSIONS_DIR", tmp_path / ".sessions")
-    monkeypatch.setattr(persistence, "ACTIVE_PATH", tmp_path / ".sessions" / "active")
-    # fresh empty active object so tests are independent of module state
-    main.STORE._active = Session()
-    main.SESSION = main.STORE.active()
 
 
 def test_create_list_activate_rename_delete(tmp_path, monkeypatch):

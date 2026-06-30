@@ -1,15 +1,11 @@
 import json
 import persistence
 from fastapi.testclient import TestClient
-from session import Session
 import main
 
 
 def _isolate(tmp_path, monkeypatch):
     monkeypatch.setattr(persistence, "SESSIONS_DIR", tmp_path / ".sessions")
-    monkeypatch.setattr(persistence, "ACTIVE_PATH", tmp_path / ".sessions" / "active")
-    main.STORE._active = Session()
-    main.SESSION = main.STORE.active()
 
 
 def _doc(name="Empty Dialogue"):
@@ -20,8 +16,9 @@ def test_put_speech_name_sets_doc_payload_label_and_filename(tmp_path, monkeypat
     _isolate(tmp_path, monkeypatch)
     with TestClient(main.app) as client:
         client.post("/sessions")                 # create + activate a slot
-        main.SESSION = main.STORE.active()
-        main.STORE.active().load(_doc())
+        # Load data into active session via registry
+        tbid = client.cookies["tbid"]
+        main.REGISTRY.store(tbid).active().load(_doc())
 
         r = client.put("/speech-name", json={"name": "Debt Collector"})
         assert r.status_code == 200 and r.json()["bot_name"] == "Debt Collector"
@@ -43,8 +40,8 @@ def test_put_empty_name_400(tmp_path, monkeypatch):
     _isolate(tmp_path, monkeypatch)
     with TestClient(main.app) as client:
         client.post("/sessions")
-        main.SESSION = main.STORE.active()
-        main.STORE.active().load(_doc())
+        tbid = client.cookies["tbid"]
+        main.REGISTRY.store(tbid).active().load(_doc())
         assert client.put("/speech-name", json={"name": "   "}).status_code == 400
 
 
@@ -52,8 +49,8 @@ def test_apply_syncs_session_label_from_doc(tmp_path, monkeypatch):
     _isolate(tmp_path, monkeypatch)
     with TestClient(main.app) as client:
         client.post("/sessions")
-        s = main.STORE.active()
-        main.SESSION = s
+        tbid = client.cookies["tbid"]
+        s = main.REGISTRY.store(tbid).active()
         s.load(_doc("Empty Dialogue"))
         # stage a pending proposal whose proposed_data carries a real name
         s.pending = {"proposed_data": _doc("Survey Bot")}
@@ -66,8 +63,8 @@ def test_apply_returns_bot_name_in_response(tmp_path, monkeypatch):
     _isolate(tmp_path, monkeypatch)
     with TestClient(main.app) as client:
         client.post("/sessions")
-        s = main.STORE.active()
-        main.SESSION = s
+        tbid = client.cookies["tbid"]
+        s = main.REGISTRY.store(tbid).active()
         s.load(_doc("Empty Dialogue"))
         s.pending = {"proposed_data": _doc("Built Bot")}
         r = client.post("/apply")
@@ -81,8 +78,8 @@ def test_undo_returns_reverted_bot_name_and_re_mirrors_label(tmp_path, monkeypat
     _isolate(tmp_path, monkeypatch)
     with TestClient(main.app) as client:
         client.post("/sessions")
-        s = main.STORE.active()
-        main.SESSION = s
+        tbid = client.cookies["tbid"]
+        s = main.REGISTRY.store(tbid).active()
         s.load(_doc("Empty Dialogue"))
 
         # rename to "New Name" — this pushes an undoable state

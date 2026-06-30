@@ -1,4 +1,3 @@
-import json
 from fastapi.testclient import TestClient
 from llm.base import LLMClient, LLMResponse, ToolCall
 import main
@@ -21,7 +20,6 @@ DATA = {
 
 
 def test_chat_add_node_apply():
-    main.SESSION.load(DATA)
     script = [
         LLMResponse(text=None, tool_calls=[ToolCall("c1", "add_node",
                     {"component": 0, "id": "greet", "prompt": "Greeting"})]),
@@ -29,19 +27,26 @@ def test_chat_add_node_apply():
     ]
 
     class _Fake(LLMClient):
-        def __init__(self): self.i = 0
+        def __init__(self):
+            self.i = 0
+
         def chat(self, messages, tools):
-            r = script[self.i]; self.i += 1; return r
+            r = script[self.i]
+            self.i += 1
+            return r
 
     main.app.dependency_overrides[main.get_client] = lambda: _Fake()
-    client = TestClient(main.app)
-    try:
-        r = client.post("/chat", json={"message": "add a greeting node to Main"})
-        assert r.status_code == 200, r.text
-        assert r.json()["proposal"] is not None
-        ap = client.post("/apply")
-        assert ap.status_code == 200, ap.text
-        errors = [f for f in ap.json()["findings"] if f["severity"] == "error"]
-        assert errors == [], errors
-    finally:
-        main.app.dependency_overrides.clear()
+    with TestClient(main.app) as client:
+        client.get("/health")  # mint tbid
+        tbid = client.cookies["tbid"]
+        main.REGISTRY.store(tbid).active().load(DATA)
+        try:
+            r = client.post("/chat", json={"message": "add a greeting node to Main"})
+            assert r.status_code == 200, r.text
+            assert r.json()["proposal"] is not None
+            ap = client.post("/apply")
+            assert ap.status_code == 200, ap.text
+            errors = [f for f in ap.json()["findings"] if f["severity"] == "error"]
+            assert errors == [], errors
+        finally:
+            main.app.dependency_overrides.clear()

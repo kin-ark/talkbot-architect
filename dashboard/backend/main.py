@@ -5,31 +5,33 @@ from __future__ import annotations
 from dotenv import load_dotenv
 load_dotenv()
 
-import json
-import os
-import tempfile
-from pathlib import Path
-from typing import Optional
+import json  # noqa: E402
+import os  # noqa: E402
+import tempfile  # noqa: E402
+from pathlib import Path  # noqa: E402
+from typing import Optional  # noqa: E402
 
-from fastapi import Depends, FastAPI, File, HTTPException, Response, UploadFile
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.requests import Request
-from fastapi.responses import JSONResponse, StreamingResponse
-from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from fastapi import Depends, FastAPI, File, HTTPException, Response, UploadFile  # noqa: E402
+from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
+from fastapi.requests import Request  # noqa: E402
+from fastapi.responses import JSONResponse, StreamingResponse  # noqa: E402
+from fastapi.staticfiles import StaticFiles  # noqa: E402
+from pydantic import BaseModel  # noqa: E402
 
-import agents
-import config_store
-import persistence
-import samples
-import speechname
-from auth import PasswordGateMiddleware
-from config_store import CONFIG, any_override, effective_key_set
-from llm.base import LLMClient
-from llm.factory import LLMConfigError, make_client
-from orchestrator import run_turn, run_turn_stream
-from session_store import SessionStore
-from wizmodifier.io import InputBundle, write_output
+import agents  # noqa: E402
+import config_store  # noqa: E402
+import samples  # noqa: E402
+import speechname  # noqa: E402
+from auth import PasswordGateMiddleware  # noqa: E402
+from config_store import any_override, effective_key_set  # noqa: E402
+from identity import ClientCookieMiddleware, client_id  # noqa: E402
+from llm.base import LLMClient  # noqa: E402
+from llm.factory import LLMConfigError, make_client  # noqa: E402
+from orchestrator import run_turn, run_turn_stream  # noqa: E402
+from registry import REGISTRY  # noqa: E402
+from session import Session  # noqa: E402
+from session_store import SessionStore  # noqa: E402
+from wizmodifier.io import InputBundle, write_output  # noqa: E402
 
 app = FastAPI(title="Talkbot Architect API")
 _cors_origins = (
@@ -37,8 +39,12 @@ _cors_origins = (
     if os.environ.get("CORS_ORIGINS")
     else []
 )
-app.add_middleware(CORSMiddleware, allow_origins=_cors_origins, allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(
+    CORSMiddleware, allow_origins=_cors_origins, allow_credentials=True,
+    allow_methods=["*"], allow_headers=["*"],
+)
 app.add_middleware(PasswordGateMiddleware)
+app.add_middleware(ClientCookieMiddleware)
 
 
 def _error_body(exc: Exception) -> dict:
@@ -58,18 +64,17 @@ async def _provider_error(request: Request, exc: LLMProviderError):
 async def _unhandled(request: Request, exc: Exception):
     return JSONResponse(status_code=500, content=_error_body(exc))
 
-STORE = SessionStore()
-SESSION = STORE.active()        # module alias — the live active object
+
+# ---------------------------------------------------------------------------
+# Per-client dependencies
+# ---------------------------------------------------------------------------
+
+def current_store(cid: str = Depends(client_id)) -> SessionStore:
+    return REGISTRY.store(cid)
 
 
-def _S():
-    """Return the currently active Session (read at call time, not import time)."""
-    return STORE.active()
-
-
-@app.on_event("startup")
-def _load_persisted_session() -> None:
-    STORE.boot()
+def current_session(store: SessionStore = Depends(current_store)) -> Session:
+    return store.active()
 
 
 # ---------------------------------------------------------------------------
@@ -104,10 +109,11 @@ class NodeTextRequest(BaseModel):
 # Helpers / dependencies
 # ---------------------------------------------------------------------------
 
-def _require_session() -> None:
+def _require_session(s: Session = Depends(current_session)) -> Session:
     """Raise 503 if no data has been loaded into the active session yet."""
-    if not _S()._stack:
+    if not s._stack:
         raise HTTPException(status_code=503, detail="no session loaded")
+    return s
 
 
 def _reconstruct_transcript(messages) -> list[dict]:
@@ -132,9 +138,8 @@ def _component_index_of(data: dict, uuid: str) -> Optional[int]:
     return None
 
 
-def _active_payload() -> dict:
+def _active_payload(s: Session) -> dict:
     """Return the rehydrate payload for the current active session."""
-    s = _S()
     if not s._stack:
         return {"summary": None, "id": s.id, "bot_name": None}
     data = s.current()
@@ -163,31 +168,32 @@ def _parse_or_400(content: bytes) -> dict:
     return data
 
 
-def get_client() -> LLMClient:
-    """Build an LLMClient from CONFIG overrides + env fallbacks."""
-    provider = CONFIG.provider or os.environ.get("LLM_PROVIDER")
-    model = CONFIG.model or os.environ.get("LLM_MODEL")
-    base_url = CONFIG.base_url  # factory also falls back to *_BASE_URL env vars
-    api_key = CONFIG.api_key    # factory falls back to provider env key when None
+def get_client(cid: str = Depends(client_id)) -> LLMClient:
+    """Build an LLMClient from per-client config overrides + env fallbacks."""
+    cfg = config_store.config_for(cid)
+    provider = cfg.provider or os.environ.get("LLM_PROVIDER")
+    model = cfg.model or os.environ.get("LLM_MODEL")
+    base_url = cfg.base_url
+    api_key = cfg.api_key
     try:
         return make_client(provider=provider, api_key=api_key, model=model, base_url=base_url)
     except LLMConfigError as e:
         raise HTTPException(status_code=503, detail=str(e))
 
 
-def _config_response() -> dict:
+def _config_response(cfg) -> dict:
     """Build the /config response body. NEVER includes the api_key value."""
-    provider = CONFIG.provider or os.environ.get("LLM_PROVIDER")
-    model = CONFIG.model or os.environ.get("LLM_MODEL")
-    base_url = CONFIG.base_url or os.environ.get(
+    provider = cfg.provider or os.environ.get("LLM_PROVIDER")
+    model = cfg.model or os.environ.get("LLM_MODEL")
+    base_url = cfg.base_url or os.environ.get(
         "ANTHROPIC_BASE_URL" if (provider or "anthropic").lower() == "anthropic" else "OPENAI_BASE_URL"
     )
     return {
         "provider": provider,
         "model": model,
         "base_url": base_url,
-        "key_set": effective_key_set(provider),
-        "source": "override" if any_override() else "env",
+        "key_set": effective_key_set(provider, cfg),
+        "source": "override" if any_override(cfg) else "env",
     }
 
 
@@ -201,52 +207,51 @@ async def health():
 
 
 @app.get("/config")
-async def get_config():
+async def get_config(cid: str = Depends(client_id)):
     """Return current effective LLM config. api_key value is NEVER included."""
-    return _config_response()
+    return _config_response(config_store.config_for(cid))
 
 
 @app.put("/config")
-async def put_config(update: ConfigUpdate):
+async def put_config(update: ConfigUpdate, cid: str = Depends(client_id)):
     """Override any subset of provider/model/base_url/api_key in memory.
 
     An empty-string api_key is treated as 'leave unchanged' (not a clear).
     Returns the same shape as GET /config.
     """
+    cfg = config_store.config_for(cid)
     if update.provider is not None:
-        CONFIG.provider = update.provider
+        cfg.provider = update.provider
     if update.model is not None:
-        CONFIG.model = update.model
+        cfg.model = update.model
     if update.base_url is not None:
-        CONFIG.base_url = update.base_url
+        cfg.base_url = update.base_url
     # Empty string means "leave unchanged"; only update when truthy
     if update.api_key:
-        CONFIG.api_key = update.api_key
-    return _config_response()
+        cfg.api_key = update.api_key
+    return _config_response(cfg)
 
 
 @app.post("/config/clear")
-async def clear_config():
+async def clear_config(cid: str = Depends(client_id)):
     """Reset all CONFIG overrides — effective config reverts to env vars."""
-    CONFIG.provider = None
-    CONFIG.model = None
-    CONFIG.base_url = None
-    CONFIG.api_key = None
-    return _config_response()
+    cfg = config_store.config_for(cid)
+    cfg.provider = cfg.model = cfg.base_url = cfg.api_key = None
+    return _config_response(cfg)
 
 
 @app.get("/export")
-async def export_current(_: None = Depends(_require_session)):
-    data = _S().current()
+async def export_current(s: Session = Depends(_require_session)):
+    data = s.current()
     nm = speechname.read_speech_name(data)
     base = speechname.slugify_filename(nm).removesuffix(".json") if nm else "speech_export"
     # Internal entry MUST be a speech*.json (WIZ + InputBundle.load require it);
     # the slugged <base> is only the download filename, never the zip entry.
-    sn = _S().speech_name if (_S().speech_name.startswith("speech")
-                              and _S().speech_name.endswith(".json")) else "speech_export.json"
+    sn = s.speech_name if (s.speech_name.startswith("speech")
+                           and s.speech_name.endswith(".json")) else "speech_export.json"
 
-    if _S().wavs:  # has audio → import-ready ZIP via the engine writer
-        bundle = InputBundle(data=data, speech_name=sn, wavs=_S().wavs)
+    if s.wavs:  # has audio → import-ready ZIP via the engine writer
+        bundle = InputBundle(data=data, speech_name=sn, wavs=s.wavs)
         with tempfile.NamedTemporaryFile(suffix=".zip", delete=False) as tmp:
             tmp_path = Path(tmp.name)
         try:
@@ -270,12 +275,13 @@ async def export_current(_: None = Depends(_require_session)):
 
 
 @app.get("/session")
-def get_session():
-    return _active_payload()
+def get_session(s: Session = Depends(current_session)):
+    return _active_payload(s)
 
 
 @app.post("/session")
-async def create_session(file: UploadFile = File(...)):
+async def create_session(file: UploadFile = File(...),
+                         store: SessionStore = Depends(current_store)):
     raw = await file.read()
     filename = file.filename or ""
 
@@ -294,20 +300,22 @@ async def create_session(file: UploadFile = File(...)):
             tmp_path.unlink(missing_ok=True)
         data = bundle.data
         stem = Path(filename).stem or "Imported bot"
-        STORE.new(name=stem)
-        _S().load(data, speech_name=bundle.speech_name, wavs=bundle.wavs)
-        _S().name = stem
+        store.new(name=stem)
+        s = store.active()
+        s.load(data, speech_name=bundle.speech_name, wavs=bundle.wavs)
+        s.name = stem
     else:
         data = _parse_or_400(raw)
         stem = Path(filename).stem or "Imported bot"
-        STORE.new(name=stem)
-        _S().load(data)
-        _S().name = stem
+        store.new(name=stem)
+        s = store.active()
+        s.load(data)
+        s.name = stem
 
-    _S()._autosave()
-    nm = speechname.read_speech_name(_S().current())
-    if nm and nm != "Empty Dialogue" and _S().id:
-        STORE.rename(_S().id, nm)
+    s._autosave()
+    nm = speechname.read_speech_name(s.current())
+    if nm and nm != "Empty Dialogue" and s.id:
+        store.rename(s.id, nm)
     # Validate only once; reuse the result for the response.
     findings = agents.validate(data)
     return {"summary": agents.summarize(data), "findings": findings}
@@ -319,7 +327,7 @@ def list_samples_route():
 
 
 @app.post("/samples/{sample_id}")
-def load_sample(sample_id: str):
+def load_sample(sample_id: str, store: SessionStore = Depends(current_store)):
     manifest = samples.load_manifest(sample_id)
     if manifest is None:
         raise HTTPException(status_code=404, detail="unknown sample")
@@ -327,59 +335,58 @@ def load_sample(sample_id: str):
     if not built["ok"]:
         raise HTTPException(status_code=500, detail=f"sample build failed: {built.get('error')}")
     title = samples.title_of(sample_id)
-    STORE.new(name=title)
-    _S().load(built["proposed_data"])
-    _S().name = title
-    _S()._autosave()
-    data = _S().current()
+    store.new(name=title)
+    s = store.active()
+    s.load(built["proposed_data"])
+    s.name = title
+    s._autosave()
+    data = s.current()
     return {"summary": agents.summarize(data), "findings": agents.validate(data)}
 
 
 @app.post("/session/blank")
-def create_blank_session():
-    STORE.new(name="New session")
-    _S().load({"BizSpeechComponent": []})
-    data = _S().current()
+def create_blank_session(store: SessionStore = Depends(current_store)):
+    store.new(name="New session")
+    s = store.active()
+    s.load({"BizSpeechComponent": []})
+    data = s.current()
     return {"summary": agents.summarize(data), "findings": agents.validate(data)}
 
 
 @app.post("/session/clear")
-def clear_session():
+def clear_session(s: Session = Depends(current_session)):
     """Drop the current session so the dashboard returns to the upload/landing screen."""
-    _S().reset()
+    s.reset()
     return {"cleared": True}
 
 
 @app.get("/summary")
-async def get_summary():
-    _require_session()
-    return agents.summarize(_S().current())
+async def get_summary(s: Session = Depends(_require_session)):
+    return agents.summarize(s.current())
 
 
 @app.get("/findings")
-async def get_findings():
-    _require_session()
-    return agents.validate(_S().current())
+async def get_findings(s: Session = Depends(_require_session)):
+    return agents.validate(s.current())
 
 
 @app.get("/node/{uuid}")
-async def get_node(uuid: str):
-    _require_session()
-    node = agents.read_node(_S().current(), uuid)
+async def get_node(uuid: str, s: Session = Depends(_require_session)):
+    node = agents.read_node(s.current(), uuid)
     if node is None:
         raise HTTPException(status_code=404, detail="node not found")
     return node
 
 
 @app.put("/node/{uuid}/text")
-def edit_node_text(uuid: str, body: NodeTextRequest):
+def edit_node_text(uuid: str, body: NodeTextRequest,
+                   s: Session = Depends(_require_session)):
     import yaml
-    _require_session()
     label = (body.label or "").strip()
     prompt = (body.prompt or "").strip()
     if not label and not prompt:
         raise HTTPException(status_code=400, detail="label or prompt required")
-    idx = _component_index_of(_S().current(), uuid)
+    idx = _component_index_of(s.current(), uuid)
     if idx is None:
         raise HTTPException(status_code=404, detail="node not found")
     op = {"op": "rename-node", "component": idx, "node": {"uuid": uuid}}
@@ -387,132 +394,137 @@ def edit_node_text(uuid: str, body: NodeTextRequest):
         op["label"] = label
     if prompt:
         op["prompt"] = prompt
-    r = agents.propose_mods(_S().current(), yaml.safe_dump([op]))
+    r = agents.propose_mods(s.current(), yaml.safe_dump([op]))
     if not r["ok"]:
         raise HTTPException(status_code=400, detail=r["error"])
-    _S().apply(r["proposed_data"])   # new undoable version + autosave + clears pending
+    s.apply(r["proposed_data"])   # new undoable version + autosave + clears pending
     return {
         "ok": True,
-        "summary": agents.summarize(_S().current()),
-        "findings": agents.validate(_S().current()),
-        "can_undo": _S().can_undo(),
-        "can_redo": _S().can_redo(),
-        "node": agents.read_node(_S().current(), uuid),
+        "summary": agents.summarize(s.current()),
+        "findings": agents.validate(s.current()),
+        "can_undo": s.can_undo(),
+        "can_redo": s.can_redo(),
+        "node": agents.read_node(s.current(), uuid),
     }
 
 
 @app.post("/chat")
-def chat(req: ChatRequest, client: LLMClient = Depends(get_client)):
+def chat(req: ChatRequest, s: Session = Depends(current_session),
+         client: LLMClient = Depends(get_client)):
     # Sync def → runs in the threadpool, so the event loop stays free for
     # /chat/cancel while this turn holds the lock.
-    _require_session()
+    if not s._stack:
+        raise HTTPException(status_code=503, detail="no session loaded")
     try:
-        with _S()._lock:
-            result = run_turn(client, _S(), req.message)
+        with s._lock:
+            result = run_turn(client, s, req.message)
     except HTTPException:
         raise
     except Exception as e:
         raise LLMProviderError(f"LLM provider error: {e}") from e
-    _S()._autosave()
+    s._autosave()
     return result
 
 
 @app.post("/chat/stream")
-def chat_stream(req: ChatRequest, client: LLMClient = Depends(get_client)):
-    _require_session()
+def chat_stream(req: ChatRequest, s: Session = Depends(current_session),
+                client: LLMClient = Depends(get_client)):
+    if not s._stack:
+        raise HTTPException(status_code=503, detail="no session loaded")
 
     def _gen():
-        with _S()._lock:
+        with s._lock:
             try:
-                for ev in run_turn_stream(client, _S(), req.message):
+                for ev in run_turn_stream(client, s, req.message):
                     yield f"data: {json.dumps(ev, ensure_ascii=False, default=str)}\n\n"
             except Exception as e:  # surface provider/tool failure as an SSE error, not a 500
                 yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
                 yield f"data: {json.dumps({'type': 'done', 'canceled': False, 'text': ''})}\n\n"
             finally:
-                _S()._autosave()
+                s._autosave()
 
     return StreamingResponse(_gen(), media_type="text/event-stream")
 
 
 @app.post("/chat/cancel")
-def chat_cancel():
+def chat_cancel(s: Session = Depends(current_session)):
     # Must NOT take the lock — it runs while a turn holds it.
-    _S().cancel_requested = True
+    s.cancel_requested = True
     return {"canceling": True}
 
 
 @app.post("/apply")
-async def apply_pending():
-    _require_session()
-    if _S().pending is None:
+async def apply_pending(s: Session = Depends(_require_session),
+                        store: SessionStore = Depends(current_store)):
+    if s.pending is None:
         raise HTTPException(status_code=409, detail="no pending proposal")
-    _S().apply(_S().pending["proposed_data"])
-    nm = speechname.read_speech_name(_S().current())
-    if nm and _S().id:
-        STORE.rename(_S().id, nm)
+    s.apply(s.pending["proposed_data"])
+    nm = speechname.read_speech_name(s.current())
+    if nm and s.id:
+        store.rename(s.id, nm)
     return {
         "applied": True,
         "bot_name": nm,
-        "summary": agents.summarize(_S().current()),
-        "findings": agents.validate(_S().current()),
-        "can_undo": _S().can_undo(),
-        "can_redo": _S().can_redo(),
+        "summary": agents.summarize(s.current()),
+        "findings": agents.validate(s.current()),
+        "can_undo": s.can_undo(),
+        "can_redo": s.can_redo(),
     }
 
 
 @app.post("/undo")
-async def undo():
-    _require_session()
-    ok = _S().undo()
-    nm = speechname.read_speech_name(_S().current())
-    if nm and _S().id:
-        STORE.rename(_S().id, nm)
+async def undo(s: Session = Depends(_require_session),
+               store: SessionStore = Depends(current_store)):
+    ok = s.undo()
+    nm = speechname.read_speech_name(s.current())
+    if nm and s.id:
+        store.rename(s.id, nm)
     return {
         "ok": ok,
         "bot_name": nm,
-        "summary": agents.summarize(_S().current()),
-        "findings": agents.validate(_S().current()),
-        "can_undo": _S().can_undo(),
-        "can_redo": _S().can_redo(),
+        "summary": agents.summarize(s.current()),
+        "findings": agents.validate(s.current()),
+        "can_undo": s.can_undo(),
+        "can_redo": s.can_redo(),
     }
 
 
 @app.post("/redo")
-async def redo():
-    _require_session()
-    ok = _S().redo()
-    nm = speechname.read_speech_name(_S().current())
-    if nm and _S().id:
-        STORE.rename(_S().id, nm)
+async def redo(s: Session = Depends(_require_session),
+               store: SessionStore = Depends(current_store)):
+    ok = s.redo()
+    nm = speechname.read_speech_name(s.current())
+    if nm and s.id:
+        store.rename(s.id, nm)
     return {
         "ok": ok,
         "bot_name": nm,
-        "summary": agents.summarize(_S().current()),
-        "findings": agents.validate(_S().current()),
-        "can_undo": _S().can_undo(),
-        "can_redo": _S().can_redo(),
+        "summary": agents.summarize(s.current()),
+        "findings": agents.validate(s.current()),
+        "can_undo": s.can_undo(),
+        "can_redo": s.can_redo(),
     }
 
 
 @app.put("/speech-name")
-def set_speech_name_route(body: BotNameRequest):
-    _require_session()
+def set_speech_name_route(body: BotNameRequest,
+                          s: Session = Depends(_require_session),
+                          store: SessionStore = Depends(current_store)):
     name = body.name.strip()
     if not name:
         raise HTTPException(status_code=400, detail="name must not be empty")
-    new = speechname.set_speech_name(_S().current(), name)
-    _S().apply(new)                                  # new undoable version + autosave
-    _S().speech_name = speechname.slugify_filename(name)
-    if _S().id:
-        STORE.rename(_S().id, name)                  # mirror the session label (persists snapshot)
+    new = speechname.set_speech_name(s.current(), name)
+    s.apply(new)                                  # new undoable version + autosave
+    s.speech_name = speechname.slugify_filename(name)
+    if s.id:
+        store.rename(s.id, name)                  # mirror the session label (persists snapshot)
     return {
         "ok": True,
         "bot_name": name,
-        "summary": agents.summarize(_S().current()),
-        "findings": agents.validate(_S().current()),
-        "can_undo": _S().can_undo(),
-        "can_redo": _S().can_redo(),
+        "summary": agents.summarize(s.current()),
+        "findings": agents.validate(s.current()),
+        "can_undo": s.can_undo(),
+        "can_redo": s.can_redo(),
     }
 
 
@@ -521,35 +533,36 @@ def set_speech_name_route(body: BotNameRequest):
 # ---------------------------------------------------------------------------
 
 @app.get("/sessions")
-def list_sessions_route():
-    return {"sessions": STORE.list(), "active_id": persistence.read_active()}
+def list_sessions_route(store: SessionStore = Depends(current_store)):
+    return {"sessions": store.list(), "active_id": store.active().id}
 
 
 @app.post("/sessions")
-def create_session_slot():
-    STORE.new()
-    _S().load({"BizSpeechComponent": []})
-    return _active_payload()   # already carries the new session's id
+def create_session_slot(store: SessionStore = Depends(current_store)):
+    store.new()
+    store.active().load({"BizSpeechComponent": []})
+    return _active_payload(store.active())
 
 
 @app.post("/sessions/{sid}/activate")
-def activate_session(sid: str):
-    if not STORE.activate(sid):
+def activate_session(sid: str, store: SessionStore = Depends(current_store)):
+    if not store.activate(sid):
         raise HTTPException(status_code=404, detail="session not found")
-    return _active_payload()   # id == sid, carried by the payload
+    return _active_payload(store.active())
 
 
 @app.patch("/sessions/{sid}")
-def rename_session(sid: str, body: RenameRequest):
-    if not STORE.rename(sid, body.name):
+def rename_session(sid: str, body: RenameRequest,
+                   store: SessionStore = Depends(current_store)):
+    if not store.rename(sid, body.name):
         raise HTTPException(status_code=404, detail="session not found")
     return {"ok": True}
 
 
 @app.delete("/sessions/{sid}")
-def delete_session_route(sid: str):
-    STORE.delete(sid)
-    return {"ok": True, "active": _S().id}
+def delete_session_route(sid: str, store: SessionStore = Depends(current_store)):
+    store.delete(sid)
+    return {"ok": True, "active": store.active().id}
 
 
 # ---------------------------------------------------------------------------

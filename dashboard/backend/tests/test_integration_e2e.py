@@ -14,10 +14,15 @@ client = TestClient(app)
 
 @pytest.fixture(autouse=True)
 def _reset_session():
-    main.SESSION._stack = []
-    main.SESSION._idx = -1
-    main.SESSION.pending = None
-    main.SESSION.transcript = []
+    # Mint a tbid by making a request, then reset session state
+    client.get("/health")
+    tbid = client.cookies.get("tbid")
+    if tbid:
+        s = main.REGISTRY.store(tbid).active()
+        s._stack = []
+        s._idx = -1
+        s.pending = None
+        s.transcript = []
     yield
     main.app.dependency_overrides.clear()
 

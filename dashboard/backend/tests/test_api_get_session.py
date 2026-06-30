@@ -4,9 +4,7 @@ import main
 
 
 def test_get_session_empty_when_no_session():
-    main.SESSION._stack = []           # simulate no session loaded
-    main.SESSION._idx = -1
-    main.SESSION.transcript = []
+    # After conftest resets REGISTRY, new client gets a fresh empty session
     with TestClient(main.app) as client:
         r = client.get("/session")
     assert r.status_code == 200
@@ -14,14 +12,17 @@ def test_get_session_empty_when_no_session():
 
 
 def test_get_session_returns_state_and_reconstructed_transcript():
-    main.SESSION.load({"BizSpeechComponent": []})
-    main.SESSION.transcript = [
-        Message(role="user", content="add a node"),
-        Message(role="assistant", content=None, tool_calls=[ToolCall("c1", "validate", {})]),
-        Message(role="tool", tool_call_id="c1", content="{}"),
-        Message(role="assistant", content="Done — added it."),
-    ]
     with TestClient(main.app) as client:
+        client.get("/health")  # mint tbid
+        tbid = client.cookies["tbid"]
+        s = main.REGISTRY.store(tbid).active()
+        s.load({"BizSpeechComponent": []})
+        s.transcript = [
+            Message(role="user", content="add a node"),
+            Message(role="assistant", content=None, tool_calls=[ToolCall("c1", "validate", {})]),
+            Message(role="tool", tool_call_id="c1", content="{}"),
+            Message(role="assistant", content="Done — added it."),
+        ]
         body = client.get("/session").json()
     assert body["summary"] is not None
     assert "findings" in body

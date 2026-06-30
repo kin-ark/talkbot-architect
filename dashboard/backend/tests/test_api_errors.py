@@ -11,10 +11,12 @@ class _BoomClient(LLMClient):
 
 
 def test_unhandled_exception_returns_error_shape():
-    main.SESSION.load({"BizSpeechComponent": []})
     main.app.dependency_overrides[main.get_client] = lambda: _BoomClient()
     client = TestClient(main.app, raise_server_exceptions=False)
     try:
+        client.get("/health")  # mint tbid
+        tbid = client.cookies["tbid"]
+        main.REGISTRY.store(tbid).active().load({"BizSpeechComponent": []})
         r = client.post("/chat", json={"message": "hi"})
         assert r.status_code == 502
         body = r.json()
@@ -26,6 +28,6 @@ def test_unhandled_exception_returns_error_shape():
 
 def test_httpexception_passes_through():
     client = TestClient(main.app, raise_server_exceptions=False)
-    main.SESSION.__init__()                          # unloaded → 503
+    # empty stack → 503 (no session loaded)
     r = client.post("/chat", json={"message": "hi"})
     assert r.status_code == 503

@@ -1,14 +1,10 @@
 import persistence
 from fastapi.testclient import TestClient
-from session import Session
 import main
 
 
 def _isolate(tmp_path, monkeypatch):
     monkeypatch.setattr(persistence, "SESSIONS_DIR", tmp_path / ".sessions")
-    monkeypatch.setattr(persistence, "ACTIVE_PATH", tmp_path / ".sessions" / "active")
-    main.STORE._active = Session()
-    main.SESSION = main.STORE.active()
 
 
 def test_list_samples(tmp_path, monkeypatch):

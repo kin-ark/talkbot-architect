@@ -25,15 +25,19 @@ class _SlowClient(LLMClient):
 
 
 def test_chat_is_serialized_per_session():
-    main.SESSION.load({"BizSpeechComponent": []})
     main.app.dependency_overrides[main.get_client] = lambda: _SlowClient()
     client = TestClient(main.app)
     try:
+        client.get("/health")  # mint tbid
+        tbid = client.cookies["tbid"]
+        main.REGISTRY.store(tbid).active().load({"BizSpeechComponent": []})
         results = []
         threads = [threading.Thread(target=lambda: results.append(client.post("/chat", json={"message": "hi"})))
                    for _ in range(2)]
-        for t in threads: t.start()
-        for t in threads: t.join()
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
         assert all(r.status_code == 200 for r in results)
         assert _SlowClient.max_active == 1     # never two turns at once
     finally:
@@ -41,9 +45,12 @@ def test_chat_is_serialized_per_session():
 
 
 def test_cancel_endpoint_sets_flag():
-    main.SESSION.load({"BizSpeechComponent": []})
     client = TestClient(main.app)
+    client.get("/health")  # mint tbid
+    tbid = client.cookies["tbid"]
+    s = main.REGISTRY.store(tbid).active()
+    s.load({"BizSpeechComponent": []})
     r = client.post("/chat/cancel")
     assert r.status_code == 200
     assert r.json()["canceling"] is True
-    assert main.SESSION.cancel_requested is True
+    assert s.cancel_requested is True

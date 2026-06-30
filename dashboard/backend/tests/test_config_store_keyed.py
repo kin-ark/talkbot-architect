@@ -1,14 +1,4 @@
-import pytest
 import config_store
-
-
-# Override the autouse _isolate fixture from conftest so this file is
-# self-contained and does not depend on the legacy CONFIG singleton.
-@pytest.fixture(autouse=True)
-def _isolate():
-    config_store._CONFIGS.clear()
-    yield
-    config_store._CONFIGS.clear()
 
 
 def test_config_for_isolates_clients():

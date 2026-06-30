@@ -1,27 +1,23 @@
-"""Shared test isolation: tmp persistence path, fresh CONFIG + SESSION per test."""
+"""Shared test isolation: tmp persistence path, fresh registry + configs per test."""
 import importlib
 import pytest
 
 
 @pytest.fixture(autouse=True)
 def _isolate(tmp_path, monkeypatch):
-    # Reset CONFIG overrides
     import config_store
-    config_store.CONFIG.provider = None
-    config_store.CONFIG.model = None
-    config_store.CONFIG.base_url = None
-    config_store.CONFIG.api_key = None
+    config_store._CONFIGS.clear()
 
-    # Point persistence at a throwaway path if the module exists yet
     try:
         persistence = importlib.import_module("persistence")
         monkeypatch.setattr(persistence, "SESSIONS_DIR", tmp_path / ".sessions", raising=False)
-        monkeypatch.setattr(persistence, "ACTIVE_PATH", tmp_path / ".sessions" / "active", raising=False)
         monkeypatch.setattr(persistence, "LEGACY_PATH", tmp_path / ".session" / "state.json", raising=False)
     except ModuleNotFoundError:
         pass
 
-    # Reset the shared SESSION
-    import main
-    main.SESSION.__init__()
+    try:
+        import main
+        main.REGISTRY.reset()
+    except Exception:
+        pass
     yield

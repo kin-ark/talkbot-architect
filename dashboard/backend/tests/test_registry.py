@@ -1,14 +1,5 @@
-import pytest
-
 import persistence
 from registry import Registry
-
-
-# Override the autouse _isolate fixture from conftest so this file is
-# self-contained and does not depend on the legacy CONFIG singleton.
-@pytest.fixture(autouse=True)
-def _isolate():
-    yield
 
 
 def test_lazy_one_store_per_client(tmp_path, monkeypatch):
