@@ -34,10 +34,15 @@ from session_store import SessionStore  # noqa: E402
 from wizmodifier.io import InputBundle, write_output  # noqa: E402
 
 app = FastAPI(title="Talkbot Architect API")
+# With allow_credentials=True a wildcard origin is invalid, so we list origins.
+# Prod sets CORS_ORIGINS explicitly (or serves the SPA same-origin → CORS unused).
+# When unset, default to the Vite dev server so local dev (5173 → 8000) works
+# out of the box now that the frontend sends credentials.
+_DEFAULT_DEV_ORIGINS = ["http://localhost:5173", "http://127.0.0.1:5173"]
 _cors_origins = (
-    os.environ.get("CORS_ORIGINS", "").split(",")
+    [o.strip() for o in os.environ["CORS_ORIGINS"].split(",") if o.strip()]
     if os.environ.get("CORS_ORIGINS")
-    else []
+    else _DEFAULT_DEV_ORIGINS
 )
 app.add_middleware(
     CORSMiddleware, allow_origins=_cors_origins, allow_credentials=True,
