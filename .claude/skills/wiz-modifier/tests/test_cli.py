@@ -4,9 +4,9 @@ import zipfile
 from pathlib import Path
 
 CLI = Path(__file__).resolve().parents[1] / "scripts" / "modify.py"
-ROOT = Path(__file__).resolve().parents[4]
-BASELINE = ROOT / "talkbot" / "Empty+Dialogue" / "speech4010869963530658988.json"
-BASELINE_ZIP = ROOT / "talkbot" / "Empty+Dialogue.zip"
+FIXTURES_DIR = Path(__file__).parent / "fixtures"
+BASELINE = FIXTURES_DIR / "speech4010869963530658988.json"
+BASELINE_ZIP = FIXTURES_DIR / "Empty+Dialogue.zip"
 
 
 def _run(args):

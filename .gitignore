@@ -1,5 +1,7 @@
 __pycache__/
 *.wav
+# committed test fixture audio (tiny placeholder)
+!.claude/skills/wiz-modifier/tests/fixtures/*.wav
 
 # Environment variable files — never commit API keys
 .env

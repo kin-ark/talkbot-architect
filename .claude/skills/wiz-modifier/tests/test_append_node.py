@@ -5,7 +5,7 @@ import pytest
 from wizmodifier.apply import run_mods
 from wizmodifier.io import InputBundle
 
-BASELINE = Path(__file__).resolve().parents[4] / "talkbot" / "Empty+Dialogue.zip"
+BASELINE = Path(__file__).parent / "fixtures" / "Empty+Dialogue.zip"
 
 
 def _load():

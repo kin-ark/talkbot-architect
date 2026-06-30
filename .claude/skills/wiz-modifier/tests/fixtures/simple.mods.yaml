@@ -1,9 +1,9 @@
-input: talkbot/Empty+Dialogue/speech4010869963530658988.json
-wav: talkbot/Empty+Dialogue/01735200078309635328.wav
+input: fixtures/speech4010869963530658988.json
+wav: fixtures/01735200078309635328.wav
 mods:
   - op: set-bsc-name
     component: 0
     value: "1. Greeting"
 output:
-  path: talkbot/_import-tests/manual-example.zip
+  path: out/manual-example.zip
   format: zip

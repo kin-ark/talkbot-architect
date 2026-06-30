@@ -4,7 +4,7 @@ from wizmodifier.mods import ModManifest, ModManifestError, load_mods
 
 def test_load_valid(tmp_path):
     text = """
-input: talkbot/Empty+Dialogue/speech4010869963530658988.json
+input: fixtures/speech4010869963530658988.json
 mods:
   - op: set-speech-id
     value: random

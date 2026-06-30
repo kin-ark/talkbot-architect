@@ -11,8 +11,8 @@ SKILL_DIR = Path(__file__).resolve().parents[1]
 PROJECT_ROOT = SKILL_DIR.parents[2]
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
 GOLDEN_DIR = Path(__file__).parent / "golden"
-BASELINE_JSON = PROJECT_ROOT / "talkbot" / "Empty+Dialogue" / "speech4010869963530658988.json"
-BASELINE_WAV = PROJECT_ROOT / "talkbot" / "Empty+Dialogue" / "01735200078309635328.wav"
+BASELINE_JSON = FIXTURES_DIR / "speech4010869963530658988.json"
+BASELINE_WAV = FIXTURES_DIR / "01735200078309635328.wav"
 
 
 @pytest.fixture

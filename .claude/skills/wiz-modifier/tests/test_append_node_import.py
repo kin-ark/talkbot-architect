@@ -6,7 +6,7 @@ from wizmodifier.io import InputBundle
 from wizmodifier.apply import run_mods
 
 ROOT = Path(__file__).resolve().parents[4]
-BASELINE = ROOT / "talkbot" / "Empty+Dialogue.zip"
+BASELINE = Path(__file__).parent / "fixtures" / "Empty+Dialogue.zip"
 CHECK = ROOT / ".claude" / "skills" / "wiz-checker" / "scripts" / "check.py"
 
 
