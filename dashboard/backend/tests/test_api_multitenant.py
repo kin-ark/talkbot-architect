@@ -28,6 +28,10 @@ def test_two_clients_are_isolated(tmp_path, monkeypatch):
 
 def test_config_is_per_client(tmp_path, monkeypatch):
     _isolate(tmp_path, monkeypatch)
+    # Assert on env-derived config below — drop any ambient fallback so the test
+    # is deterministic on a machine with a populated .env (LLM_MODEL/LLM_PROVIDER).
+    monkeypatch.delenv("LLM_MODEL", raising=False)
+    monkeypatch.delenv("LLM_PROVIDER", raising=False)
     with TestClient(main.app) as alice, TestClient(main.app) as bob:
         alice.put("/config", json={"provider": "anthropic", "model": "claude-opus-4-8"})
         assert bob.get("/config").json()["model"] is None
