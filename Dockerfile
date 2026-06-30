@@ -28,6 +28,13 @@ COPY dashboard/backend/ /app/dashboard/backend/
 # Built SPA into the dir main.py serves via StaticFiles (os.path.dirname(__file__)/static).
 COPY --from=frontend /fe/dist/ /app/dashboard/backend/static/
 
+# The backend injects the skill scripts dirs into its OWN sys.path (paths.py), but the
+# builder shells out to the checker as a SUBPROCESS (compile.py::_run_checker) which does
+# NOT inherit that — and the checker imports `wizfacts` (a sibling skill). Without the
+# skills on PYTHONPATH the subprocess crashes → empty stdout → build fails. Put all four
+# skill scripts dirs on PYTHONPATH so subprocesses resolve them too (no pip-install needed).
+ENV PYTHONPATH="/app/.claude/skills/wiz-checker/scripts:/app/.claude/skills/wiz-modifier/scripts:/app/.claude/skills/wiz-builder/scripts:/app/.claude/skills/wiz-facts/scripts"
+
 WORKDIR /app/dashboard/backend
 EXPOSE 8000
 # Single worker — the backend has a process-global active Session + in-memory config.
