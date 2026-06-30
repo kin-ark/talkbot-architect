@@ -12,6 +12,7 @@ class Session:
     def __init__(self) -> None:
         self.id: str | None = None
         self.name: str = "New session"
+        self.owner: str = "_legacy"
         self.created: float = time.time()
         self.updated: float = time.time()
         self.usage: dict = {"input_tokens": 0, "output_tokens": 0, "turns": 0, "model": None}

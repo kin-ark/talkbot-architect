@@ -4,6 +4,7 @@ from __future__ import annotations
 import base64
 import json
 import os
+import re
 import time
 import uuid
 from pathlib import Path
@@ -12,13 +13,22 @@ from llm.base import Message
 
 _BASE = Path(__file__).parent
 SESSIONS_DIR: Path = _BASE / ".sessions"
-ACTIVE_PATH: Path = SESSIONS_DIR / "active"
+ACTIVE_PATH: Path = SESSIONS_DIR / "active"  # backward-compat; unused by new code
 LEGACY_PATH: Path = _BASE / ".session" / "state.json"
+
+
+def _safe_owner(owner: str) -> str:
+    return re.sub(r"[^A-Za-z0-9_-]", "_", owner or "_legacy")
+
+
+def _active_path(owner: str) -> Path:
+    return SESSIONS_DIR / f"active.{_safe_owner(owner)}"
 
 
 def _snapshot(session) -> dict:
     return {
         "id": session.id, "name": session.name,
+        "owner": session.owner,
         "created": session.created, "updated": time.time(),
         "usage": session.usage,
         "stack": session._stack, "idx": session._idx,
@@ -32,6 +42,7 @@ def _snapshot(session) -> dict:
 def _restore(session, state: dict) -> None:
     session.id = state.get("id")
     session.name = state.get("name", "New session")
+    session.owner = state.get("owner", "_legacy")
     session.created = state.get("created", time.time())
     session.updated = state.get("updated", time.time())
     session.usage = state.get("usage") or {"input_tokens": 0, "output_tokens": 0, "turns": 0, "model": None}
@@ -53,22 +64,7 @@ def save_session(session) -> None:
     os.replace(tmp, path)
 
 
-def load_session(session, sid: str | None = None) -> bool:
-    sid = sid or read_active()
-    if not sid:
-        return False
-    try:
-        state = json.loads((SESSIONS_DIR / f"{sid}.json").read_text(encoding="utf-8"))
-    except (FileNotFoundError, json.JSONDecodeError, OSError):
-        return False
-    try:
-        _restore(session, state)
-    except (KeyError, TypeError, ValueError):
-        return False
-    return True
-
-
-def list_sessions() -> list[dict]:
+def list_sessions(owner: str | None = None) -> list[dict]:
     if not SESSIONS_DIR.exists():
         return []
     out = []
@@ -76,6 +72,8 @@ def list_sessions() -> list[dict]:
         try:
             st = json.loads(p.read_text(encoding="utf-8"))
         except (json.JSONDecodeError, OSError):
+            continue
+        if owner is not None and st.get("owner", "_legacy") != owner:
             continue
         stack = st.get("stack") or []
         out.append({"id": st.get("id"), "name": st.get("name", "Session"),
@@ -86,20 +84,44 @@ def list_sessions() -> list[dict]:
     return out
 
 
-def delete_session(sid: str) -> None:
+def load_session(session, sid: str | None = None, owner: str | None = None) -> bool:
+    sid = sid or (read_active(owner) if owner is not None else read_active(session.owner))
+    if not sid:
+        return False
+    try:
+        state = json.loads((SESSIONS_DIR / f"{sid}.json").read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return False
+    if owner is not None and state.get("owner", "_legacy") != owner:
+        return False
+    try:
+        _restore(session, state)
+    except (KeyError, TypeError, ValueError):
+        return False
+    return True
+
+
+def delete_session(sid: str, owner: str | None = None) -> None:
+    if owner is not None:
+        try:
+            st = json.loads((SESSIONS_DIR / f"{sid}.json").read_text(encoding="utf-8"))
+            if st.get("owner", "_legacy") != owner:
+                return
+        except (FileNotFoundError, json.JSONDecodeError, OSError):
+            return
     (SESSIONS_DIR / f"{sid}.json").unlink(missing_ok=True)
 
 
-def read_active() -> str | None:
+def read_active(owner: str) -> str | None:
     try:
-        return ACTIVE_PATH.read_text(encoding="utf-8").strip() or None
+        return _active_path(owner).read_text(encoding="utf-8").strip() or None
     except (FileNotFoundError, OSError):
         return None
 
 
-def write_active(sid: str) -> None:
+def write_active(owner: str, sid: str) -> None:
     SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
-    ACTIVE_PATH.write_text(sid, encoding="utf-8")
+    _active_path(owner).write_text(sid, encoding="utf-8")
 
 
 def migrate_legacy(session) -> bool:
@@ -113,6 +135,7 @@ def migrate_legacy(session) -> bool:
     _restore(session, state)
     session.id = uuid.uuid4().hex
     session.name = "Imported session"
+    session.owner = "_legacy"
     save_session(session)
-    write_active(session.id)
+    write_active("_legacy", session.id)
     return True
