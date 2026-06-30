@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent, within } from '@testing-library/react';
+import { render, screen, fireEvent, within, waitFor } from '@testing-library/react';
+import { ConfirmProvider } from '../confirm/ConfirmProvider';
 import SessionRail from './SessionRail';
 
 const SESSIONS = [
@@ -15,7 +16,7 @@ function setup(over = {}) {
     usage: USAGE, collapsed: false, onToggleCollapse: vi.fn(),
     onOpenPage: vi.fn(), theme: 'light', onToggleTheme: vi.fn(), ...over,
   };
-  render(<SessionRail {...props} />);
+  render(<ConfirmProvider><SessionRail {...props} /></ConfirmProvider>);
   return props;
 }
 
@@ -50,22 +51,21 @@ describe('SessionRail', () => {
     expect(p.onRename).toHaveBeenCalledWith('s1', 'Renamed Bot');
   });
 
-  it('delete: confirm then fires onDelete', () => {
+  it('delete: confirm then fires onDelete', async () => {
     const p = setup();
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
     const row = screen.getByText('Payment Reminder').closest('[data-testid="session-row"]');
     fireEvent.click(within(row).getByLabelText(/delete/i));
-    expect(p.onDelete).toHaveBeenCalledWith('s2');
-    window.confirm.mockRestore();
+    fireEvent.click(await screen.findByTestId('confirm-ok'));
+    await waitFor(() => expect(p.onDelete).toHaveBeenCalledWith('s2'));
   });
 
-  it('delete: cancel does NOT fire onDelete', () => {
+  it('delete: cancel does NOT fire onDelete', async () => {
     const p = setup();
-    vi.spyOn(window, 'confirm').mockReturnValue(false);
     const row = screen.getByText('Payment Reminder').closest('[data-testid="session-row"]');
     fireEvent.click(within(row).getByLabelText(/delete/i));
+    fireEvent.click(await screen.findByTestId('confirm-cancel'));
+    await waitFor(() => expect(screen.queryByTestId('confirm-dialog')).toBeNull());
     expect(p.onDelete).not.toHaveBeenCalled();
-    window.confirm.mockRestore();
   });
 
   it('shows a usage readout', () => {

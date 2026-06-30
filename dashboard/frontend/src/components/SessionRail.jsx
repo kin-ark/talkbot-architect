@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useConfirm } from '../confirm/ConfirmProvider';
 import { Plus, Pencil, Trash2, PanelLeftClose, PanelLeftOpen, MessageSquare, BarChart3, BookOpen, Settings, Sun, Moon } from 'lucide-react';
 
 function fmtUsage(u) {
@@ -11,6 +12,7 @@ function fmtUsage(u) {
 function SessionRow({ s, active, onSwitch, onRename, onDelete, collapsed }) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(s.name);
+  const confirm = useConfirm();
 
   const commit = () => {
     setEditing(false);
@@ -56,7 +58,15 @@ function SessionRow({ s, active, onSwitch, onRename, onDelete, collapsed }) {
             <Pencil size={13} />
           </button>
           <button type="button" aria-label="Delete session"
-            onClick={(e) => { e.stopPropagation(); if (window.confirm(`Delete "${s.name}"?`)) onDelete(s.id); }}
+            onClick={async (e) => {
+              e.stopPropagation();
+              const ok = await confirm({
+                title: 'Delete session?',
+                message: `Delete "${s.name}"? This cannot be undone.`,
+                confirmLabel: 'Delete', danger: true,
+              });
+              if (ok) onDelete(s.id);
+            }}
             className="p-0.5 rounded hover:bg-surface text-text-tertiary hover:text-error">
             <Trash2 size={13} />
           </button>

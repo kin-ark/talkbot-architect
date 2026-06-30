@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import * as api from '../api';
+import { toast } from '../toast/toastStore';
 
 export function useSession() {
   const [summary, setSummary] = useState(null);
@@ -63,6 +64,12 @@ export function useSession() {
     return () => { cancelled = true; };
   }, [refreshSessions]);
 
+  const errText = (e) =>
+    e?.response?.data?.detail
+    || e?.response?.data?.error?.message
+    || (e?.response?.status === 503 ? 'No AI key configured — open Settings to set a provider and key.' : null)
+    || e?.message || 'Request failed.';
+
   const upload = useCallback(async (file) => {
     touched.current = true;
     setLoading(true);
@@ -71,7 +78,7 @@ export function useSession() {
       setSummary(r.summary); setFindings(r.findings);
       setTranscript([{ role: 'agent', text: `Loaded. ${r.findings.filter(f => f.severity === 'error').length} errors, ${r.findings.filter(f => f.severity === 'warning').length} warnings. What do you want to do?` }]);
       await refreshSessions();
-    } finally { setLoading(false); }
+    } catch (e) { toast.error(errText(e)); } finally { setLoading(false); }
   }, [refreshSessions]);
 
   const startBlank = useCallback(async () => {
@@ -82,7 +89,7 @@ export function useSession() {
       setSummary(r.summary); setFindings(r.findings);
       setTranscript([{ role: 'agent', text: "Blank canvas. Describe the bot you want — e.g. \"make me a Debt Collector talkbot\"." }]);
       await refreshSessions();
-    } finally { setLoading(false); }
+    } catch (e) { toast.error(errText(e)); } finally { setLoading(false); }
   }, [refreshSessions]);
 
   const loadSample = useCallback(async (id) => {
@@ -93,16 +100,18 @@ export function useSession() {
       setSummary(r.summary); setFindings(r.findings);
       setTranscript([{ role: 'agent', text: `Loaded the ${r.summary?.components?.[0]?.name || 'sample'} sample — explore the graph, or ask me to change it.` }]);
       await refreshSessions();
-    } finally { setLoading(false); }
+    } catch (e) { toast.error(errText(e)); } finally { setLoading(false); }
   }, [refreshSessions]);
 
   const switchSession = useCallback(async (id) => {
-    touched.current = true;
-    queue.current = [];
-    if (ctrl.current) ctrl.current.abort();
-    const r = await api.activateSession(id);
-    _applyPayload(r);
-    await refreshSessions();
+    try {
+      touched.current = true;
+      queue.current = [];
+      if (ctrl.current) ctrl.current.abort();
+      const r = await api.activateSession(id);
+      _applyPayload(r);
+      await refreshSessions();
+    } catch (e) { toast.error(errText(e)); }
   }, [_applyPayload, refreshSessions]);
 
   const newSession = useCallback(async () => {
@@ -121,23 +130,21 @@ export function useSession() {
   }, [refreshSessions]);
 
   const deleteSession = useCallback(async (id) => {
-    const r = await api.deleteSession(id);
-    if (id === activeSessionId && r?.active) {
-      await switchSession(r.active);   // already calls refreshSessions; no need to repeat
-      return;
-    } else if (id === activeSessionId && !r?.active) {
-      // deleted the only session → blank landing
-      setSummary(null); setFindings([]); setTranscript([]); setProposal(null);
-      setCanUndo(false); setCanRedo(false); setUsage(null); setActiveSessionId(null);
-    }
-    await refreshSessions();
+    try {
+      const r = await api.deleteSession(id);
+      if (id === activeSessionId && r?.active) {
+        await switchSession(r.active);   // already calls refreshSessions; no need to repeat
+        toast.success('Session deleted');
+        return;
+      } else if (id === activeSessionId && !r?.active) {
+        // deleted the only session → blank landing
+        setSummary(null); setFindings([]); setTranscript([]); setProposal(null);
+        setCanUndo(false); setCanRedo(false); setUsage(null); setActiveSessionId(null);
+      }
+      await refreshSessions();
+      toast.success('Session deleted');
+    } catch (e) { toast.error(errText(e)); }
   }, [activeSessionId, switchSession, refreshSessions]);
-
-  const errText = (e) =>
-    e?.response?.data?.detail
-    || e?.response?.data?.error?.message
-    || (e?.response?.status === 503 ? 'No AI key configured — open Settings to set a provider and key.' : null)
-    || e?.message || 'Request failed.';
 
   const drain = useCallback(async () => {
     if (draining.current) return;
@@ -170,6 +177,7 @@ export function useSession() {
           queue.current = [];
           if (e?.name !== 'AbortError' && e?.name !== 'CanceledError') {
             setTranscript((t) => [...t, { role: 'error', text: errText(e) }]);
+            toast.error(errText(e));
           }
         }
       }
@@ -208,36 +216,48 @@ export function useSession() {
     setCanUndo(r.can_undo); setCanRedo(r.can_redo); setProposal(null);
   };
   const apply = useCallback(async () => {
-    const r = await api.applyPending();
-    refresh(r);
-    if (r.bot_name !== undefined) setBotName(r.bot_name ?? null);
-    refreshSessions();
+    try {
+      const r = await api.applyPending();
+      refresh(r);
+      if (r.bot_name !== undefined) setBotName(r.bot_name ?? null);
+      refreshSessions();
+      toast.success('Change applied');
+    } catch (e) { toast.error(errText(e)); }
   }, [refreshSessions]);
   const reject = useCallback(() => setProposal(null), []);
   const undo = useCallback(async () => {
-    const r = await api.undo();
-    refresh(r);
-    if (r.bot_name !== undefined) setBotName(r.bot_name ?? null);
-    refreshSessions();
+    try {
+      const r = await api.undo();
+      refresh(r);
+      if (r.bot_name !== undefined) setBotName(r.bot_name ?? null);
+      refreshSessions();
+    } catch (e) { toast.error(errText(e)); }
   }, [refreshSessions]);
   const redo = useCallback(async () => {
-    const r = await api.redo();
-    refresh(r);
-    if (r.bot_name !== undefined) setBotName(r.bot_name ?? null);
-    refreshSessions();
+    try {
+      const r = await api.redo();
+      refresh(r);
+      if (r.bot_name !== undefined) setBotName(r.bot_name ?? null);
+      refreshSessions();
+    } catch (e) { toast.error(errText(e)); }
   }, [refreshSessions]);
 
   const renameBot = useCallback(async (name) => {
-    const r = await api.setSpeechName(name);
-    refresh(r);
-    setBotName(r.bot_name ?? null);
-    refreshSessions();
+    try {
+      const r = await api.setSpeechName(name);
+      refresh(r);
+      setBotName(r.bot_name ?? null);
+      refreshSessions();
+      toast.success('Renamed to ' + name);
+    } catch (e) { toast.error(errText(e)); }
   }, [refreshSessions]);
 
   const editNodeText = useCallback(async (uuid, fields) => {
-    const r = await api.editNodeText(uuid, fields);
-    refresh(r);   // summary/findings/canUndo/canRedo, clears proposal
-    return r;
+    try {
+      const r = await api.editNodeText(uuid, fields);
+      refresh(r);   // summary/findings/canUndo/canRedo, clears proposal
+      return r;
+    } catch (e) { toast.error(errText(e)); }
   }, []);
 
   // Clear backend + local state so the app returns to the upload/landing screen.

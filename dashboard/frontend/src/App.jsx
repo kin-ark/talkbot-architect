@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSession } from './state/useSession';
+import { useConfirm } from './confirm/ConfirmProvider';
 import TopBar from './components/TopBar';
 import SessionRail from './components/SessionRail';
 import FlowCanvas from './components/FlowCanvas';
@@ -14,6 +15,7 @@ import { exportUrl, getConfig } from './api';
 
 export default function App() {
   const s = useSession();
+  const confirm = useConfirm();
   const [selectedNode, setSelectedNode] = useState(null);
   const [dockTab, setDockTab] = useState('chat');
   const [focusComponentId, setFocusComponentId] = useState(null);
@@ -36,9 +38,16 @@ export default function App() {
     return () => { off = true; };
   }, [s.summary]);
 
-  const onExport = () => {
+  const onExport = async () => {
     const errs = s.findings.filter((f) => f.severity === 'error').length;
-    if (errs > 0 && !window.confirm(`${errs} error${errs > 1 ? 's' : ''} found — export anyway?`)) return;
+    if (errs > 0) {
+      const ok = await confirm({
+        title: 'Export with errors?',
+        message: `${errs} error${errs > 1 ? 's' : ''} found — export anyway?`,
+        confirmLabel: 'Export anyway',
+      });
+      if (!ok) return;
+    }
     window.open(exportUrl(), '_blank');
   };
 
