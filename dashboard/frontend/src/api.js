@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
+axios.defaults.withCredentials = true;
 export const apiBase = () => BASE;
 
 export async function uploadSession(file) {
@@ -39,6 +40,7 @@ export async function streamChat(message, { onEvent, signal } = {}) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message }),
+      credentials: 'include',
       signal,
     });
   } catch (e) {
