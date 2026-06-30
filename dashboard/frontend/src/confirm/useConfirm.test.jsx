@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor, renderHook } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ConfirmProvider, useConfirm } from './ConfirmProvider';
 
 function Harness({ opts, onResult }) {
