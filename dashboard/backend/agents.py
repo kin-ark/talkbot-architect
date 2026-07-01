@@ -127,6 +127,40 @@ def read_node(data: dict, uuid: str) -> dict | None:
     return None
 
 
+def list_intents(data: dict) -> list[dict]:
+    """Derive the intent list from raw SpeechIntent (dashboard-side; no engine).
+
+    isInit == 1 marks a user-created intent (OPPOSITE of KB convention).
+    needs_nlu mirrors checker WIZ305: a user intent with no keywords and no
+    example user-responses. Never raises; skips malformed entries.
+    """
+    out: list[dict] = []
+    for it in unwrap(data.get("SpeechIntent")) or []:
+        if not isinstance(it, dict):
+            continue
+        name = it.get("intentName")
+        if name is None:
+            continue
+        kw = [k for k in str(it.get("keyWordInIntent") or "").split(",") if k.strip()]
+        ur = [u for u in str(it.get("userResponseInIntent") or "").split(";") if u.strip()]
+        is_user = False
+        try:
+            is_user = int(it.get("isInit", 0) or 0) == 1
+        except (ValueError, TypeError):
+            is_user = False
+        out.append({
+            "id": it.get("intentId"),
+            "name": str(name),
+            "type": "user" if is_user else "system",
+            "keyword_count": len(kw),
+            "response_count": len(ur),
+            "keywords": kw,
+            "user_responses": ur,
+            "needs_nlu": bool(is_user and not kw and not ur),
+        })
+    return out
+
+
 def get_facts(query: str) -> list[dict]:
     """Keyword search over wiz-facts YAML files.
 

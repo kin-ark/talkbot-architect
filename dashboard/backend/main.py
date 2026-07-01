@@ -375,6 +375,11 @@ async def get_findings(s: Session = Depends(_require_session)):
     return agents.validate(s.current())
 
 
+@app.get("/intents")
+async def get_intents(s: Session = Depends(_require_session)):
+    return agents.list_intents(s.current())
+
+
 @app.get("/node/{uuid}")
 async def get_node(uuid: str, s: Session = Depends(_require_session)):
     node = agents.read_node(s.current(), uuid)
