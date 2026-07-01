@@ -469,7 +469,7 @@ def _build_kbs(data: dict) -> list[KBView]:
                 if isinstance(i, dict) and "intentId" in i:
                     with contextlib.suppress(ValueError, TypeError):
                         intents.append(int(i["intentId"]))
-        intent_names = [intent_name_by_id[i] for i in intents if i in intent_name_by_id]
+        intent_names = [intent_name_by_id.get(i, str(i)) for i in intents]
 
         # Answers: answerType:1 items from kdInfo; text = item["answer"], after from afterSentence.
         kd_info = unwrap(kb.get("kdInfo"))

@@ -11,15 +11,23 @@ import ComponentsRail from './ComponentsRail';
 export default function RightDock({ activeTab, onTabChange, summary, findings, selectedNode, onSelectNode, chat, onPreview, onAskFix, onSelectComponent, focusComponentId, onEditNode, focusKb }) {
   const [drill, setDrill] = useState(null);
   const [selectedKb, setSelectedKb] = useState(null);
+  // Reset KB selection when a new export/summary loads (e.g. after apply/undo).
   useEffect(() => {
-    if (focusKb == null) return;
-    const kb = (summary?.knowledge_bases || []).find((k) => k.knowledge_id === focusKb);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- clear stale KB view on new summary
+    setDrill(null);
+    setSelectedKb(null);
+  }, [summary]);
+  // Open a specific KB when a graph KB node is clicked (nonce makes repeat clicks re-fire).
+  useEffect(() => {
+    const id = focusKb?.id;
+    if (id == null) return;
+    const kb = (summary?.knowledge_bases || []).find((k) => k.knowledge_id === id);
     if (kb) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- Focus from graph click: both states set atomically from focusKb prop change
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- focus from graph click
       setDrill(null);
       setSelectedKb(kb);
     }
-  }, [focusKb, summary]);
+  }, [focusKb]);   // eslint-disable-line react-hooks/exhaustive-deps -- summary intentionally excluded so apply/undo does not re-force detail
   const [width, setWidth] = useState(() => {
     const saved = Number(localStorage.getItem('tb-dock-w'));
     return saved >= 320 ? saved : 448;   // 28rem default

@@ -135,7 +135,7 @@ export default function App() {
                 <FlowCanvas summary={preview ? preview.summary : s.summary}
                   onSelectNode={selectNode} focusComponentId={focusComponentId}
                   highlight={preview ? preview.changeSet : null}
-                  onSelectKb={(id) => { setDockTab('kb'); setFocusKb(id); }} />
+                  onSelectKb={(id) => { setDockTab('kb'); setFocusKb((f) => ({ id, nonce: (f?.nonce || 0) + 1 })); }} />
               </div>
             </>
           ) : (

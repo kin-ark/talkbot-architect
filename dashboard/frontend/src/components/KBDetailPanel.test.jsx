@@ -37,9 +37,9 @@ describe('KBDetailPanel', () => {
   });
 
   it('falls back to numeric id when intent name is missing', () => {
-    const kb = { ...simpleKb, intents: [5, 6], intent_names: ['WantPay'] };
+    const kb = { ...simpleKb, intents: [5, 6], intent_names: ['WantPay', '6'] };
     render(<KBDetailPanel kb={kb} />);
     expect(screen.getByText('WantPay')).toBeInTheDocument();
-    expect(screen.getByText('6')).toBeInTheDocument();  // id 6 chip fallback
+    expect(screen.getByText('6')).toBeInTheDocument();
   });
 });
