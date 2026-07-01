@@ -105,10 +105,11 @@ class KBView:
     intents: list[int]
     multi_round: FlowModel | None = None  # set in Task 3; leave None here
     intent_names: list[str] = field(default_factory=list)
-    answers: list[dict] = field(default_factory=list)      # [{"text": str, "after": "wait"|"hangup"}]
-    trigger_type: str = "intent"                            # "intent" | "system"
-    is_user_created: bool = False                           # KB isInit == 0
-    multi_round_target: str | None = None                   # target component name
+    answers: list[dict] = field(default_factory=list)
+    # [{"text": str, "after": "wait"|"hangup"}]
+    trigger_type: str = "intent"  # "intent" | "system"
+    is_user_created: bool = False  # KB isInit == 0
+    multi_round_target: str | None = None  # target component name
 
 
 @dataclass
@@ -433,6 +434,18 @@ def _build_kbs(data: dict) -> list[KBView]:
     kbs_raw = unwrap(data.get("BizKnowledgeInfo"))
     if not isinstance(kbs_raw, list):
         kbs_raw = []
+
+    # Intent id -> name, built once (tolerant of partial/malformed rows).
+    si_raw = unwrap(data.get("SpeechIntent"))
+    intent_name_by_id: dict[int, str] = {}
+    if isinstance(si_raw, list):
+        for i in si_raw:
+            has_id = i.get("intentId") is not None
+            has_name = i.get("intentName") is not None
+            if isinstance(i, dict) and has_id and has_name:
+                with contextlib.suppress(ValueError, TypeError):
+                    intent_name_by_id[int(i["intentId"])] = str(i["intentName"])
+
     result: list[KBView] = []
     for kb in kbs_raw:
         if not isinstance(kb, dict):
@@ -456,13 +469,43 @@ def _build_kbs(data: dict) -> list[KBView]:
                 if isinstance(i, dict) and "intentId" in i:
                     with contextlib.suppress(ValueError, TypeError):
                         intents.append(int(i["intentId"]))
+        intent_names = [intent_name_by_id[i] for i in intents if i in intent_name_by_id]
+
+        # Answers: answerType:1 items from kdInfo; text = item["answer"], after from afterSentence.
+        kd_info = unwrap(kb.get("kdInfo"))
+        answers: list[dict] = []
+        if isinstance(kd_info, list):
+            for it in kd_info:
+                if isinstance(it, dict) and it.get("answerType") == 1:
+                    text = it.get("answer", "") or ""
+                    after = "hangup" if it.get("afterSentence") == 1 else "wait"
+                    answers.append({"text": text, "after": after})
+
+        # Trigger type: conditions is a JSON-encoded string; "null" => Intent Trigger.
+        trigger_type = "intent" if (kb.get("conditions") in ("null", None)) else "system"
+
+        # User-created: KB convention isInit == 0 (OPPOSITE of intents, where isInit:1 = user).
+        try:
+            is_user_created = int(kb.get("isInit", 1) or 0) == 0
+        except (ValueError, TypeError):
+            is_user_created = False
+
         multi_round = _build_multiround(kb, data)
+        multi_round_target = (
+            multi_round.components[0].name
+            if multi_round and multi_round.components else None
+        )
         result.append(KBView(
             knowledge_id=knowledge_id,
             title=title,
             kd_type=kd_type,
             intents=intents,
             multi_round=multi_round,
+            intent_names=intent_names,
+            answers=answers,
+            trigger_type=trigger_type,
+            is_user_created=is_user_created,
+            multi_round_target=multi_round_target,
         ))
     return result
 

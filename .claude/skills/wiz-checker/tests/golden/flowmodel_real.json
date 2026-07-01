@@ -10721,7 +10721,14 @@
       "intents": [
         352182
       ],
-      "multi_round": null
+      "multi_round": null,
+      "intent_names": [
+        "Can not hear clearly"
+      ],
+      "answers": [],
+      "trigger_type": "intent",
+      "is_user_created": false,
+      "multi_round_target": null
     },
     {
       "knowledge_id": 183794,
@@ -10840,7 +10847,23 @@
         ],
         "knowledge_bases": [],
         "global_hot_words": []
-      }
+      },
+      "intent_names": [
+        "No answer"
+      ],
+      "answers": [
+        {
+          "text": "Halo, apa suara saya tedengar jelas",
+          "after": "wait"
+        },
+        {
+          "text": "Halo apa anda bisa mendengar suara saya",
+          "after": "wait"
+        }
+      ],
+      "trigger_type": "system",
+      "is_user_created": false,
+      "multi_round_target": "No Answer"
     },
     {
       "knowledge_id": 183795,
@@ -10849,7 +10872,27 @@
       "intents": [
         352184
       ],
-      "multi_round": null
+      "multi_round": null,
+      "intent_names": [
+        "AI can not hear clearly"
+      ],
+      "answers": [
+        {
+          "text": "Maaf boleh diulangi kembali maksudnya bagaimana",
+          "after": "wait"
+        },
+        {
+          "text": "Maaf maksudnya bagaimana ya",
+          "after": "wait"
+        },
+        {
+          "text": "Mohon maaf suara anda kurang terdengar dengan jelas. Saya akan menghubungi lagi di lain waktu ya terimakasih",
+          "after": "hangup"
+        }
+      ],
+      "trigger_type": "system",
+      "is_user_created": false,
+      "multi_round_target": null
     },
     {
       "knowledge_id": 183796,
@@ -10858,7 +10901,23 @@
       "intents": [
         352185
       ],
-      "multi_round": null
+      "multi_round": null,
+      "intent_names": [
+        "Transferring to Human Agent"
+      ],
+      "answers": [
+        {
+          "text": "Suara latar mentransfer ke Agen Manusia",
+          "after": "wait"
+        },
+        {
+          "text": "Maaf, semua agent sedang sibuk. Kami akan menghubungi anda kembali nanti. Sampai jumpa!",
+          "after": "hangup"
+        }
+      ],
+      "trigger_type": "system",
+      "is_user_created": false,
+      "multi_round_target": null
     },
     {
       "knowledge_id": 183797,
@@ -10867,7 +10926,23 @@
       "intents": [
         352186
       ],
-      "multi_round": null
+      "multi_round": null,
+      "intent_names": [
+        "Interrupt"
+      ],
+      "answers": [
+        {
+          "text": "Boleh silahkan",
+          "after": "wait"
+        },
+        {
+          "text": "Silahkan bagaimana",
+          "after": "wait"
+        }
+      ],
+      "trigger_type": "intent",
+      "is_user_created": false,
+      "multi_round_target": null
     },
     {
       "knowledge_id": 183798,
@@ -10876,7 +10951,19 @@
       "intents": [
         352187
       ],
-      "multi_round": null
+      "multi_round": null,
+      "intent_names": [
+        "AI wait"
+      ],
+      "answers": [
+        {
+          "text": "Baik",
+          "after": "wait"
+        }
+      ],
+      "trigger_type": "intent",
+      "is_user_created": false,
+      "multi_round_target": null
     },
     {
       "knowledge_id": 183799,
@@ -10885,7 +10972,14 @@
       "intents": [
         352188
       ],
-      "multi_round": null
+      "multi_round": null,
+      "intent_names": [
+        "User hesitate"
+      ],
+      "answers": [],
+      "trigger_type": "intent",
+      "is_user_created": false,
+      "multi_round_target": null
     },
     {
       "knowledge_id": 183800,
@@ -10894,7 +10988,27 @@
       "intents": [
         352181
       ],
-      "multi_round": null
+      "multi_round": null,
+      "intent_names": [
+        "Unclassified"
+      ],
+      "answers": [
+        {
+          "text": "Boleh diulang lagi maksudnya bagaimana",
+          "after": "wait"
+        },
+        {
+          "text": "Maaf, maksudnya bagaimana ya ",
+          "after": "wait"
+        },
+        {
+          "text": "Mohon maf suara anda kurang tedengar dengan jelas, Saya akan hubungi lagi di lain waktu ya",
+          "after": "hangup"
+        }
+      ],
+      "trigger_type": "system",
+      "is_user_created": false,
+      "multi_round_target": null
     },
     {
       "knowledge_id": 183801,
@@ -10903,7 +11017,14 @@
       "intents": [
         352189
       ],
-      "multi_round": null
+      "multi_round": null,
+      "intent_names": [
+        "Chasing statement"
+      ],
+      "answers": [],
+      "trigger_type": "intent",
+      "is_user_created": false,
+      "multi_round_target": null
     },
     {
       "knowledge_id": 183802,
@@ -10912,7 +11033,19 @@
       "intents": [
         352190
       ],
-      "multi_round": null
+      "multi_round": null,
+      "intent_names": [
+        "Answering Machine"
+      ],
+      "answers": [
+        {
+          "text": "Selamat tinggal",
+          "after": "hangup"
+        }
+      ],
+      "trigger_type": "intent",
+      "is_user_created": false,
+      "multi_round_target": null
     },
     {
       "knowledge_id": 183803,
@@ -10921,7 +11054,14 @@
       "intents": [
         352191
       ],
-      "multi_round": null
+      "multi_round": null,
+      "intent_names": [
+        "DNC"
+      ],
+      "answers": [],
+      "trigger_type": "intent",
+      "is_user_created": false,
+      "multi_round_target": null
     },
     {
       "knowledge_id": 183804,
@@ -10930,7 +11070,14 @@
       "intents": [
         352192
       ],
-      "multi_round": null
+      "multi_round": null,
+      "intent_names": [
+        "Echo Monitoring"
+      ],
+      "answers": [],
+      "trigger_type": "system",
+      "is_user_created": false,
+      "multi_round_target": null
     },
     {
       "knowledge_id": 183805,
@@ -11961,7 +12108,14 @@
         ],
         "knowledge_bases": [],
         "global_hot_words": []
-      }
+      },
+      "intent_names": [
+        "Busy - Call back later"
+      ],
+      "answers": [],
+      "trigger_type": "intent",
+      "is_user_created": true,
+      "multi_round_target": "Busy/Call back later"
     },
     {
       "knowledge_id": 183806,
@@ -11971,7 +12125,24 @@
         352221,
         352216
       ],
-      "multi_round": null
+      "multi_round": null,
+      "intent_names": [
+        "Who are you/where are you from",
+        "Are you bot/ Are you a robot"
+      ],
+      "answers": [
+        {
+          "text": "Saya Rani menelpon dari TikTok Shop Partner ",
+          "after": "wait"
+        },
+        {
+          "text": "Hm, saya Rani menghubungi dari TikTok Shop Partner",
+          "after": "wait"
+        }
+      ],
+      "trigger_type": "intent",
+      "is_user_created": true,
+      "multi_round_target": null
     },
     {
       "knowledge_id": 183807,
@@ -11980,7 +12151,19 @@
       "intents": [
         352207
       ],
-      "multi_round": null
+      "multi_round": null,
+      "intent_names": [
+        "Is this legal"
+      ],
+      "answers": [
+        {
+          "text": "Oh, tenang saja kak. Kami adalah perwakilan resmi dari TikTok Shop Partner, menghubungi kakak untuk membantu dalam mengembangkan Toko Kakak. Kami tidak akan meminta OTP, password dan data pribadi lainnya disini ya Kak.\t",
+          "after": "wait"
+        }
+      ],
+      "trigger_type": "intent",
+      "is_user_created": true,
+      "multi_round_target": null
     },
     {
       "knowledge_id": 183808,
@@ -11989,7 +12172,19 @@
       "intents": [
         352339
       ],
-      "multi_round": null
+      "multi_round": null,
+      "intent_names": [
+        "What is your contact / hotline number"
+      ],
+      "answers": [
+        {
+          "text": "Oh, kakak dapat menghubungi kami melalui pusat bantuan di TikTok Shop Partner ya kak.",
+          "after": "wait"
+        }
+      ],
+      "trigger_type": "intent",
+      "is_user_created": true,
+      "multi_round_target": null
     },
     {
       "knowledge_id": 183809,
@@ -12985,7 +13180,19 @@
         ],
         "knowledge_bases": [],
         "global_hot_words": []
-      }
+      },
+      "intent_names": [
+        "Wrong Number",
+        "Incorrect PIC - Non-immediate family",
+        "Incorrect PIC - Immediate family",
+        "Incorrect PIC - Know the person",
+        "Not the owner",
+        "Who are you looking for"
+      ],
+      "answers": [],
+      "trigger_type": "intent",
+      "is_user_created": true,
+      "multi_round_target": "Wrong Person/Who are you looking for"
     },
     {
       "knowledge_id": 183810,
@@ -13161,7 +13368,23 @@
         ],
         "knowledge_bases": [],
         "global_hot_words": []
-      }
+      },
+      "intent_names": [
+        "Already Contacted / stop calling me"
+      ],
+      "answers": [
+        {
+          "text": "Oh iya, saya menghubungi kembali untuk menyampaikan panduan langkah selanjutnya untuk mengembangkan toko kakak.\t",
+          "after": "wait"
+        },
+        {
+          "text": "Iya, saya ingin menyampaikan panduan lanjutan untuk membantu mengembangkan toko kakak.\t",
+          "after": "wait"
+        }
+      ],
+      "trigger_type": "intent",
+      "is_user_created": true,
+      "multi_round_target": "Already Contacted"
     },
     {
       "knowledge_id": 183811,
@@ -13337,7 +13560,19 @@
         ],
         "knowledge_bases": [],
         "global_hot_words": []
-      }
+      },
+      "intent_names": [
+        "Send detail Info via WA/Email/SMS"
+      ],
+      "answers": [
+        {
+          "text": "Hm, saya izin jelaskan dulu secara singkat di telpon ini ya kak.",
+          "after": "wait"
+        }
+      ],
+      "trigger_type": "intent",
+      "is_user_created": true,
+      "multi_round_target": "Send Info/Text customer"
     },
     {
       "knowledge_id": 183812,
@@ -13346,7 +13581,19 @@
       "intents": [
         352220
       ],
-      "multi_round": null
+      "multi_round": null,
+      "intent_names": [
+        "How long this call will take"
+      ],
+      "answers": [
+        {
+          "text": "Sebentar saja kok tidak sampai 3 menit.",
+          "after": "wait"
+        }
+      ],
+      "trigger_type": "intent",
+      "is_user_created": true,
+      "multi_round_target": null
     },
     {
       "knowledge_id": 183813,
@@ -13355,7 +13602,19 @@
       "intents": [
         352224
       ],
-      "multi_round": null
+      "multi_round": null,
+      "intent_names": [
+        "What is this regarding"
+      ],
+      "answers": [
+        {
+          "text": "Saya menelpon ingin mencocokkan TikTok Shop Partner, dari resmi tiktok ingin mencocokkan toko dengan agensi mitra.",
+          "after": "wait"
+        }
+      ],
+      "trigger_type": "intent",
+      "is_user_created": true,
+      "multi_round_target": null
     },
     {
       "knowledge_id": 183814,
@@ -13364,7 +13623,19 @@
       "intents": [
         352341
       ],
-      "multi_round": null
+      "multi_round": null,
+      "intent_names": [
+        "What is XXX"
+      ],
+      "answers": [
+        {
+          "text": "TSP matchmaking adalah cocokkan TikTok Shop Partner yang bisa membantu meningkatan konten dan omset toko Kakak.",
+          "after": "wait"
+        }
+      ],
+      "trigger_type": "intent",
+      "is_user_created": true,
+      "multi_round_target": null
     },
     {
       "knowledge_id": 183815,
@@ -13373,7 +13644,19 @@
       "intents": [
         352229
       ],
-      "multi_round": null
+      "multi_round": null,
+      "intent_names": [
+        "Will all sellers received the mission to be completed"
+      ],
+      "answers": [
+        {
+          "text": "Oh ini hanya seller terpilih saja kak dan kakak merupakan salah satu seller yang beruntung nih kak.\t",
+          "after": "wait"
+        }
+      ],
+      "trigger_type": "intent",
+      "is_user_created": true,
+      "multi_round_target": null
     },
     {
       "knowledge_id": 183816,
@@ -14625,7 +14908,15 @@
         ],
         "knowledge_bases": [],
         "global_hot_words": []
-      }
+      },
+      "intent_names": [
+        "Will close my shop / not active seller anymore**",
+        "Don't have account/Don't use Shoptok"
+      ],
+      "answers": [],
+      "trigger_type": "intent",
+      "is_user_created": true,
+      "multi_round_target": "Will close shop"
     },
     {
       "knowledge_id": 183817,
@@ -14634,7 +14925,19 @@
       "intents": [
         352228
       ],
-      "multi_round": null
+      "multi_round": null,
+      "intent_names": [
+        "Other issues"
+      ],
+      "answers": [
+        {
+          "text": "Oh terkait ini, kakak dapat menghubungi kami melalui pusat bantuan di TikTok Shop Partner ya kak.Nantinya dari Pusat Bantuan akan membantu memberikan solusi dan cara lainnya untuk Toko Kakak",
+          "after": "wait"
+        }
+      ],
+      "trigger_type": "intent",
+      "is_user_created": true,
+      "multi_round_target": null
     },
     {
       "knowledge_id": 183818,
@@ -14643,7 +14946,19 @@
       "intents": [
         352225
       ],
-      "multi_round": null
+      "multi_round": null,
+      "intent_names": [
+        "Already completed matchmaking"
+      ],
+      "answers": [
+        {
+          "text": "Baik terima kasih konfirmasinya ya kak. Semoga penjualannya terus meningkat dan semangat berkreasi untuk memberikan yang terbaik bagi pelanggan. Terimakasih",
+          "after": "hangup"
+        }
+      ],
+      "trigger_type": "intent",
+      "is_user_created": true,
+      "multi_round_target": null
     },
     {
       "knowledge_id": 183819,
@@ -14652,7 +14967,19 @@
       "intents": [
         352226
       ],
-      "multi_round": null
+      "multi_round": null,
+      "intent_names": [
+        "Benefit"
+      ],
+      "answers": [
+        {
+          "text": "Jika kakak mencocokkan dengan agensi mitra, maka kakak akan dapat berdiskusi atau training dari tiktok shop official. ",
+          "after": "wait"
+        }
+      ],
+      "trigger_type": "intent",
+      "is_user_created": true,
+      "multi_round_target": null
     },
     {
       "knowledge_id": 183820,
@@ -14662,7 +14989,20 @@
         352231,
         353115
       ],
-      "multi_round": null
+      "multi_round": null,
+      "intent_names": [
+        "What are the requirements/Who is eligible",
+        "Doc Needed"
+      ],
+      "answers": [
+        {
+          "text": "Kakak cukup pastikan nomornya sudah aktif WA, informasi selanjutnya akan dihubungi oleh tiktok shop official.",
+          "after": "wait"
+        }
+      ],
+      "trigger_type": "intent",
+      "is_user_created": true,
+      "multi_round_target": null
     },
     {
       "knowledge_id": 183821,
@@ -14671,7 +15011,19 @@
       "intents": [
         352338
       ],
-      "multi_round": null
+      "multi_round": null,
+      "intent_names": [
+        "Phone call cost"
+      ],
+      "answers": [
+        {
+          "text": "Jangan khawatir, dalam penelponan ini kakak tidak akan dipungut biaya ya kak. Setelah ini jika kakak berkenan, akan ada tim khusus dari platform kami yang menghubungi kakak melalui WhatsApp untuk bantu matchmaking dengan TikTok Shop Partner yang sesuai dan sekali lagi kami tidak akan memungut biaya ya kak.",
+          "after": "wait"
+        }
+      ],
+      "trigger_type": "intent",
+      "is_user_created": true,
+      "multi_round_target": null
     },
     {
       "knowledge_id": 224365,
@@ -14680,7 +15032,19 @@
       "intents": [
         427491
       ],
-      "multi_round": null
+      "multi_round": null,
+      "intent_names": [
+        "AM - Provider Issue"
+      ],
+      "answers": [
+        {
+          "text": "Selamat tinggal",
+          "after": "hangup"
+        }
+      ],
+      "trigger_type": "intent",
+      "is_user_created": true,
+      "multi_round_target": null
     }
   ],
   "global_hot_words": [
