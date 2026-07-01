@@ -118,4 +118,21 @@ def check_intents(wf: WizFile) -> list[Finding]:
                 ),
             ))
 
+    # WIZ305: a user-created intent (isInit==1) with no NLU signal (no keywords AND no
+    # user_responses) can't reliably trigger. System intents (isInit==0) rely on platform
+    # defaults -> exempt. WARNING + deploy-blocker.
+    for intent in wf.intents.values():
+        raw = getattr(intent, "raw", {}) or {}
+        if raw.get("isInit", 0) != 1 or raw.get("isDelete", 0) != 0:
+            continue
+        if not intent.keywords and not intent.user_responses:
+            out.append(Finding(
+                code="WIZ305", severity=Severity.WARNING,
+                location=Location(entity="SpeechIntent", id=str(intent.intent_id), field=None),
+                message=(
+                    f"Intent {intent.name!r} (id {intent.intent_id}) is user-created but has no "
+                    f"keywords and no training phrases — it has no NLU signal to trigger on."
+                ),
+            ))
+
     return out
