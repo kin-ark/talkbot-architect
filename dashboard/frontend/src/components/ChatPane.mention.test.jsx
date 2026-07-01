@@ -20,8 +20,10 @@ describe('ChatPane @-mention', () => {
   it('filters by the text after @', () => {
     render(<ChatPane {...base} summary={SUMMARY} />);
     fireEvent.change(screen.getByPlaceholderText(/ask about/i), { target: { value: '@Charge' } });
-    expect(screen.getByText(/Charge/)).toBeInTheDocument();
-    expect(screen.queryByText(/AskName/)).not.toBeInTheDocument();
+    const menu = screen.getByTestId('mention-menu');
+    expect(menu).toBeInTheDocument();
+    expect(menu.textContent).toContain('Charge');
+    expect(menu.textContent).not.toContain('AskName');
   });
   it('selecting a node inserts "@label (uuid)" into the input', () => {
     render(<ChatPane {...base} summary={SUMMARY} />);
