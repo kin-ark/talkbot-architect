@@ -5,10 +5,11 @@ import FindingList from './FindingList';
 import NodePropertiesPanel from './NodePropertiesPanel';
 import KBPlane from './KBPlane';
 import KBDetailPanel from './KBDetailPanel';
+import IntentsPanel from './IntentsPanel';
 import FlowCanvas from './FlowCanvas';
 import ComponentsRail from './ComponentsRail';
 
-export default function RightDock({ activeTab, onTabChange, summary, findings, selectedNode, onSelectNode, chat, onPreview, onAskFix, onSelectComponent, focusComponentId, onEditNode, focusKb }) {
+export default function RightDock({ activeTab, onTabChange, summary, findings, selectedNode, onSelectNode, chat, onPreview, onAskFix, onSelectComponent, focusComponentId, onEditNode, intents, focusKb }) {
   const [drill, setDrill] = useState(null);
   const [selectedKb, setSelectedKb] = useState(null);
   // Reset KB selection when a new export/summary loads (e.g. after apply/undo).
@@ -38,6 +39,7 @@ export default function RightDock({ activeTab, onTabChange, summary, findings, s
     { id: 'findings', label: 'Findings', badge: errorCount || undefined },
     { id: 'properties', label: 'Properties' },
     { id: 'kb', label: 'KB' },
+    { id: 'intents', label: 'Intents' },
     { id: 'components', label: 'Components' },
   ];
 
@@ -98,6 +100,7 @@ export default function RightDock({ activeTab, onTabChange, summary, findings, s
         {activeTab === 'kb' && !drill && !selectedKb && (
           <KBPlane knowledgeBases={summary?.knowledge_bases || []} onSelect={setSelectedKb} />
         )}
+        {activeTab === 'intents' && <IntentsPanel intents={intents || []} />}
         {activeTab === 'components' && (
           <ComponentsRail summary={summary} selectedComponentId={focusComponentId}
             onSelectComponent={onSelectComponent} />

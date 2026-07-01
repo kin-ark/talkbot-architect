@@ -27,6 +27,7 @@ export async function getSession() { return (await axios.get(`${BASE}/session`))
 export async function clearSession() { return (await axios.post(`${BASE}/session/clear`)).data; }
 export async function setSpeechName(name) { return (await axios.put(`${BASE}/speech-name`, { name })).data; }
 export async function editNodeText(uuid, fields) { return (await axios.put(`${BASE}/node/${uuid}/text`, fields)).data; }
+export async function listIntents() { return (await axios.get(`${BASE}/intents`)).data; }
 export async function listSessions() { return (await axios.get(`${BASE}/sessions`)).data; }
 export async function createSession() { return (await axios.post(`${BASE}/sessions`)).data; }
 export async function activateSession(id) { return (await axios.post(`${BASE}/sessions/${id}/activate`)).data; }

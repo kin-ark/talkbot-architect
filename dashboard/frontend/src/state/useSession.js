@@ -15,6 +15,7 @@ export function useSession() {
   const [activeSessionId, setActiveSessionId] = useState(null);
   const [usage, setUsage] = useState(null);
   const [botName, setBotName] = useState(null);
+  const [intents, setIntents] = useState([]);
 
   const queue = useRef([]);
   const draining = useRef(false);
@@ -44,6 +45,10 @@ export function useSession() {
     } catch { return null; }
   }, []);
 
+  const refreshIntents = useCallback(async () => {
+    try { setIntents(await api.listIntents()); } catch { setIntents([]); }
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     Promise.resolve(api.getSession()).then((r) => {
@@ -58,11 +63,12 @@ export function useSession() {
         setUsage(r.usage || null);
         setBotName(r.bot_name ?? null);
         if (r.id !== undefined) setActiveSessionId(r.id);
+        refreshIntents();
       }
       if (!cancelled) refreshSessions();
     }).catch(() => { if (!cancelled) refreshSessions(); });
     return () => { cancelled = true; };
-  }, [refreshSessions]);
+  }, [refreshSessions, refreshIntents]);
 
   const errText = (e) =>
     e?.response?.data?.detail
@@ -78,8 +84,9 @@ export function useSession() {
       setSummary(r.summary); setFindings(r.findings);
       setTranscript([{ role: 'agent', text: `Loaded. ${r.findings.filter(f => f.severity === 'error').length} errors, ${r.findings.filter(f => f.severity === 'warning').length} warnings. What do you want to do?` }]);
       await refreshSessions();
+      await refreshIntents();
     } catch (e) { toast.error(errText(e)); } finally { setLoading(false); }
-  }, [refreshSessions]);
+  }, [refreshSessions, refreshIntents]);
 
   const startBlank = useCallback(async () => {
     touched.current = true;
@@ -89,8 +96,9 @@ export function useSession() {
       setSummary(r.summary); setFindings(r.findings);
       setTranscript([{ role: 'agent', text: "Blank canvas. Describe the bot you want — e.g. \"make me a Debt Collector talkbot\"." }]);
       await refreshSessions();
+      await refreshIntents();
     } catch (e) { toast.error(errText(e)); } finally { setLoading(false); }
-  }, [refreshSessions]);
+  }, [refreshSessions, refreshIntents]);
 
   const loadSample = useCallback(async (id) => {
     touched.current = true;
@@ -100,8 +108,9 @@ export function useSession() {
       setSummary(r.summary); setFindings(r.findings);
       setTranscript([{ role: 'agent', text: `Loaded the ${r.summary?.components?.[0]?.name || 'sample'} sample — explore the graph, or ask me to change it.` }]);
       await refreshSessions();
+      await refreshIntents();
     } catch (e) { toast.error(errText(e)); } finally { setLoading(false); }
-  }, [refreshSessions]);
+  }, [refreshSessions, refreshIntents]);
 
   const switchSession = useCallback(async (id) => {
     try {
@@ -111,8 +120,9 @@ export function useSession() {
       const r = await api.activateSession(id);
       _applyPayload(r);
       await refreshSessions();
+      await refreshIntents();
     } catch (e) { toast.error(errText(e)); }
-  }, [_applyPayload, refreshSessions]);
+  }, [_applyPayload, refreshSessions, refreshIntents]);
 
   const newSession = useCallback(async () => {
     touched.current = true;
@@ -214,6 +224,7 @@ export function useSession() {
   const refresh = (r) => {
     setSummary(r.summary); setFindings(r.findings);
     setCanUndo(r.can_undo); setCanRedo(r.can_redo); setProposal(null);
+    refreshIntents();
   };
   const apply = useCallback(async () => {
     try {
@@ -283,7 +294,7 @@ export function useSession() {
   }, []);
 
   return { summary, findings, transcript, proposal, canUndo, canRedo, loading, sending,
-           sessions, activeSessionId, usage, botName,
+           sessions, activeSessionId, usage, botName, intents,
            upload, startBlank, loadSample, send, retry, apply, reject, undo, redo, cancel, reset, startNew,
-           refreshSessions, newSession, switchSession, renameSession, deleteSession, renameBot, editNodeText };
+           refreshSessions, refreshIntents, newSession, switchSession, renameSession, deleteSession, renameBot, editNodeText };
 }

@@ -150,7 +150,7 @@ export default function App() {
             onPreview={onPreview} onAskFix={onAskFix}
             onSelectComponent={setFocusComponentId} focusComponentId={focusComponentId}
             onEditNode={(uuid, fields) => s.editNodeText(uuid, fields)}
-            focusKb={focusKb} />
+            intents={s.intents} focusKb={focusKb} />
         )}
       </div>
       {pageOverlay}

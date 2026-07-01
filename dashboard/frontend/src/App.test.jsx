@@ -7,6 +7,7 @@ import App from './App';
 beforeEach(() => {
   api.getConfig.mockResolvedValue({ key_set: true });
   api.listSamples.mockResolvedValue([]);
+  api.listIntents.mockResolvedValue([]);
 });
 
 describe('App', () => {

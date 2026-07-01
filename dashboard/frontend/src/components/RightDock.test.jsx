@@ -9,7 +9,7 @@ const FINDINGS = [{ code: 'WIZ102', severity: 'error', message: 'orphan', id: 'n
 
 function setup(tab = 'chat', onTabChange = vi.fn()) {
   render(<RightDock activeTab={tab} onTabChange={onTabChange} summary={SUMMARY}
-    findings={FINDINGS} selectedNode={null} onSelectNode={() => {}} chat={chat} />);
+    findings={FINDINGS} selectedNode={null} onSelectNode={() => {}} chat={chat} intents={[]} />);
   return { onTabChange };
 }
 
@@ -26,6 +26,18 @@ describe('RightDock', () => {
   it('findings tab renders the finding', () => {
     setup('findings');
     expect(screen.getByText(/WIZ102/)).toBeInTheDocument();
+  });
+});
+
+describe('RightDock Intents tab', () => {
+  const baseProps = {
+    activeTab: 'intents', onTabChange: vi.fn(), summary: SUMMARY, findings: [],
+    selectedNode: null, onSelectNode: () => {}, chat,
+  };
+
+  it('renders intents-panel when intents tab is active', () => {
+    render(<RightDock {...baseProps} intents={[]} />);
+    expect(screen.getByTestId('intents-panel')).toBeInTheDocument();
   });
 });
 
