@@ -166,7 +166,7 @@ export function useSession() {
             onEvent: (e) => {
               if (e.type === 'token') patch((m) => ({ ...m, text: m.text + e.delta }));
               else if (e.type === 'tool_start') patch((m) => ({ ...m, tool_trace: [...m.tool_trace, { name: e.name, arguments: e.args, status: 'running' }] }));
-              else if (e.type === 'tool_result') patch((m) => ({ ...m, tool_trace: m.tool_trace.map((tt, i) => (i === m.tool_trace.length - 1 ? { ...tt, status: 'done', summary: e.summary } : tt)) }));
+              else if (e.type === 'tool_result') patch((m) => ({ ...m, tool_trace: m.tool_trace.map((tt, i) => (i === m.tool_trace.length - 1 ? { ...tt, status: 'done', summary: e.summary, result: e.result } : tt)) }));
               else if (e.type === 'usage') setUsage({ input_tokens: e.input_tokens, output_tokens: e.output_tokens, turns: e.turns, model: e.model });
               else if (e.type === 'proposal') setProposal(e.proposal);
               else if (e.type === 'error') setTranscript((t) => [...t, { role: 'error', text: e.message }]);
