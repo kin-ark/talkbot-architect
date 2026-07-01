@@ -1,0 +1,17 @@
+name: "Hotwords Test"
+branch: dev
+language: IDN
+hot_words:
+  - indosat
+  - gopay
+  - gojek
+canvases:
+  - name: "1. Main"
+    nodes:
+      - id: root
+        prompt: "Halo."
+      - id: bye
+        prompt: "Bye."
+        type: exit
+    edges:
+      - {from: root, branch: Unclassified, to: bye}
