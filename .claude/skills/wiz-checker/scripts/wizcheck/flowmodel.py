@@ -83,6 +83,7 @@ class FlowModelNode:
     # raw envelope data dict (branch conditions, sentenceText, etc.)
     data: dict = field(default_factory=dict)
     branches: list[BranchEdge] = field(default_factory=list)
+    hot_words: tuple[str, ...] = ()
 
 
 @dataclass
@@ -109,6 +110,7 @@ class KBView:
 class FlowModel:
     components: list[FlowComponent]
     knowledge_bases: list[KBView]
+    global_hot_words: tuple[str, ...] = ()
 
 
 # ---------------------------------------------------------------------------
@@ -116,6 +118,31 @@ class FlowModel:
 # ---------------------------------------------------------------------------
 
 _VAR_REF_RE = re.compile(r"\{([A-Za-z_]\w*)\}")
+
+
+def _parse_hotwords(data: dict) -> tuple[dict[str, tuple[str, ...]], tuple[str, ...]]:
+    """Return (nodeId -> hotwords tuple, global hotwords tuple) from BizNodeHotWords."""
+    raw = data.get("BizNodeHotWords", "[]")
+    try:
+        rows = json.loads(raw) if isinstance(raw, str) else (raw or [])
+    except (ValueError, TypeError):
+        return {}, ()
+    if not isinstance(rows, list):
+        return {}, ()
+    per_node: dict[str, tuple[str, ...]] = {}
+    glob: list[str] = []
+    for r in rows:
+        if not isinstance(r, dict) or r.get("isDelete") == 1:
+            continue
+        words = tuple(w.strip() for w in (r.get("hotWords") or "").split(",") if w.strip())
+        if not words:
+            continue
+        nid = r.get("nodeId") or ""
+        if nid:
+            per_node[nid] = words
+        else:
+            glob.extend(words)
+    return per_node, tuple(glob)
 
 
 def _extract_text(data: dict) -> str:
@@ -439,11 +466,15 @@ def _build_kbs(data: dict) -> list[KBView]:
 # Public build functions
 # ---------------------------------------------------------------------------
 
-def build_components(data: dict) -> list[FlowComponent]:
+def build_components(
+    data: dict, per_node_hot_words: dict[str, tuple[str, ...]] | None = None
+) -> list[FlowComponent]:
     """Build FlowComponent list from raw export dict.
 
     Task 3 will call this directly when building the KB plane.
     """
+    if per_node_hot_words is None:
+        per_node_hot_words = {}
     raw_components = unwrap(data.get("BizSpeechComponent"))
     if not isinstance(raw_components, list):
         raw_components = []
@@ -470,6 +501,7 @@ def build_components(data: dict) -> list[FlowComponent]:
 
         for node_uuid, envelope in details.items():
             node = _build_node(node_uuid, envelope, routes)
+            node.hot_words = per_node_hot_words.get(node_uuid, ())
             nodes[node_uuid] = node
             if isinstance(envelope, dict) and envelope.get("is_default"):
                 entry_uuid = node_uuid
@@ -496,9 +528,14 @@ def build_flow_model(data: dict) -> FlowModel:
 
     KB plane (KBView assembly, multi_round links) is left to Task 3.
     """
-    components = build_components(data)
+    per_node_hw, global_hw = _parse_hotwords(data)
+    components = build_components(data, per_node_hw)
     knowledge_bases = _build_kbs(data)
-    return FlowModel(components=components, knowledge_bases=knowledge_bases)
+    return FlowModel(
+        components=components,
+        knowledge_bases=knowledge_bases,
+        global_hot_words=global_hw,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -526,6 +563,7 @@ def _node_to_dict(n: FlowModelNode) -> dict:
         "allowed_kbs": n.allowed_kbs,
         "data": n.data,
         "branches": [_branch_to_dict(b) for b in n.branches],
+        "hot_words": list(n.hot_words),
     }
 
 
@@ -556,4 +594,5 @@ def flow_model_to_dict(fm: FlowModel) -> dict:
     return {
         "components": [_component_to_dict(c) for c in fm.components],
         "knowledge_bases": [_kb_to_dict(kb) for kb in fm.knowledge_bases],
+        "global_hot_words": list(fm.global_hot_words),
     }
