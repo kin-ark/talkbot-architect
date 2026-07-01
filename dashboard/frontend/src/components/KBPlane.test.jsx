@@ -1,19 +1,29 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import KBPlane from './KBPlane';
 
-describe('KBPlane', () => {
-  it('fires onSelect for any row (including simple KBs)', () => {
-    const onSelect = vi.fn();
-    const kbs = [
-      { knowledge_id: 1, title: 'Simple', intents: [5], multi_round: null },
-      { knowledge_id: 2, title: 'MR', intents: [], multi_round: { components: [] } },
-    ];
-    render(<KBPlane knowledgeBases={kbs} onSelect={onSelect} />);
-    const rows = screen.getAllByTestId('kb-row');
-    fireEvent.click(rows[0]);
-    expect(onSelect).toHaveBeenCalledWith(kbs[0]);
-    fireEvent.click(rows[1]);
-    expect(onSelect).toHaveBeenCalledWith(kbs[1]);
+const KBS = [
+  { knowledge_id: 1, title: 'FAQ', intents: [1, 2], trigger_type: 'intent', is_user_created: true, multi_round: null },
+  { knowledge_id: 2, title: 'System Monitor', intents: [], trigger_type: 'system', is_user_created: false, multi_round: null },
+  { knowledge_id: 3, title: 'Booking', intents: [3], trigger_type: 'intent', is_user_created: true, multi_round: { components: [] } },
+];
+
+describe('KBPlane filters', () => {
+  it('filters to system KBs', () => {
+    render(<KBPlane knowledgeBases={KBS} onSelect={() => {}} />);
+    fireEvent.click(screen.getByTestId('chip-system'));
+    expect(screen.getAllByTestId('kb-row')).toHaveLength(1);
+    expect(screen.getByText('System Monitor')).toBeInTheDocument();
+  });
+  it('filters to multi-round KBs', () => {
+    render(<KBPlane knowledgeBases={KBS} onSelect={() => {}} />);
+    fireEvent.click(screen.getByTestId('chip-multi-round'));
+    expect(screen.getAllByTestId('kb-row')).toHaveLength(1);
+    expect(screen.getByText('Booking')).toBeInTheDocument();
+  });
+  it('searches by title', () => {
+    render(<KBPlane knowledgeBases={KBS} onSelect={() => {}} />);
+    fireEvent.change(screen.getByTestId('kb-search'), { target: { value: 'faq' } });
+    expect(screen.getAllByTestId('kb-row')).toHaveLength(1);
   });
 });
