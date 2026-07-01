@@ -294,3 +294,72 @@ def add_kb(bundle: InputBundle, params: dict, minter) -> None:
     # Persist the multi_round target's category=2 re-classification, if any.
     if bsc_list is not None:
         bundle.data["BizSpeechComponent"] = codec.encode(bsc_list)
+
+
+def _hotwords_constants(rows: list[dict], si_list: list[dict]) -> dict:
+    """Source row constants: clone an existing row's, else from SpeechIntent[0]."""
+    if rows:
+        s = rows[0]
+        return {
+            "branch": s.get("branch", "dev"),
+            "speechId": s.get("speechId", 0),
+            "templateCode": s.get("templateCode", ""),
+        }
+    base = si_list[0] if si_list else {}
+    return {
+        "branch": base.get("branch", "dev"),
+        "speechId": base.get("speechId", 0),
+        "templateCode": base.get("templateCode", ""),
+    }
+
+
+def _node_exists(bsc_list: list[dict], node_uuid: str) -> bool:
+    """Check if a node uuid exists in any component's details."""
+    for c in bsc_list:
+        det = c.get("details")
+        if not det or det in ("null", ""):
+            continue
+        try:
+            d = json.loads(det) if isinstance(det, str) else det
+        except (ValueError, TypeError):
+            continue
+        if isinstance(d, dict) and node_uuid in d:
+            return True
+    return False
+
+
+def set_hotwords(bundle: InputBundle, params: dict, minter) -> None:
+    """Set/replace hot-words globally (node omitted) or on a specific node. Empty list clears."""
+    words = [w.strip() for w in (params.get("hot_words") or []) if w and w.strip()]
+    node = params.get("node")  # None => global
+    rows = codec.decode(bundle.data.get("BizNodeHotWords", "[]")) or []
+    if node:
+        bsc = codec.decode(bundle.data.get("BizSpeechComponent", "[]")) or []
+        if not _node_exists(bsc, node):
+            raise ValueError(f"set-hotwords: node {node!r} not found")
+    # drop the existing target row (global = empty nodeId; per-node = matching nodeId)
+    def _is_target(r):
+        nid = r.get("nodeId") or ""
+        return (nid == node) if node else (not nid)
+
+    rows = [r for r in rows if not _is_target(r)]
+    if words:
+        si = codec.decode(bundle.data.get("SpeechIntent", "[]")) or []
+        const = _hotwords_constants(rows, si)
+        rows.append({
+            "branch": const["branch"],
+            "createId": 0,
+            "createTime": 0,
+            "engineType": "3",
+            "hotWords": ",".join(words),
+            "hotWordsIndustryId": 0,
+            "id": minter.int_id(f"set-hotwords:{node or 'global'}"),
+            "isDelete": 0,
+            "modifyId": 0,
+            "modifyTime": 0,
+            "nodeId": node or "",
+            "speechId": const["speechId"],
+            "status": 2,
+            "templateCode": const["templateCode"],
+        })
+    bundle.data["BizNodeHotWords"] = codec.encode(rows)

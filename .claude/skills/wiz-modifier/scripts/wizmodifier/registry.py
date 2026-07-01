@@ -21,6 +21,7 @@ OP_REGISTRY: dict[str, Callable] = {
     "add-variable": content.add_variable,
     "add-intent": content.add_intent,
     "add-kb": content.add_kb,
+    "set-hotwords": content.set_hotwords,
     "rename-kb": kb_edit.rename_kb,
     "set-kb-intents": kb_edit.set_kb_intents,
     "add-kb-answer": kb_edit.add_kb_answer,
