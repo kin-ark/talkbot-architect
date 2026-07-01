@@ -1,14 +1,25 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Tabs from './ui/Tabs';
 import ChatPane from './ChatPane';
 import FindingList from './FindingList';
 import NodePropertiesPanel from './NodePropertiesPanel';
 import KBPlane from './KBPlane';
+import KBDetailPanel from './KBDetailPanel';
 import FlowCanvas from './FlowCanvas';
 import ComponentsRail from './ComponentsRail';
 
-export default function RightDock({ activeTab, onTabChange, summary, findings, selectedNode, onSelectNode, chat, onPreview, onAskFix, onSelectComponent, focusComponentId, onEditNode }) {
+export default function RightDock({ activeTab, onTabChange, summary, findings, selectedNode, onSelectNode, chat, onPreview, onAskFix, onSelectComponent, focusComponentId, onEditNode, focusKb }) {
   const [drill, setDrill] = useState(null);
+  const [selectedKb, setSelectedKb] = useState(null);
+  useEffect(() => {
+    if (focusKb == null) return;
+    const kb = (summary?.knowledge_bases || []).find((k) => k.knowledge_id === focusKb);
+    if (kb) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Focus from graph click: both states set atomically from focusKb prop change
+      setDrill(null);
+      setSelectedKb(kb);
+    }
+  }, [focusKb, summary]);
   const [width, setWidth] = useState(() => {
     const saved = Number(localStorage.getItem('tb-dock-w'));
     return saved >= 320 ? saved : 448;   // 28rem default
@@ -44,7 +55,7 @@ export default function RightDock({ activeTab, onTabChange, summary, findings, s
     <div style={{ width }} className="shrink-0 h-full border-l border-border bg-surface flex flex-col relative" data-testid="right-dock">
       <div onPointerDown={startResize} data-testid="dock-resize" title="Drag to resize"
         className="absolute left-0 top-0 h-full w-1.5 -translate-x-1/2 cursor-col-resize hover:bg-primary/40 z-20" />
-      <Tabs tabs={tabs} active={activeTab} onChange={(id) => { setDrill(null); onTabChange(id); }} />
+      <Tabs tabs={tabs} active={activeTab} onChange={(id) => { setDrill(null); setSelectedKb(null); onTabChange(id); }} />
       <div className="flex-1 overflow-hidden">
         {activeTab === 'chat' && (
           <ChatPane transcript={chat.transcript} proposal={chat.proposal} sending={chat.sending}
@@ -54,23 +65,34 @@ export default function RightDock({ activeTab, onTabChange, summary, findings, s
         )}
         {activeTab === 'findings' && <FindingList findings={findings} onSelect={onSelectNode} onAskFix={onAskFix} />}
         {activeTab === 'properties' && <NodePropertiesPanel node={selectedNode} summary={summary} onEditNode={onEditNode} />}
-        {activeTab === 'kb' && !drill && (
-          <KBPlane knowledgeBases={summary?.knowledge_bases || []} onDrillIn={setDrill} />
-        )}
-        {activeTab === 'components' && (
-          <ComponentsRail summary={summary} selectedComponentId={focusComponentId}
-            onSelectComponent={onSelectComponent} />
-        )}
         {activeTab === 'kb' && drill && (
           <div className="flex flex-col h-full">
             <div className="flex items-center gap-2 px-4 py-2 border-b border-divider bg-surface-muted">
-              <button type="button" onClick={() => setDrill(null)} className="text-xs text-primary hover:underline">← Back</button>
+              <button type="button" data-testid="kb-drill-back" onClick={() => setDrill(null)} className="text-xs text-primary hover:underline">← Back</button>
               <span className="text-xs text-text-secondary">{drill.title}</span>
             </div>
             <div className="flex-1 overflow-hidden">
               <FlowCanvas summary={drill.multi_round} onSelectNode={onSelectNode} />
             </div>
           </div>
+        )}
+        {activeTab === 'kb' && !drill && selectedKb && (
+          <div className="flex flex-col h-full">
+            <div className="flex items-center gap-2 px-4 py-2 border-b border-divider bg-surface-muted">
+              <button type="button" data-testid="kb-back" onClick={() => setSelectedKb(null)} className="text-xs text-primary hover:underline">← Back</button>
+              <span className="text-xs text-text-secondary">Knowledge Base</span>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <KBDetailPanel kb={selectedKb} onDrillIn={(kb) => setDrill(kb)} />
+            </div>
+          </div>
+        )}
+        {activeTab === 'kb' && !drill && !selectedKb && (
+          <KBPlane knowledgeBases={summary?.knowledge_bases || []} onSelect={setSelectedKb} />
+        )}
+        {activeTab === 'components' && (
+          <ComponentsRail summary={summary} selectedComponentId={focusComponentId}
+            onSelectComponent={onSelectComponent} />
         )}
       </div>
     </div>

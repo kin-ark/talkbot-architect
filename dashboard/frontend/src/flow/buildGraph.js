@@ -66,7 +66,7 @@ export function buildGraph(summary) {
             emittedKbNodes.add(kbNodeId);
             const title = kbTitleMap[b.target_kb] || String(b.target_kb);
             nodes.push({
-              id: kbNodeId, position: { x: 0, y: 0 }, data: { label: `📖 KB ${title}`, kbNode: true },
+              id: kbNodeId, position: { x: 0, y: 0 }, data: { label: `📖 KB ${title}`, kbNode: true, knowledge_id: b.target_kb },
               style: { background: 'var(--c-kb-bg)', border: '2px solid var(--c-kb-border)', borderRadius: 8, padding: 8, fontSize: 12 },
             });
           }
