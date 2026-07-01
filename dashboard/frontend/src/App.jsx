@@ -19,6 +19,7 @@ export default function App() {
   const [selectedNode, setSelectedNode] = useState(null);
   const [dockTab, setDockTab] = useState('chat');
   const [focusComponentId, setFocusComponentId] = useState(null);
+  const [focusKb, setFocusKb] = useState(null);
   const [preview, setPreview] = useState(null);
   const [railCollapsed, setRailCollapsed] = useState(() => {
     try { return localStorage.getItem('tb-rail-collapsed') === '1'; } catch { return false; }
@@ -133,7 +134,8 @@ export default function App() {
               <div className="flex-1 min-h-0">
                 <FlowCanvas summary={preview ? preview.summary : s.summary}
                   onSelectNode={selectNode} focusComponentId={focusComponentId}
-                  highlight={preview ? preview.changeSet : null} />
+                  highlight={preview ? preview.changeSet : null}
+                  onSelectKb={(id) => { setDockTab('kb'); setFocusKb(id); }} />
               </div>
             </>
           ) : (
@@ -147,7 +149,8 @@ export default function App() {
             selectedNode={selectedNode ? resolveNode(selectedNode) : null} onSelectNode={selectNode} chat={chat}
             onPreview={onPreview} onAskFix={onAskFix}
             onSelectComponent={setFocusComponentId} focusComponentId={focusComponentId}
-            onEditNode={(uuid, fields) => s.editNodeText(uuid, fields)} />
+            onEditNode={(uuid, fields) => s.editNodeText(uuid, fields)}
+            focusKb={focusKb} />
         )}
       </div>
       {pageOverlay}

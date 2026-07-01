@@ -28,3 +28,36 @@ describe('RightDock', () => {
     expect(screen.getByText(/WIZ102/)).toBeInTheDocument();
   });
 });
+
+describe('RightDock KB tab', () => {
+  const summaryWithKb = {
+    components: [],
+    knowledge_bases: [
+      { knowledge_id: 1, title: 'Simple KB', intents: [5], intent_names: ['WantPay'],
+        answers: [{ text: 'Hello', after: 'wait' }], trigger_type: 'intent',
+        is_user_created: true, multi_round: null, multi_round_target: null },
+    ],
+    global_hot_words: [],
+  };
+
+  const baseProps = {
+    activeTab: 'kb', onTabChange: vi.fn(), summary: summaryWithKb, findings: [],
+    selectedNode: null, onSelectNode: () => {}, chat, focusKb: null,
+  };
+
+  it('shows list, drills into detail on row click, and returns on back', () => {
+    render(<RightDock {...baseProps} />);
+    expect(screen.getByTestId('kb-plane')).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('kb-row'));
+    expect(screen.getByTestId('kb-detail-panel')).toBeInTheDocument();
+    expect(screen.getByText('Simple KB')).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('kb-back'));
+    expect(screen.getByTestId('kb-plane')).toBeInTheDocument();
+  });
+
+  it('opens detail for the focusKb id', () => {
+    render(<RightDock {...baseProps} focusKb={1} />);
+    expect(screen.getByTestId('kb-detail-panel')).toBeInTheDocument();
+    expect(screen.getByText('Simple KB')).toBeInTheDocument();
+  });
+});

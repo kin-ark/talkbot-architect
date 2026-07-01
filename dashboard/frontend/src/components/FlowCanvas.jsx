@@ -51,7 +51,7 @@ function ComponentNode({ data }) {
 
 const nodeTypes = { componentNode: ComponentNode };
 
-export default function FlowCanvas({ summary, onSelectNode, focusComponentId, highlight }) {
+export default function FlowCanvas({ summary, onSelectNode, focusComponentId, highlight, onSelectKb }) {
   const [expanded, setExpanded] = useState(() => new Set());
   const [rf, setRf] = useState(null);
   const [hoverId, setHoverId] = useState(null);
@@ -228,7 +228,10 @@ export default function FlowCanvas({ summary, onSelectNode, focusComponentId, hi
           minZoom={0.05}
           onNodeMouseEnter={(_, n) => setHoverId(n.id)}
           onNodeMouseLeave={() => setHoverId(null)}
-          onNodeClick={(_, n) => { if (n.data?.kind !== 'component') onSelectNode?.(n.data); }}
+          onNodeClick={(_, n) => {
+            if (n.data?.kbNode) onSelectKb?.(n.data.knowledge_id);
+            else if (n.data?.kind !== 'component') onSelectNode?.(n.data);
+          }}
         >
           <Background gap={16} color="var(--c-border)" />
           <Controls />
