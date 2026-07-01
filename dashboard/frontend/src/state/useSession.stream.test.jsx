@@ -53,4 +53,21 @@ describe('useSession streaming', () => {
       expect(errs.at(-1).text).toContain('boom');
     });
   });
+
+  it('stores the tool result on the trace entry', async () => {
+    scriptStream([
+      { type: 'tool_start', name: 'validate', args: { x: 1 } },
+      { type: 'tool_result', name: 'validate', result: { findings: ['a'] }, summary: '1 finding' },
+      { type: 'done', canceled: false, text: 'done' },
+    ]);
+    const { result } = renderHook(() => useSession());
+    await act(async () => { await result.current.send('check'); });
+    await waitFor(() => {
+      const agent = result.current.transcript.filter((m) => m.role === 'agent').at(-1);
+      const entry = agent.tool_trace.at(-1);
+      expect(entry.result).toEqual({ findings: ['a'] });
+      expect(entry.summary).toBe('1 finding');
+      expect(entry.status).toBe('done');
+    });
+  });
 });
