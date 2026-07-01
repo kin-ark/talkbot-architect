@@ -200,11 +200,25 @@ _SPECS = [
              {"type": "object", "properties": {
                  "name": {"type": "string"},
                  "language": {"type": "string", "enum": ["ENG", "IDN"]},
-                 "keywords": {"type": "array", "items": {"type": "string"}}},
+                 "keywords": {"type": "array", "items": {"type": "string"}},
+                 "user_responses": {"type": "array", "items": {"type": "string"}}},
               "required": ["name", "language"]}),
     ToolSpec("add_variable",
              "Add a custom variable to the dialogue. Proposes a dry-run.",
              {"type": "object", "properties": {"name": {"type": "string"}}, "required": ["name"]}),
+    ToolSpec("set_hotwords",
+             "Set global hotwords or hotwords on a specific node for NLU training. Proposes a dry-run.",
+             {"type": "object", "properties": {
+                 "hot_words": {"type": "array", "items": {"type": "string"}},
+                 "node": {"type": ["string", "null"]}},
+              "required": ["hot_words"]}),
+    ToolSpec("set_intent_training",
+             "Set training data (keywords and user_responses) for a custom intent. Proposes a dry-run.",
+             {"type": "object", "properties": {
+                 "name": {"type": "string"},
+                 "keywords": {"type": "array", "items": {"type": "string"}},
+                 "user_responses": {"type": "array", "items": {"type": "string"}}},
+              "required": ["name"]}),
     ToolSpec("add_kb",
              "Add a Knowledge Base (triggering intents + answer(s); optional multi_round = a "
              "canvas/component name to delegate into). Proposes a dry-run.",
@@ -401,11 +415,27 @@ def dispatch(name: str, args: dict, data: dict) -> dict:
         op = {"op": "add-intent", "name": args["name"], "language": args["language"]}
         if args.get("keywords"):
             op["keywords"] = args["keywords"]
+        if args.get("user_responses"):
+            op["user_responses"] = args["user_responses"]
         return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
     if name == "add_variable":
         import yaml
         return _as_proposal(agents.propose_mods(data, yaml.safe_dump(
             [{"op": "add-variable", "name": args["name"]}])))
+    if name == "set_hotwords":
+        import yaml
+        op = {"op": "set-hotwords", "hot_words": args["hot_words"]}
+        if args.get("node") is not None:
+            op["node"] = args["node"]
+        return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
+    if name == "set_intent_training":
+        import yaml
+        op = {"op": "set-intent-training", "name": args["name"]}
+        if args.get("keywords"):
+            op["keywords"] = args["keywords"]
+        if args.get("user_responses"):
+            op["user_responses"] = args["user_responses"]
+        return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
     if name == "add_kb":
         import yaml
         op = {"op": "add-kb", "name": args["name"], "intents": args["intents"],
