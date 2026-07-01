@@ -363,3 +363,17 @@ def set_hotwords(bundle: InputBundle, params: dict, minter) -> None:
             "templateCode": const["templateCode"],
         })
     bundle.data["BizNodeHotWords"] = codec.encode(rows)
+
+
+def set_intent_training(bundle: InputBundle, params: dict, minter) -> None:
+    """Replace an existing intent's keywords / user_responses (omitted list = unchanged)."""
+    name = params["name"]
+    si = codec.decode(bundle.data.get("SpeechIntent", "[]")) or []
+    intent = next((i for i in si if i.get("intentName") == name), None)
+    if intent is None:
+        raise ValueError(f"set-intent-training: intent {name!r} not found")
+    if "keywords" in params and params["keywords"] is not None:
+        intent["keyWordInIntent"] = _bracket_join(params["keywords"], sep=",")
+    if "user_responses" in params and params["user_responses"] is not None:
+        intent["userResponseInIntent"] = _bracket_join(params["user_responses"], sep=";")
+    bundle.data["SpeechIntent"] = codec.encode(si)
