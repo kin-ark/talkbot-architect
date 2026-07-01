@@ -104,6 +104,11 @@ class KBView:
     kd_type: int
     intents: list[int]
     multi_round: FlowModel | None = None  # set in Task 3; leave None here
+    intent_names: list[str] = field(default_factory=list)
+    answers: list[dict] = field(default_factory=list)      # [{"text": str, "after": "wait"|"hangup"}]
+    trigger_type: str = "intent"                            # "intent" | "system"
+    is_user_created: bool = False                           # KB isInit == 0
+    multi_round_target: str | None = None                   # target component name
 
 
 @dataclass
@@ -586,6 +591,11 @@ def _kb_to_dict(kb: KBView) -> dict:
         "kd_type": kb.kd_type,
         "intents": kb.intents,
         "multi_round": flow_model_to_dict(kb.multi_round) if kb.multi_round else None,
+        "intent_names": kb.intent_names,
+        "answers": kb.answers,
+        "trigger_type": kb.trigger_type,
+        "is_user_created": kb.is_user_created,
+        "multi_round_target": kb.multi_round_target,
     }
 
 
