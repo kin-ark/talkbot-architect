@@ -5,7 +5,7 @@ export default function DiffCard({ proposal, onApply, onReject, onPreview }) {
   const d = proposal.checker_delta;
   const newErrs = d ? d.errors_after - d.errors_before : 0;
   const badge = !d ? 'new dialogue'
-    : newErrs > 0 ? `⚠ +${newErrs} errors` : '✓ 0 new errors';
+    : newErrs > 0 ? `+${newErrs} errors` : '0 new errors';
   const summary = proposal.change_summary;
   return (
     <div className="border border-border rounded-lg p-3 my-2 bg-surface shadow-card" data-testid="diff-card">

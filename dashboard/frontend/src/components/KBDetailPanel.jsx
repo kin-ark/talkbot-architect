@@ -1,3 +1,5 @@
+import { PhoneOff, Clock } from 'lucide-react';
+
 function Field({ label, children }) {
   return (
     <div className="mb-4">
@@ -45,8 +47,10 @@ export default function KBDetailPanel({ kb, onDrillIn }) {
               {kb.answers.map((a, i) => (
                 <li key={i} className="text-xs bg-surface-muted border border-border rounded px-2 py-1">
                   <div className="text-text">{a.text}</div>
-                  <div className="text-[10px] text-text-tertiary mt-0.5">
-                    {a.after === 'hangup' ? '☎ Hang up' : '⏳ Wait for response'}
+                  <div className="text-[10px] text-text-tertiary mt-0.5 inline-flex items-center gap-1">
+                    {a.after === 'hangup'
+                      ? <><PhoneOff size={11} /> Hang up</>
+                      : <><Clock size={11} /> Wait for response</>}
                   </div>
                 </li>
               ))}

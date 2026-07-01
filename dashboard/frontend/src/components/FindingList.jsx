@@ -40,7 +40,7 @@ export default function FindingList({ findings = [], onSelect, onAskFix }) {
           </button>
         ))}
       </div>
-      {findings.length === 0 && <p className="text-sm text-success">No findings. ✓</p>}
+      {findings.length === 0 && <p className="text-sm text-success">No findings.</p>}
       {showErrors && errors.length > 0 && <Group title="Errors" items={errors} color="text-error" onSelect={onSelect} onAskFix={onAskFix} />}
       {showWarnings && warnings.length > 0 && <Group title="Warnings" items={warnings} color="text-warning" onSelect={onSelect} onAskFix={onAskFix} />}
     </div>

@@ -1,11 +1,11 @@
 const LABELS = {
-  validate: '🔍 Validating', summarize: '🗺️ Summarizing', read_node: '📖 Reading node',
-  get_facts: '📚 Looking up facts', get_schema: '📐 Reading schema',
-  scaffold_bot: '🤖 Scaffolding bot', build: '🏗️ Building',
-  add_component: '➕ Adding component', add_node: '➕ Adding node',
-  connect_components: '🔗 Connecting', add_intent: '🎯 Adding intent',
-  add_variable: '🔡 Adding variable', apply_mods: '✏️ Proposing edits',
-  set_path: '✏️ Editing', delete_path: '🗑️ Deleting',
+  validate: 'Validating', summarize: 'Summarizing', read_node: 'Reading node',
+  get_facts: 'Looking up facts', get_schema: 'Reading schema',
+  scaffold_bot: 'Scaffolding bot', build: 'Building',
+  add_component: 'Adding component', add_node: 'Adding node',
+  connect_components: 'Connecting', add_intent: 'Adding intent',
+  add_variable: 'Adding variable', apply_mods: 'Proposing edits',
+  set_path: 'Editing', delete_path: 'Deleting',
 };
 
 export default function ToolChip({ name, args, status, summary }) {
