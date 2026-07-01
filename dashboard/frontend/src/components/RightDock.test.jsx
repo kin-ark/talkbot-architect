@@ -56,7 +56,7 @@ describe('RightDock KB tab', () => {
   });
 
   it('opens detail for the focusKb id', () => {
-    render(<RightDock {...baseProps} focusKb={1} />);
+    render(<RightDock {...baseProps} focusKb={{ id: 1, nonce: 1 }} />);
     expect(screen.getByTestId('kb-detail-panel')).toBeInTheDocument();
     expect(screen.getByText('Simple KB')).toBeInTheDocument();
   });

@@ -77,5 +77,5 @@ def test_build_kbs_missing_intent_name_falls_out():
     data["SpeechIntent"] = [{"intentId": 5, "intentName": "WantPay"}]  # 6 has no name
     kbs = _build_kbs(data)
     pay = next(k for k in kbs if k.knowledge_id == 100)
-    assert pay.intent_names == ["WantPay"]  # id 6 dropped (no name); raw intents still [5, 6]
+    assert pay.intent_names == ["WantPay", "6"]  # id 6 has no name -> falls back to its id as a string
     assert pay.intents == [5, 6]

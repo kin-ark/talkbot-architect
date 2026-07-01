@@ -14,9 +14,8 @@ const Chip = ({ children }) => (
 export default function KBDetailPanel({ kb, onDrillIn }) {
   if (!kb) return <div className="p-6 text-text-tertiary text-sm" data-testid="kb-detail-panel">Select a KB.</div>;
 
-  // Intent chips: prefer resolved names; fall back to any raw ids without a name.
-  const names = kb.intent_names || [];
-  const extraIds = (kb.intents || []).slice(names.length);  // ids beyond resolved names
+  // Intent chips: render intent_names directly (includes fallback id-strings).
+  const intentChips = kb.intent_names || [];
   const triggerLabel = kb.trigger_type === 'system' ? 'System Trigger' : 'Intent Trigger';
   const originLabel = kb.is_user_created ? 'user-created' : 'system';
 
@@ -33,9 +32,9 @@ export default function KBDetailPanel({ kb, onDrillIn }) {
       </Field>
 
       <Field label="Trigger Intents">
-        {(names.length + extraIds.length) === 0
+        {intentChips.length === 0
           ? <span className="text-text-tertiary">No intents</span>
-          : (<div>{names.map((n) => <Chip key={n}>{n}</Chip>)}{extraIds.map((id) => <Chip key={id}>{id}</Chip>)}</div>)}
+          : <div>{intentChips.map((n, i) => <Chip key={`${n}-${i}`}>{n}</Chip>)}</div>}
       </Field>
 
       <Field label="Answers">
