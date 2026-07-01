@@ -154,7 +154,8 @@
               "target_kb": null,
               "terminal": null
             }
-          ]
+          ],
+          "hot_words": []
         },
         "5e77a1e3-58ff-4daf-9c93-843813f45ac7": {
           "uuid": "5e77a1e3-58ff-4daf-9c93-843813f45ac7",
@@ -733,7 +734,8 @@
               "target_kb": null,
               "terminal": null
             }
-          ]
+          ],
+          "hot_words": []
         },
         "31e2be00-e172-40bd-8eca-be54d8df87b2": {
           "uuid": "31e2be00-e172-40bd-8eca-be54d8df87b2",
@@ -880,7 +882,8 @@
               "target_kb": null,
               "terminal": null
             }
-          ]
+          ],
+          "hot_words": []
         },
         "304d0a09-0ba5-485a-ace2-ffa808d6c9cc": {
           "uuid": "304d0a09-0ba5-485a-ace2-ffa808d6c9cc",
@@ -961,7 +964,8 @@
               "target_kb": 183805,
               "terminal": null
             }
-          ]
+          ],
+          "hot_words": []
         }
       },
       "parent_uuid": "0"
@@ -1119,7 +1123,8 @@
               "target_kb": null,
               "terminal": null
             }
-          ]
+          ],
+          "hot_words": []
         },
         "6a3c20a9-24a6-4573-aef0-24f8cc957dd9": {
           "uuid": "6a3c20a9-24a6-4573-aef0-24f8cc957dd9",
@@ -1648,7 +1653,8 @@
               "target_kb": null,
               "terminal": null
             }
-          ]
+          ],
+          "hot_words": []
         },
         "f3f6aca0-21a2-48ec-8577-d036d8247136": {
           "uuid": "f3f6aca0-21a2-48ec-8577-d036d8247136",
@@ -1794,7 +1800,8 @@
               "target_kb": null,
               "terminal": null
             }
-          ]
+          ],
+          "hot_words": []
         },
         "7ef1ab09-5b98-47e7-a8e8-95bed95aef6d": {
           "uuid": "7ef1ab09-5b98-47e7-a8e8-95bed95aef6d",
@@ -1940,7 +1947,8 @@
               "target_kb": null,
               "terminal": null
             }
-          ]
+          ],
+          "hot_words": []
         }
       },
       "parent_uuid": "0"
@@ -2098,7 +2106,8 @@
               "target_kb": null,
               "terminal": null
             }
-          ]
+          ],
+          "hot_words": []
         },
         "630546aa-4ef8-4701-a38d-d6acd38f27e0": {
           "uuid": "630546aa-4ef8-4701-a38d-d6acd38f27e0",
@@ -2244,7 +2253,8 @@
               "target_kb": null,
               "terminal": null
             }
-          ]
+          ],
+          "hot_words": []
         },
         "f5e2f7d2-813e-4261-a770-4f7b2167febf": {
           "uuid": "f5e2f7d2-813e-4261-a770-4f7b2167febf",
@@ -2322,7 +2332,8 @@
               "target_kb": null,
               "terminal": null
             }
-          ]
+          ],
+          "hot_words": []
         },
         "0ba939a5-6854-4436-a827-ab78f4b5e196": {
           "uuid": "0ba939a5-6854-4436-a827-ab78f4b5e196",
@@ -2767,7 +2778,8 @@
               "target_kb": null,
               "terminal": null
             }
-          ]
+          ],
+          "hot_words": []
         },
         "a5e1c339-7358-4cc2-b526-422c587749c6": {
           "uuid": "a5e1c339-7358-4cc2-b526-422c587749c6",
@@ -2845,7 +2857,8 @@
               "target_kb": null,
               "terminal": null
             }
-          ]
+          ],
+          "hot_words": []
         },
         "fc69e154-b0ca-45f9-a13b-b54e38795a05": {
           "uuid": "fc69e154-b0ca-45f9-a13b-b54e38795a05",
@@ -2991,7 +3004,8 @@
               "target_kb": null,
               "terminal": null
             }
-          ]
+          ],
+          "hot_words": []
         }
       },
       "parent_uuid": "0"
@@ -3470,7 +3484,8 @@
               "target_kb": null,
               "terminal": null
             }
-          ]
+          ],
+          "hot_words": []
         },
         "a65cc4a2-56a2-47ec-82c0-17cd1cda8abd": {
           "uuid": "a65cc4a2-56a2-47ec-82c0-17cd1cda8abd",
@@ -3616,7 +3631,8 @@
               "target_kb": null,
               "terminal": null
             }
-          ]
+          ],
+          "hot_words": []
         },
         "7de0be30-f669-464a-817c-13a29ef16945": {
           "uuid": "7de0be30-f669-464a-817c-13a29ef16945",
@@ -3762,7 +3778,8 @@
               "target_kb": null,
               "terminal": null
             }
-          ]
+          ],
+          "hot_words": []
         },
         "508067c7-9c81-4463-8081-cd7a05f8937a": {
           "uuid": "508067c7-9c81-4463-8081-cd7a05f8937a",
@@ -3908,7 +3925,8 @@
               "target_kb": null,
               "terminal": null
             }
-          ]
+          ],
+          "hot_words": []
         }
       },
       "parent_uuid": "0"
@@ -4369,7 +4387,8 @@
               "target_kb": null,
               "terminal": null
             }
-          ]
+          ],
+          "hot_words": []
         },
         "20d01ccf-7a79-483b-82dd-09e40798d4f9": {
           "uuid": "20d01ccf-7a79-483b-82dd-09e40798d4f9",
@@ -4480,7 +4499,8 @@
               "target_kb": null,
               "terminal": null
             }
-          ]
+          ],
+          "hot_words": []
         },
         "6b0a6ed2-a883-47ed-bfb4-4d7e0c088101": {
           "uuid": "6b0a6ed2-a883-47ed-bfb4-4d7e0c088101",
@@ -4626,7 +4646,8 @@
               "target_kb": null,
               "terminal": null
             }
-          ]
+          ],
+          "hot_words": []
         },
         "e372401b-1eb4-4428-ac20-d7d661478603": {
           "uuid": "e372401b-1eb4-4428-ac20-d7d661478603",
@@ -4772,7 +4793,8 @@
               "target_kb": null,
               "terminal": null
             }
-          ]
+          ],
+          "hot_words": []
         },
         "d8efd788-41ff-481f-9ef4-a288b1f33a02": {
           "uuid": "d8efd788-41ff-481f-9ef4-a288b1f33a02",
@@ -4918,7 +4940,8 @@
               "target_kb": null,
               "terminal": null
             }
-          ]
+          ],
+          "hot_words": []
         }
       },
       "parent_uuid": "0"
@@ -5079,7 +5102,8 @@
               "target_kb": null,
               "terminal": "hangup"
             }
-          ]
+          ],
+          "hot_words": []
         }
       },
       "parent_uuid": "0"
@@ -5237,7 +5261,8 @@
               "target_kb": null,
               "terminal": "hangup"
             }
-          ]
+          ],
+          "hot_words": []
         }
       },
       "parent_uuid": "0"
@@ -5371,7 +5396,8 @@
               "target_kb": null,
               "terminal": "hangup"
             }
-          ]
+          ],
+          "hot_words": []
         }
       },
       "parent_uuid": "0"
@@ -5565,7 +5591,8 @@
               "target_kb": null,
               "terminal": null
             }
-          ]
+          ],
+          "hot_words": []
         },
         "ee5ca180-c23b-4217-bed5-174c02f61ea7": {
           "uuid": "ee5ca180-c23b-4217-bed5-174c02f61ea7",
@@ -5655,7 +5682,8 @@
               "target_kb": null,
               "terminal": null
             }
-          ]
+          ],
+          "hot_words": []
         },
         "a9d8fc69-c3ad-4c53-8007-8988a1ef1412": {
           "uuid": "a9d8fc69-c3ad-4c53-8007-8988a1ef1412",
@@ -5733,7 +5761,8 @@
               "target_kb": null,
               "terminal": null
             }
-          ]
+          ],
+          "hot_words": []
         },
         "c761036c-62c8-412a-9070-3da2299cbbf0": {
           "uuid": "c761036c-62c8-412a-9070-3da2299cbbf0",
@@ -5811,7 +5840,8 @@
               "target_kb": null,
               "terminal": null
             }
-          ]
+          ],
+          "hot_words": []
         },
         "1ffa6ad0-4fe7-4dea-b0c2-c891ce669a61": {
           "uuid": "1ffa6ad0-4fe7-4dea-b0c2-c891ce669a61",
@@ -6008,7 +6038,8 @@
               "target_kb": null,
               "terminal": null
             }
-          ]
+          ],
+          "hot_words": []
         },
         "c4deada4-a671-4e89-8256-88e9de4c0ec4": {
           "uuid": "c4deada4-a671-4e89-8256-88e9de4c0ec4",
@@ -6095,7 +6126,8 @@
               "target_kb": null,
               "terminal": null
             }
-          ]
+          ],
+          "hot_words": []
         },
         "b150fa0d-cd3e-4637-b5bc-275f4394cd50": {
           "uuid": "b150fa0d-cd3e-4637-b5bc-275f4394cd50",
@@ -6178,7 +6210,8 @@
               "target_kb": null,
               "terminal": null
             }
-          ]
+          ],
+          "hot_words": []
         },
         "8cc97c4a-1f34-4509-aac2-4f8586e692ec": {
           "uuid": "8cc97c4a-1f34-4509-aac2-4f8586e692ec",
@@ -6426,7 +6459,8 @@
               "target_kb": null,
               "terminal": null
             }
-          ]
+          ],
+          "hot_words": []
         },
         "f5736053-2d94-4c8e-98c8-3263b327baa4": {
           "uuid": "f5736053-2d94-4c8e-98c8-3263b327baa4",
@@ -6678,7 +6712,8 @@
               "target_kb": null,
               "terminal": null
             }
-          ]
+          ],
+          "hot_words": []
         },
         "65c2eb97-5b95-4f20-987e-cf3a1bb043a8": {
           "uuid": "65c2eb97-5b95-4f20-987e-cf3a1bb043a8",
@@ -6787,7 +6822,8 @@
               "target_kb": null,
               "terminal": null
             }
-          ]
+          ],
+          "hot_words": []
         }
       },
       "parent_uuid": "0"
@@ -6967,7 +7003,8 @@
               "target_kb": null,
               "terminal": null
             }
-          ]
+          ],
+          "hot_words": []
         },
         "87d12962-eeb4-4b1e-bfd9-7b211c058551": {
           "uuid": "87d12962-eeb4-4b1e-bfd9-7b211c058551",
@@ -7051,7 +7088,8 @@
               "target_kb": null,
               "terminal": null
             }
-          ]
+          ],
+          "hot_words": []
         },
         "c5a4e499-0e34-478f-b3ea-24e8afe1c5df": {
           "uuid": "c5a4e499-0e34-478f-b3ea-24e8afe1c5df",
@@ -7429,7 +7467,8 @@
               "target_kb": null,
               "terminal": null
             }
-          ]
+          ],
+          "hot_words": []
         },
         "dbd55c13-1d6e-41ab-a9bf-3d59f0a8bca2": {
           "uuid": "dbd55c13-1d6e-41ab-a9bf-3d59f0a8bca2",
@@ -7519,7 +7558,8 @@
               "target_kb": null,
               "terminal": null
             }
-          ]
+          ],
+          "hot_words": []
         },
         "def332a8-257b-412e-92c8-339a7d00f260": {
           "uuid": "def332a8-257b-412e-92c8-339a7d00f260",
@@ -7673,7 +7713,8 @@
               "target_kb": null,
               "terminal": "hangup"
             }
-          ]
+          ],
+          "hot_words": []
         },
         "03992877-d500-47bd-9caf-98e315c4d527": {
           "uuid": "03992877-d500-47bd-9caf-98e315c4d527",
@@ -7798,7 +7839,8 @@
             "transfer_type": "",
             "transfer_condition": ""
           },
-          "branches": []
+          "branches": [],
+          "hot_words": []
         }
       },
       "parent_uuid": "0"
@@ -7959,7 +8001,8 @@
               "target_kb": null,
               "terminal": "hangup"
             }
-          ]
+          ],
+          "hot_words": []
         }
       },
       "parent_uuid": "0"
@@ -8148,7 +8191,8 @@
               "target_kb": null,
               "terminal": "hangup"
             }
-          ]
+          ],
+          "hot_words": []
         },
         "d9d72558-cde9-4e9d-8684-2f93a1a53239": {
           "uuid": "d9d72558-cde9-4e9d-8684-2f93a1a53239",
@@ -8541,7 +8585,8 @@
               "target_kb": null,
               "terminal": null
             }
-          ]
+          ],
+          "hot_words": []
         },
         "1705ce58-faa5-402b-98d0-4137ba5b36f2": {
           "uuid": "1705ce58-faa5-402b-98d0-4137ba5b36f2",
@@ -8709,7 +8754,8 @@
               "target_kb": null,
               "terminal": null
             }
-          ]
+          ],
+          "hot_words": []
         },
         "cd489d9f-2877-4041-9eee-79ed3c9a2623": {
           "uuid": "cd489d9f-2877-4041-9eee-79ed3c9a2623",
@@ -8799,7 +8845,8 @@
               "target_kb": null,
               "terminal": null
             }
-          ]
+          ],
+          "hot_words": []
         },
         "66e5565b-82f3-41af-8046-e5fe32adc840": {
           "uuid": "66e5565b-82f3-41af-8046-e5fe32adc840",
@@ -8967,7 +9014,8 @@
               "target_kb": null,
               "terminal": null
             }
-          ]
+          ],
+          "hot_words": []
         },
         "a82a4d82-40ac-4958-8e13-ce3610424824": {
           "uuid": "a82a4d82-40ac-4958-8e13-ce3610424824",
@@ -9057,7 +9105,8 @@
               "target_kb": null,
               "terminal": null
             }
-          ]
+          ],
+          "hot_words": []
         },
         "f02c1a23-6eed-4d17-a192-196554007ab1": {
           "uuid": "f02c1a23-6eed-4d17-a192-196554007ab1",
@@ -9189,7 +9238,8 @@
             "transfer_type": "",
             "transfer_condition": ""
           },
-          "branches": []
+          "branches": [],
+          "hot_words": []
         }
       },
       "parent_uuid": "0"
@@ -9374,7 +9424,8 @@
               "target_kb": null,
               "terminal": "hangup"
             }
-          ]
+          ],
+          "hot_words": []
         },
         "1e4d81e0-2140-480c-9ce5-4b053f1d9cc9": {
           "uuid": "1e4d81e0-2140-480c-9ce5-4b053f1d9cc9",
@@ -9528,7 +9579,8 @@
               "target_kb": null,
               "terminal": "hangup"
             }
-          ]
+          ],
+          "hot_words": []
         },
         "c55de534-0f53-4a9b-bc2f-ee61b16c5e8d": {
           "uuid": "c55de534-0f53-4a9b-bc2f-ee61b16c5e8d",
@@ -9653,7 +9705,8 @@
             "transfer_type": "",
             "transfer_condition": ""
           },
-          "branches": []
+          "branches": [],
+          "hot_words": []
         },
         "fe98baa7-a570-4bdc-ac90-878bbf49f022": {
           "uuid": "fe98baa7-a570-4bdc-ac90-878bbf49f022",
@@ -9743,7 +9796,8 @@
               "target_kb": null,
               "terminal": null
             }
-          ]
+          ],
+          "hot_words": []
         },
         "9572fb1b-ee45-4ca3-976a-fb0c0a3cbfcf": {
           "uuid": "9572fb1b-ee45-4ca3-976a-fb0c0a3cbfcf",
@@ -10161,7 +10215,8 @@
               "target_kb": null,
               "terminal": null
             }
-          ]
+          ],
+          "hot_words": []
         }
       },
       "parent_uuid": "0"
@@ -10322,7 +10377,8 @@
               "target_kb": null,
               "terminal": "hangup"
             }
-          ]
+          ],
+          "hot_words": []
         }
       },
       "parent_uuid": "0"
@@ -10426,7 +10482,8 @@
               "target_kb": null,
               "terminal": "hangup"
             }
-          ]
+          ],
+          "hot_words": []
         }
       },
       "parent_uuid": "0"
@@ -10492,7 +10549,8 @@
               "target_kb": null,
               "terminal": null
             }
-          ]
+          ],
+          "hot_words": []
         },
         "f672048f-4b94-47ab-a45c-95a93240f817": {
           "uuid": "f672048f-4b94-47ab-a45c-95a93240f817",
@@ -10648,7 +10706,8 @@
               "target_kb": null,
               "terminal": null
             }
-          ]
+          ],
+          "hot_words": []
         }
       },
       "parent_uuid": "4b281543-a3a3-484b-9a6e-4cad20a7db48"
@@ -10772,13 +10831,15 @@
                     "target_kb": null,
                     "terminal": "hangup"
                   }
-                ]
+                ],
+                "hot_words": []
               }
             },
             "parent_uuid": "0"
           }
         ],
-        "knowledge_bases": []
+        "knowledge_bases": [],
+        "global_hot_words": []
       }
     },
     {
@@ -11055,7 +11116,8 @@
                     "target_kb": null,
                     "terminal": null
                   }
-                ]
+                ],
+                "hot_words": []
               },
               "87d12962-eeb4-4b1e-bfd9-7b211c058551": {
                 "uuid": "87d12962-eeb4-4b1e-bfd9-7b211c058551",
@@ -11139,7 +11201,8 @@
                     "target_kb": null,
                     "terminal": null
                   }
-                ]
+                ],
+                "hot_words": []
               },
               "c5a4e499-0e34-478f-b3ea-24e8afe1c5df": {
                 "uuid": "c5a4e499-0e34-478f-b3ea-24e8afe1c5df",
@@ -11517,7 +11580,8 @@
                     "target_kb": null,
                     "terminal": null
                   }
-                ]
+                ],
+                "hot_words": []
               },
               "dbd55c13-1d6e-41ab-a9bf-3d59f0a8bca2": {
                 "uuid": "dbd55c13-1d6e-41ab-a9bf-3d59f0a8bca2",
@@ -11607,7 +11671,8 @@
                     "target_kb": null,
                     "terminal": null
                   }
-                ]
+                ],
+                "hot_words": []
               },
               "def332a8-257b-412e-92c8-339a7d00f260": {
                 "uuid": "def332a8-257b-412e-92c8-339a7d00f260",
@@ -11761,7 +11826,8 @@
                     "target_kb": null,
                     "terminal": "hangup"
                   }
-                ]
+                ],
+                "hot_words": []
               },
               "03992877-d500-47bd-9caf-98e315c4d527": {
                 "uuid": "03992877-d500-47bd-9caf-98e315c4d527",
@@ -11886,13 +11952,15 @@
                   "transfer_type": "",
                   "transfer_condition": ""
                 },
-                "branches": []
+                "branches": [],
+                "hot_words": []
               }
             },
             "parent_uuid": "0"
           }
         ],
-        "knowledge_bases": []
+        "knowledge_bases": [],
+        "global_hot_words": []
       }
     },
     {
@@ -12117,7 +12185,8 @@
                     "target_kb": null,
                     "terminal": "hangup"
                   }
-                ]
+                ],
+                "hot_words": []
               },
               "1e4d81e0-2140-480c-9ce5-4b053f1d9cc9": {
                 "uuid": "1e4d81e0-2140-480c-9ce5-4b053f1d9cc9",
@@ -12271,7 +12340,8 @@
                     "target_kb": null,
                     "terminal": "hangup"
                   }
-                ]
+                ],
+                "hot_words": []
               },
               "c55de534-0f53-4a9b-bc2f-ee61b16c5e8d": {
                 "uuid": "c55de534-0f53-4a9b-bc2f-ee61b16c5e8d",
@@ -12396,7 +12466,8 @@
                   "transfer_type": "",
                   "transfer_condition": ""
                 },
-                "branches": []
+                "branches": [],
+                "hot_words": []
               },
               "fe98baa7-a570-4bdc-ac90-878bbf49f022": {
                 "uuid": "fe98baa7-a570-4bdc-ac90-878bbf49f022",
@@ -12486,7 +12557,8 @@
                     "target_kb": null,
                     "terminal": null
                   }
-                ]
+                ],
+                "hot_words": []
               },
               "9572fb1b-ee45-4ca3-976a-fb0c0a3cbfcf": {
                 "uuid": "9572fb1b-ee45-4ca3-976a-fb0c0a3cbfcf",
@@ -12904,13 +12976,15 @@
                     "target_kb": null,
                     "terminal": null
                   }
-                ]
+                ],
+                "hot_words": []
               }
             },
             "parent_uuid": "0"
           }
         ],
-        "knowledge_bases": []
+        "knowledge_bases": [],
+        "global_hot_words": []
       }
     },
     {
@@ -13078,13 +13152,15 @@
                     "target_kb": null,
                     "terminal": "hangup"
                   }
-                ]
+                ],
+                "hot_words": []
               }
             },
             "parent_uuid": "0"
           }
         ],
-        "knowledge_bases": []
+        "knowledge_bases": [],
+        "global_hot_words": []
       }
     },
     {
@@ -13252,13 +13328,15 @@
                     "target_kb": null,
                     "terminal": "hangup"
                   }
-                ]
+                ],
+                "hot_words": []
               }
             },
             "parent_uuid": "0"
           }
         ],
-        "knowledge_bases": []
+        "knowledge_bases": [],
+        "global_hot_words": []
       }
     },
     {
@@ -13491,7 +13569,8 @@
                     "target_kb": null,
                     "terminal": "hangup"
                   }
-                ]
+                ],
+                "hot_words": []
               },
               "d9d72558-cde9-4e9d-8684-2f93a1a53239": {
                 "uuid": "d9d72558-cde9-4e9d-8684-2f93a1a53239",
@@ -13884,7 +13963,8 @@
                     "target_kb": null,
                     "terminal": null
                   }
-                ]
+                ],
+                "hot_words": []
               },
               "1705ce58-faa5-402b-98d0-4137ba5b36f2": {
                 "uuid": "1705ce58-faa5-402b-98d0-4137ba5b36f2",
@@ -14052,7 +14132,8 @@
                     "target_kb": null,
                     "terminal": null
                   }
-                ]
+                ],
+                "hot_words": []
               },
               "cd489d9f-2877-4041-9eee-79ed3c9a2623": {
                 "uuid": "cd489d9f-2877-4041-9eee-79ed3c9a2623",
@@ -14142,7 +14223,8 @@
                     "target_kb": null,
                     "terminal": null
                   }
-                ]
+                ],
+                "hot_words": []
               },
               "66e5565b-82f3-41af-8046-e5fe32adc840": {
                 "uuid": "66e5565b-82f3-41af-8046-e5fe32adc840",
@@ -14310,7 +14392,8 @@
                     "target_kb": null,
                     "terminal": null
                   }
-                ]
+                ],
+                "hot_words": []
               },
               "a82a4d82-40ac-4958-8e13-ce3610424824": {
                 "uuid": "a82a4d82-40ac-4958-8e13-ce3610424824",
@@ -14400,7 +14483,8 @@
                     "target_kb": null,
                     "terminal": null
                   }
-                ]
+                ],
+                "hot_words": []
               },
               "f02c1a23-6eed-4d17-a192-196554007ab1": {
                 "uuid": "f02c1a23-6eed-4d17-a192-196554007ab1",
@@ -14532,13 +14616,15 @@
                   "transfer_type": "",
                   "transfer_condition": ""
                 },
-                "branches": []
+                "branches": [],
+                "hot_words": []
               }
             },
             "parent_uuid": "0"
           }
         ],
-        "knowledge_bases": []
+        "knowledge_bases": [],
+        "global_hot_words": []
       }
     },
     {
@@ -14596,5 +14682,19 @@
       ],
       "multi_round": null
     }
+  ],
+  "global_hot_words": [
+    "tsp",
+    "tiktok",
+    "tiktok shop",
+    "matchmaking",
+    "nomor wa",
+    "wa",
+    "whatsapp",
+    "otp",
+    "seller",
+    "shop",
+    "partner",
+    "tiktok shop partner"
   ]
 }
