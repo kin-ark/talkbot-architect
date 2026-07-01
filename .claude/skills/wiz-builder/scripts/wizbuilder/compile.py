@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from wizbuilder.canvases import apply_canvases
+from wizbuilder.hotwords import apply_hotwords
 from wizbuilder.identity import apply_identity
 from wizbuilder.ids import IdMinter, manifest_hash_of
 from wizbuilder.intents import apply_intents
@@ -76,6 +77,7 @@ def compile_manifest(manifest_path: Path, output_path: Path) -> CompileResult:
         kb_id_by_name=kb_id_by_name,
         canvas_uuid_by_name=canvas_uuid_by_name,
     )
+    template = apply_hotwords(template, manifest, minter)
 
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)

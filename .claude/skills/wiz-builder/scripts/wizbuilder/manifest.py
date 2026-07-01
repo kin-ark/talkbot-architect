@@ -89,6 +89,7 @@ class Manifest:
     canvases: tuple[Canvas, ...]
     raw_text: str = field(repr=False)
     knowledge_bases: tuple[KnowledgeBase, ...] = field(default_factory=tuple)
+    hot_words: tuple[str, ...] = field(default_factory=tuple)
 
 
 def load_manifest(path: str | Path) -> Manifest:
@@ -494,6 +495,10 @@ def _build_manifest(data: dict, raw_text: str) -> Manifest:
         for kb in (data.get("knowledge_bases") or [])
     ]
 
+    hot_words = tuple(
+        w.strip() for w in (data.get("hot_words") or []) if w and w.strip()
+    )
+
     return Manifest(
         name=data["name"],
         branch=data["branch"],
@@ -502,5 +507,6 @@ def _build_manifest(data: dict, raw_text: str) -> Manifest:
         custom_intents=tuple(custom_intents),
         canvases=tuple(canvases),
         knowledge_bases=tuple(knowledge_bases),
+        hot_words=hot_words,
         raw_text=raw_text,
     )

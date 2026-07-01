@@ -42,6 +42,9 @@ properties:
         user_responses:
           type: array
           items: {type: string}
+  hot_words:
+    type: array
+    items: {type: string}
   knowledge_bases:
     type: array
     items:
