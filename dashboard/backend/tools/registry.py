@@ -35,11 +35,12 @@ _SPECS = [
              "Create a brand-new dialogue from typed parameters (NOT raw YAML). "
              "Proposes a full new doc (dry-run). Use after the user confirms an outline. "
              "languages: ENG, IDN (ZHO/THA pending verified language codes). "
-             "Each node may include an optional type (talk/exit/transfer/goto/goto_mr/conditional/assign/"
+             "Each node may include an optional type (talk/exit/transfer/goto/goto_mr/talk_continue/conditional/assign/"
              "nested/exit_port/goto_kb; default: talk). goto nodes require config.target set to "
              "the name of another canvas to jump to. goto_mr is an exit node that jumps to a multi-round dialogue component: "
-             "config.target = another canvas name (must be a multi-round target; terminal). nested nodes delegate to a child canvas "
-             "(config.target = child canvas name); their outgoing edges branch on the child "
+             "config.target = another canvas name (must be a multi-round target; terminal). "
+             "talk_continue: speak-and-wait response node; ONLY inside a multi-round (category:2) component; optional config.target = a main-flow component to return to; terminal, no speech-audio. "
+             "nested nodes delegate to a child canvas (config.target = child canvas name); their outgoing edges branch on the child "
              "canvas's exit_port names. exit_port is a named terminal return inside a child canvas "
              "(config.name = the port label). conditional nodes route by config.variable + "
              "config.branches (each {name, op, value|value_var, to}); assign nodes set "
@@ -78,7 +79,7 @@ _SPECS = [
                                   "prompt": {"type": "string"},
                                   "type": {"type": "string",
                                            "enum": ["talk", "exit", "transfer", "goto", "goto_mr",
-                                                    "conditional", "assign",
+                                                    "talk_continue", "conditional", "assign",
                                                     "nested", "exit_port", "goto_kb"]},
                                   "config": {"type": "object", "properties": {
                                       "target": {"type": "string"},
@@ -108,10 +109,11 @@ _SPECS = [
               "required": ["name", "language", "branch", "canvases"]}),
     ToolSpec("add_component",
              "Add a new component (optionally with nodes+edges) to the current dialogue. Proposes a dry-run. "
-             "Each node may include an optional type (talk/exit/transfer/goto/goto_mr/conditional/assign/"
+             "Each node may include an optional type (talk/exit/transfer/goto/goto_mr/talk_continue/conditional/assign/"
              "nested/exit_port/goto_kb; default: talk). "
              "goto nodes require config.target set to the name of another component to jump to. "
              "goto_mr is an exit node that jumps to a multi-round dialogue component: config.target = another component name (must be a multi-round target; terminal). "
+             "talk_continue: speak-and-wait response node; ONLY inside a multi-round (category:2) component; optional config.target = a main-flow component to return to; terminal, no speech-audio. "
              "nested nodes delegate to a child canvas (config.target = child canvas name); their "
              "outgoing edges branch on the child canvas's exit_port names. exit_port is a named "
              "terminal return inside a child canvas (config.name = the port label). "
@@ -124,7 +126,7 @@ _SPECS = [
                      "id": {"type": "string"},
                      "prompt": {"type": "string"},
                      "type": {"type": "string", "enum": ["talk", "exit", "transfer", "goto", "goto_mr",
-                                                         "conditional", "assign",
+                                                         "talk_continue", "conditional", "assign",
                                                          "nested", "exit_port", "goto_kb"]},
                      "config": {"type": "object", "properties": {
                          "target": {"type": "string"},
@@ -148,10 +150,11 @@ _SPECS = [
                      "to": {"type": "string"}}, "required": ["from", "branch", "to"]}}},
               "required": ["name"]}),
     ToolSpec("add_node",
-             "Add a node (talk/exit/transfer/goto/goto_mr/conditional/assign/nested/exit_port/goto_kb) to an existing "
+             "Add a node (talk/exit/transfer/goto/goto_mr/talk_continue/conditional/assign/nested/exit_port/goto_kb) to an existing "
              "component (by index), optionally wiring edges. Edge endpoints: the new node's id, or an "
              "existing node's uuid. goto requires config.target = another component's name. "
              "goto_mr is an exit node that jumps to a multi-round dialogue component: config.target = another component's name (must be a multi-round target; terminal). "
+             "talk_continue: speak-and-wait response node; ONLY inside a multi-round (category:2) component; optional config.target = a main-flow component to return to; terminal, no speech-audio. "
              "nested delegates to a child canvas (config.target = child canvas name); outgoing edges "
              "branch on the child canvas's exit_port names (free strings, not an enum). "
              "exit_port is a named terminal return inside a child canvas (config.name = port label). "
@@ -164,7 +167,7 @@ _SPECS = [
                  "id": {"type": "string"},
                  "prompt": {"type": "string"},
                  "type": {"type": "string", "enum": ["talk", "exit", "transfer", "goto", "goto_mr",
-                                                     "conditional", "assign",
+                                                     "talk_continue", "conditional", "assign",
                                                      "nested", "exit_port", "goto_kb"]},
                  "config": {"type": "object", "properties": {
                      "target": {"type": "string"},

@@ -131,8 +131,8 @@ def test_connect_components(two_component_doc):
     assert goto_obj["data"]["appoint_node_id"] == comp1_uuid
 
 
-_EXPECTED_NODE_TYPES = {"talk", "exit", "transfer", "goto", "goto_mr", "conditional", "assign",
-                        "nested", "exit_port", "goto_kb"}
+_EXPECTED_NODE_TYPES = {"talk", "exit", "transfer", "goto", "goto_mr", "talk_continue", "conditional",
+                        "assign", "nested", "exit_port", "goto_kb"}
 
 
 # ---------------------------------------------------------------------------
