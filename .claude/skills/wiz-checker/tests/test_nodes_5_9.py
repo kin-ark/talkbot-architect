@@ -57,3 +57,20 @@ def test_wiz110_absent_target_warns():
 def test_wiz110_clean_when_target_present():
     data = json.loads(FIX.read_text(encoding="utf-8"))
     assert "WIZ110" not in _codes(data)
+
+
+def test_wiz110_type5_absent_target_warns():
+    """WIZ110 independently fires for type-5 (talk_continue) with dangling appoint_node_id."""
+    data = json.loads(FIX.read_text(encoding="utf-8"))
+    # Point ONLY the type-5 node's appoint_node_id at a non-existent component uuid,
+    # leaving the type-9 node's multiple_appoint_id intact
+    comp = data["BizSpeechComponent"][0]
+    details_str = comp["details"]
+    details = json.loads(details_str)
+    # Find the type-5 node with appoint_node_id (dddddddd...) and change its target
+    for node_uuid, node_obj in details.items():
+        d = node_obj.get("data", {})
+        if d.get("type") == 5 and d.get("appoint_node_id"):
+            d["appoint_node_id"] = "ffffffff-ffff-ffff-ffff-ffffffffffff"
+    comp["details"] = json.dumps(details)
+    assert "WIZ110" in _codes(data)

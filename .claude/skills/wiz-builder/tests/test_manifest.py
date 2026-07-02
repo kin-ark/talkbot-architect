@@ -1066,9 +1066,15 @@ canvases:
 """
     load_manifest(_write(tmp_path, good))  # must not raise
 
-    bad = good.replace("config: {target: B}", "config: {}")
+    # Test: missing config.target raises ManifestError
+    bad_target = good.replace("config: {target: B}", "config: {}")
     with pytest.raises(ManifestError):
-        load_manifest(_write(tmp_path, bad))
+        load_manifest(_write(tmp_path, bad_target))
+
+    # Test: empty/missing prompt raises ManifestError
+    bad_prompt = good.replace('prompt: "bye"', 'prompt: ""')
+    with pytest.raises(ManifestError):
+        load_manifest(_write(tmp_path, bad_prompt))
 
 
 def test_talk_goto_unknown_target_rejected(tmp_path):

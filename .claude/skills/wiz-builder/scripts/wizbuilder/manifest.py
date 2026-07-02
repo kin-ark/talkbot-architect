@@ -249,12 +249,13 @@ def _validate_cross_field_invariants(data: dict, path: Path) -> None:
                         f"does not match any other canvas name in this manifest"
                     )
 
-        # talk_goto config.target validation (target is a canvas name; same as goto)
+        # talk_goto config.target + prompt validation (target is a canvas name; same as goto)
         for node in node_list:
             if node.get("type") == "talk_goto":
                 nid = node["id"]
                 cfg = node.get("config") or {}
                 target = cfg.get("target")
+                prompt = node.get("prompt", "")
                 if not target:
                     raise ManifestError(
                         f"{path}: canvas {cname!r}: talk_goto node {nid!r} missing config.target "
@@ -265,6 +266,11 @@ def _validate_cross_field_invariants(data: dict, path: Path) -> None:
                         f"{path}: canvas {cname!r}: talk_goto node {nid!r} "
                         f"config.target {target!r} does not match any other canvas name in "
                         f"this manifest"
+                    )
+                if not prompt:
+                    raise ManifestError(
+                        f"{path}: canvas {cname!r}: talk_goto node {nid!r} missing or empty prompt "
+                        f"(talk_goto must have a non-empty prompt before jumping)"
                     )
 
         # goto_kb config.target validation (target is a KB name; resolved at compile time)

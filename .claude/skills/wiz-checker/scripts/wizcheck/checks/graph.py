@@ -292,6 +292,8 @@ def _check_talk_goto_targets(wf: WizFile) -> list[Finding]:
                 target = data.get("appoint_node_id")
 
             if target and target not in present_uuids:
+                # Derive node type label: 9 = talk_goto, 5 = talk_continue
+                node_label = "talk_goto" if node_type == 9 else "talk_continue"
                 out.append(Finding(
                     code="WIZ110",
                     severity=Severity.WARNING,
@@ -299,7 +301,7 @@ def _check_talk_goto_targets(wf: WizFile) -> list[Finding]:
                         entity="BizSpeechComponent", id=cu, field=None
                     ),
                     message=(
-                        f"talk_goto node {node_uuid!r} jumps to component "
+                        f"{node_label} node {node_uuid!r} jumps to component "
                         f"{target!r} which is not present in the export (dangling jump)."
                     ),
                 ))
