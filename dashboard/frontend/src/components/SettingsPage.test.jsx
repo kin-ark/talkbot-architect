@@ -6,9 +6,9 @@ import SettingsPage from './SettingsPage';
 
 beforeEach(() => {
   vi.clearAllMocks();
-  api.getConfig.mockResolvedValue({ provider: 'anthropic', model: 'claude-x', base_url: null, key_set: true, source: 'env' });
-  api.updateConfig.mockResolvedValue({ provider: 'openai', model: 'gpt-y', base_url: null, key_set: true, source: 'override' });
-  api.clearConfig.mockResolvedValue({ provider: 'anthropic', model: 'claude-x', base_url: null, key_set: true, source: 'env' });
+  api.getConfig.mockResolvedValue({ provider: 'anthropic', model: 'claude-x', base_url: null, key_set: true, source: 'env', show_reasoning: false });
+  api.updateConfig.mockResolvedValue({ provider: 'openai', model: 'gpt-y', base_url: null, key_set: true, source: 'override', show_reasoning: true });
+  api.clearConfig.mockResolvedValue({ provider: 'anthropic', model: 'claude-x', base_url: null, key_set: true, source: 'env', show_reasoning: false });
 });
 
 describe('SettingsPage', () => {
@@ -20,7 +20,7 @@ describe('SettingsPage', () => {
   it('Save sends provider/model to updateConfig', async () => {
     render(<SettingsPage />);
     await waitFor(() => expect(api.getConfig).toHaveBeenCalled());
-    fireEvent.change(screen.getByLabelText(/model/i), { target: { value: 'gpt-y' } });
+    fireEvent.change(screen.getByDisplayValue('claude-x'), { target: { value: 'gpt-y' } });
     fireEvent.click(screen.getByText('Save'));
     await waitFor(() => expect(api.updateConfig).toHaveBeenCalledWith(expect.objectContaining({ model: 'gpt-y' })));
   });
@@ -29,5 +29,14 @@ describe('SettingsPage', () => {
     await waitFor(() => expect(api.getConfig).toHaveBeenCalled());
     fireEvent.click(screen.getByText(/Reset to env defaults/i));
     await waitFor(() => expect(api.clearConfig).toHaveBeenCalled());
+  });
+
+  it('renders show-reasoning from config and saves it', async () => {
+    render(<SettingsPage />);
+    const box = await screen.findByTestId('cfg-reasoning');
+    expect(box).toBeInTheDocument();
+    fireEvent.click(box);
+    fireEvent.click(screen.getByText('Save'));
+    await waitFor(() => expect(api.updateConfig).toHaveBeenCalledWith(expect.objectContaining({ show_reasoning: expect.any(Boolean) })));
   });
 });

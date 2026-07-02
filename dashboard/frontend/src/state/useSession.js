@@ -168,13 +168,14 @@ export function useSession() {
         // array index): the id is assigned before setTranscript, so the closure
         // is correct even when SSE events arrive async across render batches.
         const aid = `a${turnSeq.current++}`;
-        setTranscript((t) => [...t, { role: 'agent', text: '', tool_trace: [], _id: aid }]);
+        setTranscript((t) => [...t, { role: 'agent', text: '', tool_trace: [], reasoning: '', _id: aid }]);
         const patch = (fn) => setTranscript((t) => t.map((m) => (m._id === aid ? fn(m) : m)));
         try {
           await api.streamChat(msg, {
             signal: ctrl.current.signal,
             onEvent: (e) => {
-              if (e.type === 'token') patch((m) => ({ ...m, text: m.text + e.delta }));
+              if (e.type === 'thinking') patch((m) => ({ ...m, reasoning: (m.reasoning || '') + e.delta }));
+              else if (e.type === 'token') patch((m) => ({ ...m, text: m.text + e.delta }));
               else if (e.type === 'tool_start') patch((m) => ({ ...m, tool_trace: [...m.tool_trace, { name: e.name, arguments: e.args, status: 'running' }] }));
               else if (e.type === 'tool_result') patch((m) => ({ ...m, tool_trace: m.tool_trace.map((tt, i) => (i === m.tool_trace.length - 1 ? { ...tt, status: 'done', summary: e.summary, result: e.result } : tt)) }));
               else if (e.type === 'usage') setUsage({ input_tokens: e.input_tokens, output_tokens: e.output_tokens, turns: e.turns, model: e.model });

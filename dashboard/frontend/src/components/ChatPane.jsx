@@ -73,6 +73,7 @@ export default function ChatPane({ transcript, proposal, sending, onSend, onRetr
         <div ref={scrollRef} onScroll={onScroll} className="h-full overflow-y-auto p-4 space-y-3">
           {transcript.map((m, i) => (
             <MessageBubble key={i} role={m.role} text={m.text} toolTrace={m.tool_trace}
+              reasoning={m.reasoning}
               isLast={i === lastIdx} sending={sending} mdComponents={mdComponents}
               onRetry={onRetry} onSend={onSend} />
           ))}

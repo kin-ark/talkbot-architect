@@ -12,6 +12,7 @@ export default function SettingsPage() {
   const [model, setModel] = useState('');
   const [baseUrl, setBaseUrl] = useState('');
   const [apiKey, setApiKey] = useState('');
+  const [showReasoning, setShowReasoning] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
@@ -25,6 +26,7 @@ export default function SettingsPage() {
         setProvider(cfg.provider || 'anthropic');
         setModel(cfg.model || '');
         setBaseUrl(cfg.base_url || '');
+        setShowReasoning(cfg.show_reasoning !== false);
       })
       .catch(() => { if (!cancelled) setNotice({ type: 'err', text: 'Failed to load config.' }); })
       .finally(() => { if (!cancelled) setLoading(false); });
@@ -33,7 +35,7 @@ export default function SettingsPage() {
 
   const handleSave = async () => {
     setNotice(null);
-    const payload = { provider, model };
+    const payload = { provider, model, show_reasoning: showReasoning };
     if (baseUrl) payload.base_url = baseUrl;
     if (apiKey) payload.api_key = apiKey;
     try {
@@ -54,6 +56,7 @@ export default function SettingsPage() {
       setProvider(cfg.provider || 'anthropic');
       setModel(cfg.model || '');
       setBaseUrl(cfg.base_url || '');
+      setShowReasoning(cfg.show_reasoning !== false);
       setApiKey('');
       setNotice({ type: 'ok', text: 'Reset to env defaults.' });
     } catch {
@@ -99,6 +102,15 @@ export default function SettingsPage() {
           <input id="cfg-apikey" type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)}
             placeholder="leave blank to keep current" autoComplete="new-password"
             className="mt-1 w-full border border-border rounded px-2 py-1.5 text-sm bg-surface text-text" />
+        </label>
+        <label className="flex items-center gap-2 pt-1" htmlFor="cfg-reasoning">
+          <input id="cfg-reasoning" type="checkbox" checked={showReasoning}
+            onChange={(e) => setShowReasoning(e.target.checked)}
+            className="h-4 w-4 accent-primary" data-testid="cfg-reasoning" />
+          <span className="text-text-secondary text-xs">
+            Show model reasoning
+            <span className="block text-text-tertiary">Anthropic only — streams the model's thinking (uses extra tokens)</span>
+          </span>
         </label>
       </div>
       {notice && (

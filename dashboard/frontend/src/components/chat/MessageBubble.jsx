@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
-import { Copy, Check } from 'lucide-react';
+import { Copy, Check, Brain, ChevronRight } from 'lucide-react';
 import IconButton from '../ui/IconButton';
 import ToolTrace from './ToolTrace';
+import { narrate } from './narration';
 
 const LABEL = { user: 'You', error: 'Error', agent: 'Assistant' };
 
@@ -16,23 +17,77 @@ function bubbleClass(role) {
 
 const PROSE = 'prose prose-sm dark:prose-invert max-w-none break-words prose-pre:p-0 prose-pre:bg-transparent prose-p:my-1.5 prose-headings:mt-3 prose-headings:mb-1 prose-ul:my-1.5 prose-ol:my-1.5 prose-li:my-0.5 prose-ul:list-disc prose-ol:list-decimal';
 
-export default function MessageBubble({ role, text, toolTrace, isLast, sending, mdComponents, onRetry, onSend }) {
+function fmtElapsed(sec) {
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+function WaitingHeader({ toolTrace, hasText }) {
+  const [sec, setSec] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setSec((x) => x + 1), 1000);
+    return () => clearInterval(id);
+  }, []);
+  const running = toolTrace?.find((t) => t.status === 'running');
+  const label = hasText ? 'Writing…' : running ? narrate(running.name) : 'Thinking';
+  return (
+    <div data-testid="thinking-header" className="text-xs text-text-tertiary mb-1 flex items-center gap-1.5">
+      <span className="inline-block animate-pulse">◐</span>
+      <span>{label}…</span>
+      <span className="font-mono">{fmtElapsed(sec)}</span>
+    </div>
+  );
+}
+
+export default function MessageBubble({ role, text, toolTrace, reasoning, isLast, sending, mdComponents, onRetry, onSend }) {
   const [copied, setCopied] = useState(false);
+  const [open, setOpen] = useState(false);
+  const userToggled = useRef(false);
   const plain = role === 'user' || role === 'error';
+
+  // Auto-open reasoning while still thinking (no answer yet); auto-collapse
+  // once the answer starts — unless the user manually toggled it.
+  useEffect(() => {
+    if (userToggled.current) return;
+    setOpen(Boolean(reasoning) && !text);
+  }, [reasoning, text]);
+
+  const toggle = () => { userToggled.current = true; setOpen((v) => !v); };
+
   const copy = () => {
     navigator.clipboard?.writeText(text || '').then(() => {
       setCopied(true); setTimeout(() => setCopied(false), 1500);
     }).catch(() => {});
   };
+
+  const showWaiting = !plain && isLast && sending && !text;
+
   return (
     <div className={`group ${role === 'user' ? 'text-right' : 'text-left'}`}>
       <div className="text-xs text-text-tertiary mb-0.5">{LABEL[role] || 'Assistant'}</div>
+      {showWaiting && <WaitingHeader toolTrace={toolTrace} hasText={Boolean(text)} />}
+      {!plain && reasoning && (
+        <div data-testid="reasoning-block" className="mb-1 text-left">
+          <button type="button" data-testid="reasoning-toggle" onClick={toggle}
+            className="inline-flex items-center gap-1 text-xs text-text-tertiary hover:text-text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded">
+            <ChevronRight size={12} className={`transition-transform ${open ? 'rotate-90' : ''}`} />
+            <Brain size={12} />
+            <span>Reasoning</span>
+          </button>
+          {open && (
+            <div className="mt-1 max-h-48 overflow-y-auto whitespace-pre-wrap text-xs text-text-tertiary border-l-2 border-border pl-2">
+              {reasoning}
+            </div>
+          )}
+        </div>
+      )}
       {toolTrace?.length > 0 && <ToolTrace trace={toolTrace} />}
       <div className={`relative inline-block max-w-[80%] p-3 rounded-2xl text-sm ${bubbleClass(role)} ${plain ? 'whitespace-pre-wrap' : PROSE}`}>
         {plain
           ? text
           : <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]} components={mdComponents}>{text || ''}</ReactMarkdown>}
-        {!plain && isLast && sending && (
+        {!plain && isLast && sending && text && (
           <span data-testid="stream-caret" className="inline-block w-1.5 animate-pulse">▍</span>
         )}
       </div>
