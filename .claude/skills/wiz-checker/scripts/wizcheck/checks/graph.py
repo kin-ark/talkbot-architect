@@ -159,6 +159,7 @@ _TERMINAL_NODE_TYPES = frozenset({
     "transfer",
     "goto_component",
     "goto_kb",
+    "goto_mr",      # type-9 exit-to-multi-round jump — terminal
     "exit_port",   # type-4 with empty appoint fields — distinct from goto_component
 })
 

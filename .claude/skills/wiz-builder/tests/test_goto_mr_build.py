@@ -68,8 +68,14 @@ def test_goto_mr_builds_type9_clean():
         data = json.loads(out_path.read_text(encoding="utf-8"))
 
     # Check no errors
-    errs = [f for f in run_all_checks(parse_dict(data)) if f.severity.name == "ERROR"]
+    all_findings = run_all_checks(parse_dict(data))
+    errs = [f for f in all_findings if f.severity.name == "ERROR"]
     assert errs == [], f"Build produced errors: {errs}"
+
+    # WIZ107 regression: a component whose only terminal is a goto_mr must NOT be
+    # flagged "no terminal" (goto_mr is terminal). MR A ends in goto_mr.
+    assert not [f for f in all_findings if f.code == "WIZ107"], \
+        "goto_mr must satisfy the component-has-terminal check (WIZ107)"
 
     # Find the type-9 node in the MR A component
     comps = unwrap(data["BizSpeechComponent"])
