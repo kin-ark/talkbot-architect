@@ -9,6 +9,7 @@ import json  # noqa: E402
 import time  # noqa: E402
 import os  # noqa: E402
 import tempfile  # noqa: E402
+import io  # noqa: E402
 from pathlib import Path  # noqa: E402
 from typing import Optional  # noqa: E402
 
@@ -20,6 +21,7 @@ from fastapi.staticfiles import StaticFiles  # noqa: E402
 from pydantic import BaseModel  # noqa: E402
 
 import agents  # noqa: E402
+import backup  # noqa: E402
 import config_store  # noqa: E402
 import samples  # noqa: E402
 import speechname  # noqa: E402
@@ -36,6 +38,11 @@ from wizmodifier.io import InputBundle, write_output  # noqa: E402
 
 from logging_setup import configure_logging, log, RequestLogMiddleware  # noqa: E402
 configure_logging()  # noqa: E402
+
+try:
+    backup.start_scheduler()
+except Exception as e:  # pragma: no cover
+    log.error("", extra={"ev": "backup_error", "err": f"scheduler start: {e}"}, exc_info=e)
 
 _STARTED = time.time()
 
@@ -218,6 +225,28 @@ def _config_response(cfg) -> dict:
 @app.get("/health")
 async def health():
     return {"status": "ok", "live_sessions": len(REGISTRY._stores), "uptime_s": int(time.time() - _STARTED)}
+
+
+@app.get("/admin/backup")
+async def admin_backup():
+    data, filename = backup.open_backup_stream()
+    log.info("", extra={"ev": "backup", "kind": "download", "bytes": len(data)})
+    return Response(content=data, media_type="application/gzip",
+                    headers={"Content-Disposition": f'attachment; filename="{filename}"'})
+
+
+@app.post("/admin/restore")
+async def admin_restore(file: UploadFile = File(...)):
+    if not os.environ.get("DASHBOARD_PASSWORD"):
+        raise HTTPException(status_code=403, detail="restore requires DASHBOARD_PASSWORD to be set")
+    raw = await file.read()
+    try:
+        result = backup.restore_from(io.BytesIO(raw))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"invalid backup: {e}")
+    REGISTRY.reset()
+    log.info("", extra={"ev": "restore", "safety": result["safety_backup"]})
+    return result
 
 
 @app.get("/config")
