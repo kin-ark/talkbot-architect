@@ -251,10 +251,66 @@ def _check_orphan_nodes(wf: WizFile) -> list[Finding]:
     return out
 
 
+def _check_talk_goto_targets(wf: WizFile) -> list[Finding]:
+    """WIZ110: talk_goto (type 9) and talk_continue (type 5) nodes whose jump
+    target componentUuid is absent from the export.
+
+    WARNING, not ERROR: an absent component may be a legitimate library/external
+    reference, but a dangling jump in an in-export node is a deploy concern.
+    Read raw component data (like WIZ106) so it runs even when flow_model is None.
+    """
+    out: list[Finding] = []
+    # Collect all component uuids present in the export
+    present_uuids = set()
+    for comp in wf.components.values():
+        cu = comp.raw.get("componentUuid", "")
+        if cu:
+            present_uuids.add(cu)
+
+    # Scan each component's raw details for type-9 and type-5 nodes with appoint_node_id
+    for comp in wf.components.values():
+        cu = comp.raw.get("componentUuid", "")
+        details = _decode(comp.raw.get("details"))
+        if not isinstance(details, dict):
+            continue
+
+        for node_uuid, node_obj in details.items():
+            if not isinstance(node_obj, dict):
+                continue
+            data = node_obj.get("data", {})
+            if not isinstance(data, dict):
+                continue
+
+            node_type = data.get("type")
+            target = None
+
+            # Type 9 (talk_goto): check multiple_appoint_id
+            if node_type == 9:
+                target = data.get("multiple_appoint_id")
+            # Type 5 (talk_continue) with appoint_node_id: check appoint_node_id
+            elif node_type == 5 and data.get("appoint_node_id"):
+                target = data.get("appoint_node_id")
+
+            if target and target not in present_uuids:
+                out.append(Finding(
+                    code="WIZ110",
+                    severity=Severity.WARNING,
+                    location=Location(
+                        entity="BizSpeechComponent", id=cu, field=None
+                    ),
+                    message=(
+                        f"talk_goto node {node_uuid!r} jumps to component "
+                        f"{target!r} which is not present in the export (dangling jump)."
+                    ),
+                ))
+    return out
+
+
 def check_graph(wf: WizFile) -> list[Finding]:
     findings: list[Finding] = []
-    # WIZ106 reads raw component data only — runs even when flow_model is None.
+    # WIZ106, WIZ110 read raw component data only — run even when flow_model is None.
     findings.extend(_check_routes_validity(wf))
+    findings.extend(_check_talk_goto_targets(wf))
     if wf.flow_model is None:
         return findings
     findings.extend(_check_orphan_refs(wf))
