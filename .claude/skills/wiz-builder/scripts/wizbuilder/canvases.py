@@ -305,13 +305,21 @@ def _build_component(
             target_name = cfg.get("target", "")
             cfg["target_uuid"] = canvas_uuid_by_name.get(target_name, "")
             cfg["target_name"] = target_name
-        elif n.type == "talk_goto" and canvas_uuid_by_name:
-            # Resolve config.target (a canvas name) to the pre-minted componentUuid.
+        elif n.type == "goto_mr" and canvas_uuid_by_name:
+            # Resolve config.target (a multi-round canvas name) to the pre-minted componentUuid.
+            # Target must be a multi-round component (in mr_target_names).
             target_name = cfg.get("target", "")
+            if not (mr_target_names and target_name in mr_target_names):
+                mr_list = sorted(mr_target_names or [])
+                raise ValueError(
+                    f"goto_mr node {n.id!r} in canvas {canvas.name!r}: "
+                    f"config.target {target_name!r} is not a multi-round dialogue canvas "
+                    f"(must be some knowledge_base's multi_round target; known: {mr_list})"
+                )
             cfg["target_uuid"] = canvas_uuid_by_name.get(target_name, "")
             if not cfg["target_uuid"]:
                 raise ValueError(
-                    f"talk_goto node {n.id!r} in canvas {canvas.name!r}: "
+                    f"goto_mr node {n.id!r} in canvas {canvas.name!r}: "
                     f"config.target {target_name!r} matches no canvas "
                     f"(known: {sorted(canvas_uuid_by_name.keys())})"
                 )

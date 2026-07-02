@@ -112,7 +112,7 @@ _WIZ_OPERATOR: dict[str, str] = {
 
 _TYPE_INT = {
     "talk": 1, "exit": 2, "goto": 4, "conditional": 7, "goto_kb": 8, "assign": 10, "nested": 11,
-    "transfer": 13, "exit_port": 4, "talk_goto": 9,
+    "transfer": 13, "exit_port": 4, "goto_mr": 9,
 }
 _TYPE_NODE_NAME = {
     "talk": "Talk Node",
@@ -530,7 +530,7 @@ def _build_goto_node(
     return node_obj, None
 
 
-def _build_talk_goto_node(
+def _build_goto_mr_node(
     spec: NodeSpec,
     *,
     canvas_index: int,
@@ -549,7 +549,7 @@ def _build_talk_goto_node(
     var_source_by_name: dict[str, int] | None = None,  # unused; accepted for uniform dispatch
     nested_exit_map: dict[str, dict[str, str]] | None = None,  # unused; uniform dispatch
 ) -> tuple[dict, None]:
-    """Build one talk_goto node (type 9) ``node_obj``.
+    """Build one goto_mr node (type 9) ``node_obj``.
 
     Terminal: no ports, no SentenceCutSpeech row, no topFloorDetails row.
     Returns (node_obj, None).
@@ -562,7 +562,8 @@ def _build_talk_goto_node(
     target_uuid: str = spec.config.get("target_uuid", "")
     target_name: str = spec.config.get("target_name", spec.config.get("target", ""))
 
-    # Build the spoken text (emitted in data.list for the initial prompt)
+    # Build the node Name/label. Unlike talk_goto (which speaks), goto_mr is silent.
+    # Use prompt as the label if provided, otherwise use node id.
     text = spec.prompt
 
     canvas = {
@@ -1258,7 +1259,7 @@ NODE_BUILDERS: dict[str, Callable] = {
     "exit": _build_exit_node,
     "transfer": _build_transfer_node,
     "goto": _build_goto_node,
-    "talk_goto": _build_talk_goto_node,
+    "goto_mr": _build_goto_mr_node,
     "goto_kb": _build_goto_kb_node,
     "conditional": _build_conditional_node,
     "assign": _build_assign_node,
@@ -1351,7 +1352,7 @@ def render_component_nodes(
         ports from an empty map (no port items; routes remains empty).
     """
     # Terminal node types: no out-ports, not in inbound_ports.
-    _TERMINAL_TYPES = frozenset({"exit", "transfer", "goto", "talk_goto", "goto_kb", "exit_port"})
+    _TERMINAL_TYPES = frozenset({"exit", "transfer", "goto", "goto_mr", "goto_kb", "exit_port"})
 
     details: dict = {}
     routes: dict = {}
