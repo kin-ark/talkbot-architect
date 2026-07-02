@@ -35,9 +35,10 @@ _SPECS = [
              "Create a brand-new dialogue from typed parameters (NOT raw YAML). "
              "Proposes a full new doc (dry-run). Use after the user confirms an outline. "
              "languages: ENG, IDN (ZHO/THA pending verified language codes). "
-             "Each node may include an optional type (talk/exit/transfer/goto/conditional/assign/"
+             "Each node may include an optional type (talk/exit/transfer/goto/talk_goto/conditional/assign/"
              "nested/exit_port/goto_kb; default: talk). goto nodes require config.target set to "
-             "the name of another canvas to jump to. nested nodes delegate to a child canvas "
+             "the name of another canvas to jump to. talk_goto is a speak-then-jump node: "
+             "config.target = another canvas name (terminal). nested nodes delegate to a child canvas "
              "(config.target = child canvas name); their outgoing edges branch on the child "
              "canvas's exit_port names. exit_port is a named terminal return inside a child canvas "
              "(config.name = the port label). conditional nodes route by config.variable + "
@@ -76,7 +77,7 @@ _SPECS = [
                                   "id": {"type": "string"},
                                   "prompt": {"type": "string"},
                                   "type": {"type": "string",
-                                           "enum": ["talk", "exit", "transfer", "goto",
+                                           "enum": ["talk", "exit", "transfer", "goto", "talk_goto",
                                                     "conditional", "assign",
                                                     "nested", "exit_port", "goto_kb"]},
                                   "config": {"type": "object", "properties": {
@@ -107,9 +108,10 @@ _SPECS = [
               "required": ["name", "language", "branch", "canvases"]}),
     ToolSpec("add_component",
              "Add a new component (optionally with nodes+edges) to the current dialogue. Proposes a dry-run. "
-             "Each node may include an optional type (talk/exit/transfer/goto/conditional/assign/"
+             "Each node may include an optional type (talk/exit/transfer/goto/talk_goto/conditional/assign/"
              "nested/exit_port/goto_kb; default: talk). "
              "goto nodes require config.target set to the name of another component to jump to. "
+             "talk_goto is a speak-then-jump node: config.target = another component name (terminal). "
              "nested nodes delegate to a child canvas (config.target = child canvas name); their "
              "outgoing edges branch on the child canvas's exit_port names. exit_port is a named "
              "terminal return inside a child canvas (config.name = the port label). "
@@ -121,7 +123,7 @@ _SPECS = [
                  "nodes": {"type": "array", "items": {"type": "object", "properties": {
                      "id": {"type": "string"},
                      "prompt": {"type": "string"},
-                     "type": {"type": "string", "enum": ["talk", "exit", "transfer", "goto",
+                     "type": {"type": "string", "enum": ["talk", "exit", "transfer", "goto", "talk_goto",
                                                          "conditional", "assign",
                                                          "nested", "exit_port", "goto_kb"]},
                      "config": {"type": "object", "properties": {
@@ -146,9 +148,10 @@ _SPECS = [
                      "to": {"type": "string"}}, "required": ["from", "branch", "to"]}}},
               "required": ["name"]}),
     ToolSpec("add_node",
-             "Add a node (talk/exit/transfer/goto/conditional/assign/nested/exit_port/goto_kb) to an existing "
+             "Add a node (talk/exit/transfer/goto/talk_goto/conditional/assign/nested/exit_port/goto_kb) to an existing "
              "component (by index), optionally wiring edges. Edge endpoints: the new node's id, or an "
              "existing node's uuid. goto requires config.target = another component's name. "
+             "talk_goto is a speak-then-jump node: config.target = another component's name (terminal). "
              "nested delegates to a child canvas (config.target = child canvas name); outgoing edges "
              "branch on the child canvas's exit_port names (free strings, not an enum). "
              "exit_port is a named terminal return inside a child canvas (config.name = port label). "
@@ -160,7 +163,7 @@ _SPECS = [
                  "component": {"type": "integer"},
                  "id": {"type": "string"},
                  "prompt": {"type": "string"},
-                 "type": {"type": "string", "enum": ["talk", "exit", "transfer", "goto",
+                 "type": {"type": "string", "enum": ["talk", "exit", "transfer", "goto", "talk_goto",
                                                      "conditional", "assign",
                                                      "nested", "exit_port", "goto_kb"]},
                  "config": {"type": "object", "properties": {
