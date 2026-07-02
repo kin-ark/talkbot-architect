@@ -11,7 +11,7 @@ from jsonschema import Draft7Validator
 _SCHEMA_PATH = Path(__file__).resolve().parents[2] / "schema" / "manifest.schema.yaml"
 
 _VALID_BRANCHES = frozenset({"Positive", "Negative", "Reject", "Unclassified", "No answer"})
-_TERMINAL_TYPES = frozenset({"exit", "transfer", "goto", "goto_kb", "talk_goto", "exit_port"})
+_TERMINAL_TYPES = frozenset({"exit", "transfer", "goto", "goto_kb", "goto_mr", "exit_port"})
 _VALID_OPERATORS = frozenset(
     {">", ">=", "<", "<=", "=", "!=", "In", "NotIn", "IsNull", "NotNull", "Contains"}
 )
@@ -249,28 +249,28 @@ def _validate_cross_field_invariants(data: dict, path: Path) -> None:
                         f"does not match any other canvas name in this manifest"
                     )
 
-        # talk_goto config.target + prompt validation (target is a canvas name; same as goto)
+        # goto_mr config.target validation (target must be a multi-round canvas)
+        # Compute the set of multi-round target canvas names from KBs
+        mr_target_names = {
+            kb.get("multi_round")
+            for kb in (data.get("knowledge_bases") or [])
+            if kb.get("multi_round")
+        }
         for node in node_list:
-            if node.get("type") == "talk_goto":
+            if node.get("type") == "goto_mr":
                 nid = node["id"]
                 cfg = node.get("config") or {}
                 target = cfg.get("target")
-                prompt = node.get("prompt", "")
                 if not target:
                     raise ManifestError(
-                        f"{path}: canvas {cname!r}: talk_goto node {nid!r} missing config.target "
-                        f"(must name another canvas in this manifest)"
+                        f"{path}: canvas {cname!r}: goto_mr node {nid!r} missing config.target "
+                        f"(must name a multi-round dialogue canvas)"
                     )
-                if target not in all_canvas_names or target == cname:
+                if target not in mr_target_names:
                     raise ManifestError(
-                        f"{path}: canvas {cname!r}: talk_goto node {nid!r} "
-                        f"config.target {target!r} does not match any other canvas name in "
-                        f"this manifest"
-                    )
-                if not prompt:
-                    raise ManifestError(
-                        f"{path}: canvas {cname!r}: talk_goto node {nid!r} missing or empty prompt "
-                        f"(talk_goto must have a non-empty prompt before jumping)"
+                        f"{path}: canvas {cname!r}: goto_mr node {nid!r} "
+                        f"config.target {target!r} is not a multi-round dialogue canvas "
+                        f"(must be some knowledge_base's multi_round target)"
                     )
 
         # goto_kb config.target validation (target is a KB name; resolved at compile time)

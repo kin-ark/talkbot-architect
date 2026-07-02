@@ -90,7 +90,7 @@ properties:
                 type: string
               type:
                 type: string
-                enum: [talk, exit, transfer, goto, goto_kb, talk_goto, conditional, assign, nested, exit_port]
+                enum: [talk, exit, transfer, goto, goto_kb, goto_mr, conditional, assign, nested, exit_port]
               config:
                 type: object
                 additionalProperties: true

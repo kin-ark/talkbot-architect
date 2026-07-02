@@ -1043,112 +1043,157 @@ knowledge_bases:
 
 
 # ---------------------------------------------------------------------------
-# Task 3: talk_goto node type validation
+# Task 2: goto_mr node type validation (Exit → Go to Multi-Round Dialogue)
 # ---------------------------------------------------------------------------
 
 
-def test_talk_goto_requires_target_and_prompt(tmp_path):
-    """talk_goto requires config.target (another canvas) + non-empty prompt."""
-    good = """
-name: T
-branch: dev
-language: IDN
-canvases:
-  - name: A
-    nodes:
-      - {id: n1, type: talk_goto, prompt: "bye", config: {target: B}}
-    edges: []
-  - name: B
-    nodes:
-      - {id: b1, type: talk, prompt: "hi"}
-      - {id: b2, type: exit, prompt: "end"}
-    edges: [{from: b1, branch: Unclassified, to: b2}]
-"""
-    load_manifest(_write(tmp_path, good))  # must not raise
-
-    # Test: missing config.target raises ManifestError
-    bad_target = good.replace("config: {target: B}", "config: {}")
-    with pytest.raises(ManifestError):
-        load_manifest(_write(tmp_path, bad_target))
-
-    # Test: empty/missing prompt raises ManifestError
-    bad_prompt = good.replace('prompt: "bye"', 'prompt: ""')
-    with pytest.raises(ManifestError):
-        load_manifest(_write(tmp_path, bad_prompt))
-
-
-def test_talk_goto_unknown_target_rejected(tmp_path):
-    """A talk_goto node whose config.target names a non-existent canvas is rejected."""
+def test_goto_mr_valid_with_multiround_kb(tmp_path):
+    """goto_mr targeting a canvas that is a KB's multi_round target loads OK."""
     txt = """
-name: T
+name: MR Bot
 branch: dev
 language: IDN
+custom_intents:
+  - {name: SomeIntent, language: IDN, keywords: ["x"], user_responses: ["x"]}
+knowledge_bases:
+  - {name: "K1", intents: ["SomeIntent"], answers: ["hai"], multi_round: "MR Flow"}
 canvases:
-  - name: "1. Main"
+  - name: "Main"
     nodes:
-      - {id: greet, prompt: "Halo"}
-      - id: jump
-        prompt: "Redirecting"
-        type: talk_goto
-        config:
-          target: "3. NonExistent"
-    edges:
-      - {from: greet, branch: Unclassified, to: jump}
-  - name: "2. Follow-up"
+      - {id: g, type: goto_mr, config: {target: "MR Flow"}}
+    edges: []
+  - name: "MR Flow"
     nodes:
-      - {id: followup, prompt: "Follow-up"}
+      - {id: m1, type: talk, prompt: "putaran"}
+      - {id: m2, type: exit, prompt: "selesai"}
+    edges: [{from: m1, branch: Unclassified, to: m2}]
+"""
+    m = load_manifest(_write(tmp_path, txt))
+    nodes = {n.id: n for c in m.canvases for n in c.nodes}
+    assert nodes["g"].type == "goto_mr"
+    assert nodes["g"].config["target"] == "MR Flow"
+    # prompt is optional for goto_mr
+    assert nodes["g"].prompt == ""
+
+
+def test_goto_mr_optional_prompt(tmp_path):
+    """goto_mr prompt is optional (becomes node Name/label)."""
+    txt = """
+name: MR Bot
+branch: dev
+language: IDN
+custom_intents:
+  - {name: SomeIntent, language: IDN, keywords: ["x"], user_responses: ["x"]}
+knowledge_bases:
+  - {name: "K1", intents: ["SomeIntent"], answers: ["hai"], multi_round: "MR Flow"}
+canvases:
+  - name: "Main"
+    nodes:
+      - {id: g, type: goto_mr, prompt: "Jump to MR", config: {target: "MR Flow"}}
+    edges: []
+  - name: "MR Flow"
+    nodes:
+      - {id: m1, type: talk, prompt: "putaran"}
+      - {id: m2, type: exit, prompt: "selesai"}
+    edges: [{from: m1, branch: Unclassified, to: m2}]
+"""
+    m = load_manifest(_write(tmp_path, txt))
+    nodes = {n.id: n for c in m.canvases for n in c.nodes}
+    assert nodes["g"].prompt == "Jump to MR"
+
+
+def test_goto_mr_missing_config_target_rejected(tmp_path):
+    """A goto_mr node with no config.target is rejected."""
+    txt = """
+name: MR Bot
+branch: dev
+language: IDN
+custom_intents:
+  - {name: SomeIntent, language: IDN, keywords: ["x"], user_responses: ["x"]}
+knowledge_bases:
+  - {name: "K1", intents: ["SomeIntent"], answers: ["hai"], multi_round: "MR Flow"}
+canvases:
+  - name: "Main"
+    nodes:
+      - {id: g, type: goto_mr, config: {}}
+    edges: []
+  - name: "MR Flow"
+    nodes:
+      - {id: m1, type: talk, prompt: "putaran"}
 """
     with pytest.raises(ManifestError, match="config.target"):
         load_manifest(_write(tmp_path, txt))
 
 
-def test_talk_goto_self_targeting_rejected(tmp_path):
-    """A talk_goto node whose config.target names its OWN canvas is rejected (must be another)."""
+def test_goto_mr_target_not_multiround_rejected(tmp_path):
+    """A goto_mr node whose config.target is not a KB's multi_round target is rejected."""
     txt = """
-name: T
+name: MR Bot
 branch: dev
 language: IDN
+custom_intents:
+  - {name: SomeIntent, language: IDN, keywords: ["x"], user_responses: ["x"]}
+knowledge_bases:
+  - {name: "K1", intents: ["SomeIntent"], answers: ["hai"], multi_round: "MR Flow"}
 canvases:
-  - name: "1. Main"
+  - name: "Main"
     nodes:
-      - {id: greet, prompt: "Halo"}
-      - id: jump
-        prompt: "Loop"
-        type: talk_goto
-        config:
-          target: "1. Main"
-    edges:
-      - {from: greet, branch: Unclassified, to: jump}
-  - name: "2. Other"
+      - {id: g, type: goto_mr, config: {target: "NotMR"}}
+    edges: []
+  - name: "MR Flow"
     nodes:
-      - {id: other, prompt: "Other"}
+      - {id: m1, type: talk, prompt: "putaran"}
+  - name: "NotMR"
+    nodes:
+      - {id: n1, type: talk, prompt: "regular"}
 """
-    with pytest.raises(ManifestError, match="does not match any other canvas"):
+    with pytest.raises(ManifestError, match="not a multi-round dialogue canvas"):
         load_manifest(_write(tmp_path, txt))
 
 
-def test_talk_goto_node_with_outgoing_edge_rejected(tmp_path):
-    """A talk_goto node with an outgoing edge is rejected (terminal rule)."""
+def test_goto_mr_target_must_exist_canvas(tmp_path):
+    """A goto_mr node whose config.target names a non-existent canvas is rejected."""
     txt = """
-name: T
+name: MR Bot
 branch: dev
 language: IDN
+custom_intents:
+  - {name: SomeIntent, language: IDN, keywords: ["x"], user_responses: ["x"]}
+knowledge_bases:
+  - {name: "K1", intents: ["SomeIntent"], answers: ["hai"], multi_round: "MR Flow"}
 canvases:
-  - name: "1. Main"
+  - name: "Main"
     nodes:
-      - {id: greet, prompt: "Halo"}
-      - id: jump
-        prompt: "Redirect"
-        type: talk_goto
-        config:
-          target: "2. Follow-up"
+      - {id: g, type: goto_mr, config: {target: "Ghost"}}
+    edges: []
+  - name: "MR Flow"
+    nodes:
+      - {id: m1, type: talk, prompt: "putaran"}
+"""
+    with pytest.raises(ManifestError, match="config.target"):
+        load_manifest(_write(tmp_path, txt))
+
+
+def test_goto_mr_node_with_outgoing_edge_rejected(tmp_path):
+    """A goto_mr node with an outgoing edge is rejected (terminal rule)."""
+    txt = """
+name: MR Bot
+branch: dev
+language: IDN
+custom_intents:
+  - {name: SomeIntent, language: IDN, keywords: ["x"], user_responses: ["x"]}
+knowledge_bases:
+  - {name: "K1", intents: ["SomeIntent"], answers: ["hai"], multi_round: "MR Flow"}
+canvases:
+  - name: "Main"
+    nodes:
+      - {id: g, type: goto_mr, config: {target: "MR Flow"}}
       - {id: extra, prompt: "Extra"}
     edges:
-      - {from: greet, branch: Unclassified, to: jump}
-      - {from: jump, branch: Positive, to: extra}
-  - name: "2. Follow-up"
+      - {from: g, branch: Positive, to: extra}
+  - name: "MR Flow"
     nodes:
-      - {id: followup, prompt: "Follow-up"}
+      - {id: m1, type: talk, prompt: "putaran"}
 """
     with pytest.raises(ManifestError, match="terminal"):
         load_manifest(_write(tmp_path, txt))
