@@ -166,12 +166,14 @@ def _validate_special_node(
         skip self when scanning for existing nested references (M2).
     """
     ntype = node.get("type")
-    if ntype not in ("conditional", "assign", "exit_port", "nested", "goto_kb", "goto"):
+    if ntype not in (
+        "conditional", "assign", "exit_port", "nested", "goto_kb", "goto", "talk_goto"
+    ):
         return
     nid = node.get("id", "<no-id>")
     cfg = node.get("config") or {}
 
-    if ntype in ("goto", "goto_kb"):
+    if ntype in ("goto", "goto_kb", "talk_goto"):
         target = cfg.get("target")
         if not target:
             raise ValueError(
@@ -599,6 +601,19 @@ def append_node(bundle: InputBundle, params: dict, minter) -> None:
                 f"append-node: goto node {node['id']!r}: config.target {target_name!r} "
                 f"does not match any existing component name"
             )
+    elif node_type_str == "talk_goto":
+        target_name = cfg.get("target", "")
+        if not target_name:
+            raise ValueError(
+                f"append-node: talk_goto node {node['id']!r} missing config.target"
+            )
+        cfg["target_uuid"] = comp_uuid_by_name.get(target_name, "")
+        cfg["target_name"] = target_name
+        if not cfg["target_uuid"]:
+            raise ValueError(
+                f"append-node: talk_goto node {node['id']!r}: config.target {target_name!r} "
+                f"does not match any existing component name"
+            )
     elif node_type_str == "goto_kb":
         target_name = cfg.get("target", "")
         if not target_name:
@@ -631,7 +646,9 @@ def append_node(bundle: InputBundle, params: dict, minter) -> None:
 
     # Validate special nodes BEFORE rendering.
     current_comp_name = comp.get("name")
-    if node_type_str in ("conditional", "assign", "exit_port", "nested", "goto", "goto_kb"):
+    if node_type_str in (
+        "conditional", "assign", "exit_port", "nested", "goto", "goto_kb", "talk_goto"
+    ):
         _validate_special_node(
             node,
             _declared_var_names(bundle),
@@ -698,10 +715,13 @@ def append_node(bundle: InputBundle, params: dict, minter) -> None:
     }
     _NODE_TYPE_INT = {
         "talk": 1, "exit": 2, "goto": 4, "exit_port": 4,
-        "conditional": 7, "goto_kb": 8, "assign": 10, "nested": 11, "transfer": 13,
+        "conditional": 7, "goto_kb": 8, "talk_goto": 9, "assign": 10, "nested": 11, "transfer": 13,
     }
-    # Terminal nodes (exit, transfer, goto, goto_kb, exit_port) are not added to inboundPorts.
-    _TERMINAL = frozenset({"exit", "transfer", "goto", "goto_kb", "exit_port"})
+    # Terminal nodes (exit, transfer, goto, goto_kb, talk_goto, exit_port)
+    # are not added to inboundPorts.
+    _TERMINAL = frozenset(
+        {"exit", "transfer", "goto", "goto_kb", "talk_goto", "exit_port"}
+    )
     if not has_incoming and node_type_str not in _TERMINAL:
         inbound.append({
             "name": _NODE_NAME.get(node_type_str, "Talk Node"),
