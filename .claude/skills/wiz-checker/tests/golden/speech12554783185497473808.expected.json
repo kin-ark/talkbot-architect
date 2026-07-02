@@ -2,7 +2,7 @@
   "file": "speech12554783185497473808.json",
   "summary": {
     "errors": 0,
-    "warnings": 23,
+    "warnings": 22,
     "checks_run": [
       "schema",
       "graph",
@@ -12,16 +12,6 @@
     ]
   },
   "findings": [
-    {
-      "code": "WIZ107",
-      "severity": "warning",
-      "location": {
-        "entity": "BizSpeechComponent",
-        "id": "7581cc9f-6870-4854-b27e-3d587dd60c75",
-        "field": null
-      },
-      "message": "Component 'Amount Due' ('7581cc9f-6870-4854-b27e-3d587dd60c75') has no terminal node (Exit/Transfer/Goto) \u2014 the flow cannot end."
-    },
     {
       "code": "WIZ202",
       "severity": "warning",
@@ -230,7 +220,7 @@
         "id": "450517",
         "field": null
       },
-      "message": "Intent 'Empty_try' (id 450517) is user-created but has no keywords and no training phrases \u2014 it has no NLU signal to trigger on."
+      "message": "Intent 'Empty_try' (id 450517) is user-created but has no keywords and no training phrases — it has no NLU signal to trigger on."
     },
     {
       "code": "WIZ305",
@@ -240,7 +230,7 @@
         "id": "450527",
         "field": null
       },
-      "message": "Intent 'Dummy KB purpose' (id 450527) is user-created but has no keywords and no training phrases \u2014 it has no NLU signal to trigger on."
+      "message": "Intent 'Dummy KB purpose' (id 450527) is user-created but has no keywords and no training phrases — it has no NLU signal to trigger on."
     }
   ]
 }
