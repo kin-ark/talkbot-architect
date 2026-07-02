@@ -16,6 +16,7 @@ class RuntimeConfig:
     model: str | None = None
     base_url: str | None = None
     api_key: str | None = None  # in-memory only; never persisted/logged/returned
+    show_reasoning: bool = True
 
 
 _CONFIGS: dict[str, RuntimeConfig] = {}

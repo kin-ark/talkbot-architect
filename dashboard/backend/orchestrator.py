@@ -97,6 +97,8 @@ def run_turn_stream(client, session, user_message: str) -> Iterator[dict]:
                 _rollback()
                 yield {"type": "done", "canceled": True, "text": ""}
                 return
+            if chunk.thinking_delta:
+                yield {"type": "thinking", "delta": chunk.thinking_delta}
             if chunk.text_delta:
                 turn_text += chunk.text_delta
                 yield {"type": "token", "delta": chunk.text_delta}
@@ -108,7 +110,8 @@ def run_turn_stream(client, session, user_message: str) -> Iterator[dict]:
         if resp is None:                       # defensive: empty stream
             resp = LLMResponse(text=turn_text or None, tool_calls=[])
 
-        assistant = Message(role="assistant", content=resp.text, tool_calls=resp.tool_calls)
+        assistant = Message(role="assistant", content=resp.text, tool_calls=resp.tool_calls,
+                            thinking_blocks=getattr(resp, "thinking_blocks", []))
         messages.append(assistant)
         session.transcript.append(assistant)
         if resp.text:

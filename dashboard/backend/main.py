@@ -44,6 +44,7 @@ try:
 except Exception as e:  # pragma: no cover
     log.error("", extra={"ev": "backup_error", "err": f"scheduler start: {e}"}, exc_info=e)
 
+_THINKING_BUDGET = 2048
 _STARTED = time.time()
 
 app = FastAPI(title="Talkbot Architect API")
@@ -111,6 +112,7 @@ class ConfigUpdate(BaseModel):
     model: Optional[str] = None
     base_url: Optional[str] = None
     api_key: Optional[str] = None
+    show_reasoning: Optional[bool] = None
 
 
 class RenameRequest(BaseModel):
@@ -196,8 +198,11 @@ def get_client(cid: str = Depends(client_id)) -> LLMClient:
     model = cfg.model or os.environ.get("LLM_MODEL")
     base_url = cfg.base_url
     api_key = cfg.api_key
+    resolved = (provider or "anthropic").lower()
+    thinking_budget = _THINKING_BUDGET if (cfg.show_reasoning and resolved == "anthropic") else None
     try:
-        return make_client(provider=provider, api_key=api_key, model=model, base_url=base_url)
+        return make_client(provider=provider, api_key=api_key, model=model,
+                           base_url=base_url, thinking_budget=thinking_budget)
     except LLMConfigError as e:
         raise HTTPException(status_code=503, detail=str(e))
 
@@ -215,6 +220,7 @@ def _config_response(cfg) -> dict:
         "base_url": base_url,
         "key_set": effective_key_set(provider, cfg),
         "source": "override" if any_override(cfg) else "env",
+        "show_reasoning": cfg.show_reasoning,
     }
 
 
@@ -272,6 +278,8 @@ async def put_config(update: ConfigUpdate, cid: str = Depends(client_id)):
     # Empty string means "leave unchanged"; only update when truthy
     if update.api_key:
         cfg.api_key = update.api_key
+    if update.show_reasoning is not None:
+        cfg.show_reasoning = update.show_reasoning
     return _config_response(cfg)
 
 
@@ -280,6 +288,7 @@ async def clear_config(cid: str = Depends(client_id)):
     """Reset all CONFIG overrides — effective config reverts to env vars."""
     cfg = config_store.config_for(cid)
     cfg.provider = cfg.model = cfg.base_url = cfg.api_key = None
+    cfg.show_reasoning = True
     return _config_response(cfg)
 
 
