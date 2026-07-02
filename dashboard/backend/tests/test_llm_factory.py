@@ -24,7 +24,7 @@ def test_openai_base_url_passed_through(monkeypatch):
     captured = {}
 
     class FakeOpenAIClient:
-        def __init__(self, api_key, model, base_url=None):
+        def __init__(self, api_key, model, base_url=None, attempts=3, sleep=None):
             captured["base_url"] = base_url
             captured["api_key"] = api_key
             captured["model"] = model
@@ -39,7 +39,7 @@ def test_anthropic_base_url_passed_through(monkeypatch):
     captured = {}
 
     class FakeAnthropicClient:
-        def __init__(self, api_key, model, base_url=None):
+        def __init__(self, api_key, model, base_url=None, thinking_budget=None):
             captured["base_url"] = base_url
             captured["api_key"] = api_key
 
@@ -53,7 +53,7 @@ def test_openai_env_base_url_fallback(monkeypatch):
     captured = {}
 
     class FakeOpenAIClient:
-        def __init__(self, api_key, model, base_url=None):
+        def __init__(self, api_key, model, base_url=None, attempts=3, sleep=None):
             captured["base_url"] = base_url
 
     monkeypatch.setenv("OPENAI_BASE_URL", "http://from-env")
@@ -67,7 +67,7 @@ def test_anthropic_env_base_url_fallback(monkeypatch):
     captured = {}
 
     class FakeAnthropicClient:
-        def __init__(self, api_key, model, base_url=None):
+        def __init__(self, api_key, model, base_url=None, thinking_budget=None):
             captured["base_url"] = base_url
 
     monkeypatch.setenv("ANTHROPIC_BASE_URL", "http://from-env-a")
@@ -81,7 +81,7 @@ def test_openai_compatible_provider_uses_openai_client(monkeypatch):
     captured = {}
 
     class FakeOpenAIClient:
-        def __init__(self, api_key, model, base_url=None):
+        def __init__(self, api_key, model, base_url=None, attempts=3, sleep=None):
             captured["base_url"] = base_url
             captured["model"] = model
 
@@ -95,7 +95,7 @@ def test_openai_compatible_without_base_url_raises(monkeypatch):
     monkeypatch.delenv("OPENAI_BASE_URL", raising=False)
 
     class FakeOpenAIClient:
-        def __init__(self, api_key, model, base_url=None):
+        def __init__(self, api_key, model, base_url=None, attempts=3, sleep=None):
             pass
 
     monkeypatch.setattr("llm.factory._openai_client_class", FakeOpenAIClient)

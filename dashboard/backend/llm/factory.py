@@ -20,6 +20,7 @@ def make_client(
     api_key: str | None,
     model: str | None,
     base_url: str | None = None,
+    thinking_budget: int | None = None,
 ) -> LLMClient:
     """Build and return an LLMClient for the given provider.
 
@@ -52,7 +53,8 @@ def make_client(
         if cls is None:
             from llm.anthropic_client import AnthropicClient
             cls = AnthropicClient
-        return cls(api_key=key, model=model or "claude-opus-4-8", base_url=effective_base)
+        return cls(api_key=key, model=model or "claude-opus-4-8",
+                   base_url=effective_base, thinking_budget=thinking_budget)
 
     if resolved_provider in ("openai", "openai-compatible"):
         key = api_key or os.environ.get("OPENAI_API_KEY")
