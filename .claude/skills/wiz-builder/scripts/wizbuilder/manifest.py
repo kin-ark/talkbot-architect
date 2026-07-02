@@ -11,7 +11,7 @@ from jsonschema import Draft7Validator
 _SCHEMA_PATH = Path(__file__).resolve().parents[2] / "schema" / "manifest.schema.yaml"
 
 _VALID_BRANCHES = frozenset({"Positive", "Negative", "Reject", "Unclassified", "No answer"})
-_TERMINAL_TYPES = frozenset({"exit", "transfer", "goto", "goto_kb", "exit_port"})
+_TERMINAL_TYPES = frozenset({"exit", "transfer", "goto", "goto_kb", "talk_goto", "exit_port"})
 _VALID_OPERATORS = frozenset(
     {">", ">=", "<", "<=", "=", "!=", "In", "NotIn", "IsNull", "NotNull", "Contains"}
 )
@@ -247,6 +247,24 @@ def _validate_cross_field_invariants(data: dict, path: Path) -> None:
                     raise ManifestError(
                         f"{path}: canvas {cname!r}: goto node {nid!r} config.target {target!r} "
                         f"does not match any other canvas name in this manifest"
+                    )
+
+        # talk_goto config.target validation (target is a canvas name; same as goto)
+        for node in node_list:
+            if node.get("type") == "talk_goto":
+                nid = node["id"]
+                cfg = node.get("config") or {}
+                target = cfg.get("target")
+                if not target:
+                    raise ManifestError(
+                        f"{path}: canvas {cname!r}: talk_goto node {nid!r} missing config.target "
+                        f"(must name another canvas in this manifest)"
+                    )
+                if target not in all_canvas_names or target == cname:
+                    raise ManifestError(
+                        f"{path}: canvas {cname!r}: talk_goto node {nid!r} "
+                        f"config.target {target!r} does not match any other canvas name in "
+                        f"this manifest"
                     )
 
         # goto_kb config.target validation (target is a KB name; resolved at compile time)

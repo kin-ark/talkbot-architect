@@ -1040,3 +1040,109 @@ knowledge_bases:
     assert kb.name == "Delegated"
     assert kb.answers == ()
     assert kb.multi_round == "Handler"
+
+
+# ---------------------------------------------------------------------------
+# Task 3: talk_goto node type validation
+# ---------------------------------------------------------------------------
+
+
+def test_talk_goto_requires_target_and_prompt(tmp_path):
+    """talk_goto requires config.target (another canvas) + non-empty prompt."""
+    good = """
+name: T
+branch: dev
+language: IDN
+canvases:
+  - name: A
+    nodes:
+      - {id: n1, type: talk_goto, prompt: "bye", config: {target: B}}
+    edges: []
+  - name: B
+    nodes:
+      - {id: b1, type: talk, prompt: "hi"}
+      - {id: b2, type: exit, prompt: "end"}
+    edges: [{from: b1, branch: Unclassified, to: b2}]
+"""
+    load_manifest(_write(tmp_path, good))  # must not raise
+
+    bad = good.replace("config: {target: B}", "config: {}")
+    with pytest.raises(ManifestError):
+        load_manifest(_write(tmp_path, bad))
+
+
+def test_talk_goto_unknown_target_rejected(tmp_path):
+    """A talk_goto node whose config.target names a non-existent canvas is rejected."""
+    txt = """
+name: T
+branch: dev
+language: IDN
+canvases:
+  - name: "1. Main"
+    nodes:
+      - {id: greet, prompt: "Halo"}
+      - id: jump
+        prompt: "Redirecting"
+        type: talk_goto
+        config:
+          target: "3. NonExistent"
+    edges:
+      - {from: greet, branch: Unclassified, to: jump}
+  - name: "2. Follow-up"
+    nodes:
+      - {id: followup, prompt: "Follow-up"}
+"""
+    with pytest.raises(ManifestError, match="config.target"):
+        load_manifest(_write(tmp_path, txt))
+
+
+def test_talk_goto_self_targeting_rejected(tmp_path):
+    """A talk_goto node whose config.target names its OWN canvas is rejected (must be another)."""
+    txt = """
+name: T
+branch: dev
+language: IDN
+canvases:
+  - name: "1. Main"
+    nodes:
+      - {id: greet, prompt: "Halo"}
+      - id: jump
+        prompt: "Loop"
+        type: talk_goto
+        config:
+          target: "1. Main"
+    edges:
+      - {from: greet, branch: Unclassified, to: jump}
+  - name: "2. Other"
+    nodes:
+      - {id: other, prompt: "Other"}
+"""
+    with pytest.raises(ManifestError, match="does not match any other canvas"):
+        load_manifest(_write(tmp_path, txt))
+
+
+def test_talk_goto_node_with_outgoing_edge_rejected(tmp_path):
+    """A talk_goto node with an outgoing edge is rejected (terminal rule)."""
+    txt = """
+name: T
+branch: dev
+language: IDN
+canvases:
+  - name: "1. Main"
+    nodes:
+      - {id: greet, prompt: "Halo"}
+      - id: jump
+        prompt: "Redirect"
+        type: talk_goto
+        config:
+          target: "2. Follow-up"
+      - {id: extra, prompt: "Extra"}
+    edges:
+      - {from: greet, branch: Unclassified, to: jump}
+      - {from: jump, branch: Positive, to: extra}
+  - name: "2. Follow-up"
+    nodes:
+      - {id: followup, prompt: "Follow-up"}
+"""
+    with pytest.raises(ManifestError, match="terminal"):
+        load_manifest(_write(tmp_path, txt))
