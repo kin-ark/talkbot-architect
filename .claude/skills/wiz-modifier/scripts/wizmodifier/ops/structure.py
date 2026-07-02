@@ -167,18 +167,22 @@ def _validate_special_node(
     """
     ntype = node.get("type")
     if ntype not in (
-        "conditional", "assign", "exit_port", "nested", "goto_kb", "goto", "goto_mr"
+        "conditional", "assign", "exit_port", "nested", "goto_kb", "goto", "goto_mr",
+        "talk_continue"
     ):
         return
     nid = node.get("id", "<no-id>")
     cfg = node.get("config") or {}
 
-    if ntype in ("goto", "goto_kb", "goto_mr"):
+    if ntype in ("goto", "goto_kb", "goto_mr", "talk_continue"):
         target = cfg.get("target")
-        if not target:
+        # talk_continue and goto_kb have optional targets; goto and goto_mr require them
+        if ntype in ("goto", "goto_mr") and not target:
             raise ValueError(
                 f"{prefix} {ntype} node {nid!r} missing config.target"
             )
+        # talk_continue: if target is present, validation is deferred to append_node
+        # where we can check component categories
         return
 
     if ntype == "exit_port":
@@ -627,6 +631,35 @@ def append_node(bundle: InputBundle, params: dict, minter) -> None:
                 f"append-node: goto_mr target {target_name!r} is not a multi-round "
                 f"(category:2) component"
             )
+    elif node_type_str == "talk_continue":
+        # Validate that the component being appended to is a multi-round (category:2) component
+        container_comp_category = comp.get("category", 1)
+        if container_comp_category != 2:
+            raise ValueError(
+                "append-node: talk_continue is only valid inside a multi-round "
+                "(category:2) component"
+            )
+        # Optional return target: if config.target is present, resolve and validate
+        target_name = cfg.get("target", "")
+        if target_name:
+            cfg["target_uuid"] = comp_uuid_by_name.get(target_name, "")
+            cfg["target_name"] = target_name
+            if not cfg["target_uuid"]:
+                raise ValueError(
+                    f"append-node: talk_continue node {node['id']!r}: "
+                    f"config.target {target_name!r} does not match any existing component name"
+                )
+            # Validate that the return target component is a main-flow (category != 2) component
+            target_comp = comp_by_name.get(target_name)
+            if target_comp and target_comp.get("category") == 2:
+                raise ValueError(
+                    f"append-node: talk_continue return target {target_name!r} must be a main-flow "
+                    f"(non-multi-round) component"
+                )
+        else:
+            # No return target: set defaults
+            cfg["target_uuid"] = ""
+            cfg["target_name"] = ""
     elif node_type_str == "goto_kb":
         target_name = cfg.get("target", "")
         if not target_name:
@@ -660,7 +693,8 @@ def append_node(bundle: InputBundle, params: dict, minter) -> None:
     # Validate special nodes BEFORE rendering.
     current_comp_name = comp.get("name")
     if node_type_str in (
-        "conditional", "assign", "exit_port", "nested", "goto", "goto_kb", "goto_mr"
+        "conditional", "assign", "exit_port", "nested", "goto", "goto_kb", "goto_mr",
+        "talk_continue"
     ):
         _validate_special_node(
             node,
@@ -728,12 +762,13 @@ def append_node(bundle: InputBundle, params: dict, minter) -> None:
     }
     _NODE_TYPE_INT = {
         "talk": 1, "exit": 2, "goto": 4, "exit_port": 4,
-        "conditional": 7, "goto_kb": 8, "goto_mr": 9, "assign": 10, "nested": 11, "transfer": 13,
+        "conditional": 7, "goto_kb": 8, "goto_mr": 9, "talk_continue": 5, "assign": 10,
+        "nested": 11, "transfer": 13,
     }
-    # Terminal nodes (exit, transfer, goto, goto_kb, goto_mr, exit_port)
+    # Terminal nodes (exit, transfer, goto, goto_kb, goto_mr, talk_continue, exit_port)
     # are not added to inboundPorts.
     _TERMINAL = frozenset(
-        {"exit", "transfer", "goto", "goto_kb", "goto_mr", "exit_port"}
+        {"exit", "transfer", "goto", "goto_kb", "goto_mr", "talk_continue", "exit_port"}
     )
     if not has_incoming and node_type_str not in _TERMINAL:
         inbound.append({
