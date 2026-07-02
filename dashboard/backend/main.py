@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import json  # noqa: E402
+import time  # noqa: E402
 import os  # noqa: E402
 import tempfile  # noqa: E402
 from pathlib import Path  # noqa: E402
@@ -33,6 +34,11 @@ from session import Session  # noqa: E402
 from session_store import SessionStore  # noqa: E402
 from wizmodifier.io import InputBundle, write_output  # noqa: E402
 
+from logging_setup import configure_logging, log, RequestLogMiddleware  # noqa: E402
+configure_logging()  # noqa: E402
+
+_STARTED = time.time()
+
 app = FastAPI(title="Talkbot Architect API")
 # With allow_credentials=True a wildcard origin is invalid, so we list origins.
 # Prod sets CORS_ORIGINS explicitly (or serves the SPA same-origin → CORS unused).
@@ -50,6 +56,7 @@ app.add_middleware(
 )
 app.add_middleware(PasswordGateMiddleware)
 app.add_middleware(ClientCookieMiddleware)
+app.add_middleware(RequestLogMiddleware)
 
 
 def _error_body(exc: Exception) -> dict:
@@ -62,11 +69,13 @@ class LLMProviderError(Exception):
 
 @app.exception_handler(LLMProviderError)
 async def _provider_error(request: Request, exc: LLMProviderError):
+    log.error("", extra={"ev": "exc", "path": request.url.path, "err": f"{type(exc).__name__}: {exc}"}, exc_info=exc)
     return JSONResponse(status_code=502, content=_error_body(exc))
 
 
 @app.exception_handler(Exception)
 async def _unhandled(request: Request, exc: Exception):
+    log.error("", extra={"ev": "exc", "path": request.url.path, "err": f"{type(exc).__name__}: {exc}"}, exc_info=exc)
     return JSONResponse(status_code=500, content=_error_body(exc))
 
 
@@ -208,7 +217,7 @@ def _config_response(cfg) -> dict:
 
 @app.get("/health")
 async def health():
-    return {"status": "ok"}
+    return {"status": "ok", "live_sessions": len(REGISTRY._stores), "uptime_s": int(time.time() - _STARTED)}
 
 
 @app.get("/config")
@@ -420,38 +429,55 @@ def edit_node_text(uuid: str, body: NodeTextRequest,
 
 @app.post("/chat")
 def chat(req: ChatRequest, s: Session = Depends(current_session),
-         client: LLMClient = Depends(get_client)):
+         client: LLMClient = Depends(get_client), cid: str = Depends(client_id)):
     # Sync def → runs in the threadpool, so the event loop stays free for
     # /chat/cancel while this turn holds the lock.
     if not s._stack:
         raise HTTPException(status_code=503, detail="no session loaded")
+    cfg = config_store.config_for(cid)
+    provider = cfg.provider or os.environ.get("LLM_PROVIDER")
+    model = cfg.model or os.environ.get("LLM_MODEL")
+    t0 = time.perf_counter()
     try:
         with s._lock:
             result = run_turn(client, s, req.message)
     except HTTPException:
         raise
     except Exception as e:
+        log.info("", extra={"ev": "llm", "provider": provider, "model": model, "ok": False,
+                            "ms": round((time.perf_counter() - t0) * 1000), "err": str(e)})
         raise LLMProviderError(f"LLM provider error: {e}") from e
+    log.info("", extra={"ev": "llm", "provider": provider, "model": model, "ok": True,
+                        "ms": round((time.perf_counter() - t0) * 1000)})
     s._autosave()
     return result
 
 
 @app.post("/chat/stream")
 def chat_stream(req: ChatRequest, s: Session = Depends(current_session),
-                client: LLMClient = Depends(get_client)):
+                client: LLMClient = Depends(get_client), cid: str = Depends(client_id)):
     if not s._stack:
         raise HTTPException(status_code=503, detail="no session loaded")
+    cfg = config_store.config_for(cid)
+    provider = cfg.provider or os.environ.get("LLM_PROVIDER")
+    model = cfg.model or os.environ.get("LLM_MODEL")
 
     def _gen():
+        t0 = time.perf_counter()
+        ok = True
         with s._lock:
             try:
                 for ev in run_turn_stream(client, s, req.message):
                     yield f"data: {json.dumps(ev, ensure_ascii=False, default=str)}\n\n"
-            except Exception as e:  # surface provider/tool failure as an SSE error, not a 500
+            except Exception as e:
+                ok = False
+                log.error("", extra={"ev": "exc", "path": "/chat/stream", "err": f"{type(e).__name__}: {e}"}, exc_info=e)
                 yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
                 yield f"data: {json.dumps({'type': 'done', 'canceled': False, 'text': ''})}\n\n"
             finally:
                 s._autosave()
+                log.info("", extra={"ev": "llm", "provider": provider, "model": model, "ok": ok,
+                                    "ms": round((time.perf_counter() - t0) * 1000)})
 
     return StreamingResponse(_gen(), media_type="text/event-stream")
 

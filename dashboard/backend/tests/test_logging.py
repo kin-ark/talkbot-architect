@@ -85,3 +85,42 @@ def test_request_log_middleware_logs_requests_but_not_health():
         assert reqs[0].path == "/ping" and reqs[0].status == 200
     finally:
         logging_setup.log.removeHandler(handler)
+
+
+def test_health_returns_richer_body():
+    import main
+    with TestClient(main.app) as client:
+        body = client.get("/health").json()
+    assert body["status"] == "ok"
+    assert isinstance(body["live_sessions"], int)
+    assert isinstance(body["uptime_s"], int)
+
+
+def test_unhandled_exception_is_logged():
+    import main
+    # Register a throwaway route that raises, then hit it and assert an exc log.
+    @main.app.get("/_boom_test")
+    def _boom():
+        raise RuntimeError("kaboom")
+
+    logging_setup._configured = False
+    logging_setup.configure_logging()
+
+    # Attach a custom handler to capture records on the 'tba' logger.
+    records = []
+    class ListHandler(logging.Handler):
+        def emit(self, record):
+            records.append(record)
+
+    handler = ListHandler()
+    handler.setLevel(logging.ERROR)
+    logging_setup.log.addHandler(handler)
+
+    try:
+        with TestClient(main.app, raise_server_exceptions=False) as client:
+            r = client.get("/_boom_test")
+        assert r.status_code == 500
+        excs = [rec for rec in records if getattr(rec, "ev", None) == "exc"]
+        assert excs and "kaboom" in (excs[-1].err or "")
+    finally:
+        logging_setup.log.removeHandler(handler)
