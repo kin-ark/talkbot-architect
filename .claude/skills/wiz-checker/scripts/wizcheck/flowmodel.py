@@ -263,8 +263,8 @@ def _build_branches(
         ))
         return branches
 
-    if node_type == "talk_goto":
-        # type 9: speak then ONE cross-component jump via multiple_appoint_id.
+    if node_type == "goto_mr":
+        # type 9: ONE cross-component jump via multiple_appoint_id to a multi-round component.
         target_comp = data.get("multiple_appoint_id")
         label = data.get("specificComponentName") or "go to component"
         branches.append(BranchEdge(label=label, kind="exit", target_component=target_comp))

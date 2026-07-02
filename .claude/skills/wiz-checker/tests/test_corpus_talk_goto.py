@@ -13,5 +13,5 @@ def test_corpus_type9_no_longer_unknown():
     sj = [n for n in z.namelist() if n.lower().endswith(".json")][0]
     fm = build_flow_model(json.loads(z.read(sj)))
     types = {n.node_type for c in fm.components for n in c.nodes.values()}
-    assert "talk_goto" in types
+    assert "goto_mr" in types
     assert "unknown" not in types  # type 9 was the only unknown source

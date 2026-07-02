@@ -252,7 +252,7 @@ def _check_orphan_nodes(wf: WizFile) -> list[Finding]:
 
 
 def _check_talk_goto_targets(wf: WizFile) -> list[Finding]:
-    """WIZ110: talk_goto (type 9) and talk_continue (type 5) nodes whose jump
+    """WIZ110: goto_mr (type 9) and talk_continue (type 5) nodes whose jump
     target componentUuid is absent from the export.
 
     WARNING, not ERROR: an absent component may be a legitimate library/external
@@ -284,7 +284,7 @@ def _check_talk_goto_targets(wf: WizFile) -> list[Finding]:
             node_type = data.get("type")
             target = None
 
-            # Type 9 (talk_goto): check multiple_appoint_id
+            # Type 9 (goto_mr): check multiple_appoint_id
             if node_type == 9:
                 target = data.get("multiple_appoint_id")
             # Type 5 (talk_continue) with appoint_node_id: check appoint_node_id
@@ -292,8 +292,8 @@ def _check_talk_goto_targets(wf: WizFile) -> list[Finding]:
                 target = data.get("appoint_node_id")
 
             if target and target not in present_uuids:
-                # Derive node type label: 9 = talk_goto, 5 = talk_continue
-                node_label = "talk_goto" if node_type == 9 else "talk_continue"
+                # Derive node type label: 9 = goto_mr, 5 = talk_continue
+                node_label = "goto_mr" if node_type == 9 else "talk_continue"
                 out.append(Finding(
                     code="WIZ110",
                     severity=Severity.WARNING,
