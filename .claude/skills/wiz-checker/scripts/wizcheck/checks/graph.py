@@ -251,7 +251,7 @@ def _check_orphan_nodes(wf: WizFile) -> list[Finding]:
     return out
 
 
-def _check_talk_goto_targets(wf: WizFile) -> list[Finding]:
+def _check_goto_mr_targets(wf: WizFile) -> list[Finding]:
     """WIZ110: goto_mr (type 9) and talk_continue (type 5) nodes whose jump
     target componentUuid is absent from the export.
 
@@ -312,7 +312,7 @@ def check_graph(wf: WizFile) -> list[Finding]:
     findings: list[Finding] = []
     # WIZ106, WIZ110 read raw component data only — run even when flow_model is None.
     findings.extend(_check_routes_validity(wf))
-    findings.extend(_check_talk_goto_targets(wf))
+    findings.extend(_check_goto_mr_targets(wf))
     if wf.flow_model is None:
         return findings
     findings.extend(_check_orphan_refs(wf))

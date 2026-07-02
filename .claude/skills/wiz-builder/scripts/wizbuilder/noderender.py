@@ -562,7 +562,7 @@ def _build_goto_mr_node(
     target_uuid: str = spec.config.get("target_uuid", "")
     target_name: str = spec.config.get("target_name", spec.config.get("target", ""))
 
-    # Build the node Name/label. Unlike talk_goto (which speaks), goto_mr is silent.
+    # Build the node Name/label. goto_mr is silent (no speech) — the text is only a label.
     # Use prompt as the label if provided, otherwise use node id.
     text = spec.prompt
 
