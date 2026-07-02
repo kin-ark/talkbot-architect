@@ -131,7 +131,7 @@ def test_connect_components(two_component_doc):
     assert goto_obj["data"]["appoint_node_id"] == comp1_uuid
 
 
-_EXPECTED_NODE_TYPES = {"talk", "exit", "transfer", "goto", "talk_goto", "conditional", "assign",
+_EXPECTED_NODE_TYPES = {"talk", "exit", "transfer", "goto", "goto_mr", "conditional", "assign",
                         "nested", "exit_port", "goto_kb"}
 
 
@@ -252,19 +252,19 @@ def test_scaffold_bot_node_type_enum_includes_goto_kb():
     )
 
 
-def test_scaffold_bot_node_type_enum_includes_talk_goto():
-    """scaffold_bot node type enum must include talk_goto (Task 6)."""
+def test_scaffold_bot_node_type_enum_includes_goto_mr():
+    """scaffold_bot node type enum must include goto_mr (Task 5)."""
     specs = {s.name: s for s in registry.tool_specs()}
     sb_canvas_item_props = (
         specs["scaffold_bot"].parameters["properties"]["canvases"]["items"]["properties"]
     )
     node_type_enum = sb_canvas_item_props["nodes"]["items"]["properties"]["type"]["enum"]
-    assert "talk_goto" in node_type_enum, (
-        f"scaffold_bot node type enum missing 'talk_goto'; found: {node_type_enum}"
+    assert "goto_mr" in node_type_enum, (
+        f"scaffold_bot node type enum missing 'goto_mr'; found: {node_type_enum}"
     )
-    # Verify that config.target is documented for talk_goto
+    # Verify that config.target is documented for goto_mr
     sb_cfg = sb_canvas_item_props["nodes"]["items"]["properties"]["config"]["properties"]
-    assert "target" in sb_cfg, "scaffold_bot config must advertise 'target' for talk_goto"
+    assert "target" in sb_cfg, "scaffold_bot config must advertise 'target' for goto_mr"
 
 
 def test_add_node_exit_no_config(two_component_doc):
