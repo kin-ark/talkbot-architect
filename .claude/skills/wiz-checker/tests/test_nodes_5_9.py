@@ -74,3 +74,23 @@ def test_wiz110_type5_absent_target_warns():
             d["appoint_node_id"] = "ffffffff-ffff-ffff-ffff-ffffffffffff"
     comp["details"] = json.dumps(details)
     assert "WIZ110" in _codes(data)
+
+
+def test_wiz111_goto_mr_outside_multiround_warns():
+    data = json.loads(FIX.read_text(encoding="utf-8"))
+    assert "WIZ111" in _codes(data)  # type-9 node sits in a non-category:2 component
+
+
+def test_wiz111_clean_when_container_is_multiround():
+    data = json.loads(FIX.read_text(encoding="utf-8"))
+    # mark every component that holds a type-9 node as category:2
+    comps = json.loads(data["BizSpeechComponent"]) if isinstance(data["BizSpeechComponent"], str) else data["BizSpeechComponent"]
+    for c in comps:
+        det = c.get("details")
+        if not det or det in ("null", ""):
+            continue
+        tree = json.loads(det) if isinstance(det, str) else det
+        if any((n.get("data") or {}).get("type") == 9 for n in tree.values()):
+            c["category"] = 2
+    data["BizSpeechComponent"] = json.dumps(comps) if isinstance(data["BizSpeechComponent"], str) else comps
+    assert "WIZ111" not in _codes(data)

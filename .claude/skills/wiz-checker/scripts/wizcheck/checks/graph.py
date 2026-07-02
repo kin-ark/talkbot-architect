@@ -308,11 +308,53 @@ def _check_goto_mr_targets(wf: WizFile) -> list[Finding]:
     return out
 
 
+def _check_goto_mr_container(wf: WizFile) -> list[Finding]:
+    """WIZ111: goto_mr (type 9) node must live inside a multi-round (category:2) component.
+
+    A goto_mr node outside a multi-round component is a deployment error — goto_mr
+    is only valid within multi-round components for navigating between MR dialogues.
+    Read raw component data so it runs even when flow_model is None.
+    """
+    out: list[Finding] = []
+    for comp in wf.components.values():
+        comp_name = comp.raw.get("name", "")
+        # Read the component's category; treat missing as category 1 (non-MR)
+        category = comp.raw.get("category", 1)
+
+        details = _decode(comp.raw.get("details"))
+        if not isinstance(details, dict):
+            continue
+
+        # Scan for type-9 nodes in a non-category:2 component
+        for node_uuid, node_obj in details.items():
+            if not isinstance(node_obj, dict):
+                continue
+            data = node_obj.get("data", {})
+            if not isinstance(data, dict):
+                continue
+
+            if data.get("type") == 9 and category != 2:
+                out.append(Finding(
+                    code="WIZ111",
+                    severity=Severity.ERROR,
+                    location=Location(
+                        entity="BizSpeechComponent", id=node_uuid, field=None
+                    ),
+                    message=(
+                        f"goto_mr node {node_uuid!r} is in component {comp_name!r} "
+                        f"which is not a multi-round dialogue (category:2); goto_mr is "
+                        f"only valid inside a multi-round component."
+                    ),
+                ))
+    return out
+
+
 def check_graph(wf: WizFile) -> list[Finding]:
     findings: list[Finding] = []
-    # WIZ106, WIZ110 read raw component data only — run even when flow_model is None.
+    # WIZ106, WIZ110, WIZ111 read raw component data only — run even when flow_model is None.
     findings.extend(_check_routes_validity(wf))
     findings.extend(_check_goto_mr_targets(wf))
+    findings.extend(_check_goto_mr_container(wf))
     if wf.flow_model is None:
         return findings
     findings.extend(_check_orphan_refs(wf))
