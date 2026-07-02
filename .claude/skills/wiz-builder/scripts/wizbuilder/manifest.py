@@ -11,7 +11,9 @@ from jsonschema import Draft7Validator
 _SCHEMA_PATH = Path(__file__).resolve().parents[2] / "schema" / "manifest.schema.yaml"
 
 _VALID_BRANCHES = frozenset({"Positive", "Negative", "Reject", "Unclassified", "No answer"})
-_TERMINAL_TYPES = frozenset({"exit", "transfer", "goto", "goto_kb", "goto_mr", "exit_port"})
+_TERMINAL_TYPES = frozenset(
+    {"exit", "transfer", "goto", "goto_kb", "goto_mr", "talk_continue", "exit_port"}
+)
 _VALID_OPERATORS = frozenset(
     {">", ">=", "<", "<=", "=", "!=", "In", "NotIn", "IsNull", "NotNull", "Contains"}
 )
@@ -279,6 +281,36 @@ def _validate_cross_field_invariants(data: dict, path: Path) -> None:
                         f"not a multi-round dialogue; goto_mr is only valid inside a "
                         f"multi-round component"
                     )
+
+        # talk_continue config.target validation (optional return target; must be main-flow)
+        # Container constraint: talk_continue must be inside a multi-round canvas
+        for node in node_list:
+            if node.get("type") == "talk_continue":
+                nid = node["id"]
+                cfg = node.get("config") or {}
+                target = cfg.get("target")
+
+                # Container constraint: canvas must be a multi-round target
+                if cname not in mr_target_names:
+                    raise ManifestError(
+                        f"{path}: talk_continue node {nid!r} is in canvas {cname!r} which is "
+                        f"not a multi-round dialogue; talk_continue is only valid inside a "
+                        f"multi-round component"
+                    )
+
+                # Return target validation (if present)
+                if target:
+                    if target not in all_canvas_names:
+                        raise ManifestError(
+                            f"{path}: canvas {cname!r}: talk_continue node {nid!r} "
+                            f"config.target {target!r} does not match any canvas name"
+                        )
+                    # Return target must be a main-flow canvas (NOT a multi-round target)
+                    if target in mr_target_names:
+                        raise ManifestError(
+                            f"{path}: canvas {cname!r}: talk_continue node {nid!r} "
+                            f"return target {target!r} must be a main-flow (non-multi-round) canvas"
+                        )
 
         # goto_kb config.target validation (target is a KB name; resolved at compile time)
         for node in node_list:

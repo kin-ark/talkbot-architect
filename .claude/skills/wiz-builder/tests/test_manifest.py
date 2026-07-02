@@ -1256,3 +1256,151 @@ canvases:
 """
     with pytest.raises(ManifestError, match="terminal"):
         load_manifest(_write(tmp_path, txt))
+
+
+# ---------------------------------------------------------------------------
+# Task 2: talk_continue node type validation
+# ---------------------------------------------------------------------------
+
+
+def test_talk_continue_valid_inside_multiround_canvas(tmp_path):
+    """talk_continue inside a multi-round canvas loads OK."""
+    txt = """
+name: TC Bot
+branch: dev
+language: IDN
+custom_intents:
+  - {name: Intent1, language: IDN, keywords: ["x"], user_responses: ["x"]}
+knowledge_bases:
+  - {name: "K1", intents: ["Intent1"], answers: ["hai"], multi_round: "MR A"}
+canvases:
+  - name: "Main"
+    nodes:
+      - {id: m, type: talk, prompt: "Main flow"}
+      - {id: m_exit, type: exit, prompt: "Main exit"}
+    edges: [{from: m, branch: Unclassified, to: m_exit}]
+  - name: "MR A"
+    nodes:
+      - {id: a1, type: talk, prompt: "MR A round"}
+      - {id: tc, type: talk_continue, prompt: "Tunggu jawaban Anda"}
+    edges: [{from: a1, branch: Unclassified, to: tc}]
+"""
+    m = load_manifest(_write(tmp_path, txt))
+    nodes = {n.id: n for c in m.canvases for n in c.nodes}
+    assert nodes["tc"].type == "talk_continue"
+    assert nodes["tc"].prompt == "Tunggu jawaban Anda"
+
+
+def test_talk_continue_prompt_optional(tmp_path):
+    """talk_continue prompt is optional."""
+    txt = """
+name: TC Bot
+branch: dev
+language: IDN
+custom_intents:
+  - {name: Intent1, language: IDN, keywords: ["x"], user_responses: ["x"]}
+knowledge_bases:
+  - {name: "K1", intents: ["Intent1"], answers: ["hai"], multi_round: "MR A"}
+canvases:
+  - name: "Main"
+    nodes:
+      - {id: m, type: talk, prompt: "Main flow"}
+      - {id: m_exit, type: exit, prompt: "Main exit"}
+    edges: [{from: m, branch: Unclassified, to: m_exit}]
+  - name: "MR A"
+    nodes:
+      - {id: a1, type: talk, prompt: "MR A round"}
+      - {id: tc, type: talk_continue}
+    edges: [{from: a1, branch: Unclassified, to: tc}]
+"""
+    m = load_manifest(_write(tmp_path, txt))
+    nodes = {n.id: n for c in m.canvases for n in c.nodes}
+    assert nodes["tc"].type == "talk_continue"
+    assert nodes["tc"].prompt == ""
+
+
+def test_talk_continue_with_return_target_valid(tmp_path):
+    """talk_continue with config.target = a main-flow canvas loads OK."""
+    txt = """
+name: TC Bot
+branch: dev
+language: IDN
+custom_intents:
+  - {name: Intent1, language: IDN, keywords: ["x"], user_responses: ["x"]}
+knowledge_bases:
+  - {name: "K1", intents: ["Intent1"], answers: ["hai"], multi_round: "MR A"}
+canvases:
+  - name: "Main"
+    nodes:
+      - {id: m, type: talk, prompt: "Main flow"}
+      - {id: m_exit, type: exit, prompt: "Main exit"}
+    edges: [{from: m, branch: Unclassified, to: m_exit}]
+  - name: "MR A"
+    nodes:
+      - {id: a1, type: talk, prompt: "MR A round"}
+      - {id: tc, type: talk_continue, config: {target: "Main"}}
+    edges: [{from: a1, branch: Unclassified, to: tc}]
+"""
+    m = load_manifest(_write(tmp_path, txt))
+    nodes = {n.id: n for c in m.canvases for n in c.nodes}
+    assert nodes["tc"].type == "talk_continue"
+    assert nodes["tc"].config["target"] == "Main"
+
+
+def test_talk_continue_outside_multiround_canvas_rejected(tmp_path):
+    """A talk_continue node in a non-multi-round canvas is rejected."""
+    txt = """
+name: TC Bot
+branch: dev
+language: IDN
+custom_intents:
+  - {name: Intent1, language: IDN, keywords: ["x"], user_responses: ["x"]}
+knowledge_bases:
+  - {name: "K1", intents: ["Intent1"], answers: ["hai"], multi_round: "MR A"}
+canvases:
+  - name: "Main"
+    nodes:
+      - {id: m, type: talk, prompt: "Main flow"}
+      - {id: tc, type: talk_continue, prompt: "Invalid"}
+    edges: [{from: m, branch: Unclassified, to: tc}]
+  - name: "MR A"
+    nodes:
+      - {id: a1, type: talk, prompt: "MR A round"}
+      - {id: a2, type: exit, prompt: "MR A exit"}
+    edges: [{from: a1, branch: Unclassified, to: a2}]
+"""
+    with pytest.raises(ManifestError, match="only valid inside a multi-round"):
+        load_manifest(_write(tmp_path, txt))
+
+
+def test_talk_continue_return_target_must_be_main_flow(tmp_path):
+    """A talk_continue config.target must name a main-flow (non-multi-round) canvas."""
+    txt = """
+name: TC Bot
+branch: dev
+language: IDN
+custom_intents:
+  - {name: Intent1, language: IDN, keywords: ["x"], user_responses: ["x"]}
+  - {name: Intent2, language: IDN, keywords: ["y"], user_responses: ["y"]}
+knowledge_bases:
+  - {name: "K1", intents: ["Intent1"], answers: ["hai"], multi_round: "MR A"}
+  - {name: "K2", intents: ["Intent2"], answers: ["yok"], multi_round: "MR B"}
+canvases:
+  - name: "Main"
+    nodes:
+      - {id: m, type: talk, prompt: "Main flow"}
+      - {id: m_exit, type: exit, prompt: "Main exit"}
+    edges: [{from: m, branch: Unclassified, to: m_exit}]
+  - name: "MR A"
+    nodes:
+      - {id: a1, type: talk, prompt: "MR A round"}
+      - {id: tc, type: talk_continue, config: {target: "MR B"}}
+    edges: [{from: a1, branch: Unclassified, to: tc}]
+  - name: "MR B"
+    nodes:
+      - {id: b1, type: talk, prompt: "MR B round"}
+      - {id: b2, type: exit, prompt: "MR B exit"}
+    edges: [{from: b1, branch: Unclassified, to: b2}]
+"""
+    with pytest.raises(ManifestError, match="must be a main-flow"):
+        load_manifest(_write(tmp_path, txt))
