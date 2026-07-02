@@ -9,9 +9,13 @@ services:
       - .env.deploy            # DASHBOARD_PASSWORD=... (+ optional DASHBOARD_USER, LLM_PROVIDER, LLM_MODEL, CORS_ORIGINS)
     environment:
       - LOG_DIR=/app/dashboard/backend/logs
+      - BACKUP_DIR=/app/dashboard/backend/backups
+      - BACKUP_INTERVAL_H=6      # 0 disables the scheduled auto-backup
+      - BACKUP_KEEP=7
     volumes:
       - sessions:/app/dashboard/backend/.sessions
       - logs:/app/dashboard/backend/logs
+      - backups:/app/dashboard/backend/backups        # separate from sessions
     restart: unless-stopped
     labels:
       - autoheal=true
@@ -33,3 +37,4 @@ services:
 volumes:
   sessions:
   logs:
+  backups:
