@@ -614,6 +614,12 @@ def append_node(bundle: InputBundle, params: dict, minter) -> None:
                 f"append-node: goto_mr node {node['id']!r}: config.target {target_name!r} "
                 f"does not match any existing component name"
             )
+        # Validate that the component being appended to is a multi-round (category:2) component
+        container_comp_category = comp.get("category", 1)
+        if container_comp_category != 2:
+            raise ValueError(
+                "append-node: goto_mr is only valid inside a multi-round (category:2) component"
+            )
         # Validate that the target component is a multi-round (category:2) component
         target_comp = comp_by_name.get(target_name)
         if target_comp and target_comp.get("category") != 2:
