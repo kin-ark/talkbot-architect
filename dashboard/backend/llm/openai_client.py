@@ -11,7 +11,9 @@ class OpenAIClient(LLMClient):
     def __init__(self, api_key: str, model: str, base_url: str | None = None,
                  attempts: int = 3, sleep=None):
         from openai import OpenAI
-        kwargs: dict = {"api_key": api_key}
+        # max_retries=0: with_retry is the single retry authority (SDK default 2
+        # would compound under our loop).
+        kwargs: dict = {"api_key": api_key, "max_retries": 0}
         if base_url:
             kwargs["base_url"] = base_url
         self._client = OpenAI(**kwargs)

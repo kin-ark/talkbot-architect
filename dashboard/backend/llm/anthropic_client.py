@@ -11,7 +11,9 @@ class AnthropicClient(LLMClient):
     def __init__(self, api_key: str, model: str, base_url: str | None = None,
                  thinking_budget: int | None = None, attempts: int = 3, sleep=time.sleep):
         import anthropic
-        kwargs: dict = {"api_key": api_key}
+        # max_retries=0: with_retry is the single retry authority. Without this
+        # the SDK's own default (2) compounds under our loop → up to ~9 calls.
+        kwargs: dict = {"api_key": api_key, "max_retries": 0}
         if base_url:
             kwargs["base_url"] = base_url
         self._client = anthropic.Anthropic(**kwargs)

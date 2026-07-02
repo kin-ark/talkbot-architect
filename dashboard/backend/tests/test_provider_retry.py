@@ -1,11 +1,5 @@
-import pytest
 from llm.anthropic_client import AnthropicClient
 from llm.openai_client import OpenAIClient
-from llm.base import LLMResponse
-
-
-class _FakeStatusErr(Exception):
-    def __init__(self, status): self.status_code = status
 
 
 def test_anthropic_is_retryable_classifies(monkeypatch):
@@ -22,18 +16,26 @@ def test_anthropic_is_retryable_classifies(monkeypatch):
 
 def test_anthropic_chat_retries_then_succeeds(monkeypatch):
     c = AnthropicClient.__new__(AnthropicClient)
-    c._model = "m"; c.model = "m"; c._thinking_budget = None; c._attempts = 3
+    c._model = "m"
+    c.model = "m"
+    c._thinking_budget = None
+    c._attempts = 3
     c._sleep = lambda s: None
     import anthropic
     calls = {"n": 0}
+
     class _Msgs:
         def create(self, **kw):
             calls["n"] += 1
             if calls["n"] < 3:
                 raise anthropic.APIConnectionError(request=None)
+
             class _Block:  # text block
-                type = "text"; text = "hi"
-            class _R: content = [_Block()]
+                type = "text"
+                text = "hi"
+
+            class _R:
+                content = [_Block()]
             return _R()
     c._client = type("X", (), {"messages": _Msgs()})()
     out = c.chat([], [])
