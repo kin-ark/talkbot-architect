@@ -112,7 +112,7 @@ _WIZ_OPERATOR: dict[str, str] = {
 
 _TYPE_INT = {
     "talk": 1, "exit": 2, "goto": 4, "conditional": 7, "goto_kb": 8, "assign": 10, "nested": 11,
-    "transfer": 13, "exit_port": 4,
+    "transfer": 13, "exit_port": 4, "talk_goto": 9,
 }
 _TYPE_NODE_NAME = {
     "talk": "Talk Node",
@@ -517,6 +517,110 @@ def _build_goto_node(
         "data": data,
         "name": "Exit Node",
         "type": 4,
+        "is_default": is_default,
+        "data_extra": {
+            "hot_words_list": [],
+            "intents": [],
+            "variables": [],
+            "serviceCall": [],
+            "sentence_cut": [],
+        },
+    }
+
+    return node_obj, None
+
+
+def _build_talk_goto_node(
+    spec: NodeSpec,
+    *,
+    canvas_index: int,
+    comp_uuid: str,
+    speech_id: int,
+    branch_intent_ids: dict[str, int],
+    kb_ids: list[str],
+    node_language: str,
+    minter: Any,
+    sort_index: int,
+    port_uuids: dict[str, str],
+    node_uuid: str,
+    reccut_uuid: str,
+    is_default: bool,
+    component_nav: list[dict] | None = None,
+    var_source_by_name: dict[str, int] | None = None,  # unused; accepted for uniform dispatch
+    nested_exit_map: dict[str, dict[str, str]] | None = None,  # unused; uniform dispatch
+) -> tuple[dict, None]:
+    """Build one talk_goto node (type 9) ``node_obj``.
+
+    Terminal: no ports, no SentenceCutSpeech row, no topFloorDetails row.
+    Returns (node_obj, None).
+    The caller must supply resolved target info in spec.config:
+      - config["target_uuid"]: pre-minted componentUuid of the target canvas
+      - config["target_name"]: canonical canvas name (e.g. "2. Second Canvas")
+    These are injected by canvases.py's name→uuid map before calling render_component_nodes,
+    or by the modifier's structure.py which resolves against the existing export's components.
+    """
+    target_uuid: str = spec.config.get("target_uuid", "")
+    target_name: str = spec.config.get("target_name", spec.config.get("target", ""))
+
+    # Build the spoken text (emitted in data.list for the initial prompt)
+    text = spec.prompt
+
+    canvas = {
+        "view": "react-shape-view",
+        "component": {
+            "props": {
+                "text": "Exit Node",
+                "list": list(component_nav) if component_nav else [],
+                "type": 2,
+            }
+        },
+        "size": {"width": 234, "height": 106},
+        "shape": "react-shape",
+        "id": node_uuid,
+        "position": {"x": -450, "y": 390},
+        "zIndex": 2,
+    }
+
+    data: dict = {
+        "appoint_node_id": "",
+        "speakType": 1,
+        "hitKnowledgeRate": [],
+        "intention_judgment_time": 0.8,
+        "type": 9,
+        "repeat_script_type": 0,
+        "hot_words_list": [],
+        "specificComponentName": target_name,
+        "hangupRate": "0.0%",
+        "exclusive_key_words": [],
+        "can_be_interrupted": 0,
+        "id": node_uuid,
+        "node_repetition": 0,
+        "selected": False,
+        "hitKnowledgeCountsRate": "0.0%",
+        "multiple_appoint_id": target_uuid,
+        "allow_jump_knowledges_switch": 1,
+        "allow_jump_knowledges": [],
+        "is_transfer": 0,
+        "appoint_knowledge_id": "",
+        "list": [text],
+        "is_default": is_default,
+        "textareaList": [""],
+        "nodeLabelArr": [],
+        "node_language": node_language,
+        "agent_type": "SYSTEM",
+        "sms_id": "",
+        "can_interrupt_percent": 80,
+        "name": text if text else "Talk Node",
+        "notices_info": [],
+        "notice_send_type": 0,
+        "position": {"x": -450, "y": 390},
+    }
+
+    node_obj: dict = {
+        "canvas": canvas,
+        "data": data,
+        "name": text if text else "Talk Node",
+        "type": 9,
         "is_default": is_default,
         "data_extra": {
             "hot_words_list": [],
@@ -1154,6 +1258,7 @@ NODE_BUILDERS: dict[str, Callable] = {
     "exit": _build_exit_node,
     "transfer": _build_transfer_node,
     "goto": _build_goto_node,
+    "talk_goto": _build_talk_goto_node,
     "goto_kb": _build_goto_kb_node,
     "conditional": _build_conditional_node,
     "assign": _build_assign_node,
@@ -1246,7 +1351,7 @@ def render_component_nodes(
         ports from an empty map (no port items; routes remains empty).
     """
     # Terminal node types: no out-ports, not in inbound_ports.
-    _TERMINAL_TYPES = frozenset({"exit", "transfer", "goto", "goto_kb", "exit_port"})
+    _TERMINAL_TYPES = frozenset({"exit", "transfer", "goto", "talk_goto", "goto_kb", "exit_port"})
 
     details: dict = {}
     routes: dict = {}

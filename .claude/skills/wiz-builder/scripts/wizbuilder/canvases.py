@@ -305,6 +305,17 @@ def _build_component(
             target_name = cfg.get("target", "")
             cfg["target_uuid"] = canvas_uuid_by_name.get(target_name, "")
             cfg["target_name"] = target_name
+        elif n.type == "talk_goto" and canvas_uuid_by_name:
+            # Resolve config.target (a canvas name) to the pre-minted componentUuid.
+            target_name = cfg.get("target", "")
+            cfg["target_uuid"] = canvas_uuid_by_name.get(target_name, "")
+            if not cfg["target_uuid"]:
+                raise ValueError(
+                    f"talk_goto node {n.id!r} in canvas {canvas.name!r}: "
+                    f"config.target {target_name!r} matches no canvas "
+                    f"(known: {sorted(canvas_uuid_by_name.keys())})"
+                )
+            cfg["target_name"] = target_name
         elif n.type == "goto_kb":
             # Resolve config.target (a KB name) to the knowledgeId int.
             target_kb_name = cfg.get("target", "")
