@@ -272,6 +272,13 @@ def _validate_cross_field_invariants(data: dict, path: Path) -> None:
                         f"config.target {target!r} is not a multi-round dialogue canvas "
                         f"(must be some knowledge_base's multi_round target)"
                     )
+                # Container constraint: goto_mr node must be in a multi-round canvas
+                if cname not in mr_target_names:
+                    raise ManifestError(
+                        f"{path}: goto_mr node {nid!r} is in canvas {cname!r} which is "
+                        f"not a multi-round dialogue; goto_mr is only valid inside a "
+                        f"multi-round component"
+                    )
 
         # goto_kb config.target validation (target is a KB name; resolved at compile time)
         for node in node_list:

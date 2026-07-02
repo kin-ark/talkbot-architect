@@ -316,6 +316,14 @@ def _build_component(
                     f"config.target {target_name!r} is not a multi-round dialogue canvas "
                     f"(must be some knowledge_base's multi_round target; known: {mr_list})"
                 )
+            # Container constraint: the goto_mr node must itself be in a multi-round canvas
+            if not (mr_target_names and canvas.name in mr_target_names):
+                mr_list = sorted(mr_target_names or [])
+                raise ValueError(
+                    f"goto_mr node {n.id!r} is in canvas {canvas.name!r} which is not "
+                    f"a multi-round dialogue; goto_mr is only valid inside a multi-round component "
+                    f"(known multi-round: {mr_list})"
+                )
             cfg["target_uuid"] = canvas_uuid_by_name.get(target_name, "")
             if not cfg["target_uuid"]:
                 raise ValueError(

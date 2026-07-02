@@ -1047,33 +1047,41 @@ knowledge_bases:
 # ---------------------------------------------------------------------------
 
 
-def test_goto_mr_valid_with_multiround_kb(tmp_path):
-    """goto_mr targeting a canvas that is a KB's multi_round target loads OK."""
+def test_goto_mr_valid_inside_multiround_canvas(tmp_path):
+    """goto_mr inside a multi-round canvas targeting another MR canvas loads OK."""
     txt = """
 name: MR Bot
 branch: dev
 language: IDN
 custom_intents:
-  - {name: SomeIntent, language: IDN, keywords: ["x"], user_responses: ["x"]}
+  - {name: Intent1, language: IDN, keywords: ["x"], user_responses: ["x"]}
+  - {name: Intent2, language: IDN, keywords: ["y"], user_responses: ["y"]}
 knowledge_bases:
-  - {name: "K1", intents: ["SomeIntent"], answers: ["hai"], multi_round: "MR Flow"}
+  - {name: "K1", intents: ["Intent1"], answers: ["hai"], multi_round: "MR A"}
+  - {name: "K2", intents: ["Intent2"], answers: ["yok"], multi_round: "MR B"}
 canvases:
   - name: "Main"
     nodes:
-      - {id: g, type: goto_mr, config: {target: "MR Flow"}}
-    edges: []
-  - name: "MR Flow"
+      - {id: m, type: talk, prompt: "Main flow"}
+      - {id: m_exit, type: exit, prompt: "Main exit"}
+    edges: [{from: m, branch: Unclassified, to: m_exit}]
+  - name: "MR A"
     nodes:
-      - {id: m1, type: talk, prompt: "putaran"}
-      - {id: m2, type: exit, prompt: "selesai"}
-    edges: [{from: m1, branch: Unclassified, to: m2}]
+      - {id: a1, type: talk, prompt: "MR A round"}
+      - {id: a_goto, type: goto_mr, config: {target: "MR B"}}
+    edges: [{from: a1, branch: Unclassified, to: a_goto}]
+  - name: "MR B"
+    nodes:
+      - {id: b1, type: talk, prompt: "MR B round"}
+      - {id: b2, type: exit, prompt: "MR B exit"}
+    edges: [{from: b1, branch: Unclassified, to: b2}]
 """
     m = load_manifest(_write(tmp_path, txt))
     nodes = {n.id: n for c in m.canvases for n in c.nodes}
-    assert nodes["g"].type == "goto_mr"
-    assert nodes["g"].config["target"] == "MR Flow"
+    assert nodes["a_goto"].type == "goto_mr"
+    assert nodes["a_goto"].config["target"] == "MR B"
     # prompt is optional for goto_mr
-    assert nodes["g"].prompt == ""
+    assert nodes["a_goto"].prompt == ""
 
 
 def test_goto_mr_optional_prompt(tmp_path):
@@ -1083,19 +1091,27 @@ name: MR Bot
 branch: dev
 language: IDN
 custom_intents:
-  - {name: SomeIntent, language: IDN, keywords: ["x"], user_responses: ["x"]}
+  - {name: Intent1, language: IDN, keywords: ["x"], user_responses: ["x"]}
+  - {name: Intent2, language: IDN, keywords: ["y"], user_responses: ["y"]}
 knowledge_bases:
-  - {name: "K1", intents: ["SomeIntent"], answers: ["hai"], multi_round: "MR Flow"}
+  - {name: "K1", intents: ["Intent1"], answers: ["hai"], multi_round: "MR Flow"}
+  - {name: "K2", intents: ["Intent2"], answers: ["yok"], multi_round: "Other MR"}
 canvases:
   - name: "Main"
     nodes:
-      - {id: g, type: goto_mr, prompt: "Jump to MR", config: {target: "MR Flow"}}
-    edges: []
+      - {id: m, type: talk, prompt: "Main"}
+      - {id: m_exit, type: exit, prompt: "Main exit"}
+    edges: [{from: m, branch: Unclassified, to: m_exit}]
   - name: "MR Flow"
     nodes:
       - {id: m1, type: talk, prompt: "putaran"}
-      - {id: m2, type: exit, prompt: "selesai"}
-    edges: [{from: m1, branch: Unclassified, to: m2}]
+      - {id: g, type: goto_mr, prompt: "Jump to MR", config: {target: "Other MR"}}
+    edges: [{from: m1, branch: Unclassified, to: g}]
+  - name: "Other MR"
+    nodes:
+      - {id: m2, type: talk, prompt: "selesai"}
+      - {id: m3, type: exit, prompt: "exit"}
+    edges: [{from: m2, branch: Unclassified, to: m3}]
 """
     m = load_manifest(_write(tmp_path, txt))
     nodes = {n.id: n for c in m.canvases for n in c.nodes}
@@ -1174,6 +1190,38 @@ canvases:
         load_manifest(_write(tmp_path, txt))
 
 
+def test_goto_mr_outside_multiround_canvas_rejected(tmp_path):
+    """A goto_mr node in a non-multi-round canvas is rejected (container rule)."""
+    txt = """
+name: MR Bot
+branch: dev
+language: IDN
+custom_intents:
+  - {name: Intent1, language: IDN, keywords: ["x"], user_responses: ["x"]}
+  - {name: Intent2, language: IDN, keywords: ["y"], user_responses: ["y"]}
+knowledge_bases:
+  - {name: "K1", intents: ["Intent1"], answers: ["hai"], multi_round: "MR A"}
+  - {name: "K2", intents: ["Intent2"], answers: ["yok"], multi_round: "MR B"}
+canvases:
+  - name: "Main"
+    nodes:
+      - {id: g, type: goto_mr, config: {target: "MR A"}}
+    edges: []
+  - name: "MR A"
+    nodes:
+      - {id: a1, type: talk, prompt: "MR A round"}
+      - {id: a2, type: exit, prompt: "MR A exit"}
+    edges: [{from: a1, branch: Unclassified, to: a2}]
+  - name: "MR B"
+    nodes:
+      - {id: b1, type: talk, prompt: "MR B round"}
+      - {id: b2, type: exit, prompt: "MR B exit"}
+    edges: [{from: b1, branch: Unclassified, to: b2}]
+"""
+    with pytest.raises(ManifestError, match="only valid inside a multi-round"):
+        load_manifest(_write(tmp_path, txt))
+
+
 def test_goto_mr_node_with_outgoing_edge_rejected(tmp_path):
     """A goto_mr node with an outgoing edge is rejected (terminal rule)."""
     txt = """
@@ -1181,19 +1229,30 @@ name: MR Bot
 branch: dev
 language: IDN
 custom_intents:
-  - {name: SomeIntent, language: IDN, keywords: ["x"], user_responses: ["x"]}
+  - {name: Intent1, language: IDN, keywords: ["x"], user_responses: ["x"]}
+  - {name: Intent2, language: IDN, keywords: ["y"], user_responses: ["y"]}
 knowledge_bases:
-  - {name: "K1", intents: ["SomeIntent"], answers: ["hai"], multi_round: "MR Flow"}
+  - {name: "K1", intents: ["Intent1"], answers: ["hai"], multi_round: "MR A"}
+  - {name: "K2", intents: ["Intent2"], answers: ["yok"], multi_round: "MR B"}
 canvases:
   - name: "Main"
     nodes:
-      - {id: g, type: goto_mr, config: {target: "MR Flow"}}
+      - {id: m, type: talk, prompt: "Main"}
+      - {id: m_exit, type: exit, prompt: "Main exit"}
+    edges: [{from: m, branch: Unclassified, to: m_exit}]
+  - name: "MR A"
+    nodes:
+      - {id: a1, type: talk, prompt: "MR A round"}
+      - {id: g, type: goto_mr, config: {target: "MR B"}}
       - {id: extra, prompt: "Extra"}
     edges:
+      - {from: a1, branch: Unclassified, to: g}
       - {from: g, branch: Positive, to: extra}
-  - name: "MR Flow"
+  - name: "MR B"
     nodes:
-      - {id: m1, type: talk, prompt: "putaran"}
+      - {id: b1, type: talk, prompt: "MR B round"}
+      - {id: b2, type: exit, prompt: "MR B exit"}
+    edges: [{from: b1, branch: Unclassified, to: b2}]
 """
     with pytest.raises(ManifestError, match="terminal"):
         load_manifest(_write(tmp_path, txt))
