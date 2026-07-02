@@ -332,6 +332,34 @@ def _build_component(
                     f"(known: {sorted(canvas_uuid_by_name.keys())})"
                 )
             cfg["target_name"] = target_name
+        elif n.type == "talk_continue" and canvas_uuid_by_name:
+            # Container constraint: talk_continue must be in a multi-round canvas
+            if not (mr_target_names and canvas.name in mr_target_names):
+                mr_list = sorted(mr_target_names or [])
+                raise ValueError(
+                    f"talk_continue node {n.id!r} is in canvas {canvas.name!r} which is "
+                    f"not a multi-round dialogue; talk_continue is only valid inside a "
+                    f"multi-round component (known multi-round: {mr_list})"
+                )
+            # Optional return target: resolve to a main-flow (non-MR) component.
+            target_name = cfg.get("target", "")
+            if target_name:
+                if target_name not in canvas_uuid_by_name:
+                    raise ValueError(
+                        f"talk_continue node {n.id!r} in canvas {canvas.name!r}: "
+                        f"config.target {target_name!r} matches no canvas "
+                        f"(known: {sorted(canvas_uuid_by_name.keys())})"
+                    )
+                if mr_target_names and target_name in mr_target_names:
+                    mr_list = sorted(mr_target_names or [])
+                    raise ValueError(
+                        f"talk_continue node {n.id!r} in canvas {canvas.name!r}: "
+                        f"return target {target_name!r} is a multi-round component; "
+                        f"talk_continue return target must be a main-flow (non-multi-round) canvas "
+                        f"(known multi-round: {mr_list})"
+                    )
+                cfg["target_uuid"] = canvas_uuid_by_name.get(target_name, "")
+                cfg["target_name"] = target_name
         elif n.type == "goto_kb":
             # Resolve config.target (a KB name) to the knowledgeId int.
             target_kb_name = cfg.get("target", "")
