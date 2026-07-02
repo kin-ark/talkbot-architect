@@ -611,7 +611,7 @@ def _build_goto_mr_node(
         "agent_type": "SYSTEM",
         "sms_id": "",
         "can_interrupt_percent": 80,
-        "name": text if text else "Talk Node",
+        "name": text if text else "Exit Node",
         "notices_info": [],
         "notice_send_type": 0,
         "position": {"x": -450, "y": 390},
@@ -620,7 +620,7 @@ def _build_goto_mr_node(
     node_obj: dict = {
         "canvas": canvas,
         "data": data,
-        "name": text if text else "Talk Node",
+        "name": text if text else "Exit Node",
         "type": 9,
         "is_default": is_default,
         "data_extra": {
