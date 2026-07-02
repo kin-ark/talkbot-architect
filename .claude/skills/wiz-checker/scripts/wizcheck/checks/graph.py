@@ -160,6 +160,7 @@ _TERMINAL_NODE_TYPES = frozenset({
     "goto_component",
     "goto_kb",
     "goto_mr",      # type-9 exit-to-multi-round jump — terminal
+    "talk_continue",  # type-5 speak-and-wait node — terminal
     "exit_port",   # type-4 with empty appoint fields — distinct from goto_component
 })
 
@@ -350,12 +351,55 @@ def _check_goto_mr_container(wf: WizFile) -> list[Finding]:
     return out
 
 
+def _check_talk_continue_container(wf: WizFile) -> list[Finding]:
+    """WIZ112: talk_continue (type 5) node must live inside a multi-round (category:2) component.
+
+    A talk_continue node outside a multi-round component is a deployment error — talk_continue
+    is only valid within multi-round components as a branch target for speaking and waiting.
+    Read raw component data so it runs even when flow_model is None.
+    """
+    out: list[Finding] = []
+    for comp in wf.components.values():
+        comp_name = comp.raw.get("name", "")
+        # Read the component's category; treat missing as category 1 (non-MR)
+        category = comp.raw.get("category", 1)
+
+        details = _decode(comp.raw.get("details"))
+        if not isinstance(details, dict):
+            continue
+
+        # Scan for type-5 nodes in a non-category:2 component
+        for node_uuid, node_obj in details.items():
+            if not isinstance(node_obj, dict):
+                continue
+            data = node_obj.get("data", {})
+            if not isinstance(data, dict):
+                continue
+
+            if data.get("type") == 5 and category != 2:
+                out.append(Finding(
+                    code="WIZ112",
+                    severity=Severity.ERROR,
+                    location=Location(
+                        entity="BizSpeechComponent", id=node_uuid, field=None
+                    ),
+                    message=(
+                        f"talk_continue node {node_uuid!r} is in component {comp_name!r} "
+                        f"which is not a multi-round dialogue (category:2); talk_continue is "
+                        f"only valid inside a multi-round component."
+                    ),
+                ))
+    return out
+
+
 def check_graph(wf: WizFile) -> list[Finding]:
     findings: list[Finding] = []
-    # WIZ106, WIZ110, WIZ111 read raw component data only — run even when flow_model is None.
+    # WIZ106, WIZ110, WIZ111, WIZ112 read raw component data only — run even when
+    # flow_model is None.
     findings.extend(_check_routes_validity(wf))
     findings.extend(_check_goto_mr_targets(wf))
     findings.extend(_check_goto_mr_container(wf))
+    findings.extend(_check_talk_continue_container(wf))
     if wf.flow_model is None:
         return findings
     findings.extend(_check_orphan_refs(wf))

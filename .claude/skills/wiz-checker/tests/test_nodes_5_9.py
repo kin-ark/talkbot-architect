@@ -94,3 +94,22 @@ def test_wiz111_clean_when_container_is_multiround():
             c["category"] = 2
     data["BizSpeechComponent"] = json.dumps(comps) if isinstance(data["BizSpeechComponent"], str) else comps
     assert "WIZ111" not in _codes(data)
+
+
+def test_wiz112_talk_continue_outside_multiround_errors():
+    data = json.loads(FIX.read_text(encoding="utf-8"))
+    assert "WIZ112" in _codes(data)  # type-5 in a non-category:2 component
+
+
+def test_wiz112_clean_when_container_is_multiround():
+    data = json.loads(FIX.read_text(encoding="utf-8"))
+    comps = json.loads(data["BizSpeechComponent"]) if isinstance(data["BizSpeechComponent"], str) else data["BizSpeechComponent"]
+    for c in comps:
+        det = c.get("details")
+        if not det or det in ("null", ""):
+            continue
+        tree = json.loads(det) if isinstance(det, str) else det
+        if any((n.get("data") or {}).get("type") == 5 for n in tree.values()):
+            c["category"] = 2
+    data["BizSpeechComponent"] = json.dumps(comps)
+    assert "WIZ112" not in _codes(data)
