@@ -1,0 +1,42 @@
+{
+  "BizSpeechComponent": [
+    {
+      "componentUuid": "11111111-1111-4111-8111-111111111111",
+      "speechId": 1,
+      "category": 1,
+      "branch": "dev",
+      "createTime": 1700000000000,
+      "updateTime": 1700000000000,
+      "name": "Start",
+      "details": "{\"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa\":{\"data\":{\"type\":1,\"id\":\"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa\",\"name\":\"Welcome\",\"list\":[\"Halo\"],\"node_language\":\"3\",\"is_default\":true},\"canvas\":{\"ports\":{}}},\"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb\":{\"data\":{\"type\":9,\"id\":\"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb\",\"name\":\"Jump to Target\",\"list\":[\"Sampai jumpa\"],\"multiple_appoint_id\":\"567a38ca-76e4-47f9-8070-31e0c659c2ce\",\"specificComponentName\":\"Target\",\"appoint_node_id\":\"\",\"speakType\":1,\"node_language\":\"3\",\"is_default\":false},\"canvas\":{\"ports\":{}}},\"cccccccc-cccc-4ccc-8ccc-cccccccccccc\":{\"data\":{\"type\":5,\"id\":\"cccccccc-cccc-4ccc-8ccc-cccccccccccc\",\"name\":\"Continue Terminal\",\"list\":[\"Selesai\"],\"node_language\":\"3\",\"is_default\":false},\"canvas\":{\"ports\":{}}},\"dddddddd-dddd-4ddd-8ddd-dddddddddddd\":{\"data\":{\"type\":5,\"id\":\"dddddddd-dddd-4ddd-8ddd-dddddddddddd\",\"name\":\"Continue to Target\",\"list\":[\"Terus\"],\"appoint_node_id\":\"567a38ca-76e4-47f9-8070-31e0c659c2ce\",\"node_language\":\"3\",\"is_default\":false},\"canvas\":{\"ports\":{}}}}",
+      "routes": "{\"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa\":{},\"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb\":{},\"cccccccc-cccc-4ccc-8ccc-cccccccccccc\":{},\"dddddddd-dddd-4ddd-8ddd-dddddddddddd\":{}}",
+      "inboundPorts": "[{\"uuid\":\"ffffffff-ffff-4fff-8fff-ffffffffffff\",\"label\":\"Entry\"}]",
+      "topFloorDetails": "[]"
+    },
+    {
+      "componentUuid": "567a38ca-76e4-47f9-8070-31e0c659c2ce",
+      "speechId": 2,
+      "category": 1,
+      "branch": "dev",
+      "createTime": 1700000000000,
+      "updateTime": 1700000000000,
+      "name": "Target",
+      "details": "{\"eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee\":{\"data\":{\"type\":1,\"id\":\"eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee\",\"name\":\"Target Response\",\"list\":[\"Anda sudah sampai di Target\"],\"node_language\":\"3\",\"is_default\":true},\"canvas\":{\"ports\":{}}}}",
+      "routes": "{\"eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee\":{}}",
+      "inboundPorts": "[{\"uuid\":\"fafafaff-afaf-4faf-afaf-fafafaffffff\",\"label\":\"Entry\"}]",
+      "topFloorDetails": "[]"
+    }
+  ],
+  "SpeechVariable": [],
+  "SpeechIntent": [
+    {
+      "intentId": 1,
+      "intentName": "Unclassified",
+      "language": "IDN",
+      "keyWordInIntent": [],
+      "userResponseInIntent": []
+    }
+  ],
+  "SentenceCutSpeech": [],
+  "SpeechAudio": []
+}

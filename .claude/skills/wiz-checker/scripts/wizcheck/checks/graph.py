@@ -40,7 +40,7 @@ _RULES = _load_rules()
 
 # Terminal node types: routes must be empty.
 # type 4 = goto_component OR exit_port — both terminal.
-_TERMINAL_TYPE_INTS = frozenset({2, 4, 8, 13})
+_TERMINAL_TYPE_INTS = frozenset({2, 4, 8, 9, 13})
 
 
 def _decode(raw: object) -> dict:

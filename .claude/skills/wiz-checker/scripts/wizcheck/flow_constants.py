@@ -68,6 +68,7 @@ NODE_TYPE_MAP: dict[int, str] = {
     5: "talk_continue",     # Inline Talk continuation stub (bridge node)
     7: "conditional",
     8: "goto_kb",           # Exit sub-type: jump to a specific knowledge base
+    9: "talk_goto",         # Exit sub-type: speak then jump to a specific component
     10: "variable_assignment",
     11: "nested_component", # Nested/sub-component node (contains a child component)
     13: "transfer",         # Transfer-to-human node (distinct from type-2 exit/hangup)

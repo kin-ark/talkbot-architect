@@ -263,6 +263,22 @@ def _build_branches(
         ))
         return branches
 
+    if node_type == "talk_goto":
+        # type 9: speak then ONE cross-component jump via multiple_appoint_id.
+        target_comp = data.get("multiple_appoint_id")
+        label = data.get("specificComponentName") or "go to component"
+        branches.append(BranchEdge(label=label, kind="exit", target_component=target_comp))
+        return branches
+
+    if node_type == "talk_continue" and data.get("appoint_node_id"):
+        # type 5, rare (3.5%): a talk-continuation that jumps to a component.
+        branches.append(BranchEdge(
+            label=data.get("name") or "continue",
+            kind="exit",
+            target_component=data.get("appoint_node_id"),
+        ))
+        return branches
+
     if node_type == "exit":
         # type 2: ONE terminal hang-up edge (is_transfer flag is NOT authoritative;
         # transfer-to-human is a distinct node type 13 — see NODE_TYPE_MAP).
