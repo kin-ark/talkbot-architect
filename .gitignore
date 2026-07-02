@@ -22,6 +22,9 @@ docs/personal/*.pdf
 # Docs, specs, design notes, manuals — never committed (kept on disk only)
 docs/
 
+# Real talkbot exports / corpus (customer dialogue JSON + audio) — never committed
+talkbot/
+
 # Dashboard session persistence — local runtime state
 dashboard/backend/.session/
 dashboard/backend/.sessions/
