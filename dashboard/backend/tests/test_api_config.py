@@ -145,11 +145,12 @@ def test_get_client_uses_config_override(monkeypatch):
     """get_client() should build client from config override when set."""
     captured = {}
 
-    def fake_make_client(provider, api_key, model, base_url=None):
+    def fake_make_client(provider, api_key, model, base_url=None, thinking_budget=None):
         captured["provider"] = provider
         captured["api_key"] = api_key
         captured["model"] = model
         captured["base_url"] = base_url
+        captured["thinking_budget"] = thinking_budget
         from llm.base import FakeLLMClient
         return FakeLLMClient(script=[])
 
