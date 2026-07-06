@@ -88,6 +88,8 @@ export function useSession() {
     try {
       const r = await api.uploadSession(file);
       setSummary(r.summary); setFindings(r.findings);
+      setIsComponent(Boolean(r.is_component));
+      setComponentWarnings(r.component_warnings || []);
       setTranscript([{ role: 'agent', text: `Loaded. ${r.findings.filter(f => f.severity === 'error').length} errors, ${r.findings.filter(f => f.severity === 'warning').length} warnings. What do you want to do?` }]);
       await refreshSessions();
       await refreshIntents();
@@ -100,6 +102,8 @@ export function useSession() {
     try {
       const r = await api.startBlank();
       setSummary(r.summary); setFindings(r.findings);
+      setIsComponent(false);
+      setComponentWarnings([]);
       setTranscript([{ role: 'agent', text: "Blank canvas. Describe the bot you want — e.g. \"make me a Debt Collector talkbot\"." }]);
       await refreshSessions();
       await refreshIntents();
@@ -112,6 +116,8 @@ export function useSession() {
     try {
       const r = await api.loadSample(id);
       setSummary(r.summary); setFindings(r.findings);
+      setIsComponent(false);
+      setComponentWarnings([]);
       setTranscript([{ role: 'agent', text: `Loaded the ${r.summary?.components?.[0]?.name || 'sample'} sample — explore the graph, or ask me to change it.` }]);
       await refreshSessions();
       await refreshIntents();
@@ -286,6 +292,7 @@ export function useSession() {
     try { await api.clearSession(); } catch { /* best-effort */ }
     setSummary(null); setFindings([]); setTranscript([]); setProposal(null);
     setCanUndo(false); setCanRedo(false); setUsage(null); setBotName(null); setActiveSessionId(null);
+    setIsComponent(false); setComponentWarnings([]);
     await refreshSessions();
   }, [refreshSessions]);
 
@@ -298,6 +305,7 @@ export function useSession() {
     if (ctrl.current) ctrl.current.abort();
     setSummary(null); setFindings([]); setTranscript([]); setProposal(null);
     setCanUndo(false); setCanRedo(false); setBotName(null);
+    setIsComponent(false); setComponentWarnings([]);
   }, []);
 
   return { summary, findings, transcript, proposal, canUndo, canRedo, loading, sending,

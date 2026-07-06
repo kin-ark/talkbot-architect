@@ -178,7 +178,7 @@ def _active_payload(s: Session) -> dict:
         "can_redo": s.can_redo(),
         "usage": s.usage,
         "is_component": s.is_component,
-        "component_warnings": agents.component_export_warnings(data) if (s._stack and s.is_component) else [],
+        "component_warnings": agents.component_export_warnings(data) if s.is_component else [],
     }
 
 
@@ -391,7 +391,12 @@ async def create_session(file: UploadFile = File(...),
         store.rename(s.id, nm)
     # Validate only once; reuse the result for the response.
     findings = agents.validate(data)
-    return {"summary": agents.summarize(data), "findings": findings}
+    return {
+        "summary": agents.summarize(data),
+        "findings": findings,
+        "is_component": s.is_component,
+        "component_warnings": agents.component_export_warnings(s.current()) if s.is_component else [],
+    }
 
 
 @app.get("/samples")

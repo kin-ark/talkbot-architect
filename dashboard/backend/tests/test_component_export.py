@@ -55,3 +55,21 @@ def test_api_component_export(tmp_path, monkeypatch):
         # Check body is a component envelope
         exported = json.loads(export_resp.content)
         assert is_component_export(exported)
+
+
+def test_session_upload_response_includes_is_component(tmp_path, monkeypatch):
+    """Test that POST /session response includes is_component and component_warnings fields."""
+    monkeypatch.setattr(persistence, "SESSIONS_DIR", tmp_path / ".sessions")
+    with TestClient(main.app) as client:
+        # Upload the component fixture
+        raw_fixture = FIX.read_bytes()
+        files = {"file": ("component.json", raw_fixture, "application/json")}
+        r = client.post("/session", files=files)
+        assert r.status_code == 200
+
+        # Check response includes is_component and component_warnings
+        body = r.json()
+        assert "is_component" in body
+        assert body["is_component"] is True
+        assert "component_warnings" in body
+        assert isinstance(body["component_warnings"], list)
