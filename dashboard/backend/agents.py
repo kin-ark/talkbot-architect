@@ -334,3 +334,25 @@ def propose_build(manifest_yaml: str) -> dict:
         return {"ok": True, "proposed_data": data, "error": None}
     except (ManifestError, CompileError, ValueError) as e:
         return {"ok": False, "proposed_data": None, "error": str(e)}
+
+
+def component_export_warnings(data: dict) -> list[str]:
+    """Warnings for sections that can't survive a component export (dropped)."""
+    def _n(key):
+        v = data.get(key)
+        if isinstance(v, str):
+            import json as _j
+            try:
+                v = _j.loads(v)
+            except Exception:
+                return 0
+        return len(v) if isinstance(v, list) else 0
+
+    out = []
+    kb = _n("BizKnowledgeInfo")
+    if kb:
+        out.append(f"{kb} knowledge base{'s' if kb != 1 else ''} will not be included in the component export")
+    hw = _n("BizNodeHotWords")
+    if hw:
+        out.append(f"{hw} hot-word row{'s' if hw != 1 else ''} will not be included in the component export")
+    return out

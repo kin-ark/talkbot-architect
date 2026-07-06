@@ -165,7 +165,7 @@ def _component_index_of(data: dict, uuid: str) -> Optional[int]:
 def _active_payload(s: Session) -> dict:
     """Return the rehydrate payload for the current active session."""
     if not s._stack:
-        return {"summary": None, "id": s.id, "bot_name": None}
+        return {"summary": None, "id": s.id, "bot_name": None, "is_component": s.is_component, "component_warnings": []}
     data = s.current()
     return {
         "id": s.id,
@@ -177,6 +177,8 @@ def _active_payload(s: Session) -> dict:
         "can_undo": s.can_undo(),
         "can_redo": s.can_redo(),
         "usage": s.usage,
+        "is_component": s.is_component,
+        "component_warnings": agents.component_export_warnings(data) if (s._stack and s.is_component) else [],
     }
 
 
@@ -295,6 +297,15 @@ async def clear_config(cid: str = Depends(client_id)):
 
 @app.get("/export")
 async def export_current(s: Session = Depends(_require_session)):
+    if s.is_component:
+        from wizcheck.component_adapter import full_to_component_export
+        nm = speechname.read_speech_name(s.current())
+        dto = full_to_component_export(s.current(), base=s.component_base, name=nm)
+        body = json.dumps(dto, ensure_ascii=False, indent=2).encode("utf-8")
+        stem = speechname.slugify_filename(nm).removesuffix(".json") if nm else "component"
+        return Response(content=body, media_type="application/json",
+                        headers={"Content-Disposition": f'attachment; filename="{stem}.component.json"'})
+
     data = s.current()
     nm = speechname.read_speech_name(data)
     base = speechname.slugify_filename(nm).removesuffix(".json") if nm else "speech_export"
