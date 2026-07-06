@@ -30,6 +30,9 @@ SAMPLES = [
     {"id": "debt_overdue_90", "title": "Debt Collection — Overdue 90+",
      "description": "Long-overdue collector: escalating repetition, randomized convincer variants, 3-tier ladder, keringanan/restructuring KB.",
      "manifest_file": "debt_overdue_90.yaml"},
+    {"id": "debt_ptp_reminder", "title": "Debt Collection — PTP Reminder",
+     "description": "Promise-to-pay follow-up: janji-bayar framing, reason-classified convincer fan-out, re-collect PTP time + method, strongest pressure.",
+     "manifest_file": "debt_ptp_reminder.yaml"},
 ]
 
 _BY_ID = {s["id"]: s for s in SAMPLES}
