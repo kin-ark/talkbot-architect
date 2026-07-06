@@ -28,3 +28,6 @@ talkbot/
 # Dashboard session persistence — local runtime state
 dashboard/backend/.session/
 dashboard/backend/.sessions/
+
+# CLAUDE.md — local project guidance, kept on disk only (not tracked)
+CLAUDE.md
