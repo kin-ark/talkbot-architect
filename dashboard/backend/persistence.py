@@ -36,6 +36,8 @@ def _snapshot(session) -> dict:
         "pending": session.pending,
         "speech_name": session.speech_name,
         "wavs": {k: base64.b64encode(v).decode("ascii") for k, v in session.wavs.items()},
+        "is_component": session.is_component,
+        "component_base": session.component_base,
     }
 
 
@@ -52,6 +54,8 @@ def _restore(session, state: dict) -> None:
     session.pending = state.get("pending")
     session.speech_name = state.get("speech_name", "speech_export.json")
     session.wavs = {k: base64.b64decode(v) for k, v in state.get("wavs", {}).items()}
+    session.is_component = state.get("is_component", False)
+    session.component_base = state.get("component_base", None)
 
 
 def save_session(session) -> None:

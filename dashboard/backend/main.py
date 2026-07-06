@@ -35,6 +35,7 @@ from registry import REGISTRY  # noqa: E402
 from session import Session  # noqa: E402
 from session_store import SessionStore  # noqa: E402
 from wizmodifier.io import InputBundle, write_output  # noqa: E402
+from wizcheck.component_adapter import is_component_export, component_export_to_full  # noqa: E402
 
 from logging_setup import configure_logging, log, RequestLogMiddleware  # noqa: E402
 configure_logging()  # noqa: E402
@@ -351,17 +352,26 @@ async def create_session(file: UploadFile = File(...),
         finally:
             tmp_path.unlink(missing_ok=True)
         data = bundle.data
+        comp = is_component_export(data)
+        base = data if comp else None
+        if comp:
+            data = component_export_to_full(data)
         stem = Path(filename).stem or "Imported bot"
         store.new(name=stem)
         s = store.active()
-        s.load(data, speech_name=bundle.speech_name, wavs=bundle.wavs)
+        s.load(data, speech_name=bundle.speech_name, wavs=bundle.wavs,
+               is_component=comp, component_base=base)
         s.name = stem
     else:
         data = _parse_or_400(raw)
+        comp = is_component_export(data)
+        base = data if comp else None
+        if comp:
+            data = component_export_to_full(data)
         stem = Path(filename).stem or "Imported bot"
         store.new(name=stem)
         s = store.active()
-        s.load(data)
+        s.load(data, is_component=comp, component_base=base)
         s.name = stem
 
     s._autosave()

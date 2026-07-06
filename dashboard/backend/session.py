@@ -22,6 +22,8 @@ class Session:
         self.pending: dict | None = None
         self.speech_name: str = "speech_export.json"
         self.wavs: dict[str, bytes] = {}
+        self.is_component: bool = False
+        self.component_base: dict | None = None
         self.cancel_requested: bool = False
         self._lock = threading.Lock()
 
@@ -38,6 +40,8 @@ class Session:
         *,
         speech_name: str = "speech_export.json",
         wavs: dict[str, bytes] | None = None,
+        is_component: bool = False,
+        component_base: dict | None = None,
     ) -> None:
         # Keep id/name (slot identity); refresh updated timestamp
         self.updated = time.time()
@@ -47,6 +51,8 @@ class Session:
         self.pending = None
         self.speech_name = speech_name
         self.wavs = wavs if wavs is not None else {}
+        self.is_component = is_component
+        self.component_base = copy.deepcopy(component_base) if component_base is not None else None
         self._autosave()
 
     def reset(self) -> None:
@@ -57,6 +63,8 @@ class Session:
         self._idx = -1
         self.transcript = []
         self.pending = None
+        self.is_component = False
+        self.component_base = None
         self.cancel_requested = False
         self._autosave()
 
