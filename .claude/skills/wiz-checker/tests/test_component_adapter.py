@@ -83,3 +83,21 @@ def test_adapt_empty_dto_lists_safe():
     full = component_export_to_full(minimal)
     assert full["BizSpeechComponent"] == []
     assert "SpeechIntent" in full  # still present (empty)
+
+
+from wizcheck.parser import parse_dict
+
+
+def test_parse_dict_adapts_component_export():
+    wf = parse_dict(_COMP_EXPORT)
+    assert wf.is_component_export is True
+    # raw is now the adapted full-shape dict
+    assert "BizSpeechComponent" in wf.raw
+    assert len(wf.components) == 1
+    # flow model built from the adapted component
+    assert wf.flow_model is not None
+
+
+def test_parse_dict_full_export_flag_false():
+    wf = parse_dict({"BizSpeechComponent": [], "SpeechIntent": [], "SpeechVariable": []})
+    assert wf.is_component_export is False

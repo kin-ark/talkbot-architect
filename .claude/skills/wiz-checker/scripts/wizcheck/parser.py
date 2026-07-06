@@ -127,6 +127,12 @@ def parse_dict(raw: dict[str, Any]) -> WizFile:
         raise ParseError(
             f"expected a JSON object at top level, got {type(raw).__name__}"
         )
+
+    from wizcheck.component_adapter import component_export_to_full, is_component_export
+    component_mode = is_component_export(raw)
+    if component_mode:
+        raw = component_export_to_full(raw)
+
     variables = _parse_variables(_unwrap_list(raw.get("SpeechVariable"), "SpeechVariable"))
     intents = _parse_intents(_unwrap_list(raw.get("SpeechIntent"), "SpeechIntent"))
     utterances = _parse_utterances(
@@ -152,6 +158,7 @@ def parse_dict(raw: dict[str, Any]) -> WizFile:
         audios=audios,
         knowledge_bases=knowledge_bases,
         flow_model=flow_model,
+        is_component_export=component_mode,
     )
 
 

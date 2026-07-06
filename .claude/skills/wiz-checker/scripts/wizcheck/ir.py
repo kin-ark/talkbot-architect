@@ -98,3 +98,4 @@ class WizFile:
     knowledge_bases: dict[int, KnowledgeBase]
     raw: dict[str, Any] = field(repr=False)
     flow_model: FlowModel | None = field(default=None, kw_only=True)
+    is_component_export: bool = field(default=False, kw_only=True)
