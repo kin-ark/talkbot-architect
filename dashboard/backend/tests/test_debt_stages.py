@@ -42,6 +42,10 @@ def _assert_mature(data):
     assert 5 in types                       # talk_continue (multi-round)
 
 
+def test_dpd0_mature():
+    _assert_mature(_build("debt_dpd0"))
+
+
 def test_dpd1_5_mature():
     _assert_mature(_build("debt_dpd1_5"))
 

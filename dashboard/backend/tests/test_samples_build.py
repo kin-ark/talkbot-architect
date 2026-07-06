@@ -12,7 +12,7 @@ def test_registry_shape():
     for e in listed:
         assert set(e) == {"id", "title", "description"}
     ids = {e["id"] for e in listed}
-    assert {"greeting_faq", "debt_collector", "appointment_booking", "debt_dpd1_5"} <= ids
+    assert {"greeting_faq", "debt_collector", "appointment_booking", "debt_dpd0", "debt_dpd1_5"} <= ids
     assert len(listed) >= 4
 
 
