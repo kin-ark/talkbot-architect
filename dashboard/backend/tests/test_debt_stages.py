@@ -64,3 +64,39 @@ def test_overdue_90_mature():
 
 def test_ptp_reminder_mature():
     _assert_mature(_build("debt_ptp_reminder"))
+
+
+def _component_names(data):
+    """Extract canvas/component names from built data."""
+    names = []
+    for c in _raw_list(data.get("BizSpeechComponent")):
+        name = c.get("name", "")
+        if name:
+            names.append(name)
+    return names
+
+
+def test_stages_are_differentiated():
+    """Guard per-stage differentiation via component structure and SCS count."""
+    predue_data = _build("debt_predue_d1")
+    dpd0_data = _build("debt_dpd0")
+    dpd6_data = _build("debt_dpd6_30")
+
+    # predue and dpd0 both have 10 base canvases, but dpd6 has 13 (adds 3 convincer tiers)
+    predue_comps = _component_names(predue_data)
+    dpd0_comps = _component_names(dpd0_data)
+    dpd6_comps = _component_names(dpd6_data)
+
+    assert len(predue_comps) == 10, f"predue should have 10 components, got {len(predue_comps)}"
+    assert len(dpd0_comps) == 10, f"dpd0 should have 10 components, got {len(dpd0_comps)}"
+    assert len(dpd6_comps) == 13, f"dpd6 should have 13 components (extra tiers + DPD Info), got {len(dpd6_comps)}"
+
+    # dpd6 has exclusive components for multi-tier collection
+    assert "3. Second Convincer" in dpd6_comps
+    assert "4. Third Convincer" in dpd6_comps
+    assert "DPD Info" in dpd6_comps
+
+    # These should NOT be in predue/dpd0
+    assert "3. Second Convincer" not in predue_comps
+    assert "4. Third Convincer" not in predue_comps
+    assert "DPD Info" not in predue_comps

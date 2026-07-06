@@ -79,6 +79,10 @@ custom_intents:
     language: IDN
     keywords: ["lapor", "polisi", "adukan", "pengacara", "ylki"]
     user_responses: ["saya laporkan ke pihak berwajib loh", "saya laporin ke polisi ya"]
+  - name: AskDueDate
+    language: IDN
+    keywords: ["jatuh tempo kapan", "berapa hari telat", "sisa berapa hari", "jatuh tempo tanggal berapa", "telat berapa hari"]
+    user_responses: ["Jatuh temponya kapan ya?", "Sudah telat berapa hari?", "Sisa berapa hari lagi?", "Tanggal jatuh temponya kapan?"]
 
 hot_words:
   - "Legal"
@@ -155,7 +159,7 @@ knowledge_bases:
     intents: [WillReportPolice]
     answers: ["Kami memohon maaf atas ketidaknyamanannya. Saya sudah mencatat hal ini dan nanti ada staff kami yang akan menghubungi anda kembali. Terima kasih."]
   - name: "KBB5 DPD Info"
-    intents: [AlreadyPaid]
+    intents: [AskDueDate]
     multi_round: "DPD Info"
 
 canvases:
