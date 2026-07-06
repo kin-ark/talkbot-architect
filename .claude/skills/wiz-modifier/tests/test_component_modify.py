@@ -40,3 +40,41 @@ def test_write_component_rejects_zip(tmp_path):
     bundle = InputBundle.load(FIXT)
     with pytest.raises(ValueError, match="JSON only"):
         write_output(bundle, tmp_path / "out.zip", fmt="zip")
+
+
+def _mods_hash():
+    return "test-hash"
+
+
+def test_guard_rejects_bot_scope_op():
+    import pytest
+    from wizmodifier.apply import run_mods
+    bundle = InputBundle.load(FIXT)
+    mods = [{"op": "set-hotwords", "words": ["indosat"]}]
+    with pytest.raises(ValueError, match="component mode"):
+        run_mods(bundle, mods, manifest_hash=_mods_hash())
+
+
+def test_guard_rejects_forbidden_node_type():
+    import pytest
+    from wizmodifier.apply import run_mods
+    bundle = InputBundle.load(FIXT)
+    mods = [{"op": "append-node", "component": "Greeting",
+             "node": {"id": "k", "type": "goto_kb", "config": {"target": "SomeKB"}}}]
+    with pytest.raises(ValueError, match="component mode"):
+        run_mods(bundle, mods, manifest_hash=_mods_hash())
+
+
+def test_guard_allows_permitted_op_no_raise():
+    # An allowed op passes the guard (guard does not raise "component mode" error).
+    # The op itself may fail for unrelated reasons (missing fields); we assert only
+    # that the GUARD does not raise.
+    from wizmodifier.apply import run_mods
+    bundle = InputBundle.load(FIXT)
+    mods = [{"op": "rename-node", "component": "Greeting",
+             "node": "Hello, this is a test.", "name": "Hi there"}]
+    try:
+        run_mods(bundle, mods, manifest_hash=_mods_hash())
+    except ValueError as e:
+        # If an error was raised, ensure it's not from the guard (not "component mode")
+        assert "component mode" not in str(e), f"Guard should not raise: {e}"

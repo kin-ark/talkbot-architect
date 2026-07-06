@@ -49,8 +49,15 @@ class InputBundle:
         text = path.read_text(encoding="utf-8")
         raw = json.loads(text)
         if is_component_export(raw):
+            data = component_export_to_full(raw)
+            # Encode decoded lists to JSON strings to match full-export shape ops expect
+            data["BizSpeechComponent"] = codec.encode(data.get("BizSpeechComponent", []))
+            data["SentenceCutSpeech"] = codec.encode(data.get("SentenceCutSpeech", []))
+            data["SpeechIntent"] = codec.encode(data.get("SpeechIntent", []))
+            data["SpeechVariable"] = codec.encode(data.get("SpeechVariable", []))
+            data["SpeechAudio"] = codec.encode(data.get("SpeechAudio", []))
             return cls(
-                data=component_export_to_full(raw),
+                data=data,
                 speech_name=path.name,
                 is_component=True,
                 component_source=copy.deepcopy(raw),

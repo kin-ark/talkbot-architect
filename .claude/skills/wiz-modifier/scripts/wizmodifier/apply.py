@@ -34,6 +34,34 @@ _RESULTS_TEMPLATE = """# Import Test Results
 |------|--------|-------|
 """
 
+_COMPONENT_FORBIDDEN_OPS = frozenset({
+    "add-kb", "rename-kb", "set-kb-intents", "add-kb-answer", "edit-kb-answer",
+    "remove-kb-answer", "set-kb-multiround", "delete-kb", "set-hotwords",
+})
+_COMPONENT_FORBIDDEN_NODE_TYPES = frozenset({"goto_kb", "goto_mr", "talk_continue"})
+
+
+def _node_types_in_mod(entry: dict) -> list[str]:
+    """Node type strings an append-node / add-component mod would emit."""
+    op = entry.get("op")
+    if op == "append-node":
+        node = entry.get("node") or {}
+        t = node.get("type")
+        return [t] if t else []
+    if op == "add-component":
+        return [n.get("type") for n in (entry.get("nodes") or []) if n.get("type")]
+    return []
+
+
+def _guard_component_mods(mods: list[dict]) -> None:
+    for entry in mods:
+        op = entry.get("op")
+        if op in _COMPONENT_FORBIDDEN_OPS:
+            raise ValueError(f"component mode: op {op!r} unsupported")
+        for t in _node_types_in_mod(entry):
+            if t in _COMPONENT_FORBIDDEN_NODE_TYPES:
+                raise ValueError(f"component mode: node type {t!r} unsupported")
+
 
 def run_mods(bundle: InputBundle, mods: list[dict], manifest_hash: str) -> None:
     """Apply each mod in order, mutating the bundle in place.
@@ -41,6 +69,8 @@ def run_mods(bundle: InputBundle, mods: list[dict], manifest_hash: str) -> None:
     Raises ValueError (from an op) if a target is missing; the caller decides
     whether to write. No write happens here.
     """
+    if bundle.is_component:
+        _guard_component_mods(mods)
     minter = IdMinter(manifest_hash=manifest_hash)
     for i, entry in enumerate(mods):
         params = {k: v for k, v in entry.items() if k != "op"}
