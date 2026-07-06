@@ -1,0 +1,21 @@
+{
+  "name": "Main",
+  "componentImportAndExportDTOS": [{
+    "componentName": "Main",
+    "componentUuid": "a227ff42-008d-4970-9eff-c43b3d18fd22",
+    "speechComponentDTO": {
+      "componentUuid": "a227ff42-008d-4970-9eff-c43b3d18fd22",
+      "speechId": 1, "category": 1, "branch": "dev", "name": "Main",
+      "sortIndex": 1, "parentUuid": "0", "updateTime": 123,
+      "details": {}, "routes": {}, "inboundPorts": []
+    },
+    "sentenceCutDTOList": [],
+    "asrSceneEntityList": []
+  }],
+  "speechIntentDTO": [
+    {"intentId": 1, "intentName": "Unclassified", "isInit": 0, "language": "IDN", "keyWordInIntent": [], "userResponseInIntent": []}
+  ],
+  "speechVariableDTO": [],
+  "speechEntiEntityList": [], "speechEntityData": [],
+  "speechFunctionDTO": [], "tagDTOList": []
+}

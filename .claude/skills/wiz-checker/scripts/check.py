@@ -58,6 +58,13 @@ def main(argv: list[str] | None = None) -> int:
         print(f"wiz-checker: parse error: {e}", file=sys.stderr)
         return 3
 
+    if getattr(wf, "is_component_export", False):
+        print(
+            "note: component-export format detected — bot-scope checks "
+            "(WIZ104/110/202/303) suppressed",
+            file=sys.stderr,
+        )
+
     report = Report(file=str(file_path), checks_run=list(REGISTRY.keys()))
     for _name, check_fn in REGISTRY.items():
         report.extend(check_fn(wf))

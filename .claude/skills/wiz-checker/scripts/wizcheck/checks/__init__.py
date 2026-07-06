@@ -35,4 +35,7 @@ def run_all_checks(wf: WizFile) -> list[Finding]:
     findings: list[Finding] = []
     for name in ["schema", "graph", "variables", "intents", "platform"]:
         findings.extend(REGISTRY[name](wf))
+    if wf.is_component_export:
+        from wizcheck.component_adapter import BOT_SCOPE_CODES
+        findings = [f for f in findings if f.code not in BOT_SCOPE_CODES]
     return findings
