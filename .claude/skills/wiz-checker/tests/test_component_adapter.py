@@ -302,3 +302,106 @@ def test_base_splice_none_matches_phase2():
     b = full_to_component_export(full, name="X", base=None)
     assert a == b
     assert a["speechEntiEntityList"] == []  # regenerated empty when no base
+
+
+def test_prune_topfloor_details_not_in_base():
+    """Splice prunes topFloorDetails added by flush if the base component lacked it."""
+    import json
+    # base: no topFloorDetails key
+    base = {
+        "name": "Test",
+        "componentImportAndExportDTOS": [{
+            "componentName": "Main",
+            "componentUuid": "c-1",
+            "speechComponentDTO": {
+                "componentUuid": "c-1",
+                "speechId": 1, "category": 1, "branch": "dev", "name": "Main",
+                "sortIndex": 1, "parentUuid": "0", "updateTime": 123,
+                "details": {}, "routes": {}, "inboundPorts": [],
+                # NOTE: no topFloorDetails key
+            },
+            "sentenceCutDTOList": [],
+            "asrSceneEntityList": [],
+        }],
+        "speechIntentDTO": [],
+        "speechVariableDTO": [],
+        "speechEntiEntityList": [], "speechEntityData": [],
+        "speechFunctionDTO": [], "tagDTOList": [],
+    }
+    # Convert to full, then inject topFloorDetails (simulating FlowEditor.flush)
+    full = component_export_to_full(base)
+    comp = full["BizSpeechComponent"][0]
+    comp["topFloorDetails"] = []  # flush adds this
+    # Encode back to builder-style strings
+    full_str = {k: (json.dumps(v) if isinstance(v, (list, dict)) else v)
+                for k, v in full.items()}
+    # Splice with base: topFloorDetails should be pruned
+    dto = full_to_component_export(full_str, base=base)
+    scd = dto["componentImportAndExportDTOS"][0]["speechComponentDTO"]
+    assert "topFloorDetails" not in scd, "topFloorDetails should be pruned from regen"
+
+
+def test_retain_topfloor_details_in_base():
+    """Splice retains topFloorDetails if the base component had it."""
+    import json
+    # base: WITH topFloorDetails key
+    base = {
+        "name": "Test",
+        "componentImportAndExportDTOS": [{
+            "componentName": "Main",
+            "componentUuid": "c-1",
+            "speechComponentDTO": {
+                "componentUuid": "c-1",
+                "speechId": 1, "category": 1, "branch": "dev", "name": "Main",
+                "sortIndex": 1, "parentUuid": "0", "updateTime": 123,
+                "details": {}, "routes": {}, "inboundPorts": [],
+                "topFloorDetails": [],  # base HAS this key
+            },
+            "sentenceCutDTOList": [],
+            "asrSceneEntityList": [],
+        }],
+        "speechIntentDTO": [],
+        "speechVariableDTO": [],
+        "speechEntiEntityList": [], "speechEntityData": [],
+        "speechFunctionDTO": [], "tagDTOList": [],
+    }
+    full = component_export_to_full(base)
+    full_str = {k: (json.dumps(v) if isinstance(v, (list, dict)) else v)
+                for k, v in full.items()}
+    dto = full_to_component_export(full_str, base=base)
+    scd = dto["componentImportAndExportDTOS"][0]["speechComponentDTO"]
+    assert "topFloorDetails" in scd, "topFloorDetails should be retained (was in base)"
+
+
+def test_no_over_prune_zero_value():
+    """Splice does NOT prune a key with value 0 (e.g. sortIndex) even if base lacks it."""
+    import json
+    # base: no sortIndex
+    base = {
+        "name": "Test",
+        "componentImportAndExportDTOS": [{
+            "componentName": "Main",
+            "componentUuid": "c-1",
+            "speechComponentDTO": {
+                "componentUuid": "c-1",
+                "speechId": 1, "category": 1, "branch": "dev", "name": "Main",
+                # no sortIndex
+                "parentUuid": "0", "updateTime": 123,
+                "details": {}, "routes": {}, "inboundPorts": [],
+            },
+            "sentenceCutDTOList": [],
+            "asrSceneEntityList": [],
+        }],
+        "speechIntentDTO": [],
+        "speechVariableDTO": [],
+        "speechEntiEntityList": [], "speechEntityData": [],
+        "speechFunctionDTO": [], "tagDTOList": [],
+    }
+    full = component_export_to_full(base)
+    comp = full["BizSpeechComponent"][0]
+    comp["sortIndex"] = 0  # regen has sortIndex:0
+    full_str = {k: (json.dumps(v) if isinstance(v, (list, dict)) else v)
+                for k, v in full.items()}
+    dto = full_to_component_export(full_str, base=base)
+    scd = dto["componentImportAndExportDTOS"][0]["speechComponentDTO"]
+    assert "sortIndex" in scd and scd["sortIndex"] == 0, "sortIndex:0 should NOT be pruned"

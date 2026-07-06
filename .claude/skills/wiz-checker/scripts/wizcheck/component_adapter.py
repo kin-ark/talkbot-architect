@@ -17,6 +17,17 @@ from typing import Any
 # in its parent bot). Suppressed when validating a component export.
 BOT_SCOPE_CODES = frozenset({"WIZ104", "WIZ110", "WIZ202", "WIZ303"})
 
+_EMPTY_DEFAULTS = ([], {}, "", None)
+
+
+def _prune_added_empty_keys(regen_scd: dict, base_scd: dict) -> None:
+    """Drop regenerated speechComponentDTO keys that the base component did not
+    have AND whose value is an empty default — so a modify round-trip does not
+    inject keys (e.g. topFloorDetails:[]) the source never carried."""
+    base_keys = set(base_scd) if isinstance(base_scd, dict) else set()
+    for k in [k for k in regen_scd if k not in base_keys and regen_scd[k] in _EMPTY_DEFAULTS]:
+        del regen_scd[k]
+
 
 def is_component_export(raw: Any) -> bool:
     """True if `raw` is a WIZ component-library export envelope."""
@@ -273,7 +284,12 @@ def _splice_component_export(base, comps, cuts_by_comp, intent_dtos, var_dtos, n
         comp = comp_by_uuid.pop(cu, None)
         if comp is None:
             continue  # component deleted by an op -> drop its entry
-        entry["speechComponentDTO"] = _to_speech_component_dto(comp)
+        # Read base speechComponentDTO before overwriting, so we can prune
+        # any spurious empty keys that flush injected.
+        base_scd = entry.get("speechComponentDTO") or {}
+        regen = _to_speech_component_dto(comp)
+        _prune_added_empty_keys(regen, base_scd)
+        entry["speechComponentDTO"] = regen
         entry["sentenceCutDTOList"] = [
             _to_sentence_cut_dto(r) for r in cuts_by_comp.get(cu, [])
         ]

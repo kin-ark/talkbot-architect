@@ -157,3 +157,108 @@ def test_modify_component_rewire_edge_roundtrips_clean(tmp_path):
     assert "componentImportAndExportDTOS" in result
     # round-trip validates clean (0 error-severity findings)
     assert _errors(result) == []
+
+
+def test_modify_component_key_set_preserved_no_spurious_keys(tmp_path):
+    """Modify a component without topFloorDetails, apply rename-node, verify key set unchanged."""
+    # Build a minimal component-export without topFloorDetails (simulates a source
+    # that the modifier receives).
+    comp_export_no_topfloor = {
+        "name": "Minimal",
+        "componentImportAndExportDTOS": [{
+            "componentName": "Greeting",
+            "componentUuid": "11111111-1111-1111-1111-111111111111",
+            "speechId": 12345,
+            "templateCode": "T_test",
+            "enterpriseId": 0,
+            "asrSceneEntityList": [],
+            "speechComponentDTO": {
+                "componentUuid": "11111111-1111-1111-1111-111111111111",
+                "name": "Greeting",
+                "branch": "dev",
+                "category": 1,
+                "type": 1,
+                "editStatus": 1,
+                "useStatus": 1,
+                "parentUuid": "0",
+                "sortIndex": 1,
+                "speechId": 12345,
+                "templateCode": "T_test",
+                "updateTime": 1000,
+                "updateBy": 999,
+                "id": 888,
+                "version": "4",
+                "inboundPorts": [{"name": "Entry", "type": 1, "uuid": "22222222-2222-2222-2222-222222222222", "is_default": True}],
+                "outboundPorts": [],
+                "routes": {"22222222-2222-2222-2222-222222222222": {}},
+                "nluConf": {},
+                "sourceUuid": "",
+                "details": {"22222222-2222-2222-2222-222222222222": {
+                    "type": 1,
+                    "data": {
+                        "type": 1,
+                        "name": "Entry",
+                        "list": ["Hello"]
+                    }
+                }},
+                # NOTE: no topFloorDetails key
+            },
+            "sentenceCutDTOList": [{
+                "id": "22222222-2222-2222-2222-222222222222",
+                "componentUuid": "11111111-1111-1111-1111-111111111111",
+                "sentence_text": "Hello",
+                "sen_rec_name": "",
+                "sentence_text_url": "",
+                "speech_rec_cut_id": "rec-001",
+                "is_delete": 0,
+                "sentenceCutId": 777,
+                "showType": 0,
+                "sortIndex": 1,
+                "type": "record",
+            }],
+        }],
+        "speechIntentDTO": [
+            {"intentId": 1, "intentName": "Unclassified", "isInit": 0, "language": "IDN",
+             "keyWordInIntent": [], "userResponseInIntent": []},
+        ],
+        "speechVariableDTO": [],
+        "speechEntiEntityList": [],
+        "speechEntityData": [],
+        "speechFunctionDTO": [],
+        "tagDTOList": [],
+    }
+
+    # Write to temp file and load
+    in_file = tmp_path / "in.json"
+    in_file.write_text(json.dumps(comp_export_no_topfloor), encoding="utf-8")
+
+    # Load and apply rename-node op
+    from wizmodifier.apply import run_mods
+    bundle = InputBundle.load(in_file)
+    assert bundle.is_component is True
+
+    # Record the input key set
+    input_scd = comp_export_no_topfloor["componentImportAndExportDTOS"][0]["speechComponentDTO"]
+    input_keys = set(input_scd.keys())
+
+    # Apply a rename-node op (rename node "Entry" to "Welcome")
+    mods = [{"op": "rename-node", "component": 0,
+             "node": {"label": "Entry"},
+             "label": "Welcome"}]
+    run_mods(bundle, mods, manifest_hash="test-hash")
+
+    # Write output
+    out_file = tmp_path / "out.json"
+    write_output(bundle, out_file, fmt="json")
+
+    # Re-parse output and verify key set unchanged + rename worked
+    result = json.loads(out_file.read_text(encoding="utf-8"))
+    output_scd = result["componentImportAndExportDTOS"][0]["speechComponentDTO"]
+    output_keys = set(output_scd.keys())
+
+    # Key set should be identical (no spurious topFloorDetails or other keys added)
+    assert output_keys == input_keys, f"Key set changed: input={input_keys}, output={output_keys}"
+    assert "topFloorDetails" not in output_keys, "topFloorDetails should NOT be present"
+
+    # Verify round-trip validates clean
+    assert _errors(result) == []
