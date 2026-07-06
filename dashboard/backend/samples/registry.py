@@ -15,6 +15,9 @@ SAMPLES = [
     {"id": "appointment_booking", "title": "Appointment Booking",
      "description": "Collects a choice, sets a variable, and routes on it.",
      "manifest_file": "appointment_booking.yaml"},
+    {"id": "debt_dpd1_5", "title": "Debt Collection — DPD 1-5",
+     "description": "Firm mid-stage collector: greet+confirm, inform overdue, 2-tier convincer, collect PTP, multi-round KBs.",
+     "manifest_file": "debt_collection_dpd1_5.yaml"},
 ]
 
 _BY_ID = {s["id"]: s for s in SAMPLES}

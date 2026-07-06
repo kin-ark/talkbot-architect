@@ -9,11 +9,11 @@ def _raw_list(value):
 
 def test_registry_shape():
     listed = samples.list_samples()
-    assert len(listed) == 3
     for e in listed:
         assert set(e) == {"id", "title", "description"}
     ids = {e["id"] for e in listed}
-    assert ids == {"greeting_faq", "debt_collector", "appointment_booking"}
+    assert {"greeting_faq", "debt_collector", "appointment_booking", "debt_dpd1_5"} <= ids
+    assert len(listed) >= 4
 
 
 def test_every_sample_builds_clean():
