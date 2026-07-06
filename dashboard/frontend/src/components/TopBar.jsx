@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { Pencil, Undo2, Redo2 } from 'lucide-react';
+import { Pencil, Undo2, Redo2, Puzzle } from 'lucide-react';
 import Button from './ui/Button';
 
-export default function TopBar({ hasDoc, canUndo, canRedo, onUndo, onRedo, onExport, botName, onRenameBot }) {
+export default function TopBar({ hasDoc, canUndo, canRedo, onUndo, onRedo, onExport, botName, onRenameBot, isComponent }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
   const display = botName && botName !== 'Empty Dialogue' ? botName : '';
@@ -31,6 +31,13 @@ export default function TopBar({ hasDoc, canUndo, canRedo, onUndo, onRedo, onExp
             <span className="truncate">{display || 'Untitled bot'}</span>
             <Pencil size={12} className="shrink-0 opacity-0 group-hover:opacity-60" />
           </button>
+        )}
+        {isComponent && (
+          <span data-testid="component-badge"
+            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs bg-surface-secondary text-text-secondary border border-border"
+            title="Component export — exports as a component envelope">
+            <Puzzle size={12} /> Component
+          </span>
         )}
       </div>
       <div className="flex items-center gap-1">

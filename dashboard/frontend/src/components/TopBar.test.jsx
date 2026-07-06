@@ -2,7 +2,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { vi, describe, it, expect } from 'vitest';
 import TopBar from './TopBar';
 
-const base = { hasDoc: true, canUndo: false, canRedo: true, onUndo: () => {}, onRedo: () => {}, onExport: () => {} };
+const base = { hasDoc: true, canUndo: false, canRedo: true, onUndo: () => {}, onRedo: () => {}, onExport: () => {}, isComponent: false };
 
 describe('TopBar', () => {
   it('renders iconified undo/redo and no New button', () => {
@@ -65,5 +65,15 @@ describe('TopBar', () => {
     fireEvent.keyDown(input, { key: 'Escape' });
     fireEvent.blur(input);
     expect(onRenameBot).not.toHaveBeenCalled();
+  });
+
+  it('shows a Component badge when isComponent', () => {
+    render(<TopBar {...base} isComponent botName="Widget" />);
+    expect(screen.getByTestId('component-badge')).toBeInTheDocument();
+  });
+
+  it('no Component badge for a full bot', () => {
+    render(<TopBar {...base} isComponent={false} botName="Bot" />);
+    expect(screen.queryByTestId('component-badge')).toBeNull();
   });
 });

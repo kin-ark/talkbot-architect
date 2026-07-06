@@ -16,6 +16,8 @@ export function useSession() {
   const [usage, setUsage] = useState(null);
   const [botName, setBotName] = useState(null);
   const [intents, setIntents] = useState([]);
+  const [isComponent, setIsComponent] = useState(false);
+  const [componentWarnings, setComponentWarnings] = useState([]);
 
   const queue = useRef([]);
   const draining = useRef(false);
@@ -33,6 +35,8 @@ export function useSession() {
     setCanRedo(!!r.can_redo);
     setUsage(r.usage || null);
     setBotName(r.bot_name ?? null);
+    setIsComponent(Boolean(r.is_component));
+    setComponentWarnings(r.component_warnings || []);
     if (r.id !== undefined) setActiveSessionId(r.id);
   }, []);
 
@@ -62,6 +66,8 @@ export function useSession() {
         setCanRedo(!!r.can_redo);
         setUsage(r.usage || null);
         setBotName(r.bot_name ?? null);
+        setIsComponent(Boolean(r.is_component));
+        setComponentWarnings(r.component_warnings || []);
         if (r.id !== undefined) setActiveSessionId(r.id);
         refreshIntents();
       }
@@ -295,7 +301,7 @@ export function useSession() {
   }, []);
 
   return { summary, findings, transcript, proposal, canUndo, canRedo, loading, sending,
-           sessions, activeSessionId, usage, botName, intents,
+           sessions, activeSessionId, usage, botName, intents, isComponent, componentWarnings,
            upload, startBlank, loadSample, send, retry, apply, reject, undo, redo, cancel, reset, startNew,
            refreshSessions, refreshIntents, newSession, switchSession, renameSession, deleteSession, renameBot, editNodeText };
 }

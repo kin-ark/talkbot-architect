@@ -114,7 +114,7 @@ export default function App() {
     <div className="h-screen flex flex-col bg-canvas">
       <TopBar hasDoc={!!s.summary} canUndo={s.canUndo} canRedo={s.canRedo}
         onUndo={s.undo} onRedo={s.redo} onExport={onExport}
-        botName={s.botName} onRenameBot={s.renameBot} />
+        botName={s.botName} onRenameBot={s.renameBot} isComponent={s.isComponent} />
       <div className="flex-1 flex overflow-hidden">
         <SessionRail sessions={s.sessions} activeSessionId={s.activeSessionId}
           usage={s.usage} collapsed={railCollapsed} onToggleCollapse={toggleRail}
