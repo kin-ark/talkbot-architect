@@ -104,6 +104,8 @@ def test_modify_component_rename_node_roundtrips_clean(tmp_path):
     result = json.loads(out.read_text(encoding="utf-8"))
     # envelope shape preserved
     assert "componentImportAndExportDTOS" in result
+    # new label appears in the output
+    assert "Welcome" in json.dumps(result)
     # round-trip validates clean (0 error-severity findings)
     assert _errors(result) == []
 
@@ -121,4 +123,37 @@ def test_modify_component_add_variable_roundtrips_clean(tmp_path):
     names = [v.get("name") for v in result.get("speechVariableDTO", [])]
     assert "Score" in names
     # round-trip validates clean
+    assert _errors(result) == []
+
+
+def test_guard_rejects_add_component_forbidden_node():
+    """Guard rejects add-component with forbidden node type (goto_kb, goto_mr, talk_continue)."""
+    import pytest
+    from wizmodifier.apply import run_mods
+    bundle = InputBundle.load(FIXT)
+    # add-component with a goto_kb node (forbidden in component mode)
+    mods = [{"op": "add-component", "name": "NewComponent",
+             "nodes": [{"id": "n1", "type": "goto_kb", "config": {"target": "SomeKB"}}]}]
+    with pytest.raises(ValueError, match="component mode"):
+        run_mods(bundle, mods, manifest_hash="_")
+
+
+def test_modify_component_rewire_edge_roundtrips_clean(tmp_path):
+    """Load component -> apply rewire-edge op -> write -> re-parse -> 0 errors."""
+    from wizmodifier.apply import run_mods
+    bundle = InputBundle.load(FIXT)
+    # Fixture has a talk node (uuid c8a8f42b-1524-54b6-acb9-cb57d35ccfc7) with branches
+    # Positive, Negative, Unclassified. Only Unclassified is routed to the exit.
+    # Rewire the Negative branch to the exit node.
+    mods = [{"op": "rewire-edge", "component": 0,
+             "from": {"label": "Talk Node"},
+             "branch": "Negative",
+             "to": {"label": "Exit Node"}}]
+    run_mods(bundle, mods, manifest_hash="h")
+    out = tmp_path / "out.json"
+    write_output(bundle, out, fmt="json")
+    result = json.loads(out.read_text(encoding="utf-8"))
+    # envelope shape preserved
+    assert "componentImportAndExportDTOS" in result
+    # round-trip validates clean (0 error-severity findings)
     assert _errors(result) == []
