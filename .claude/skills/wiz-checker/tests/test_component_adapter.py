@@ -101,3 +101,100 @@ def test_parse_dict_adapts_component_export():
 def test_parse_dict_full_export_flag_false():
     wf = parse_dict({"BizSpeechComponent": [], "SpeechIntent": [], "SpeechVariable": []})
     assert wf.is_component_export is False
+
+
+from wizcheck.component_adapter import full_to_component_export
+
+# A full-export-shaped dict as the BUILDER emits it: top-level sections are
+# escaped-JSON STRINGS; per-component details/routes are strings too;
+# intents carry bracket-string keyword fields.
+import json as _json
+_FULL = {
+    "BizSpeechComponent": _json.dumps([{
+        "componentUuid": "c-1", "name": "Main", "branch": "dev", "category": 1,
+        "speechId": 7, "templateCode": "T", "type": 1, "editStatus": 2, "useStatus": 1,
+        "parentUuid": "0", "sortIndex": 1, "createTime": 100, "updateTime": 200,
+        "createBy": "x", "language": "IDN", "id": 55,
+        "details": _json.dumps({"n1": {"type": 1, "data": {"type": 1, "list": ["hi"]}}}),
+        "routes": _json.dumps({"n1": {}}),
+        "inboundPorts": _json.dumps([{"uuid": "n1"}]),
+        "outboundPorts": "[]", "topFloorDetails": "[]", "nluConf": "{}", "sourceUuid": "",
+    }]),
+    "SentenceCutSpeech": _json.dumps([{
+        "id": "n1", "componentUuid": "c-1", "sentenceText": "hi", "senRecName": "",
+        "sentenceTextUrl": "", "speechRecCutId": "r1", "sentenceCutId": 999,
+        "showType": 0, "sortIndex": 1, "type": "record", "isDelete": 0,
+        "branch": "dev", "speechId": 7,
+    }]),
+    "SpeechIntent": _json.dumps([{
+        "intentId": 1, "intentName": "Positive", "isInit": 1, "language": "IDN",
+        "keyWordInIntent": "[Ya,Betul]", "userResponseInIntent": "[]",
+        "branch": "dev", "isDelete": 0, "nodeId": "", "speechId": 7,
+        "templateCode": "T", "createTime": 0, "updateTime": 0,
+    }]),
+    "SpeechVariable": _json.dumps([{
+        "id": 2, "name": "Segment", "textType": "DEFAULT", "type": 1,
+        "userId": 9, "variableSource": 0, "beInit": 0, "branch": "dev",
+        "createTime": 0, "enumVariable": 0, "speechId": 7, "templateCode": "T",
+    }]),
+    "SpeechAudio": "[]", "BizNodeHotWords": "[]",
+}
+
+
+def test_full_to_component_export_envelope_shape():
+    dto = full_to_component_export(_FULL, name="Main")
+    assert dto["name"] == "Main"
+    for k in ("componentImportAndExportDTOS", "speechIntentDTO", "speechVariableDTO",
+              "speechEntiEntityList", "speechEntityData", "speechFunctionDTO", "tagDTOList"):
+        assert k in dto
+    assert dto["speechEntiEntityList"] == [] and dto["speechFunctionDTO"] == []
+
+
+def test_full_to_component_export_component_decoded():
+    dto = full_to_component_export(_FULL)
+    entry = dto["componentImportAndExportDTOS"][0]
+    assert entry["componentName"] == "Main" and entry["componentUuid"] == "c-1"
+    scd = entry["speechComponentDTO"]
+    assert isinstance(scd["details"], dict)        # decoded, not a string
+    assert isinstance(scd["routes"], dict)
+    assert isinstance(scd["inboundPorts"], list)
+    assert "createTime" not in scd and "language" not in scd  # dropped
+    assert scd["version"] == "4"
+
+
+def test_full_to_component_export_sentence_cut_snake():
+    dto = full_to_component_export(_FULL)
+    row = dto["componentImportAndExportDTOS"][0]["sentenceCutDTOList"][0]
+    assert row["sentence_text"] == "hi" and row["speech_rec_cut_id"] == "r1"
+    assert "sentenceText" not in row and "branch" not in row and "speechId" not in row
+
+
+def test_full_to_component_export_intent_arrays():
+    dto = full_to_component_export(_FULL)
+    intent = dto["speechIntentDTO"][0]
+    assert intent["keyWordInIntent"] == ["Ya", "Betul"]      # bracket-string -> array
+    assert intent["userResponseInIntent"] == []
+    assert intent["preExclusiveKeyword"] == [] and "branch" not in intent
+
+
+def test_full_to_component_export_variable_trim():
+    dto = full_to_component_export(_FULL)
+    var = dto["speechVariableDTO"][0]
+    assert var["name"] == "Segment" and var["variableSource"] == 0
+    assert "branch" not in var and "enumVariable" not in var
+
+
+def test_roundtrip_dto_to_full_to_dto():
+    # Start from a component export, go full, come back — key structure preserved.
+    dto0 = _COMP_EXPORT  # the fixture already defined earlier in this test module
+    full = component_export_to_full(dto0)
+    # re-encode the top-level sections as the builder would (strings), so
+    # full_to_component_export sees builder-shaped input:
+    import json
+    full_str = {k: (json.dumps(v) if isinstance(v, (list, dict)) else v)
+                for k, v in full.items()}
+    dto1 = full_to_component_export(full_str, name=dto0.get("name"))
+    e0 = dto0["componentImportAndExportDTOS"][0]
+    e1 = dto1["componentImportAndExportDTOS"][0]
+    assert e1["componentUuid"] == e0["componentUuid"]
+    assert e1["speechComponentDTO"]["name"] == e0["speechComponentDTO"]["name"]
