@@ -31,6 +31,13 @@ _SPECS = [
              "Return the manifest schema, known node labels, and modifier op names. "
              "Call this before authoring scaffold_bot params or ops.",
              {"type": "object", "properties": {}}),
+    ToolSpec("get_playbook",
+             "Retrieve a corpus-derived blueprint (flow skeleton, stage tuning, "
+             "intents, KBs, scripts) for a known bot vertical, e.g. 'debt_collection'. "
+             "Call this BEFORE scaffolding a whole new bot in that domain.",
+             {"type": "object",
+              "properties": {"vertical": {"type": "string"}},
+              "required": ["vertical"]}),
     ToolSpec("scaffold_bot",
              "Create a brand-new dialogue from typed parameters (NOT raw YAML). "
              "Proposes a full new doc (dry-run). Use after the user confirms an outline. "
@@ -397,6 +404,8 @@ def dispatch(name: str, args: dict, data: dict) -> dict:
         return _as_proposal(p)
     if name == "get_schema":
         return {"result": agents.get_schema(), "proposal": None}
+    if name == "get_playbook":
+        return {"result": agents.get_playbook(args["vertical"]), "proposal": None}
     if name == "add_component":
         import yaml
         op = {"op": "add-component", "name": args["name"]}

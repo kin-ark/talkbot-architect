@@ -216,6 +216,18 @@ def get_schema() -> dict:
     }
 
 
+def get_playbook(vertical: str) -> dict:
+    """Corpus-derived blueprint for a bot vertical (e.g. 'debt_collection')."""
+    import playbooks
+    text = playbooks.get_playbook(vertical)
+    return {
+        "found": text is not None,
+        "vertical": vertical,
+        "playbook": text,
+        "available": [p["id"] for p in playbooks.list_playbooks()],
+    }
+
+
 def propose_mods(data: dict, mods_yaml: str) -> dict:
     """Deep-copy *data*, apply *mods_yaml* ops as a dry-run, return diff + delta.
 
