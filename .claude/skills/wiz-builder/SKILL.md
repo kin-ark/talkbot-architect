@@ -52,6 +52,16 @@ Do **not** invoke for:
      --manifest talkbot/<slug>/manifest.yaml
    ```
 
+   By default, `--emit full` produces a complete bot export. To emit a **component-library export** instead, pass `--emit component`:
+
+   ```bash
+   python .claude/skills/wiz-builder/scripts/build.py \
+     --manifest talkbot/<slug>/manifest.yaml --emit component \
+     --out talkbot/<slug>/component.json
+   ```
+
+   Component mode compiles each canvas into a reusable component (`componentImportAndExportDTOS` envelope). Bot-level features—`knowledge_bases`, `hot_words`, and node types `goto_kb`/`goto_mr`/`talk_continue`—are unsupported in component mode; the builder will reject them with a clear error.
+
    The CLI prints a JSON result:
    ```json
    {
