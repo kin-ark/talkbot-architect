@@ -44,3 +44,7 @@ def _assert_mature(data):
 
 def test_dpd1_5_mature():
     _assert_mature(_build("debt_dpd1_5"))
+
+
+def test_predue_d1_mature():
+    _assert_mature(_build("debt_predue_d1"))

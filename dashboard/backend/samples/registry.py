@@ -18,6 +18,9 @@ SAMPLES = [
     {"id": "debt_dpd1_5", "title": "Debt Collection — DPD 1-5",
      "description": "Firm mid-stage collector: greet+confirm, inform overdue, 2-tier convincer, collect PTP, multi-round KBs.",
      "manifest_file": "debt_collection_dpd1_5.yaml"},
+    {"id": "debt_predue_d1", "title": "Debt Collection — Predue D-1",
+     "description": "Softest pre-due reminder: gentle nudge, future-penalty framing, single convincer, give-more-time KB.",
+     "manifest_file": "debt_predue_d1.yaml"},
 ]
 
 _BY_ID = {s["id"]: s for s in SAMPLES}

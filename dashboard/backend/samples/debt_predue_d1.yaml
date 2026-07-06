@@ -1,0 +1,340 @@
+name: "Debt Collection - Predue D-1"
+branch: dev
+language: IDN
+
+custom_variables:
+  - name: Salutation
+  - name: GenderX
+  - name: Nama
+  - name: JumlahTagihan
+  - name: JatuhTempo
+  - name: PtpStatus
+  - name: DateCollected
+
+custom_intents:
+  - name: AlreadyPaid
+    language: IDN
+    keywords: ["sudah bayar", "sudah terbayar"]
+    user_responses: ["kan saya udah bayar", "kemaren siang udah dibayar", "perasaan saya udah lunas kok", "minggu lalu udah dibayar kok", "iya semalem udah saya bayar"]
+  - name: BankAccountVA
+    language: IDN
+    keywords: ["kode", "kodenya", "rekening"]
+    user_responses: ["kodenya mana", "nomor registrasinya berapa", "transfer ke mana", "rekening mana"]
+  - name: HowToPay
+    language: IDN
+    keywords: ["gimana cara bayar", "bisa bayar pakai apa", "via apa"]
+    user_responses: ["cara bayarnya gimana ya", "pembayarannya bisa melalui apa", "apa aja metode pembayarannya"]
+  - name: FailedToPay
+    language: IDN
+    keywords: ["gagal bayar", "blokir", "block", "gangguan", "failed"]
+    user_responses: ["gagal terus tadi pas bayar", "udah bayar kok tapi gagal", "setiap mau bayar gagal"]
+  - name: Waive
+    language: IDN
+    keywords: ["pengurangan", "potongan", "diskon", "keringanan"]
+    user_responses: ["saya mau minta keringanan", "boleh dibantu penghapusan bunga gak", "mau bayar tapi tanpa bunga"]
+  - name: CanIPayInstallments
+    language: IDN
+    keywords: ["dicicil", "nyicil", "cicil", "minimal payment"]
+    user_responses: ["apa bisa dicicil", "diangsur aja ya", "kalau bayarnya cuma setengahnya gimana"]
+  - name: GiveMeMoreTime
+    language: IDN
+    keywords: ["tambah waktu", "minta waktu", "waktu tambahan"]
+    user_responses: ["kasih saya waktu lebih", "dimundurin bayarnya boleh ya", "kasih saya waktu seminggu lagi"]
+  - name: InterestTooHigh
+    language: IDN
+    keywords: ["bunganya tinggi", "bunga tinggi", "bunga"]
+    user_responses: ["bunganya tinggi banget sih mbak", "biaya adminnya tinggi", "nyekik leher banget dendanya"]
+  - name: ExtendedFee
+    language: IDN
+    keywords: ["biaya perpanjangan", "denda per hari", "biaya tambahan"]
+    user_responses: ["ada biaya perpanjangan gak", "ini denda per hari atau gimana", "kok tiap hari nambah dendanya"]
+  - name: DifferentAmount
+    language: IDN
+    keywords: ["jumlahnya beda", "nominal beda", "kok jadi lebih bayar"]
+    user_responses: ["kok jadi lebih bayar", "jumlahnya kok beda", "nominalnya kok gak sama"]
+  - name: WrongPerson
+    language: IDN
+    keywords: ["salah nomor", "salah sambung", "nyari siapa"]
+    user_responses: ["orangnya tidak ada", "salah nomor", "salah sambung mbak kayaknya", "mau bicara sama siapa ya", "nyari bapak siapa"]
+  - name: InPrison
+    language: IDN
+    keywords: ["bui", "penjara", "di tahan"]
+    user_responses: ["dia lagi di penjara mbak", "dia lagi dalam proses hukum"]
+  - name: Hospitalized
+    language: IDN
+    keywords: ["rumah sakit", "sakit", "rawat inap", "isoman", "covid", "kecelakaan"]
+    user_responses: ["baru aja masuk rumah sakit", "ada keluarga yang sakit"]
+  - name: StopCallingMe
+    language: IDN
+    keywords: ["jangan telpon", "berhenti nelpon", "keluarkan nomor saya"]
+    user_responses: ["udah jangan telpon telpon lagi", "berhenti nelponin saya bisa gak", "tolong keluarkan nomor saya dari list"]
+  - name: WillCallCS
+    language: IDN
+    keywords: ["telepon dulu", "nomor yang bisa dihubungi", "hotline"]
+    user_responses: ["oke saya telepon dulu saja", "ada nomor yang bisa saya hubungi"]
+  - name: WillReportPolice
+    language: IDN
+    keywords: ["lapor", "polisi", "adukan", "pengacara", "ylki"]
+    user_responses: ["saya laporkan ke pihak berwajib loh", "saya laporin ke polisi ya"]
+
+hot_words:
+  - "Legal"
+  - "OJK"
+  - "call center"
+  - "hotline"
+  - "jatuh tempo"
+  - "deadline"
+  - "jatoh tempo"
+  - "denda"
+  - "bayar"
+  - "uang"
+  - "tagihan"
+  - "nyicil"
+  - "cicil"
+  - "hutang"
+  - "ngutang"
+  - "utang"
+  - "virtual account"
+  - "va"
+  - "banking"
+  - "bca"
+  - "brimo"
+  - "brilink"
+  - "alfamart"
+  - "indomart"
+  - "tokopedia"
+  - "bukalapak"
+
+knowledge_bases:
+  - name: "KBG5 Wrong Number"
+    intents: [WrongPerson]
+    multi_round: "Wrong Number"
+  - name: "KBB10 How to Pay"
+    intents: [HowToPay]
+    multi_round: "How to Pay"
+  - name: "KBB4 Give Me More Time"
+    intents: [GiveMeMoreTime]
+    multi_round: "Give Me More Time"
+  - name: "KBB11 Already Paid"
+    intents: [AlreadyPaid]
+    answers: ["Oh Baik, mohon maaf sudah mengganggu waktu anda. Kami akan konfirmasi lagi di sistem. Terima kasih dan selamat beraktifitas kembali."]
+  - name: "KB1 Bank Account VA"
+    intents: [BankAccountVA]
+    answers: ["Baik, anda bisa melakukan pembayaran melalui Virtual Account yang tertera pada aplikasi atau SMS pemberitahuan. / Mohon cek aplikasi kami untuk nomor Virtual Account pembayaran."]
+  - name: "KBB1 Failed Payment"
+    intents: [FailedToPay]
+    answers: ["Hal ini jarang terjadi, mohon login ke aplikasi untuk mengecek tagihan dan nomor Virtual Account anda, atau coba beberapa saat lagi."]
+  - name: "KBB7 Waive Discount"
+    intents: [Waive]
+    answers: ["Mohon maaf untuk saat ini kami belum bisa memberikan keringanan. Silahkan membayar penuh tagihannya sesuai dengan yang tertera."]
+  - name: "KBB19 Installment"
+    intents: [CanIPayInstallments]
+    answers: ["Mohon maaf kami belum bisa menerima pembayaran dengan cicilan untuk saat ini. Pembayaran perlu dilakukan penuh sesuai tagihan."]
+  - name: "KBB18 Interest Too High"
+    intents: [InterestTooHigh]
+    answers: ["Oh, kalau anda membayar sebelum jatuh tempo, tidak akan terkena biaya keterlambatan. Kami sarankan segera melunasi."]
+  - name: "KBB8 Penalty Non-Payment"
+    intents: [ExtendedFee]
+    answers: ["Kalau anda terlambat membayar, akan ada biaya keterlambatan yang dapat bertambah. Kami sarankan melunasi sebelum jatuh tempo."]
+  - name: "KBB20 Different Amount"
+    intents: [DifferentAmount]
+    answers: ["Jumlah yang kami sebutkan adalah tagihan terbaru. Staff kami akan menghubungi anda kembali untuk penjelasan lebih lanjut."]
+  - name: "KBB9 Special Circumstances"
+    intents: [InPrison, Hospitalized]
+    answers: ["Kami turut prihatin mendengar kabar tersebut. Mohon hubungi call center kami agar dapat dibantu lebih lanjut mengenai tagihan ini. Terima kasih."]
+  - name: "KBB13 Stop Calling Me"
+    intents: [StopCallingMe]
+    answers: ["Oh kalau begitu saya mohon maaf. Sebagai asisten virtual, saya hanya ingin mengingatkan mengenai tagihan anda. Terima kasih atas waktunya."]
+  - name: "KBB16 Hotline How to Contact"
+    intents: [WillCallCS]
+    answers: ["Jika anda mengalami kesulitan apapun, mohon hubungi customer service kami melalui aplikasi atau nomor layanan yang tertera. / Anda bisa menghubungi call center kami di nomor layanan resmi."]
+  - name: "KBB14 Will Report Police"
+    intents: [WillReportPolice]
+    answers: ["Kami memohon maaf atas ketidaknyamanannya. Saya sudah mencatat hal ini dan nanti ada staff kami yang akan menghubungi anda kembali. Terima kasih."]
+
+canvases:
+  - name: "0. Greeting & Confirm"
+    nodes:
+      - id: cond_gender
+        type: conditional
+        prompt: "(rute salam berdasarkan gender)"
+        config:
+          variable: GenderX
+          branches:
+            - {name: Male, op: "=", value: "Male", to: assign_male}
+            - {name: Female, op: "=", value: "Female", to: assign_female}
+            - {name: Default, to: assign_default}
+      - id: assign_male
+        type: assign
+        prompt: "(set sapaan Bapak)"
+        config: {variable: Salutation, value: "Bapak"}
+      - id: assign_female
+        type: assign
+        prompt: "(set sapaan Ibu)"
+        config: {variable: Salutation, value: "Ibu"}
+      - id: assign_default
+        type: assign
+        prompt: "(set sapaan default)"
+        config: {variable: Salutation, value: "Bapak/Ibu"}
+      - id: greet
+        type: talk
+        prompt: "Halo, Saya Nia dari layanan pembiayaan kami. [Apakah betul saya berbicara dengan {Salutation} {Nama}?] / [Ini dengan {Salutation} {Nama}, betul ya?] / [Apa betul dengan {Salutation} {Nama} yang berbicara?]"
+      - id: g_inform
+        type: goto
+        config: {target: "1. Inform Payment"}
+      - id: g_wrong
+        type: goto_kb
+        config: {target: "KBG5 Wrong Number"}
+    edges:
+      - {from: assign_male, branch: Default, to: greet}
+      - {from: assign_female, branch: Default, to: greet}
+      - {from: assign_default, branch: Default, to: greet}
+      - {from: greet, branch: Positive, to: g_inform}
+      - {from: greet, branch: Negative, to: g_wrong}
+      - {from: greet, branch: Unclassified, to: g_inform}
+
+  - name: "1. Inform Payment"
+    nodes:
+      - id: inform
+        type: talk
+        prompt: "Halo, saya menelepon untuk memberitahukan bahwa ada tagihan anda di layanan kami yang akan jatuh tempo pada {JatuhTempo} sebesar {JumlahTagihan}. Apakah ada rencana pembayaran dalam waktu dekat? / Mohon maaf mengganggu waktunya, kami ingin mengingatkan bahwa tagihan anda sebesar {JumlahTagihan} akan jatuh tempo pada {JatuhTempo}. Apa bisa dilunasi sebelum jatuh tempo? / Baik, saya hanya ingin mengingatkan kembali tagihan anda sebesar {JumlahTagihan} yang akan jatuh tempo. Bisa dibayarkan sebelum waktu jatuh tempo?"
+      - id: g_collect
+        type: goto
+        config: {target: "Collect Commitment"}
+      - id: g_convince
+        type: goto
+        config: {target: "2. Convincer"}
+      - id: g_unclass
+        type: goto
+        config: {target: "Unclassified"}
+    edges:
+      - {from: inform, branch: Positive, to: g_collect}
+      - {from: inform, branch: Negative, to: g_convince}
+      - {from: inform, branch: Unclassified, to: g_unclass}
+
+  - name: "2. Convincer"
+    nodes:
+      - id: convince
+        type: talk
+        prompt: "Oh, kami memahami keadaannya dan terima kasih atas kesetiaan anda. Kami sarankan untuk membayar sebelum jatuh tempo agar terhindar dari denda tambahan. Kalau anda melunasi sebelum lewat jatuh tempo, anda tidak akan dikenakan biaya keterlambatan. Apa bisa diusahakan? / Kami memahami situasinya, namun kami sarankan untuk melunasi sebelum jatuh tempo supaya terhindar dari denda. Bisa diusahakan pembayarannya?"
+      - id: g_collect2
+        type: goto
+        config: {target: "Collect Commitment"}
+      - id: g_negclose
+        type: goto
+        config: {target: "Negative Closing"}
+      - id: g_unclass2
+        type: goto
+        config: {target: "Collect Commitment"}
+    edges:
+      - {from: convince, branch: Positive, to: g_collect2}
+      - {from: convince, branch: Negative, to: g_negclose}
+      - {from: convince, branch: Unclassified, to: g_unclass2}
+
+  - name: "Collect Commitment"
+    nodes:
+      - id: ask_time
+        type: talk
+        prompt: "Baik, kira-kira anda akan melakukan pembayaran tanggal berapa ya? / Bisa diinfokan tanggal pembayarannya? / Kapan kira-kira bisa dilunasi tagihannya?"
+      - id: assign_ptp
+        type: assign
+        prompt: "(catat komitmen pembayaran)"
+        config: {variable: PtpStatus, value: "Committed"}
+      - id: assign_date
+        type: assign
+        prompt: "(catat tanggal janji bayar)"
+        config: {variable: DateCollected, value: "Sesuai Kesepakatan"}
+      - id: route_ptp
+        type: conditional
+        prompt: "(rute berdasarkan status PTP)"
+        config:
+          variable: PtpStatus
+          branches:
+            - {name: Committed, op: "=", value: "Committed", to: g_pos}
+            - {name: Default, to: g_neg}
+      - id: g_pos
+        type: goto
+        config: {target: "Positive Closing"}
+      - id: g_neg
+        type: goto
+        config: {target: "Negative Closing"}
+    edges:
+      - {from: ask_time, branch: Positive, to: assign_ptp}
+      - {from: ask_time, branch: Unclassified, to: assign_ptp}
+      - {from: ask_time, branch: Negative, to: g_neg}
+      - {from: assign_ptp, branch: Default, to: assign_date}
+      - {from: assign_date, branch: Default, to: route_ptp}
+
+  - name: "Positive Closing"
+    nodes:
+      - id: close_pos
+        type: talk
+        prompt: "Baik, data anda sudah kami catat. Jumlah yang harus dibayarkan sebesar {JumlahTagihan}, kami tunggu pembayarannya pada {DateCollected}. Jika belum masuk, kami akan menghubungi anda kembali. Terima kasih. / Terima kasih atas komitmennya, mohon segera dilakukan pembayaran sesuai kesepakatan ya."
+      - id: end_pos
+        type: exit
+        prompt: "Selamat siang."
+    edges:
+      - {from: close_pos, branch: Unclassified, to: end_pos}
+
+  - name: "Negative Closing"
+    nodes:
+      - id: close_neg
+        type: talk
+        prompt: "Baik, kalau begitu kami harapkan pembayarannya sebelum jatuh tempo ya, untuk menghindari biaya tambahan. Jika belum masuk, kami akan terus menghubungi anda kembali. Terima kasih. / Mohon segera diselesaikan tagihannya sebelum jatuh tempo untuk menghindari biaya tambahan. Terima kasih atas waktunya."
+      - id: end_neg
+        type: exit
+        prompt: "Selamat siang."
+    edges:
+      - {from: close_neg, branch: Unclassified, to: end_neg}
+
+  - name: "Unclassified"
+    nodes:
+      - id: unclass_talk
+        type: talk
+        prompt: "Mohon maaf sepertinya ada masalah sinyal. Saya hanya ingin mengingatkan anda untuk melunasi tagihan sebesar {JumlahTagihan} sebelum jatuh tempo. Kami tunggu pembayarannya sebelum {JatuhTempo} ya. Terima kasih."
+      - id: end_unclass
+        type: exit
+        prompt: "Selamat siang."
+    edges:
+      - {from: unclass_talk, branch: Unclassified, to: end_unclass}
+
+  - name: "Wrong Number"
+    nodes:
+      - id: verify
+        type: talk
+        prompt: "Hmm, mohon maaf, apa saya sedang berbicara dengan {Salutation} {Nama}? / Apa benar ini dengan {Salutation} {Nama}?"
+      - id: tc_resume
+        type: talk_continue
+        prompt: "Baik, kalau begitu mari kita lanjutkan mengenai informasi tagihannya ya."
+        config: {target: "1. Inform Payment"}
+      - id: apology_exit
+        type: exit
+        prompt: "Oh, mohon maaf sudah mengganggu waktu Anda, terima kasih dan semoga hari anda menyenangkan."
+    edges:
+      - {from: verify, branch: Positive, to: tc_resume}
+      - {from: verify, branch: Negative, to: apology_exit}
+      - {from: verify, branch: Unclassified, to: apology_exit}
+
+  - name: "How to Pay"
+    nodes:
+      - id: explain
+        type: talk_continue
+        prompt: "Pembayaran dapat dilakukan melalui aplikasi, ATM, transfer bank ke Virtual Account, atau minimarket seperti Alfamart/Indomaret. / Anda bisa membayar lewat m-banking, virtual account, atau datang langsung ke minimarket terdekat."
+        config: {target: "1. Inform Payment"}
+
+  - name: "Give Me More Time"
+    nodes:
+      - id: offer_time
+        type: talk
+        prompt: "Baik, kami dapat memberikan tambahan waktu, namun agar tidak dikenakan denda tambahan, kami sarankan tetap diselesaikan secepatnya. Apakah masih bisa diusahakan sebelum jatuh tempo? / Kami memahami kondisi Anda, namun mohon diusahakan pembayarannya secepatnya untuk menghindari denda."
+      - id: tc_resume2
+        type: talk_continue
+        prompt: "Baik, kalau begitu mari kita lanjutkan pembicaraan mengenai penyelesaian tagihannya."
+        config: {target: "1. Inform Payment"}
+      - id: tc_wait
+        type: talk_continue
+        prompt: "Baik, kami catat permintaan Anda. Mohon tetap diusahakan pembayarannya secepatnya untuk menghindari biaya tambahan. Terima kasih."
+    edges:
+      - {from: offer_time, branch: Positive, to: tc_resume2}
+      - {from: offer_time, branch: Negative, to: tc_wait}
+      - {from: offer_time, branch: Unclassified, to: tc_wait}
