@@ -27,6 +27,9 @@ SAMPLES = [
     {"id": "debt_dpd6_30", "title": "Debt Collection — DPD 6-30",
      "description": "Insistent overdue collector: overdue-days framing, accruing-penalty consequence, 3-tier convincer, DPD info KB.",
      "manifest_file": "debt_dpd6_30.yaml"},
+    {"id": "debt_overdue_90", "title": "Debt Collection — Overdue 90+",
+     "description": "Long-overdue collector: escalating repetition, randomized convincer variants, 3-tier ladder, keringanan/restructuring KB.",
+     "manifest_file": "debt_overdue_90.yaml"},
 ]
 
 _BY_ID = {s["id"]: s for s in SAMPLES}
