@@ -68,6 +68,16 @@ output:
   format: zip          # zip | zip-no-wav | json
 ```
 
+## Component-export mode
+
+The modifier auto-detects a WIZ component-library export (`componentImportAndExportDTOS` envelope) on load. It adapts the component's DTO format to the full-export shape ops already understand, applies mutations unchanged, and writes the component envelope back (JSON only). Untouched passthrough fields (envelope `name`, per-entry metadata, entity/function/tag lists) are preserved verbatim.
+
+A component is a standalone reusable unit; component-mode op restrictions forbid bot-scope operations:
+- **Forbidden ops:** `add-kb`, `rename-kb`, `set-kb-intents`, `add-kb-answer`, `edit-kb-answer`, `remove-kb-answer`, `set-kb-multiround`, `delete-kb`, `set-hotwords` (all bot-level).
+- **Forbidden node types:** `goto_kb`, `goto_mr`, `talk_continue` (all require bot context).
+
+These ops raise `ValueError("component mode: ... unsupported")` before any mutation. Component input requesting ZIP output raises; JSON is the only valid output format.
+
 ## Notes
 
 - The checker runs in **advisory** mode (findings printed, never blocks) — import-test files are deliberately divergent.

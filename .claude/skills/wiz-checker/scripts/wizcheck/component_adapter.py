@@ -60,17 +60,30 @@ def _adapt_intent(dto: dict) -> dict:
     return out
 
 
+def _adapt_variable(dto: dict, comp: dict) -> dict:
+    # Component-export variables lack 'speechId' and 'templateCode' fields;
+    # add them from component (same pattern as sentence_cut adaptation).
+    out = dict(dto)
+    out.setdefault("branch", comp.get("branch", "dev"))
+    out.setdefault("speechId", comp.get("speechId"))
+    out.setdefault("templateCode", comp.get("templateCode"))
+    return out
+
+
 def component_export_to_full(raw: dict) -> dict:
     """Build a full-export-shaped dict from a component-export envelope."""
     entries = raw.get("componentImportAndExportDTOS") or []
     components: list[dict] = []
     sentence_cuts: list[dict] = []
+    first_comp = None
     for entry in entries:
         if not isinstance(entry, dict):
             continue
         comp = _adapt_component(entry)
         if comp is None:
             continue
+        if first_comp is None:
+            first_comp = comp
         components.append(comp)
         for row in entry.get("sentenceCutDTOList") or []:
             if isinstance(row, dict):
@@ -78,7 +91,9 @@ def component_export_to_full(raw: dict) -> dict:
 
     intents = [_adapt_intent(i) for i in (raw.get("speechIntentDTO") or [])
                if isinstance(i, dict)]
-    variables = [dict(v) for v in (raw.get("speechVariableDTO") or [])
+    # Use first component's branch for variables; all components share the intent/variable defs.
+    default_comp = first_comp or {}
+    variables = [_adapt_variable(v, default_comp) for v in (raw.get("speechVariableDTO") or [])
                  if isinstance(v, dict)]
 
     return {

@@ -78,3 +78,47 @@ def test_guard_allows_permitted_op_no_raise():
     except ValueError as e:
         # If an error was raised, ensure it's not from the guard (not "component mode")
         assert "component mode" not in str(e), f"Guard should not raise: {e}"
+
+
+def _errors(envelope_dict):
+    """Extract ERROR-severity findings from a component-export dict."""
+    from wizcheck.checks import run_all_checks
+    from wizcheck.parser import parse_dict
+    wf = parse_dict(envelope_dict)
+    findings = run_all_checks(wf)
+    return [f for f in findings if getattr(f, "severity", "") == "error"]
+
+
+def test_modify_component_rename_node_roundtrips_clean(tmp_path):
+    """Load component -> apply rename-node op -> write -> re-parse -> 0 errors."""
+    from wizmodifier.apply import run_mods
+    bundle = InputBundle.load(FIXT)
+    # rename the entry talk node's label; the fixture node label is "Talk Node"
+    # component=0 is the only component in the fixture
+    # node ref uses {"label": "Talk Node"} format
+    mods = [{"op": "rename-node", "component": 0,
+             "node": {"label": "Talk Node"}, "label": "Welcome"}]
+    run_mods(bundle, mods, manifest_hash="h")
+    out = tmp_path / "out.json"
+    write_output(bundle, out, fmt="json")
+    result = json.loads(out.read_text(encoding="utf-8"))
+    # envelope shape preserved
+    assert "componentImportAndExportDTOS" in result
+    # round-trip validates clean (0 error-severity findings)
+    assert _errors(result) == []
+
+
+def test_modify_component_add_variable_roundtrips_clean(tmp_path):
+    """Load component -> add-variable -> write -> re-parse -> 0 errors + variable present."""
+    from wizmodifier.apply import run_mods
+    bundle = InputBundle.load(FIXT)
+    mods = [{"op": "add-variable", "name": "Score", "textType": "DEFAULT"}]
+    run_mods(bundle, mods, manifest_hash="h")
+    out = tmp_path / "out.json"
+    write_output(bundle, out, fmt="json")
+    result = json.loads(out.read_text(encoding="utf-8"))
+    # new variable present in envelope
+    names = [v.get("name") for v in result.get("speechVariableDTO", [])]
+    assert "Score" in names
+    # round-trip validates clean
+    assert _errors(result) == []
