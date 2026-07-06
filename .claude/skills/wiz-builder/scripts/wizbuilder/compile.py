@@ -133,6 +133,7 @@ def _run_checker(output_path: Path) -> CompileResult:
         capture_output=True,
         text=True,
         encoding="utf-8",
+        errors="replace",
     )
     if proc.returncode not in (0, 1):
         raise RuntimeError(

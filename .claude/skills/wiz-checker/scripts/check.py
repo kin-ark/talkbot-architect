@@ -60,7 +60,7 @@ def main(argv: list[str] | None = None) -> int:
 
     if getattr(wf, "is_component_export", False):
         print(
-            "note: component-export format detected — bot-scope checks "
+            "note: component-export format detected - bot-scope checks "
             "(WIZ104/110/202/303) suppressed",
             file=sys.stderr,
         )

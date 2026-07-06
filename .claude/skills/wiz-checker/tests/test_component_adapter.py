@@ -186,15 +186,71 @@ def test_full_to_component_export_variable_trim():
 
 def test_roundtrip_dto_to_full_to_dto():
     # Start from a component export, go full, come back — key structure preserved.
-    dto0 = _COMP_EXPORT  # the fixture already defined earlier in this test module
+    # Use a fixture with non-empty details to catch decode/encode regressions.
+    import json
+    dto0 = {
+        "name": "Main",
+        "componentImportAndExportDTOS": [{
+            "componentName": "Main",
+            "componentUuid": "a227ff42-008d-4970-9eff-c43b3d18fd22",
+            "speechComponentDTO": {
+                "componentUuid": "a227ff42-008d-4970-9eff-c43b3d18fd22",
+                "speechId": 1, "category": 1, "branch": "dev", "name": "Main",
+                "sortIndex": 1, "parentUuid": "0", "updateTime": 123,
+                "details": {"n1": {"type": 1, "data": {"type": 1}}},  # non-empty details
+                "routes": {}, "inboundPorts": [],
+            },
+            "sentenceCutDTOList": [{
+                "componentUuid": "a227ff42-008d-4970-9eff-c43b3d18fd22",
+                "id": "0352c639-d634-4e06-a8b8-c0c5543f224e",
+                "sen_rec_name": "", "sentence_text": "Halo?", "sentence_text_url": "",
+                "sentenceCutId": 999, "speech_rec_cut_id": "08d59256-b044-5911-a401-c764ff28fa00",
+                "showType": 0, "sortIndex": 1, "type": "record",
+            }],
+            "asrSceneEntityList": [],
+        }],
+        "speechIntentDTO": [
+            {"intentId": 1, "intentName": "Positive", "isInit": 1, "language": "IDN",
+             "keyWordInIntent": ["Ya", "Betul"], "userResponseInIntent": []},
+        ],
+        "speechVariableDTO": [
+            {"beInit": 0, "id": 2, "name": "Customer Segment", "textType": "DEFAULT",
+             "type": 0, "userId": 9, "variableSource": 0},
+        ],
+        "speechEntiEntityList": [], "speechEntityData": [],
+        "speechFunctionDTO": [], "tagDTOList": [],
+    }
+
     full = component_export_to_full(dto0)
     # re-encode the top-level sections as the builder would (strings), so
     # full_to_component_export sees builder-shaped input:
-    import json
     full_str = {k: (json.dumps(v) if isinstance(v, (list, dict)) else v)
                 for k, v in full.items()}
     dto1 = full_to_component_export(full_str, name=dto0.get("name"))
+
+    # Check component-level structure
     e0 = dto0["componentImportAndExportDTOS"][0]
     e1 = dto1["componentImportAndExportDTOS"][0]
     assert e1["componentUuid"] == e0["componentUuid"]
     assert e1["speechComponentDTO"]["name"] == e0["speechComponentDTO"]["name"]
+
+    # Check non-empty details survive (not collapsed to empty dict)
+    assert e1["speechComponentDTO"]["details"] == {"n1": {"type": 1, "data": {"type": 1}}}
+
+    # Check sentence-cut snake fields survive
+    sc0 = e0["sentenceCutDTOList"][0]
+    sc1 = e1["sentenceCutDTOList"][0]
+    assert sc1["sentence_text"] == sc0["sentence_text"] == "Halo?"
+    assert sc1["speech_rec_cut_id"] == sc0["speech_rec_cut_id"]
+
+    # Check intent array fields survive
+    intent0 = dto0["speechIntentDTO"][0]
+    intent1 = dto1["speechIntentDTO"][0]
+    assert intent1["keyWordInIntent"] == intent0["keyWordInIntent"] == ["Ya", "Betul"]
+    assert intent1["intentName"] == intent0["intentName"] == "Positive"
+
+    # Check variable name/source survive
+    var0 = dto0["speechVariableDTO"][0]
+    var1 = dto1["speechVariableDTO"][0]
+    assert var1["name"] == var0["name"] == "Customer Segment"
+    assert var1["variableSource"] == var0["variableSource"] == 0

@@ -56,3 +56,32 @@ def test_emit_full_unchanged():
 def test_component_mode_rejects_knowledge_bases():
     with pytest.raises((ManifestError, CompileError), match="component mode"):
         _build(_BAD_KB_MANIFEST, "component")
+
+
+def test_component_mode_rejects_hot_words():
+    manifest_with_hotwords = _COMPONENT_MANIFEST.rstrip() + """
+hot_words:
+  - "indosat"
+"""
+    with pytest.raises((ManifestError, CompileError), match="component mode"):
+        _build(manifest_with_hotwords, "component")
+
+
+def test_component_mode_rejects_goto_kb_node():
+    manifest_with_goto_kb = """
+name: "Greeting Component"
+branch: dev
+language: IDN
+canvases:
+  - name: "Main"
+    nodes:
+      - {id: greet, type: talk, prompt: "Halo?"}
+      - {id: jump, type: goto_kb, config: {target: "SomeKB"}}
+      - {id: bye, type: exit, prompt: "Terima kasih."}
+    edges:
+      - {from: greet, branch: Positive, to: jump}
+      - {from: greet, branch: Negative, to: bye}
+      - {from: greet, branch: Unclassified, to: bye}
+"""
+    with pytest.raises((ManifestError, CompileError), match="component mode"):
+        _build(manifest_with_goto_kb, "component")
