@@ -254,3 +254,51 @@ def test_roundtrip_dto_to_full_to_dto():
     var1 = dto1["speechVariableDTO"][0]
     assert var1["name"] == var0["name"] == "Customer Segment"
     assert var1["variableSource"] == var0["variableSource"] == 0
+
+
+def test_base_splice_preserves_passthrough_and_replaces_modeled():
+    base = {
+        "name": "Orig Name",
+        "componentImportAndExportDTOS": [{
+            "componentName": "Comp A",
+            "componentUuid": "uuid-a",
+            "speechId": "sp1",
+            "templateCode": "tc1",
+            "enterpriseId": 7,
+            "asrSceneEntityList": [{"keep": "me"}],
+            "speechComponentDTO": {"componentUuid": "uuid-a", "name": "Comp A",
+                                   "details": {"n1": {"type": 1}}, "routes": {}},
+            "sentenceCutDTOList": [],
+        }],
+        "speechIntentDTO": [],
+        "speechVariableDTO": [],
+        "speechEntiEntityList": [{"stays": 1}],
+        "speechEntityData": [{"stays": 2}],
+        "speechFunctionDTO": [{"stays": 3}],
+        "tagDTOList": [{"stays": 4}],
+    }
+    full = component_export_to_full(base)
+    # rename the component's node label in the full shape so the modeled
+    # section legitimately differs from base.
+    dto = full_to_component_export(full, base=base)
+    # passthrough preserved verbatim
+    assert dto["speechEntiEntityList"] == [{"stays": 1}]
+    assert dto["speechEntityData"] == [{"stays": 2}]
+    assert dto["speechFunctionDTO"] == [{"stays": 3}]
+    assert dto["tagDTOList"] == [{"stays": 4}]
+    assert dto["name"] == "Orig Name"
+    entry = dto["componentImportAndExportDTOS"][0]
+    assert entry["asrSceneEntityList"] == [{"keep": "me"}]
+    assert entry["enterpriseId"] == 7
+    # modeled section present + decoded
+    assert entry["speechComponentDTO"]["componentUuid"] == "uuid-a"
+    assert isinstance(entry["speechComponentDTO"]["details"], dict)
+
+
+def test_base_splice_none_matches_phase2():
+    full = {"BizSpeechComponent": "[]", "SentenceCutSpeech": "[]",
+            "SpeechIntent": "[]", "SpeechVariable": "[]"}
+    a = full_to_component_export(full, name="X")
+    b = full_to_component_export(full, name="X", base=None)
+    assert a == b
+    assert a["speechEntiEntityList"] == []  # regenerated empty when no base

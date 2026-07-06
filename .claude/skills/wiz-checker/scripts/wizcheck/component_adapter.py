@@ -8,6 +8,7 @@ intent/variable rows. This module maps it back to the full-export shape.
 """
 from __future__ import annotations
 
+import copy
 import json
 from typing import Any
 
@@ -168,11 +169,21 @@ def _to_variable_dto(row: dict) -> dict:
     return out
 
 
-def full_to_component_export(full: dict, *, name: str | None = None) -> dict:
+def full_to_component_export(
+    full: dict, *, name: str | None = None, base: dict | None = None
+) -> dict:
     """Inverse of component_export_to_full: full-export dict -> component-export DTO.
 
     Accepts a builder-produced full-export dict (sections may be escaped-JSON
-    strings or already-decoded).  Emits the componentImportAndExportDTOS envelope.
+    strings or already-decoded). Emits the componentImportAndExportDTOS envelope.
+
+    When ``base`` is given (the original envelope the modifier loaded), the
+    modeled sections are regenerated from ``full`` and overlaid onto a deep copy
+    of ``base``; every other field of ``base`` (passthrough entity/function/tag
+    lists, per-entry asrSceneEntityList/speechId/templateCode/enterpriseId, and
+    ``name``) is preserved verbatim. Components are matched by componentUuid;
+    a component in ``full`` but not ``base`` is appended, one in ``base`` but not
+    ``full`` is dropped.
     """
     comps = _dec(full.get("BizSpeechComponent")) or []
     scs = _dec(full.get("SentenceCutSpeech")) or []
@@ -181,12 +192,19 @@ def full_to_component_export(full: dict, *, name: str | None = None) -> dict:
     if not isinstance(comps, list):
         comps = []
 
-    # group sentence-cuts by componentUuid
     cuts_by_comp: dict[str, list] = {}
     if isinstance(scs, list):
         for row in scs:
             if isinstance(row, dict):
                 cuts_by_comp.setdefault(row.get("componentUuid"), []).append(row)
+
+    intent_dtos = [_to_intent_dto(i) for i in intents if isinstance(i, dict)]
+    var_dtos = [_to_variable_dto(v) for v in variables if isinstance(v, dict)]
+
+    if base is not None:
+        return _splice_component_export(
+            base, comps, cuts_by_comp, intent_dtos, var_dtos, name
+        )
 
     entries = []
     for comp in comps:
@@ -207,10 +225,51 @@ def full_to_component_export(full: dict, *, name: str | None = None) -> dict:
     return {
         "name": name or (entries[0]["componentName"] if entries else ""),
         "componentImportAndExportDTOS": entries,
-        "speechIntentDTO": [_to_intent_dto(i) for i in intents if isinstance(i, dict)],
-        "speechVariableDTO": [_to_variable_dto(v) for v in variables if isinstance(v, dict)],
+        "speechIntentDTO": intent_dtos,
+        "speechVariableDTO": var_dtos,
         "speechEntiEntityList": [],
         "speechEntityData": [],
         "speechFunctionDTO": [],
         "tagDTOList": [],
     }
+
+
+def _new_component_entry(comp: dict, cuts_by_comp: dict) -> dict:
+    cu = comp.get("componentUuid")
+    return {
+        "componentName": comp.get("name", ""),
+        "componentUuid": cu,
+        "speechId": comp.get("speechId"),
+        "templateCode": comp.get("templateCode"),
+        "enterpriseId": comp.get("enterpriseId", 0),
+        "asrSceneEntityList": [],
+        "speechComponentDTO": _to_speech_component_dto(comp),
+        "sentenceCutDTOList": [_to_sentence_cut_dto(r) for r in cuts_by_comp.get(cu, [])],
+    }
+
+
+def _splice_component_export(base, comps, cuts_by_comp, intent_dtos, var_dtos, name):
+    out = copy.deepcopy(base)
+    comp_by_uuid = {c.get("componentUuid"): c for c in comps if isinstance(c, dict)}
+    base_entries = out.get("componentImportAndExportDTOS") or []
+    new_entries = []
+    for entry in base_entries:
+        cu = entry.get("componentUuid")
+        comp = comp_by_uuid.pop(cu, None)
+        if comp is None:
+            continue  # component deleted by an op -> drop its entry
+        entry["speechComponentDTO"] = _to_speech_component_dto(comp)
+        entry["sentenceCutDTOList"] = [
+            _to_sentence_cut_dto(r) for r in cuts_by_comp.get(cu, [])
+        ]
+        entry["componentName"] = comp.get("name", entry.get("componentName", ""))
+        new_entries.append(entry)
+    # components added by an op (uuid absent from base) -> append fresh entries
+    for _cu, comp in comp_by_uuid.items():
+        new_entries.append(_new_component_entry(comp, cuts_by_comp))
+    out["componentImportAndExportDTOS"] = new_entries
+    out["speechIntentDTO"] = intent_dtos
+    out["speechVariableDTO"] = var_dtos
+    if name is not None:
+        out["name"] = name
+    return out
