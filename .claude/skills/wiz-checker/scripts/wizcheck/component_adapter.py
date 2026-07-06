@@ -34,6 +34,7 @@ def _adapt_component(dto_entry: dict) -> dict | None:
 
 
 def _adapt_sentence_cut(row: dict, comp: dict) -> dict:
+    # Remap DTO fields to full-export shape; unknown DTO fields are intentionally dropped.
     return {
         "id": row.get("id"),
         "componentUuid": row.get("componentUuid"),
@@ -45,7 +46,7 @@ def _adapt_sentence_cut(row: dict, comp: dict) -> dict:
         "showType": row.get("showType", 0),
         "sortIndex": row.get("sortIndex", 0),
         "type": row.get("type", "record"),
-        "isDelete": 0,
+        "isDelete": row.get("is_delete", 0),
         "branch": comp.get("branch", "dev"),
         "speechId": comp.get("speechId"),
     }

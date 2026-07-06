@@ -69,6 +69,10 @@ def main(argv: list[str] | None = None) -> int:
     for _name, check_fn in REGISTRY.items():
         report.extend(check_fn(wf))
 
+    if getattr(wf, "is_component_export", False):
+        from wizcheck.component_adapter import BOT_SCOPE_CODES
+        report.findings = [f for f in report.findings if f.code not in BOT_SCOPE_CODES]
+
     if args.only:
         report.findings = [f for f in report.findings if f.code.startswith(args.only)]
 
