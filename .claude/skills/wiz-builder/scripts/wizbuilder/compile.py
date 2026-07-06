@@ -22,6 +22,8 @@ _TEMPLATE_PATH = _SKILL_DIR / "templates" / "empty_dialogue.json"
 _PROJECT_ROOT = _SKILL_DIR.parents[2]
 _CHECKER_CLI = _PROJECT_ROOT / ".claude" / "skills" / "wiz-checker" / "scripts" / "check.py"
 
+_COMPONENT_FORBIDDEN_NODE_TYPES = frozenset({"goto_kb", "goto_mr", "talk_continue"})
+
 
 class CompileError(RuntimeError):
     """Raised when wiz-checker reports errors > 0 against the compiler's output.
@@ -32,6 +34,21 @@ class CompileError(RuntimeError):
     """
 
 
+def _validate_component_mode(manifest) -> None:
+    """Reject bot-level features unsupported in a standalone component export."""
+    if manifest.knowledge_bases:
+        raise CompileError("knowledge_bases are not supported in component mode (--emit component)")
+    if manifest.hot_words:
+        raise CompileError("hot_words are not supported in component mode (--emit component)")
+    for canvas in manifest.canvases:
+        for node in canvas.nodes:
+            if node.type in _COMPONENT_FORBIDDEN_NODE_TYPES:
+                raise CompileError(
+                    f"node {node.id!r} type {node.type!r} is not supported in component mode "
+                    f"(--emit component) — needs bot-level KB/multi-round context"
+                )
+
+
 @dataclass
 class CompileResult:
     output_path: Path
@@ -40,7 +57,9 @@ class CompileResult:
     finding_codes: dict[str, int]
 
 
-def compile_manifest(manifest_path: Path, output_path: Path) -> CompileResult:
+def compile_manifest(
+    manifest_path: Path, output_path: Path, *, emit: str = "full"
+) -> CompileResult:
     """Compile a manifest into a checker-clean WIZ.AI export.
 
     Steps:
@@ -50,10 +69,14 @@ def compile_manifest(manifest_path: Path, output_path: Path) -> CompileResult:
       4. apply_variables
       5. apply_intents
       6. apply_canvases
-      7. serialize to output_path
-      8. shell out to wiz-checker; verify errors == 0
+      7. (optional) post-pass: transform to component-export DTO if emit=="component"
+      8. serialize to output_path
+      9. shell out to wiz-checker; verify errors == 0
     """
     manifest = load_manifest(manifest_path)
+
+    if emit == "component":
+        _validate_component_mode(manifest)
     template = _load_template()
     minter = IdMinter(manifest_hash=manifest_hash_of(manifest.raw_text))
 
@@ -78,6 +101,10 @@ def compile_manifest(manifest_path: Path, output_path: Path) -> CompileResult:
         canvas_uuid_by_name=canvas_uuid_by_name,
     )
     template = apply_hotwords(template, manifest, minter)
+
+    if emit == "component":
+        from wizcheck.component_adapter import full_to_component_export
+        template = full_to_component_export(template, name=manifest.name)
 
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)

@@ -60,6 +60,10 @@ def main(argv: list[str] | None = None) -> int:
         "--out", type=Path, default=None, help="Output speech*.json path (optional)"
     )
     parser.add_argument("--force", action="store_true", help="Overwrite existing output directory")
+    parser.add_argument(
+        "--emit", choices=["full", "component"], default="full",
+        help="Output format: full bot export (default) or component-library export",
+    )
     args = parser.parse_args(argv)
 
     # Project root = three levels up from scripts/build.py (.claude/skills/wiz-builder/scripts).
@@ -82,7 +86,7 @@ def main(argv: list[str] | None = None) -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     try:
-        result = compile_manifest(args.manifest, out_path)
+        result = compile_manifest(args.manifest, out_path, emit=args.emit)
     except ManifestError as e:
         print(f"manifest error: {e}", file=sys.stderr)
         return 2
