@@ -13,6 +13,8 @@ from wizcheck.ir import (
     Component,
     Intent,
     KnowledgeBase,
+    TagCategory,
+    TagValue,
     Utterance,
     Variable,
     WizFile,
@@ -145,6 +147,7 @@ def parse_dict(raw: dict[str, Any]) -> WizFile:
     knowledge_bases = _parse_knowledge_bases(
         _unwrap_list(raw.get("BizKnowledgeInfo"), "BizKnowledgeInfo")
     )
+    tags = _parse_tags(_unwrap_list(raw.get("SpeechTag"), "SpeechTag"))
 
     from wizcheck.flowmodel import build_flow_model
     flow_model = build_flow_model(raw)
@@ -159,6 +162,7 @@ def parse_dict(raw: dict[str, Any]) -> WizFile:
         knowledge_bases=knowledge_bases,
         flow_model=flow_model,
         is_component_export=component_mode,
+        tags=tags,
     )
 
 
@@ -257,6 +261,31 @@ def _parse_knowledge_bases(entries: list[dict[str, Any]]) -> dict[int, Knowledge
         out[kb.knowledge_id] = kb
     return out
 
+
+def _parse_tags(entries: list[dict[str, Any]]) -> tuple[TagCategory, ...]:
+    out: list[TagCategory] = []
+    for e in entries:
+        if not isinstance(e, dict) or "id" not in e:
+            continue
+        values: list[TagValue] = []
+        for p in e.get("bizTagPropertyDTOS") or []:
+            if not isinstance(p, dict) or "id" not in p:
+                continue
+            values.append(TagValue(
+                id=str(p["id"]),
+                value=str(p.get("value", "")),
+                tag_id=str(p.get("tagId", "")),
+                raw=p,
+            ))
+        out.append(TagCategory(
+            id=str(e["id"]),
+            name=str(e.get("name", "")),
+            is_mutex=int(e.get("isMutex", 0) or 0),
+            type=int(e.get("type", 0) or 0),
+            values=tuple(values),
+            raw=e,
+        ))
+    return tuple(out)
 
 
 def _parse_components(entries: list[dict[str, Any]]) -> dict[UUID, Component]:

@@ -87,6 +87,28 @@ class KnowledgeBase:
 
 
 @dataclass(frozen=True)
+class TagValue:
+    """A selectable disposition value under a TagCategory."""
+
+    id: str            # value id, stringified
+    value: str         # label
+    tag_id: str        # parent category id, stringified
+    raw: dict[str, Any] = field(repr=False)
+
+
+@dataclass(frozen=True)
+class TagCategory:
+    """A SpeechTag category (disposition group)."""
+
+    id: str            # category id, stringified
+    name: str
+    is_mutex: int
+    type: int
+    values: tuple[TagValue, ...]
+    raw: dict[str, Any] = field(repr=False)
+
+
+@dataclass(frozen=True)
 class WizFile:
     """Top-level container for a parsed WIZ.AI exported JSON file."""
 
@@ -99,3 +121,4 @@ class WizFile:
     raw: dict[str, Any] = field(repr=False)
     flow_model: FlowModel | None = field(default=None, kw_only=True)
     is_component_export: bool = field(default=False, kw_only=True)
+    tags: tuple[TagCategory, ...] = field(default=(), kw_only=True)
