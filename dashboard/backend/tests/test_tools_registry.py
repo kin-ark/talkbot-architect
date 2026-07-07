@@ -44,7 +44,7 @@ def test_specs_have_all_tools():
                 "remove_kb_answer", "set_kb_multiround", "delete_kb",
                 "rewire_edge", "delete_edge", "delete_node", "rename_node", "move_node",
                 "complete_component",
-                "set_hotwords", "set_intent_training"}
+                "set_hotwords", "set_intent_training", "set_node_tags"}
     assert names == expected
 
 

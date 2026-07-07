@@ -225,6 +225,17 @@ _SPECS = [
                  "hot_words": {"type": "array", "items": {"type": "string"}},
                  "node": {"type": ["string", "null"]}},
               "required": ["hot_words"]}),
+    ToolSpec("set_node_tags",
+             "Assign disposition tags (category + values) to a node. Resolves by name against existing tags, "
+             "auto-appends absent ones. Proposes a dry-run.",
+             {"type": "object", "properties": {
+                 "node": {"type": "object", "properties": {
+                     "uuid": {"type": "string"}, "label": {"type": "string"}}},
+                 "tags": {"type": "array", "items": {"type": "object", "properties": {
+                     "category": {"type": "string"},
+                     "values": {"type": "array", "items": {"type": "string"}}},
+                          "required": ["category", "values"]}}},
+              "required": ["node", "tags"]}),
     ToolSpec("set_intent_training",
              "Set training data (keywords and user_responses) for a custom intent. Proposes a dry-run.",
              {"type": "object", "properties": {
@@ -442,6 +453,10 @@ def dispatch(name: str, args: dict, data: dict) -> dict:
         op = {"op": "set-hotwords", "hot_words": args["hot_words"]}
         if args.get("node") is not None:
             op["node"] = args["node"]
+        return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
+    if name == "set_node_tags":
+        import yaml
+        op = {"op": "set-node-tags", "node": args["node"], "tags": args["tags"]}
         return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
     if name == "set_intent_training":
         import yaml

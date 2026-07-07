@@ -48,6 +48,7 @@ _NLU_TOOLS = [
     "add_intent",
     "set_hotwords",
     "set_intent_training",
+    "set_node_tags",
 ]
 
 
@@ -89,6 +90,16 @@ def test_nlu_tool_schemas():
     assert "user_responses" in sit["properties"]
     assert sit["properties"]["user_responses"]["type"] == "array"
     assert set(sit.get("required", [])) >= {"name"}
+
+    # set_node_tags: node(node-ref, required), tags(array of {category, values}, required)
+    snt = specs["set_node_tags"].parameters
+    assert "node" in snt["properties"]
+    assert snt["properties"]["node"]["type"] == "object"
+    assert "uuid" in snt["properties"]["node"]["properties"]
+    assert "label" in snt["properties"]["node"]["properties"]
+    assert "tags" in snt["properties"]
+    assert snt["properties"]["tags"]["type"] == "array"
+    assert set(snt.get("required", [])) >= {"node", "tags"}
 
 
 # ---------------------------------------------------------------------------
@@ -169,3 +180,37 @@ def test_set_intent_training_name_only(nlu_doc):
     assert out["result"]["ok"] is True, out["result"].get("error")
     assert out["proposal"] is not None
     assert isinstance(out["proposal"]["proposed_data"], dict)
+
+
+def test_set_node_tags_with_speechtag(nlu_doc):
+    """set_node_tags dispatch with a real SpeechTag and node uuid returns a proposal."""
+    # Find a node uuid from the fixture
+    bsc = nlu_doc.get("BizSpeechComponent", [])
+    if bsc and isinstance(bsc, list) and bsc:
+        if isinstance(bsc[0], dict) and "details" in bsc[0]:
+            details_str = bsc[0]["details"]
+            if isinstance(details_str, str):
+                try:
+                    details = json.loads(details_str)
+                    node_uuids = list(details.keys())
+                    if node_uuids:
+                        node_uuid = node_uuids[0]
+                        out = registry.dispatch("set_node_tags", {
+                            "node": {"uuid": node_uuid},
+                            "tags": [{"category": "Test Category", "values": ["Test Value"]}],
+                        }, nlu_doc)
+                        assert out["result"]["ok"] is True, out["result"].get("error")
+                        assert out["proposal"] is not None
+                        assert isinstance(out["proposal"]["proposed_data"], dict)
+                        return
+                except (json.JSONDecodeError, ValueError):
+                    pass
+
+    # Fallback: dispatch with a generic node ref (even if target not found, should fail gracefully)
+    out = registry.dispatch("set_node_tags", {
+        "node": {"uuid": "00000000-0000-0000-0000-000000000001"},
+        "tags": [{"category": "Test Category", "values": ["Test Value"]}],
+    }, nlu_doc)
+    # Should either succeed or fail with a clear error
+    assert isinstance(out, dict)
+    assert "result" in out

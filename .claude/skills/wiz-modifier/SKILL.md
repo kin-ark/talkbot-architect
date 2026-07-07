@@ -54,6 +54,14 @@ A KB's Default Response = **Single Sentence** (`kdInfo` `answerType:1` answers) 
 
 KB-edit ops route through a shared `KbEditor` (decode→mutate→flush, ids preserved). Checker side: `WIZ302` (intent declared), `WIZ303` (goto_kb → missing KB, WARNING+deploy-blocker, library-tolerant), `WIZ304` (user KB with no Default Response, WARNING+deploy-blocker, system KBs exempt). The 6 flow-mutation ops (`rewire-edge`, `delete-edge`, `delete-node`, `move-node`, `rename-node`, `complete-component`) live alongside these.
 
+## Tag assignment
+
+| Op | Params |
+|----|--------|
+| `set-node-tags` | `node: {uuid\|label}`, `tags: [{category, values:[...]}]` |
+
+`set-node-tags` assigns disposition tags to a node by name. It resolves `category` and each value against the export's existing `SpeechTag` (real tenant ids); auto-appends absent category/value rows so all refs resolve. Replaces the node's denormalized `tag_list` wholesale; empty `tags: []` clears tags. Recomputes the bot-level `kbTag` (sorted unique category ids referenced by any node). Forbidden in component mode (bot-scope). Checker-clean: output has 0 `WIZ401`/`WIZ402` tag-ref findings by construction.
+
 ## Mod-manifest format
 
 ```yaml
@@ -73,7 +81,7 @@ output:
 The modifier auto-detects a WIZ component-library export (`componentImportAndExportDTOS` envelope) on load. It adapts the component's DTO format to the full-export shape ops already understand, applies mutations unchanged, and writes the component envelope back (JSON only). Untouched passthrough fields (envelope `name`, per-entry metadata, entity/function/tag lists) are preserved verbatim.
 
 A component is a standalone reusable unit; component-mode op restrictions forbid bot-scope operations:
-- **Forbidden ops:** `add-kb`, `rename-kb`, `set-kb-intents`, `add-kb-answer`, `edit-kb-answer`, `remove-kb-answer`, `set-kb-multiround`, `delete-kb`, `set-hotwords` (all bot-level).
+- **Forbidden ops:** `add-kb`, `rename-kb`, `set-kb-intents`, `add-kb-answer`, `edit-kb-answer`, `remove-kb-answer`, `set-kb-multiround`, `delete-kb`, `set-hotwords`, `set-node-tags` (all bot-level).
 - **Forbidden node types:** `goto_kb`, `goto_mr`, `talk_continue` (all require bot context).
 
 These ops raise `ValueError("component mode: ... unsupported")` before any mutation. Component input requesting ZIP output raises; JSON is the only valid output format.
