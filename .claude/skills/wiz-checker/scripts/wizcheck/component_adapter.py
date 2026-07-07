@@ -15,7 +15,7 @@ from typing import Any
 # Bot/scope checks that are structurally false-positive for a lone component
 # (it legitimately references sibling components / KBs / vars defined elsewhere
 # in its parent bot). Suppressed when validating a component export.
-BOT_SCOPE_CODES = frozenset({"WIZ104", "WIZ110", "WIZ202", "WIZ303"})
+BOT_SCOPE_CODES = frozenset({"WIZ104", "WIZ110", "WIZ202", "WIZ303", "WIZ401", "WIZ402"})
 
 _EMPTY_DEFAULTS = ([], {}, "", None)
 

@@ -12,6 +12,7 @@ from wizcheck.checks.graph import check_graph
 from wizcheck.checks.intents import check_intents
 from wizcheck.checks.platform import check_platform
 from wizcheck.checks.schema import check_schema
+from wizcheck.checks.tags import check_tags
 from wizcheck.checks.variables import check_variables
 from wizcheck.ir import WizFile
 from wizcheck.report import Finding
@@ -22,6 +23,7 @@ REGISTRY: dict[str, Callable[[WizFile], list[Finding]]] = {
     "variables": check_variables,
     "intents": check_intents,
     "platform": check_platform,
+    "tags": check_tags,
 }
 
 
@@ -33,7 +35,7 @@ def get_check(name: str) -> Callable[[WizFile], list[Finding]]:
 
 def run_all_checks(wf: WizFile) -> list[Finding]:
     findings: list[Finding] = []
-    for name in ["schema", "graph", "variables", "intents", "platform"]:
+    for name in ["schema", "graph", "variables", "intents", "platform", "tags"]:
         findings.extend(REGISTRY[name](wf))
     if wf.is_component_export:
         from wizcheck.component_adapter import BOT_SCOPE_CODES

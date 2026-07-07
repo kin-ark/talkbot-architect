@@ -44,7 +44,7 @@ def test_is_component_export_false_for_full():
     assert is_component_export(_FULL_EXPORT) is False
 
 def test_bot_scope_codes():
-    assert BOT_SCOPE_CODES == frozenset({"WIZ104", "WIZ110", "WIZ202", "WIZ303"})
+    assert BOT_SCOPE_CODES == frozenset({"WIZ104", "WIZ110", "WIZ202", "WIZ303", "WIZ401", "WIZ402"})
 
 def test_adapt_builds_required_top_level_keys():
     full = component_export_to_full(_COMP_EXPORT)

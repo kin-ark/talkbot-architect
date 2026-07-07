@@ -46,3 +46,115 @@ def test_parse_missing_speech_tag():
     del raw["SpeechTag"]
     wf = parse_dict(raw)
     assert wf.tags == ()
+
+
+from wizcheck.checks import run_all_checks
+from wizcheck.checks.tags import check_tags
+
+
+def _codes(findings):
+    return sorted(f.code for f in findings)
+
+
+def _comp_with_tag_list(tag_list):
+    """A BizSpeechComponent JSON-string with one node carrying data.tag_list."""
+    details = {"node-1": {"type": 1, "data": {"name": "Talk Node", "tag_list": tag_list}}}
+    return json.dumps([{
+        "componentUuid": "00000000-0000-0000-0000-000000000001", "name": "Main",
+        "details": json.dumps(details), "routes": "{}", "inboundPorts": "[]",
+    }])
+
+
+def _embedded_category(cat_id, values):
+    """Denormalized node tag_list entry: category header + selected value rows."""
+    return {
+        "id": cat_id, "name": "Debt Result", "isMutex": 1, "type": 0,
+        "bizTagPropertyDTOS": [
+            {"id": vid, "tagId": tid, "value": "X", "active": True} for vid, tid in values
+        ],
+    }
+
+
+def test_resolve_clean_node_and_kbtag():
+    raw = _bot_with_tags()
+    raw["BizSpeechComponent"] = _comp_with_tag_list(
+        [_embedded_category("100", [("101", "100")])])
+    raw["kbTag"] = [100, 200]
+    wf = parse_dict(raw)
+    assert check_tags(wf) == []
+
+
+def test_wiz401_dangling_category():
+    raw = _bot_with_tags()
+    raw["BizSpeechComponent"] = _comp_with_tag_list(
+        [_embedded_category("999", [("101", "100")])])  # category 999 absent
+    wf = parse_dict(raw)
+    assert _codes(check_tags(wf)) == ["WIZ401"]
+
+
+def test_wiz401_unknown_value():
+    raw = _bot_with_tags()
+    raw["BizSpeechComponent"] = _comp_with_tag_list(
+        [_embedded_category("100", [("777", "100")])])  # value 777 absent
+    wf = parse_dict(raw)
+    assert _codes(check_tags(wf)) == ["WIZ401"]
+
+
+def test_wiz401_wrong_parent():
+    raw = _bot_with_tags()
+    # value 201 belongs to category 200, but embedded under category 100
+    raw["BizSpeechComponent"] = _comp_with_tag_list(
+        [_embedded_category("100", [("201", "100")])])
+    wf = parse_dict(raw)
+    assert _codes(check_tags(wf)) == ["WIZ401"]
+
+
+def test_wiz402_unknown_kbtag():
+    raw = _bot_with_tags()
+    raw["kbTag"] = [100, 555]  # 555 absent
+    wf = parse_dict(raw)
+    assert _codes(check_tags(wf)) == ["WIZ402"]
+
+
+def test_kbtag_tolerant_of_zero_and_none():
+    raw = _bot_with_tags()
+    raw["kbTag"] = 0
+    assert check_tags(parse_dict(raw)) == []
+    raw["kbTag"] = "0"
+    assert check_tags(parse_dict(raw)) == []
+
+
+def test_empty_tags_no_findings():
+    raw = _bot_with_tags()
+    raw["SpeechTag"] = "[]"
+    wf = parse_dict(raw)
+    assert check_tags(wf) == []
+
+
+def test_run_all_checks_includes_tags():
+    raw = _bot_with_tags()
+    raw["BizSpeechComponent"] = _comp_with_tag_list(
+        [_embedded_category("999", [("101", "100")])])
+    findings = run_all_checks(parse_dict(raw))
+    assert any(f.code == "WIZ401" for f in findings)
+
+
+def test_component_mode_suppresses_tag_findings():
+    # A component-export envelope; even if it had tag refs, WIZ401/402 are bot-scope.
+    comp_export = {
+        "componentImportAndExportDTOS": [{
+            "componentName": "Main", "componentUuid": "00000000-0000-0000-0000-000000000001",
+            "speechComponentDTO": {
+                "componentUuid": "00000000-0000-0000-0000-000000000001", "name": "Main",
+                "details": {"node-1": {"type": 1, "data": {
+                    "name": "T", "tag_list": [_embedded_category("999", [("101", "100")])]}}},
+                "routes": {}, "inboundPorts": [],
+            },
+            "sentenceCutDTOList": [],
+        }],
+        "speechIntentDTO": [], "speechVariableDTO": [],
+        "speechEntiEntityList": [], "speechEntityData": [],
+        "speechFunctionDTO": [], "tagDTOList": [],
+    }
+    findings = run_all_checks(parse_dict(comp_export))
+    assert not any(f.code in ("WIZ401", "WIZ402") for f in findings)

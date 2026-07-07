@@ -8,7 +8,8 @@
       "graph",
       "variables",
       "intents",
-      "platform"
+      "platform",
+      "tags"
     ]
   },
   "findings": [
