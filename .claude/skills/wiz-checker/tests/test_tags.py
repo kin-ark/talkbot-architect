@@ -109,6 +109,32 @@ def test_wiz401_wrong_parent():
     assert _codes(check_tags(wf)) == ["WIZ401"]
 
 
+def test_wiz401_omitted_tagid_not_flagged():
+    """A valid value whose row OMITS tagId should not flag WIZ401.
+
+    This tests the fix for the wrong-parent predicate false-positive:
+    the row clause now gates on presence (only fires when tagId is present).
+    """
+    raw = _bot_with_tags()
+    # Create a category with a value row that omits the tagId key
+    details = {"node-1": {"type": 1, "data": {"name": "Talk Node", "tag_list": [
+        {
+            "id": "100", "name": "Debt Result", "isMutex": 1, "type": 0,
+            "bizTagPropertyDTOS": [
+                {"id": "101", "value": "Refuse Payment", "active": True}  # tagId omitted
+            ],
+        }
+    ]}}}
+    raw["BizSpeechComponent"] = json.dumps([{
+        "componentUuid": "00000000-0000-0000-0000-000000000001", "name": "Main",
+        "details": json.dumps(details), "routes": "{}", "inboundPorts": "[]",
+    }])
+    wf = parse_dict(raw)
+    # Should not flag WIZ401 because the value 101 is valid under category 100
+    # and the missing tagId in the row should not trigger a false positive
+    assert check_tags(wf) == []
+
+
 def test_wiz402_unknown_kbtag():
     raw = _bot_with_tags()
     raw["kbTag"] = [100, 555]  # 555 absent

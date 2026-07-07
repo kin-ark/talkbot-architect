@@ -66,7 +66,7 @@ def check_tags(wf: WizFile) -> list[Finding]:
                                 entity="FlowNode", id=node_uuid, field="tag_list"),
                             message=f"Node references unknown tag value {vid!r}.",
                         ))
-                    elif known.tag_id != cat_id or str(row.get("tagId", "")) != cat_id:
+                    elif known.tag_id != cat_id or ("tagId" in row and str(row["tagId"]) != cat_id):
                         out.append(Finding(
                             code="WIZ401",
                             severity=Severity.WARNING,
