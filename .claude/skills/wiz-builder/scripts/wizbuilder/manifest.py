@@ -38,6 +38,20 @@ class CustomIntent:
 
 
 @dataclass(frozen=True)
+class TagCategorySpec:
+    name: str
+    values: tuple[str, ...]
+    is_mutex: bool = False
+    type: int = 0
+
+
+@dataclass(frozen=True)
+class TagAssignmentSpec:
+    category: str
+    values: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class Node:
     """A FlowNode in a canvas.
 
@@ -49,6 +63,7 @@ class Node:
     prompt: str
     type: str = "talk"
     config: dict = field(default_factory=dict)
+    tags: tuple[TagAssignmentSpec, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -92,6 +107,8 @@ class Manifest:
     raw_text: str = field(repr=False)
     knowledge_bases: tuple[KnowledgeBase, ...] = field(default_factory=tuple)
     hot_words: tuple[str, ...] = field(default_factory=tuple)
+    tags: tuple[TagCategorySpec, ...] = field(default_factory=tuple)
+    enterprise_id: int | str | None = None
 
 
 def load_manifest(path: str | Path) -> Manifest:
@@ -511,6 +528,22 @@ def _validate_cross_field_invariants(data: dict, path: Path) -> None:
                 f"does not match any canvas"
             )
 
+    # --- tags validation ---
+    tags_list = data.get("tags") or []
+    tag_names: list[str] = []
+    for t in tags_list:
+        tname = t["name"]
+        # Unique tag category names
+        if tname in tag_names:
+            raise ManifestError(f"{path}: duplicate tag category name: {tname!r}")
+        tag_names.append(tname)
+        # Unique values within each category
+        values = t.get("values") or []
+        if len(values) != len(set(values)):
+            raise ManifestError(
+                f"{path}: duplicate tag value in category {tname!r}"
+            )
+
 
 def _build_manifest(data: dict, raw_text: str) -> Manifest:
     custom_variables = [
@@ -535,6 +568,12 @@ def _build_manifest(data: dict, raw_text: str) -> Manifest:
                     prompt=node.get("prompt", ""),
                     type=node.get("type", "talk"),
                     config=node.get("config", {}),
+                    tags=tuple(
+                        TagAssignmentSpec(
+                            category=t["category"], values=tuple(t.get("values") or ())
+                        )
+                        for t in node.get("tags") or []
+                    ),
                 )
             )
         edges = []
@@ -562,6 +601,19 @@ def _build_manifest(data: dict, raw_text: str) -> Manifest:
         w.strip() for w in (data.get("hot_words") or []) if w and w.strip()
     )
 
+    tags = []
+    for t in data.get("tags") or []:
+        values = tuple(t.get("values") or ())
+        if len(set(values)) != len(values):
+            raise ManifestError(f"duplicate tag value in category {t['name']!r}")
+        tags.append(TagCategorySpec(
+            name=t["name"], values=values,
+            is_mutex=bool(t.get("is_mutex", False)), type=int(t.get("type", 0)),
+        ))
+    cat_names = [t.name for t in tags]
+    if len(set(cat_names)) != len(cat_names):
+        raise ManifestError(f"duplicate tag category name: {sorted(cat_names)}")
+
     return Manifest(
         name=data["name"],
         branch=data["branch"],
@@ -571,5 +623,7 @@ def _build_manifest(data: dict, raw_text: str) -> Manifest:
         canvases=tuple(canvases),
         knowledge_bases=tuple(knowledge_bases),
         hot_words=hot_words,
+        tags=tuple(tags),
+        enterprise_id=data.get("enterprise_id"),
         raw_text=raw_text,
     )

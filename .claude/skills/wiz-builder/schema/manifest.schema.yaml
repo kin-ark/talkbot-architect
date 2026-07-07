@@ -45,6 +45,21 @@ properties:
   hot_words:
     type: array
     items: {type: string}
+  enterprise_id:
+    type: [integer, string]
+  tags:
+    type: array
+    items:
+      type: object
+      required: [name, values]
+      additionalProperties: false
+      properties:
+        name: {type: string, minLength: 1}
+        values:
+          type: array
+          items: {type: string}
+        is_mutex: {type: boolean}
+        type: {type: integer, enum: [0, 3]}
   knowledge_bases:
     type: array
     items:
@@ -94,6 +109,17 @@ properties:
               config:
                 type: object
                 additionalProperties: true
+              tags:
+                type: array
+                items:
+                  type: object
+                  required: [category, values]
+                  additionalProperties: false
+                  properties:
+                    category: {type: string, minLength: 1}
+                    values:
+                      type: array
+                      items: {type: string}
         edges:
           type: array
           items:
