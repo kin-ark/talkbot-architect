@@ -11,7 +11,8 @@ import StatisticsPage from './components/StatisticsPage';
 import DocsPage from './components/DocsPage';
 import SettingsPage from './components/SettingsPage';
 import { useTheme } from './theme/useTheme';
-import { exportUrl, getConfig } from './api';
+import { exportUrl, componentExportUrl, getConfig } from './api';
+import { toast } from './toast/toastStore';
 
 export default function App() {
   const s = useSession();
@@ -50,6 +51,12 @@ export default function App() {
       if (!ok) return;
     }
     window.open(exportUrl(), '_blank');
+  };
+
+  const onExportComponent = (uuid) => {
+    const kbs = s.summary?.knowledge_bases?.length || 0;
+    if (kbs) toast.info(`${kbs} knowledge base${kbs === 1 ? '' : 's'} won't be included in the component export`);
+    window.open(componentExportUrl(uuid), '_blank');
   };
 
   const onStartNew = () => {
@@ -114,7 +121,7 @@ export default function App() {
     <div className="h-screen flex flex-col bg-canvas">
       <TopBar hasDoc={!!s.summary} canUndo={s.canUndo} canRedo={s.canRedo}
         onUndo={s.undo} onRedo={s.redo} onExport={onExport}
-        botName={s.botName} onRenameBot={s.renameBot} isComponent={s.isComponent} />
+        botName={s.botName} onRenameBot={s.renameBot} isComponent={s.isComponent} onExportComponent={onExportComponent} />
       <div className="flex-1 flex overflow-hidden">
         <SessionRail sessions={s.sessions} activeSessionId={s.activeSessionId}
           usage={s.usage} collapsed={railCollapsed} onToggleCollapse={toggleRail}
@@ -150,7 +157,7 @@ export default function App() {
             onPreview={onPreview} onAskFix={onAskFix}
             onSelectComponent={setFocusComponentId} focusComponentId={focusComponentId}
             onEditNode={(uuid, fields) => s.editNodeText(uuid, fields)}
-            intents={s.intents} focusKb={focusKb} />
+            intents={s.intents} focusKb={focusKb} onExportComponent={onExportComponent} />
         )}
       </div>
       {pageOverlay}

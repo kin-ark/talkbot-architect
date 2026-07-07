@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { Puzzle } from 'lucide-react';
 import FilterChips from './ui/FilterChips';
+import IconButton from './ui/IconButton';
 
-export default function ComponentsRail({ summary, selectedComponentId, onSelectComponent }) {
+export default function ComponentsRail({ summary, selectedComponentId, onSelectComponent, onExportComponent }) {
   const components = summary?.components || [];
   const [filter, setFilter] = useState('all');
   const [query, setQuery] = useState('');
@@ -33,12 +35,21 @@ export default function ComponentsRail({ summary, selectedComponentId, onSelectC
           const active = c.uuid === selectedComponentId;
           const count = filter === 'all' ? `${total}` : `${matchCount(c)}/${total}`;
           return (
-            <button type="button" key={c.uuid} onClick={() => onSelectComponent(c.uuid)}
-              className={`w-full flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
-                active ? 'bg-surface-muted text-primary font-semibold' : 'text-text-secondary hover:bg-surface-muted'}`}>
-              <span className="truncate">{c.name}</span>
-              <span className="ml-auto text-xs text-text-tertiary">{count}</span>
-            </button>
+            <div key={c.uuid} className="flex items-center gap-1 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              style={{ outline: active ? '2px solid var(--color-primary)' : 'none', borderRadius: '0.375rem' }}>
+              <button type="button" onClick={() => onSelectComponent(c.uuid)}
+                className={`flex-1 min-w-0 text-left px-2.5 py-1.5 text-sm rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                  active ? 'bg-surface-muted text-primary font-semibold' : 'text-text-secondary hover:bg-surface-muted'}`}>
+                <span className="truncate">{c.name}</span>
+              </button>
+              <span className="px-1 text-xs text-text-tertiary">{count}</span>
+              {onExportComponent && (
+                <IconButton label="Export as component" data-testid={`export-component-${c.uuid}`}
+                  onClick={(e) => { e.stopPropagation(); onExportComponent(c.uuid); }} className="h-6 w-6 shrink-0 mr-1">
+                  <Puzzle size={13} />
+                </IconButton>
+              )}
+            </div>
           );
         })}
         {components.length === 0 && <p className="px-2 py-3 text-xs text-text-tertiary">No components yet.</p>}

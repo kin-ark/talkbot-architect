@@ -2,7 +2,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { vi, describe, it, expect } from 'vitest';
 import TopBar from './TopBar';
 
-const base = { hasDoc: true, canUndo: false, canRedo: true, onUndo: () => {}, onRedo: () => {}, onExport: () => {}, isComponent: false };
+const base = { hasDoc: true, canUndo: false, canRedo: true, onUndo: () => {}, onRedo: () => {}, onExport: () => {}, isComponent: false, onExportComponent: () => {} };
 
 describe('TopBar', () => {
   it('renders iconified undo/redo and no New button', () => {
@@ -75,5 +75,15 @@ describe('TopBar', () => {
   it('no Component badge for a full bot', () => {
     render(<TopBar {...base} isComponent={false} botName="Bot" />);
     expect(screen.queryByTestId('component-badge')).toBeNull();
+  });
+
+  it('shows Export-as-component for a full bot', () => {
+    render(<TopBar {...base} hasDoc isComponent={false} onExportComponent={() => {}} />);
+    expect(screen.getByTestId('export-component')).toBeInTheDocument();
+  });
+
+  it('hides Export-as-component in component mode', () => {
+    render(<TopBar {...base} hasDoc isComponent onExportComponent={() => {}} />);
+    expect(screen.queryByTestId('export-component')).toBeNull();
   });
 });

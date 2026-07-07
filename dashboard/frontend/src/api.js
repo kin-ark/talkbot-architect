@@ -17,6 +17,9 @@ export async function redo() { return (await axios.post(`${BASE}/redo`)).data; }
 export async function getSummary() { return (await axios.get(`${BASE}/summary`)).data; }
 export async function getFindings() { return (await axios.get(`${BASE}/findings`)).data; }
 export function exportUrl() { return `${BASE}/export`; }
+export function componentExportUrl(uuid) {
+  return uuid ? `${BASE}/export/component?uuid=${encodeURIComponent(uuid)}` : `${BASE}/export/component`;
+}
 export async function getConfig() { return (await axios.get(`${BASE}/config`)).data; }
 export async function updateConfig(body) { return (await axios.put(`${BASE}/config`, body)).data; }
 export async function clearConfig() { return (await axios.post(`${BASE}/config/clear`)).data; }

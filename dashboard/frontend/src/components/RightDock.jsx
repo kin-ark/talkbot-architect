@@ -9,7 +9,7 @@ import IntentsPanel from './IntentsPanel';
 import FlowCanvas from './FlowCanvas';
 import ComponentsRail from './ComponentsRail';
 
-export default function RightDock({ activeTab, onTabChange, summary, findings, selectedNode, onSelectNode, chat, onPreview, onAskFix, onSelectComponent, focusComponentId, onEditNode, intents, focusKb }) {
+export default function RightDock({ activeTab, onTabChange, summary, findings, selectedNode, onSelectNode, chat, onPreview, onAskFix, onSelectComponent, focusComponentId, onEditNode, intents, focusKb, onExportComponent }) {
   const [drill, setDrill] = useState(null);
   const [selectedKb, setSelectedKb] = useState(null);
   // Reset KB selection when a new export/summary loads (e.g. after apply/undo).
@@ -103,7 +103,7 @@ export default function RightDock({ activeTab, onTabChange, summary, findings, s
         {activeTab === 'intents' && <IntentsPanel intents={intents || []} />}
         {activeTab === 'components' && (
           <ComponentsRail summary={summary} selectedComponentId={focusComponentId}
-            onSelectComponent={onSelectComponent} />
+            onSelectComponent={onSelectComponent} onExportComponent={onExportComponent} />
         )}
       </div>
     </div>

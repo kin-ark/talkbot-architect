@@ -23,3 +23,13 @@ describe('ComponentsRail filters', () => {
     expect(screen.queryByText('Router')).toBeNull();
   });
 });
+
+describe('ComponentsRail export', () => {
+  it('per-row export-as-component fires onExportComponent(uuid)', () => {
+    const onExportComponent = vi.fn();
+    render(<ComponentsRail summary={summary}
+      selectedComponentId={null} onSelectComponent={() => {}} onExportComponent={onExportComponent} />);
+    fireEvent.click(screen.getByTestId('export-component-a'));
+    expect(onExportComponent).toHaveBeenCalledWith('a');
+  });
+});
