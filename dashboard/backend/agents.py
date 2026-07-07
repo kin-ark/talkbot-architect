@@ -336,6 +336,46 @@ def propose_build(manifest_yaml: str) -> dict:
         return {"ok": False, "proposed_data": None, "error": str(e)}
 
 
+def export_component_dto(data: dict, component_uuid: str | None = None) -> dict:
+    """Emit a component-export envelope from a full dialog.
+
+    component_uuid=None → the whole dialog (all components). Otherwise the named
+    component plus any nested-child components (parentUuid chain). Never mutates
+    `data`. Raises KeyError if the uuid is not present.
+    """
+    from wizcheck.component_adapter import full_to_component_export
+
+    if component_uuid is None:
+        return full_to_component_export(data)
+
+    raw = data.get("BizSpeechComponent")
+    comps = json.loads(raw) if isinstance(raw, str) else (raw or [])
+    if not isinstance(comps, list):
+        comps = []
+    by_uuid = {c.get("componentUuid"): c for c in comps if isinstance(c, dict)}
+    if component_uuid not in by_uuid:
+        raise KeyError(component_uuid)
+
+    # children map (parentUuid -> [componentUuid]) for transitive descendants
+    children: dict[str, list[str]] = {}
+    for c in comps:
+        if isinstance(c, dict):
+            children.setdefault(c.get("parentUuid"), []).append(c.get("componentUuid"))
+
+    keep: set[str] = set()
+    stack = [component_uuid]
+    while stack:
+        cu = stack.pop()
+        if cu in keep:
+            continue
+        keep.add(cu)
+        stack.extend(children.get(cu, []))
+
+    subset = dict(data)  # shallow copy; replace only the components list
+    subset["BizSpeechComponent"] = [by_uuid[u] for u in by_uuid if u in keep]
+    return full_to_component_export(subset)
+
+
 def component_export_warnings(data: dict) -> list[str]:
     """Warnings for sections that can't survive a component export (dropped)."""
     def _n(key):

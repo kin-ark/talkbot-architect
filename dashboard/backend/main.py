@@ -338,6 +338,28 @@ async def export_current(s: Session = Depends(_require_session)):
     )
 
 
+@app.get("/export/component")
+async def export_component(uuid: str | None = None, s: Session = Depends(_require_session)):
+    if s.is_component:
+        raise HTTPException(status_code=400, detail="this session is already a component; use /export")
+    data = s.current()
+    try:
+        dto = agents.export_component_dto(data, uuid)
+    except KeyError:
+        raise HTTPException(status_code=404, detail="unknown component")
+    if uuid is not None:
+        raw = data.get("BizSpeechComponent")
+        comps = json.loads(raw) if isinstance(raw, str) else (raw or [])
+        nm = next((c.get("name") for c in comps if isinstance(c, dict)
+                   and c.get("componentUuid") == uuid), None) or "component"
+    else:
+        nm = speechname.read_speech_name(data) or "component"
+    stem = speechname.slugify_filename(nm).removesuffix(".json") or "component"
+    body = json.dumps(dto, ensure_ascii=False, indent=2).encode("utf-8")
+    return Response(content=body, media_type="application/json",
+                    headers={"Content-Disposition": f'attachment; filename="{stem}.component.json"'})
+
+
 @app.get("/session")
 def get_session(s: Session = Depends(current_session)):
     return _active_payload(s)
