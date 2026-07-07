@@ -194,6 +194,28 @@ def test_build_vocabulary_rejects_unknown_value(tmp_path):
         build_tag_vocabulary(m, IdMinter(manifest_hash="h"))
 
 
+def test_build_vocabulary_rejects_empty_values(tmp_path):
+    m = load_manifest(_write(tmp_path, """
+    name: Tag Bot
+    branch: dev
+    language: IDN
+    tags:
+      - name: C
+        values: [a]
+    canvases:
+      - name: Main
+        nodes:
+          - id: n
+            type: talk
+            prompt: x
+            tags:
+              - category: C
+                values: []
+    """))
+    with pytest.raises(CompileError, match="has no values"):
+        build_tag_vocabulary(m, IdMinter(manifest_hash="h"))
+
+
 def test_apply_tags_emits_speechtag_and_kbtag(tmp_path):
     m = _manifest_with_tags(tmp_path)
     minter = IdMinter(manifest_hash="h")
@@ -353,3 +375,73 @@ def test_no_tags_manifest_leaves_speechtag_empty(tmp_path):
     details = json.loads(comps[0]["details"])
     # all nodes should have empty tag_lists (no assigned tags)
     assert all((n.get("data") or {}).get("tag_list") == [] for n in details.values())
+
+
+def test_tag_authoring_determinism(tmp_path):
+    """Compile the same tagged manifest twice and verify SpeechTag, kbTag,
+    and per-node tag_list are byte-identical (without comparing whole files,
+    which have randomly-minted speechId)."""
+    from wizbuilder.compile import compile_manifest
+
+    mp = _write(tmp_path, """
+    name: Tag Bot
+    branch: dev
+    language: IDN
+    enterprise_id: 999
+    tags:
+      - name: Debt Result
+        is_mutex: true
+        values: [Refuse Payment, Willing to Repay]
+      - name: Payment Method
+        type: 3
+        values: [Card, Bank Transfer]
+    canvases:
+      - name: Main
+        nodes:
+          - id: greet
+            type: talk
+            prompt: Hi
+            tags:
+              - category: Debt Result
+                values: [Willing to Repay]
+              - category: Payment Method
+                values: [Card, Bank Transfer]
+          - id: bye
+            type: exit
+            prompt: Bye
+        edges:
+          - {from: greet, branch: Unclassified, to: bye}
+    """)
+
+    # Compile twice to separate output files
+    out1 = tmp_path / "out1.json"
+    out2 = tmp_path / "out2.json"
+    compile_manifest(mp, out1, emit="full")
+    compile_manifest(mp, out2, emit="full")
+
+    # Extract relevant parts from both outputs
+    data1 = json.loads(out1.read_text(encoding="utf-8"))
+    data2 = json.loads(out2.read_text(encoding="utf-8"))
+
+    # Compare SpeechTag and kbTag directly
+    assert data1["SpeechTag"] == data2["SpeechTag"], "SpeechTag differs between runs"
+    assert data1["kbTag"] == data2["kbTag"], "kbTag differs between runs"
+
+    # Extract per-node tag_list values from both outputs
+    comps1 = json.loads(data1["BizSpeechComponent"])
+    comps2 = json.loads(data2["BizSpeechComponent"])
+    details1 = json.loads(comps1[0]["details"])
+    details2 = json.loads(comps2[0]["details"])
+
+    # Collect tag_list by node id (order-independent extraction)
+    def extract_tag_lists(details):
+        result = {}
+        for node_id, node in details.items():
+            tag_list = (node.get("data") or {}).get("tag_list", [])
+            result[node_id] = json.dumps(tag_list, sort_keys=True, separators=(",", ":"))
+        return result
+
+    tags1 = extract_tag_lists(details1)
+    tags2 = extract_tag_lists(details2)
+
+    assert tags1 == tags2, "per-node tag_list differs between runs"

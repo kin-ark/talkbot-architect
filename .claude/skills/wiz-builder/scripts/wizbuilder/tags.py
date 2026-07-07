@@ -47,6 +47,10 @@ def build_tag_vocabulary(manifest: Manifest, minter: IdMinter) -> TagVocabulary:
                 if cat is None:
                     raise CompileError(
                         f"node {node.id!r} assigns unknown tag category {a.category!r}")
+                if not a.values:
+                    raise CompileError(
+                        f"node {node.id!r} tag assignment for {a.category!r} "
+                        f"has no values")
                 for v in a.values:
                     if v not in cat.values:
                         raise CompileError(
