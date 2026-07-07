@@ -34,9 +34,9 @@ def test_picker_exports_single_component():
     dto = agents.export_component_dto(data, uuid)
     assert is_component_export(dto)
     got = {e["componentUuid"] for e in dto["componentImportAndExportDTOS"]}
-    # the picked component is present; total <= all (subset)
+    # the picked component is present; total < all (true subset)
     assert uuid in got
-    assert len(got) <= len(comps)
+    assert len(got) < len(comps)
 
 
 def test_unknown_uuid_raises():
@@ -111,9 +111,13 @@ def test_api_export_component_from_component_session(tmp_path, monkeypatch):
     """GET /export/component from a component session → 400"""
     monkeypatch.setattr(persistence, "SESSIONS_DIR", tmp_path / ".sessions")
     with TestClient(main.app) as client:
-        # Upload a component export (if fixture available) or skip
-        # For now, we'll just test that a full bot works
-        client.post("/samples/greeting_faq")
-        # A full bot is not a component session, so this should succeed
-        r = client.get("/export/component")
+        # Build a full bot and export it as a component envelope
+        data = agents.propose_build(samples.load_manifest("greeting_faq"))["proposed_data"]
+        dto = agents.export_component_dto(data, None)
+        # Upload the component envelope to make the session a component session
+        files = {"file": ("comp.json", json.dumps(dto).encode("utf-8"), "application/json")}
+        r = client.post("/session", files=files)
         assert r.status_code == 200
+        # Now try to export as component from a component session → 400
+        r = client.get("/export/component")
+        assert r.status_code == 400
