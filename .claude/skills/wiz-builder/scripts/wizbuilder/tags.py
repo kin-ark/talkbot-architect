@@ -72,6 +72,30 @@ def _category_dict(name: str, cat: TagCat, ent_id: int | str) -> dict[str, Any]:
     }
 
 
+def node_tag_list(assignments, vocabulary: TagVocabulary) -> list[dict]:
+    """Denormalized data.tag_list for a node's TagAssignmentSpec list:
+    category header (string ids) + only the SELECTED value rows (active:true)."""
+    out = []
+    ent = str(vocabulary.ent_id)
+    for a in assignments:
+        cat = vocabulary.categories[a.category]
+        out.append({
+            "id": str(cat.id),
+            "name": a.category,
+            "isMutex": cat.is_mutex,
+            "type": cat.type,
+            "tagProperty": 0,
+            "entId": ent,
+            "createTime": _TAG_TS,
+            "modifyTime": _TAG_TS,
+            "bizTagPropertyDTOS": [
+                {"id": str(cat.values[v]), "tagId": str(cat.id), "value": v, "active": True}
+                for v in a.values
+            ],
+        })
+    return out
+
+
 def apply_tags(
     template: dict[str, Any], manifest: Manifest, vocabulary: TagVocabulary, minter: IdMinter
 ) -> dict[str, Any]:

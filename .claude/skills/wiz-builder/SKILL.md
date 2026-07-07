@@ -92,6 +92,16 @@ Do **not** invoke for:
   confirmation. The CLI requires `--force` for non-empty output directories;
   surface the warning and ask before retrying.
 
+## Tags (dispositions)
+
+Author the WIZ `SpeechTag` disposition vocabulary and assign tags to nodes:
+
+- Top-level `tags:` — a list of categories: `{name, values: [labels], is_mutex?: bool, type?: 0|3}` (0 = enumerated, 3 = free-text). Emits the `SpeechTag` table.
+- Top-level `enterprise_id:` — optional; sets `entId` on every tag (match your WIZ tenant so it deploys correctly). Omitted → a deterministic id is minted.
+- Node-level `tags:` — `[{category, values: [subset]}]` assigns dispositions to a node; emits a denormalized `data.tag_list` (category header + selected value rows). `kbTag` is auto-derived from all node assignments.
+
+Output is checker-clean (sub-project-1 `WIZ401`/`WIZ402` resolve by construction). A node assigning an undeclared category or an unknown value is a `CompileError`. Tags are bot-scope — `--emit component` rejects `tags:` and node `tags:`. (KB-level tag assignment + modifier tag ops are separate later sub-projects; the from-scratch tag deploy shape has a pending human import/deploy gate.)
+
 ## Exit codes
 
 | Code | Meaning |

@@ -46,6 +46,7 @@ def apply_canvases(
     minter: IdMinter,
     *,
     kb_id_by_name: dict[str, int] | None = None,
+    tag_vocabulary=None,
 ) -> tuple[dict[str, Any], dict[str, str]]:
     """Replace the template's BizSpeechComponent list with manifest canvases.
 
@@ -219,6 +220,7 @@ def apply_canvases(
             parent_uuid=canvas_uuid_by_name.get(parent_of_child.get(canvas.name, ""), "0"),
             mr_target_names=mr_target_names,
             kb_name_to_id=kb_name_to_id,
+            tag_vocabulary=tag_vocabulary,
         )
         comp_by_ci[ci] = comp
         scs_by_ci[ci] = scs_rows
@@ -254,6 +256,7 @@ def apply_canvases(
             parent_uuid="0",
             mr_target_names=mr_target_names,
             kb_name_to_id=kb_name_to_id,
+            tag_vocabulary=tag_vocabulary,
         )
         comp_by_ci[ci] = comp
         scs_by_ci[ci] = scs_rows
@@ -292,6 +295,7 @@ def _build_component(
     parent_uuid: str = "0",
     mr_target_names: set[str] | None = None,
     kb_name_to_id: dict[str, int] | None = None,
+    tag_vocabulary=None,
 ) -> tuple[dict[str, Any], list[dict]]:
     """Build a single BizSpeechComponent entry using render_component_nodes.
 
@@ -375,7 +379,7 @@ def _build_component(
             # Resolve config.target (a child canvas name) to the pre-minted componentUuid.
             target_name = cfg.get("target", "")
             cfg["target_uuid"] = canvas_uuid_by_name.get(target_name, "")
-        node_specs.append(NodeSpec(id=n.id, prompt=n.prompt, type=n.type, config=cfg))
+        node_specs.append(NodeSpec(id=n.id, prompt=n.prompt, type=n.type, config=cfg, tags=n.tags))
     edge_specs = [EdgeSpec(src=e.src, branch=e.branch, dst=e.dst) for e in canvas.edges]
 
     r = render_component_nodes(
@@ -391,6 +395,7 @@ def _build_component(
         component_nav=component_nav,
         var_source_by_name=var_source_by_name,
         nested_exit_map=nested_exit_map,
+        tag_vocabulary=tag_vocabulary,
     )
 
     entry = {

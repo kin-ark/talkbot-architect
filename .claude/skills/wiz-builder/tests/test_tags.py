@@ -270,3 +270,86 @@ def test_component_mode_rejects_node_tags(tmp_path):
     """)
     with pytest.raises(CompileError, match="component mode"):
         compile_manifest(mp, tmp_path / "out.json", emit="component")
+
+
+def test_end_to_end_node_tag_list_and_checker_clean(tmp_path):
+    from wizbuilder.compile import compile_manifest
+
+    mp = _write(tmp_path, """
+    name: Tag Bot
+    branch: dev
+    language: IDN
+    enterprise_id: 999
+    tags:
+      - name: Debt Result
+        is_mutex: true
+        values: [Refuse Payment, Willing to Repay]
+    canvases:
+      - name: Main
+        nodes:
+          - id: greet
+            type: talk
+            prompt: Hi
+            tags:
+              - category: Debt Result
+                values: [Willing to Repay]
+          - id: bye
+            type: exit
+            prompt: Bye
+        edges:
+          - {from: greet, branch: Unclassified, to: bye}
+    """)
+    out = tmp_path / "out.json"
+    result = compile_manifest(mp, out, emit="full")
+    assert result.finding_codes.get("WIZ401", 0) == 0
+    assert result.finding_codes.get("WIZ402", 0) == 0
+
+    data = json.loads(out.read_text(encoding="utf-8"))
+    comps = json.loads(data["BizSpeechComponent"])
+    details = json.loads(comps[0]["details"])
+    # find the greet talk node (type 1) with a tag_list
+    tagged = [n for n in details.values() if (n.get("data") or {}).get("tag_list")]
+    assert len(tagged) == 1
+    tl = tagged[0]["data"]["tag_list"]
+    assert len(tl) == 1
+    cat = tl[0]
+    assert cat["name"] == "Debt Result"
+    assert isinstance(cat["id"], str)          # denormalized: string ids
+    assert isinstance(cat["entId"], str)
+    rows = cat["bizTagPropertyDTOS"]
+    assert len(rows) == 1                        # only the SELECTED value
+    assert rows[0]["value"] == "Willing to Repay"
+    assert rows[0]["active"] is True
+    assert isinstance(rows[0]["id"], str) and isinstance(rows[0]["tagId"], str)
+    # exactly one node carries a non-empty tag_list (the greet node)
+    with_tl = [n for n in details.values() if (n.get("data") or {}).get("tag_list")]
+    assert len(with_tl) == 1
+
+
+def test_no_tags_manifest_leaves_speechtag_empty(tmp_path):
+    from wizbuilder.compile import compile_manifest
+    mp = _write(tmp_path, """
+    name: Tag Bot
+    branch: dev
+    language: IDN
+    canvases:
+      - name: Main
+        nodes:
+          - id: g
+            type: talk
+            prompt: Hi
+          - id: b
+            type: exit
+            prompt: Bye
+        edges:
+          - {from: g, branch: Unclassified, to: b}
+    """)
+    out = tmp_path / "out.json"
+    compile_manifest(mp, out, emit="full")
+    data = json.loads(out.read_text(encoding="utf-8"))
+    assert data["SpeechTag"] == "[]"
+    assert data["kbTag"] == []
+    comps = json.loads(data["BizSpeechComponent"])
+    details = json.loads(comps[0]["details"])
+    # all nodes should have empty tag_lists (no assigned tags)
+    assert all((n.get("data") or {}).get("tag_list") == [] for n in details.values())

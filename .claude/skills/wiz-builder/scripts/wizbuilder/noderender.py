@@ -23,6 +23,7 @@ class NodeSpec:
     prompt: str
     type: str = "talk"
     config: dict = field(default_factory=dict)
+    tags: tuple = field(default_factory=tuple)
 
 
 @dataclass(frozen=True)
@@ -1412,6 +1413,7 @@ def render_component_nodes(
     component_nav: list[dict] | None = None,
     var_source_by_name: dict[str, int] | None = None,
     nested_exit_map: dict[str, dict[str, str]] | None = None,
+    tag_vocabulary=None,
 ) -> RenderedNodes:
     """Render a list of NodeSpec objects into WIZ.AI component sub-dicts.
 
@@ -1540,6 +1542,11 @@ def render_component_nodes(
             var_source_by_name=var_source_by_name,
             nested_exit_map=nested_exit_map,
         )
+
+        # Inject denormalized tag_list for tagged nodes
+        if tag_vocabulary is not None and getattr(spec, "tags", ()):
+            from wizbuilder.tags import node_tag_list
+            node_obj["data"]["tag_list"] = node_tag_list(spec.tags, tag_vocabulary)
 
         # --- accumulate ---
         details[node_uuid] = node_obj

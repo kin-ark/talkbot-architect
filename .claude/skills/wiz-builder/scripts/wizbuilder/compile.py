@@ -94,11 +94,12 @@ def compile_manifest(
         for kb in manifest.knowledge_bases
     }
 
-    # Build tag vocabulary for validation (Task 3 will thread it into apply_canvases)
+    # Build tag vocabulary for validation and node tag_list injection
     tag_vocabulary = build_tag_vocabulary(manifest, minter)
 
     template, canvas_uuid_by_name = apply_canvases(
-        template, manifest, minter, kb_id_by_name=kb_id_by_name
+        template, manifest, minter, kb_id_by_name=kb_id_by_name,
+        tag_vocabulary=tag_vocabulary,
     )
     template = apply_knowledge_bases(
         template, manifest, minter,
