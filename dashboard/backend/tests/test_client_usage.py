@@ -15,7 +15,9 @@ class _AStream:
 
 
 def test_anthropic_usage_on_final_chunk():
-    c = AnthropicClient.__new__(AnthropicClient); c._model = "m"; c.model = "m"
+    c = AnthropicClient.__new__(AnthropicClient)
+    c._model = "m"
+    c.model = "m"
     c._client = SimpleNamespace(messages=SimpleNamespace(stream=lambda **k: _AStream()))
     chunks = list(c.stream_chat([], []))
     final = [ch for ch in chunks if ch.response][0]
@@ -23,7 +25,9 @@ def test_anthropic_usage_on_final_chunk():
 
 
 def test_openai_usage_on_final_chunk():
-    c = OpenAIClient.__new__(OpenAIClient); c._model = "m"; c.model = "m"
+    c = OpenAIClient.__new__(OpenAIClient)
+    c._model = "m"
+    c.model = "m"
     def _create(**kw):
         assert kw.get("stream_options") == {"include_usage": True}
         return iter([

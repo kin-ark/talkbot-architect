@@ -38,7 +38,8 @@ def test_backstop_forces_a_fix_then_finishes(monkeypatch):
         return {"result": {"ok": True}, "proposal": _proposal(findings)}
     monkeypatch.setattr(orchestrator.registry, "dispatch", fake_dispatch)
 
-    tc = lambda i: ToolCall(id=f"c{i}", name="apply_mods", arguments={})
+    def tc(i):
+        return ToolCall(id=f"c{i}", name="apply_mods", arguments={})
     client = FakeLLMClient(script=[
         LLMResponse(text=None, tool_calls=[tc(1)]),   # round 1: makes error proposal
         LLMResponse(text="done?", tool_calls=[]),     # round 2: tries to finish (dirty) → backstop

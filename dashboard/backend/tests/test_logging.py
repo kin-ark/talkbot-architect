@@ -8,7 +8,11 @@ from fastapi.testclient import TestClient
 def test_jsonformatter_emits_valid_json_with_extras():
     fmt = logging_setup.JsonFormatter()
     rec = logging.LogRecord("tba", logging.INFO, __file__, 1, "", (), None)
-    rec.ev = "req"; rec.method = "GET"; rec.path = "/x"; rec.status = 200; rec.ms = 3
+    rec.ev = "req"
+    rec.method = "GET"
+    rec.path = "/x"
+    rec.status = 200
+    rec.ms = 3
     obj = json.loads(fmt.format(rec))
     assert obj["ev"] == "req" and obj["method"] == "GET" and obj["status"] == 200
     assert "ts" in obj and obj["lvl"] == "INFO"
@@ -29,7 +33,8 @@ def test_jsonformatter_renders_exc_info_trace():
 def test_jsonformatter_never_raises_on_bad_extra():
     fmt = logging_setup.JsonFormatter()
     rec = logging.LogRecord("tba", logging.INFO, __file__, 1, "hi", (), None)
-    rec.ev = "req"; rec.err = object()          # non-serializable
+    rec.ev = "req"
+    rec.err = object()          # non-serializable
     out = fmt.format(rec)                         # must not raise
     assert isinstance(out, str) and len(out) > 0
 

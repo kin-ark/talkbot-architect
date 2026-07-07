@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { Pencil, Undo2, Redo2, Puzzle } from 'lucide-react';
+import { Pencil, Undo2, Redo2, Puzzle, AlertTriangle } from 'lucide-react';
 import Button from './ui/Button';
 
-export default function TopBar({ hasDoc, canUndo, canRedo, onUndo, onRedo, onExport, botName, onRenameBot, isComponent, onExportComponent }) {
+export default function TopBar({ hasDoc, canUndo, canRedo, onUndo, onRedo, onExport, botName, onRenameBot, isComponent, onExportComponent, componentWarnings = [] }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
   const display = botName && botName !== 'Empty Dialogue' ? botName : '';
@@ -37,6 +37,13 @@ export default function TopBar({ hasDoc, canUndo, canRedo, onUndo, onRedo, onExp
             className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs bg-surface-secondary text-text-secondary border border-border"
             title="Component export — exports as a component envelope">
             <Puzzle size={12} /> Component
+          </span>
+        )}
+        {isComponent && componentWarnings.length > 0 && (
+          <span data-testid="component-warnings"
+            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs bg-warning-bg text-warning border border-warning"
+            title={componentWarnings.join('; ')}>
+            <AlertTriangle size={12} />
           </span>
         )}
       </div>

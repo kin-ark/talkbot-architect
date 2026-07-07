@@ -4,8 +4,11 @@ from llm.base import Message, ToolCall
 
 def _client(budget):
     c = AnthropicClient.__new__(AnthropicClient)
-    c._model = "m"; c.model = "m"; c._thinking_budget = budget
-    c._attempts = 3; c._sleep = lambda s: None
+    c._model = "m"
+    c.model = "m"
+    c._thinking_budget = budget
+    c._attempts = 3
+    c._sleep = lambda s: None
     return c
 
 
@@ -47,7 +50,8 @@ def test_stream_emits_thinking_delta_and_blocks():
 
     class _Event:
         def __init__(self, delta):
-            self.type = "content_block_delta"; self.delta = delta
+            self.type = "content_block_delta"
+            self.delta = delta
 
     class _Block:
         def __init__(self, **kw):

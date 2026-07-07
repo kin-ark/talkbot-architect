@@ -3,11 +3,15 @@ from llm.anthropic_client import AnthropicClient
 
 
 class _FakeTextDelta:
-    def __init__(self, text): self.type = "text_delta"; self.text = text
+    def __init__(self, text):
+        self.type = "text_delta"
+        self.text = text
 
 
 class _FakeEvent:
-    def __init__(self, text): self.type = "content_block_delta"; self.delta = _FakeTextDelta(text)
+    def __init__(self, text):
+        self.type = "content_block_delta"
+        self.delta = _FakeTextDelta(text)
 
 
 class _FakeFinalBlockText:
@@ -25,7 +29,8 @@ class _FakeStreamCtx:
             text_stream = iter([])
             def __iter__(self_inner): return iter([_FakeEvent("hi "), _FakeEvent("there")])
             def get_final_message(self_inner): return _FakeFinalMessage()
-        self._s = S(); return self._s
+        self._s = S()
+        return self._s
     def __exit__(self, *a): return False
 
 

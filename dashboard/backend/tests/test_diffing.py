@@ -1,4 +1,4 @@
-from diffing import unified_diff_of, checker_delta
+from diffing import unified_diff_of
 
 
 def test_unified_diff_shows_changed_value():

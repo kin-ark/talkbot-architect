@@ -55,7 +55,7 @@ export default function App() {
 
   const onExportComponent = (uuid) => {
     const kbs = s.summary?.knowledge_bases?.length || 0;
-    if (kbs) toast.info(`${kbs} knowledge base${kbs === 1 ? '' : 's'} won't be included in the component export`);
+    if (!uuid && kbs) toast.info(`${kbs} knowledge base${kbs === 1 ? '' : 's'} won't be included in the component export`);
     window.open(componentExportUrl(uuid), '_blank');
   };
 
@@ -121,7 +121,7 @@ export default function App() {
     <div className="h-screen flex flex-col bg-canvas">
       <TopBar hasDoc={!!s.summary} canUndo={s.canUndo} canRedo={s.canRedo}
         onUndo={s.undo} onRedo={s.redo} onExport={onExport}
-        botName={s.botName} onRenameBot={s.renameBot} isComponent={s.isComponent} onExportComponent={onExportComponent} />
+        botName={s.botName} onRenameBot={s.renameBot} isComponent={s.isComponent} onExportComponent={onExportComponent} componentWarnings={s.componentWarnings} />
       <div className="flex-1 flex overflow-hidden">
         <SessionRail sessions={s.sessions} activeSessionId={s.activeSessionId}
           usage={s.usage} collapsed={railCollapsed} onToggleCollapse={toggleRail}

@@ -1,5 +1,4 @@
-from llm.base import FakeLLMClient, LLMResponse, ToolCall, Message, ToolSpec
-from llm.base import StreamChunk
+from llm.base import FakeLLMClient, LLMResponse, ToolCall, Message
 
 
 def test_fake_returns_scripted_responses_in_order():

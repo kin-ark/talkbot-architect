@@ -10,14 +10,16 @@ def _reload_main(monkeypatch, password):
         monkeypatch.delenv("DASHBOARD_PASSWORD", raising=False)
     else:
         monkeypatch.setenv("DASHBOARD_PASSWORD", password)
-    import main, auth
+    import main
+    import auth
     importlib.reload(auth)
     importlib.reload(main)
     return main
 
 
 def _dirs(tmp_path, monkeypatch):
-    sess = tmp_path / ".sessions"; sess.mkdir()
+    sess = tmp_path / ".sessions"
+    sess.mkdir()
     monkeypatch.setattr(persistence, "SESSIONS_DIR", sess)
     monkeypatch.setattr(backup, "BACKUP_DIR", tmp_path / "backups")
     return sess
@@ -26,7 +28,8 @@ def _dirs(tmp_path, monkeypatch):
 def _valid_tarball(sess_content=b'{"id":"s9"}'):
     buf = io.BytesIO()
     with tarfile.open(fileobj=buf, mode="w:gz") as t:
-        info = tarfile.TarInfo(name="s9.json"); info.size = len(sess_content)
+        info = tarfile.TarInfo(name="s9.json")
+        info.size = len(sess_content)
         t.addfile(info, io.BytesIO(sess_content))
     buf.seek(0)
     return buf.read()
