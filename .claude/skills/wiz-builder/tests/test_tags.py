@@ -80,3 +80,193 @@ def test_manifest_rejects_duplicate_value_in_category(tmp_path):
           - name: Main
             nodes: [{id: n, type: talk, prompt: x}]
         """))
+
+
+import json
+
+from wizbuilder.ids import IdMinter
+from wizbuilder.tags import apply_tags, build_tag_vocabulary
+from wizbuilder.compile import CompileError
+
+
+def _manifest_with_tags(tmp_path):
+    return load_manifest(_write(tmp_path, """
+    name: Tag Bot
+    branch: dev
+    language: IDN
+    enterprise_id: 999
+    tags:
+      - name: Debt Result
+        is_mutex: true
+        values: [Refuse Payment, Willing to Repay]
+      - name: Unused
+        values: [x]
+    canvases:
+      - name: Main
+        nodes:
+          - id: greet
+            type: talk
+            prompt: Hi
+            tags:
+              - category: Debt Result
+                values: [Willing to Repay]
+          - id: bye
+            type: exit
+            prompt: Bye
+        edges:
+          - {from: greet, branch: Unclassified, to: bye}
+    """))
+
+
+def test_build_vocabulary_mints_ids_and_entid(tmp_path):
+    m = _manifest_with_tags(tmp_path)
+    minter = IdMinter(manifest_hash="h")
+    vocab = build_tag_vocabulary(m, minter)
+    assert vocab.ent_id == 999
+    assert set(vocab.categories) == {"Debt Result", "Unused"}
+    debt = vocab.categories["Debt Result"]
+    assert isinstance(debt.id, int)
+    assert set(debt.values) == {"Refuse Payment", "Willing to Repay"}
+    # deterministic
+    assert build_tag_vocabulary(m, IdMinter(manifest_hash="h")).categories["Debt Result"].id == debt.id
+
+
+def test_build_vocabulary_minted_entid_when_absent(tmp_path):
+    m = load_manifest(_write(tmp_path, """
+    name: Tag Bot
+    branch: dev
+    language: IDN
+    tags:
+      - name: C
+        values: [a]
+    canvases:
+      - name: Main
+        nodes:
+          - id: n
+            type: talk
+            prompt: x
+    """))
+    vocab = build_tag_vocabulary(m, IdMinter(manifest_hash="h"))
+    assert isinstance(vocab.ent_id, int) and vocab.ent_id != 0
+
+
+def test_build_vocabulary_rejects_unknown_category(tmp_path):
+    m = load_manifest(_write(tmp_path, """
+    name: Tag Bot
+    branch: dev
+    language: IDN
+    tags:
+      - name: C
+        values: [a]
+    canvases:
+      - name: Main
+        nodes:
+          - id: n
+            type: talk
+            prompt: x
+            tags:
+              - category: Nope
+                values: [a]
+    """))
+    with pytest.raises(CompileError, match="unknown tag category"):
+        build_tag_vocabulary(m, IdMinter(manifest_hash="h"))
+
+
+def test_build_vocabulary_rejects_unknown_value(tmp_path):
+    m = load_manifest(_write(tmp_path, """
+    name: Tag Bot
+    branch: dev
+    language: IDN
+    tags:
+      - name: C
+        values: [a]
+    canvases:
+      - name: Main
+        nodes:
+          - id: n
+            type: talk
+            prompt: x
+            tags:
+              - category: C
+                values: [zzz]
+    """))
+    with pytest.raises(CompileError, match="unknown tag value"):
+        build_tag_vocabulary(m, IdMinter(manifest_hash="h"))
+
+
+def test_apply_tags_emits_speechtag_and_kbtag(tmp_path):
+    m = _manifest_with_tags(tmp_path)
+    minter = IdMinter(manifest_hash="h")
+    vocab = build_tag_vocabulary(m, minter)
+    template = {"SpeechTag": "[]", "kbTag": []}
+    out = apply_tags(template, m, vocab, minter)
+    st = json.loads(out["SpeechTag"])
+    assert {c["name"] for c in st} == {"Debt Result", "Unused"}
+    debt = next(c for c in st if c["name"] == "Debt Result")
+    assert debt["isMutex"] == 1
+    assert debt["entId"] == 999
+    assert {p["value"] for p in debt["bizTagPropertyDTOS"]} == {"Refuse Payment", "Willing to Repay"}
+    assert all(isinstance(p["id"], int) for p in debt["bizTagPropertyDTOS"])
+    # kbTag = only categories a node assigned (Debt Result), not Unused
+    assert out["kbTag"] == [vocab.categories["Debt Result"].id]
+
+
+def test_apply_tags_noop_without_tags(tmp_path):
+    m = load_manifest(_write(tmp_path, """
+    name: Tag Bot
+    branch: dev
+    language: IDN
+    canvases:
+      - name: Main
+        nodes:
+          - id: n
+            type: talk
+            prompt: x
+    """))
+    template = {"SpeechTag": "[]", "kbTag": []}
+    out = apply_tags(template, m, build_tag_vocabulary(m, IdMinter(manifest_hash="h")), IdMinter(manifest_hash="h"))
+    assert out["SpeechTag"] == "[]"
+    assert out["kbTag"] == []
+
+
+def test_component_mode_rejects_tags(tmp_path):
+    from wizbuilder.compile import compile_manifest
+    mp = _write(tmp_path, """
+    name: Tag Bot
+    branch: dev
+    language: IDN
+    tags:
+      - name: C
+        values: [a]
+    canvases:
+      - name: Main
+        nodes:
+          - id: n
+            type: talk
+            prompt: x
+    """)
+    with pytest.raises(CompileError, match="component mode"):
+        compile_manifest(mp, tmp_path / "out.json", emit="component")
+
+
+def test_component_mode_rejects_node_tags(tmp_path):
+    from wizbuilder.compile import compile_manifest
+    mp = _write(tmp_path, """
+    name: Tag Bot
+    branch: dev
+    language: IDN
+    tags:
+      - name: C
+        values: [a]
+    canvases:
+      - name: Main
+        nodes:
+          - id: n
+            type: talk
+            prompt: x
+            tags:
+              - category: C
+                values: [a]
+    """)
+    with pytest.raises(CompileError, match="component mode"):
+        compile_manifest(mp, tmp_path / "out.json", emit="component")

@@ -9,13 +9,17 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from wizbuilder.canvases import apply_canvases
+from wizbuilder.errors import CompileError
 from wizbuilder.hotwords import apply_hotwords
 from wizbuilder.identity import apply_identity
 from wizbuilder.ids import IdMinter, manifest_hash_of
 from wizbuilder.intents import apply_intents
 from wizbuilder.knowledge import apply_knowledge_bases
 from wizbuilder.manifest import load_manifest
+from wizbuilder.tags import apply_tags, build_tag_vocabulary
 from wizbuilder.variables import apply_variables
+
+__all__ = ["CompileError", "compile_manifest", "CompileResult"]
 
 _SKILL_DIR = Path(__file__).resolve().parents[2]
 _TEMPLATE_PATH = _SKILL_DIR / "templates" / "empty_dialogue.json"
@@ -25,27 +29,25 @@ _CHECKER_CLI = _PROJECT_ROOT / ".claude" / "skills" / "wiz-checker" / "scripts" 
 _COMPONENT_FORBIDDEN_NODE_TYPES = frozenset({"goto_kb", "goto_mr", "talk_continue"})
 
 
-class CompileError(RuntimeError):
-    """Raised when wiz-checker reports errors > 0 against the compiler's output.
-
-    This indicates a bug in the compiler itself (the produced speech*.json failed
-    structural/logical validation). Distinct from plain RuntimeError, which is
-    reserved for unexpected internal failures (e.g. checker crash, malformed JSON).
-    """
-
-
 def _validate_component_mode(manifest) -> None:
     """Reject bot-level features unsupported in a standalone component export."""
     if manifest.knowledge_bases:
         raise CompileError("knowledge_bases are not supported in component mode (--emit component)")
     if manifest.hot_words:
         raise CompileError("hot_words are not supported in component mode (--emit component)")
+    if manifest.tags:
+        raise CompileError("tags are not supported in component mode (--emit component)")
     for canvas in manifest.canvases:
         for node in canvas.nodes:
             if node.type in _COMPONENT_FORBIDDEN_NODE_TYPES:
                 raise CompileError(
                     f"node {node.id!r} type {node.type!r} is not supported in component mode "
                     f"(--emit component) — needs bot-level KB/multi-round context"
+                )
+            if node.tags:
+                raise CompileError(
+                    f"node {node.id!r} tag assignment is not supported in component mode "
+                    f"(--emit component)"
                 )
 
 
@@ -92,6 +94,9 @@ def compile_manifest(
         for kb in manifest.knowledge_bases
     }
 
+    # Build tag vocabulary for validation (Task 3 will thread it into apply_canvases)
+    tag_vocabulary = build_tag_vocabulary(manifest, minter)
+
     template, canvas_uuid_by_name = apply_canvases(
         template, manifest, minter, kb_id_by_name=kb_id_by_name
     )
@@ -101,6 +106,7 @@ def compile_manifest(
         canvas_uuid_by_name=canvas_uuid_by_name,
     )
     template = apply_hotwords(template, manifest, minter)
+    template = apply_tags(template, manifest, tag_vocabulary, minter)
 
     if emit == "component":
         from wizcheck.component_adapter import full_to_component_export
