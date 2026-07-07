@@ -450,6 +450,17 @@ class FlowEditor:
             if row.get("id") == uuid and "name" in row:
                 row["name"] = text
 
+    def set_tags(self, uuid: str, tag_list: list[dict]) -> None:
+        """Set the denormalized disposition tag_list on a node's data.
+
+        Replaces ``details[uuid]["data"]["tag_list"]`` wholesale (an empty
+        list clears the node's tags). Flushed back by ``flush()``.
+        """
+        node_obj = self.details.get(uuid)
+        if node_obj is None:
+            raise FlowEditError(f"no node with uuid {uuid!r}")
+        node_obj.setdefault("data", {})["tag_list"] = tag_list
+
     def set_prompt(self, uuid: str, text: str, all_scs: list[dict]) -> None:
         """Update the spoken-text prompt of a talk or exit node.
 
