@@ -11,6 +11,7 @@ import json
 from typing import Any
 
 from wizbuilder.ids import IdMinter
+from wizbuilder.layout import assign_positions
 from wizbuilder.manifest import Canvas, Manifest
 from wizbuilder.noderender import EdgeSpec, NodeSpec, render_component_nodes
 
@@ -397,6 +398,10 @@ def _build_component(
         nested_exit_map=nested_exit_map,
         tag_vocabulary=tag_vocabulary,
     )
+
+    # Lay out node positions (data.top/left) so the component doesn't import
+    # as a stack at the origin in the WIZ canvas.
+    assign_positions(r.details, r.routes)
 
     entry = {
         "componentUuid": canvas_uuid,
