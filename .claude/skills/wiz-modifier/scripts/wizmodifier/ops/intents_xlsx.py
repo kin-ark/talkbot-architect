@@ -74,10 +74,15 @@ def import_intents_xlsx(bundle: InputBundle, params: dict, minter) -> None:
             g = {
                 "keywords": [],
                 "user_responses": [],
-                "language": get_cell(row, col["language"]),
+                "language": "",
             }
             grouped[name] = g
             order.append(name)
+        # Capture language as first non-empty value across the group's rows
+        if not g["language"]:
+            lang_cell = get_cell(row, col["language"])
+            if lang_cell:
+                g["language"] = lang_cell
         if typ == "keyword":
             g["keywords"].append(content)
         elif typ in ("user response", "user_response"):
@@ -95,6 +100,19 @@ def import_intents_xlsx(bundle: InputBundle, params: dict, minter) -> None:
         bundle.warnings.append(
             f"import-intents-xlsx: skipped {skipped_adv} Include/Exclude row(s) "
             f"(advanced rules have no full-export representation)")
+
+    # Skip intents with no keywords and no user_responses (no NLU signal)
+    skipped_empty = []
+    for name in order:
+        g = grouped[name]
+        if not g["keywords"] and not g["user_responses"]:
+            skipped_empty.append(name)
+            bundle.warnings.append(
+                f"import-intents-xlsx: intent {name!r} has no Keyword/User-response rows, skipped"
+            )
+    for name in skipped_empty:
+        del grouped[name]
+    order = [n for n in order if n in grouped]
 
     existing = {i.get("intentName") for i in json.loads(bundle.data.get("SpeechIntent", "[]"))}
     for name in order:

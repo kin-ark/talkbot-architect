@@ -116,6 +116,43 @@ def test_import_component_mode_rejected(tmp_path):
         run_mods(b, [{"op": "import-intents-xlsx", "path": str(p)}], manifest_hash="h")
 
 
+def test_import_first_nonempty_language_across_group(tmp_path):
+    # Intent "New" has row1 Language empty, row2 Language "English"
+    # Fix: language should be captured as first-non-empty across group rows
+    p = _sheet(tmp_path, [
+        ["New", "Keyword", "baru", ""],              # empty language
+        ["New", "User response", "yang baru", "English"],  # language here
+    ])
+    b = _bundle()
+    run_mods(b, [{"op": "import-intents-xlsx", "path": str(p)}], manifest_hash="h")
+    it = _intents(b)
+    assert "New" in it
+    assert it["New"]["language"] == "ENG", "Should capture English from 2nd row"
+    # No "unknown language" warning should be emitted
+    assert not any("unknown language" in w.lower() for w in b.warnings)
+
+
+def test_import_skip_empty_training_intents(tmp_path):
+    # Intent "OnlyAdv" has ONLY Include/Exclude rows (no Keyword/User-response)
+    # Intent "RealKeyword" has actual Keyword rows
+    # Fix: skip "OnlyAdv", create "RealKeyword"
+    p = _sheet(tmp_path, [
+        ["OnlyAdv", "Include", "must", "English"],
+        ["OnlyAdv", "Exclude", "not", "English"],
+        ["RealKeyword", "Keyword", "kunci", "English"],
+    ])
+    b = _bundle()
+    run_mods(b, [{"op": "import-intents-xlsx", "path": str(p)}], manifest_hash="h")
+    it = _intents(b)
+    # OnlyAdv should NOT be in SpeechIntent (no keywords, no user_responses)
+    assert "OnlyAdv" not in it, "Intent with only Include/Exclude should be skipped"
+    # RealKeyword should be present
+    assert "RealKeyword" in it
+    assert it["RealKeyword"]["keyWordInIntent"] == "[kunci]"
+    # A warning naming the skipped intent should be present
+    assert any("OnlyAdv" in w and "no Keyword" in w for w in b.warnings)
+
+
 def test_export_intents_cli_roundtrip(tmp_path):
     import json as _json
     from modify import main
