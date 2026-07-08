@@ -344,13 +344,13 @@ async def export_component(uuid: str | None = None, s: Session = Depends(_requir
     if s.is_component:
         raise HTTPException(status_code=400, detail="this session is already a component; use /export")
     data = s.current()
-    try:
-        dto = agents.export_component_dto(data, uuid)
-    except KeyError:
-        raise HTTPException(status_code=404, detail="unknown component")
 
     # Single component export (uuid provided)
     if uuid is not None:
+        try:
+            dto = agents.export_component_dto(data, uuid)
+        except KeyError:
+            raise HTTPException(status_code=404, detail="unknown component")
         raw = data.get("BizSpeechComponent")
         comps = json.loads(raw) if isinstance(raw, str) else (raw or [])
         nm = next((c.get("name") for c in comps if isinstance(c, dict)
@@ -394,7 +394,8 @@ async def export_component(uuid: str | None = None, s: Session = Depends(_requir
             zf.writestr(f"{stem} (multi-round).component.json", mr_json)
 
         # Intent Excel
-        si = json.loads(data.get("SpeechIntent", "[]")) or []
+        _si = data.get("SpeechIntent", "[]")
+        si = json.loads(_si) if isinstance(_si, str) else (_si or [])
         intent_rows = intent_export_rows(si)
         with tempfile.NamedTemporaryFile(suffix=".xls", delete=False) as tmp:
             tmp_intent = Path(tmp.name)
@@ -406,7 +407,8 @@ async def export_component(uuid: str | None = None, s: Session = Depends(_requir
             tmp_intent.unlink(missing_ok=True)
 
         # KB Excel
-        bk = json.loads(data.get("BizKnowledgeInfo", "[]")) or []
+        _bk = data.get("BizKnowledgeInfo", "[]")
+        bk = json.loads(_bk) if isinstance(_bk, str) else (_bk or [])
         kb_rows = kb_export_rows(bk, si)
         with tempfile.NamedTemporaryFile(suffix=".xls", delete=False) as tmp:
             tmp_kb = Path(tmp.name)
