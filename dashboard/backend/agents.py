@@ -465,3 +465,82 @@ def ensure_mature(data: dict) -> tuple[dict, dict]:
         "errors": [f for f in findings if f.get("severity") == "error"],
     }
     return work, report
+
+
+_FEATURE_PALETTE = [
+    "talk", "conditional", "assign", "nested", "goto", "goto_kb", "goto_mr",
+    "talk_continue", "transfer", "exit", "knowledge_base", "multi_round",
+    "hot_words", "disposition_tags", "trained_intents",
+]
+_NODE_TYPE_FEATURE = {
+    1: "talk", 2: "exit", 4: "goto", 5: "talk_continue", 7: "conditional",
+    8: "goto_kb", 9: "goto_mr", 10: "assign", 11: "nested", 13: "transfer",
+}
+
+
+def feature_coverage(data: dict) -> dict:
+    """Deterministic report of which palette features a built export uses.
+
+    Returns {"used": [...], "missing": [...]} partitioning _FEATURE_PALETTE.
+    Advisory only (never forces features); pure; never raises.
+    """
+    used: set[str] = set()
+
+    # node types + per-node disposition tags
+    try:
+        for comp in unwrap(data.get("BizSpeechComponent")) or []:
+            det = comp.get("details") if isinstance(comp, dict) else None
+            if not det or det in ("null", ""):
+                continue
+            tree = json.loads(det) if isinstance(det, str) else det
+            for node in (tree.values() if isinstance(tree, dict) else []):
+                d = node.get("data") or {}
+                t = d.get("type")
+                if t in _NODE_TYPE_FEATURE:
+                    used.add(_NODE_TYPE_FEATURE[t])
+                if d.get("tag_list"):
+                    used.add("disposition_tags")
+    except Exception:  # noqa: BLE001 — best-effort
+        pass
+
+    # KBs + multi-round
+    try:
+        kbs = unwrap(data.get("BizKnowledgeInfo")) or []
+        if kbs:
+            used.add("knowledge_base")
+        for kb in kbs:
+            kd = kb.get("kdInfo") if isinstance(kb, dict) else None
+            kd = json.loads(kd) if isinstance(kd, str) else kd
+            if isinstance(kd, list) and any(isinstance(i, dict) and i.get("answerType") == 2 for i in kd):
+                used.add("multi_round")
+                break
+    except Exception:  # noqa: BLE001
+        pass
+
+    # hot-words
+    try:
+        if unwrap(data.get("BizNodeHotWords")):
+            used.add("hot_words")
+    except Exception:  # noqa: BLE001
+        pass
+
+    # disposition tags (top-level SpeechTag)
+    try:
+        if unwrap(data.get("SpeechTag")):
+            used.add("disposition_tags")
+    except Exception:  # noqa: BLE001
+        pass
+
+    # trained intents (user-created with keywords/responses)
+    try:
+        for it in unwrap(data.get("SpeechIntent")) or []:
+            if not isinstance(it, dict):
+                continue
+            if str(it.get("isInit")) == "1" and (it.get("keyWordInIntent") or it.get("userResponseInIntent")):
+                used.add("trained_intents")
+                break
+    except Exception:  # noqa: BLE001
+        pass
+
+    return {"used": [f for f in _FEATURE_PALETTE if f in used],
+            "missing": [f for f in _FEATURE_PALETTE if f not in used]}
