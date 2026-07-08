@@ -78,3 +78,17 @@ def test_cross_component_target_ignored():
     routes = {"e": {"p1": _edge("a"), "p2": _edge("EXTERNAL")}, "a": {}}
     assign_positions(details, routes)
     assert "top" in details["a"]["data"]
+
+
+def test_writes_canvas_and_data_position():
+    details = {"e": _node(True), "a": _node(), "b": _node()}
+    routes = {"e": {"p1": _edge("a"), "p2": _edge("b")}, "a": {}, "b": {}}
+    assign_positions(details, routes)
+    for k in details:
+        dp = details[k]["data"]["position"]
+        cp = details[k]["canvas"]["position"]
+        assert dp == cp                                  # data + canvas mirror
+        assert dp == {"x": details[k]["data"]["left"], "y": details[k]["data"]["top"]}
+    # distinct canvas positions (the field WIZ renders from) — no stack
+    pos = {tuple(details[k]["canvas"]["position"].values()) for k in details}
+    assert len(pos) == len(details)

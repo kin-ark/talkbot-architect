@@ -84,6 +84,15 @@ def assign_positions(
         per_rank[r] = col_of[u] + 1
 
     for u in details:
-        data = details[u].setdefault("data", {})
-        data["top"] = origin_top + rank[u] * row_gap
-        data["left"] = origin_left + col_of[u] * col_gap
+        node = details[u]
+        x = origin_left + col_of[u] * col_gap
+        y = origin_top + rank[u] * row_gap
+        data = node.setdefault("data", {})
+        # data.top/left are secondary (absent on several node types); the field
+        # WIZ actually renders from is the jointjs cell position, mirrored in
+        # data.position AND canvas.position. Set all so the flow lays out.
+        data["top"] = y
+        data["left"] = x
+        data["position"] = {"x": x, "y": y}
+        canvas = node.setdefault("canvas", {})
+        canvas["position"] = {"x": x, "y": y}
