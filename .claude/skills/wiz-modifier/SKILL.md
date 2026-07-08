@@ -69,6 +69,13 @@ The modifier reads and writes the WIZ intent Excel format (`.xls`-named xlsx fil
 - **Import op: `import-intents-xlsx`** — Load a sheet into an existing export. Groups rows by intent name and composes `add_intent` / `set_intent_training` ops. Maps **Keyword** → `keywords` list, **User response** → `user_responses` list. Include/Exclude rows (advanced rules without full-export representation) are warned and skipped. Language column mapped from display names (e.g., "Bahasa Indonesia" → IDN, "English" → ENG, "Chinese" → ZHO, "Thai" → THA); unknown languages warned and default to IDN. Forbidden in component mode (bot-scope).
 - **Export CLI: `--export-intents <path> --in <bot.json>`** — Unbracket intent keywords/user-responses and write to a single-sheet `.xlsx`. Language codes mapped back to display names. Each keyword/user-response becomes a row: Intent | Type | Content | Language. Output file is named `.xls` (WIZ format: xlsx bytes, `.xls` name extension).
 
+## KB Excel
+
+The modifier reads and writes the WIZ KB (Knowledge Base) Excel format (`.xls`-named xlsx files):
+
+- **Import op: `import-kb-xlsx`** — Load a sheet into an existing export. One row = one KB. Title is the KB name; Intent is a single trigger intent (must exist in `SpeechIntent`, else warning + skipped). Dialogue Content is the answer text, bracket-wrapped (e.g., `[Allianz covers you.]`). Composes `add_kb` (new) or `set_kb_intents` + `edit_kb_answer` (existing KB). Duplicate title → warning + skipped. Forbidden in component mode (bot-scope).
+- **Export CLI: `--export-kb <path> --in <bot.json>`** — Dump the input's `BizKnowledgeInfo` to a single-sheet `.xlsx`. Exports Title (KB name), Intent (first trigger intent name), and Dialogue Content (first single-sentence answer, bracket-wrapped). Multi-round-only KBs (no `answerType:1` answer) are skipped with a note to stderr. Output file is named `.xls` (WIZ format: xlsx bytes, `.xls` name extension).
+
 ## Mod-manifest format
 
 ```yaml

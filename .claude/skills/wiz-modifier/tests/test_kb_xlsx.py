@@ -109,3 +109,35 @@ def test_import_component_mode_rejected(tmp_path):
     b = _bundle(); b.is_component = True
     with pytest.raises(ValueError, match="component mode"):
         run_mods(b, [{"op": "import-kb-xlsx", "path": str(p)}], manifest_hash="h")
+
+
+def test_export_kb_cli_roundtrip(tmp_path):
+    import json as _json
+    from modify import main
+    kb_simple = {
+        "kdTitle": "KB Benefit", "knowledgeId": 5,
+        "intents": _json.dumps([{"intentName": "Benefit", "intentId": 100}]),
+        "kdInfo": _json.dumps([{"answerType": 1, "answer": "Allianz covers you.", "id": "a1"}]),
+    }
+    kb_mr_only = {
+        "kdTitle": "KB MR", "knowledgeId": 6,
+        "intents": _json.dumps([{"intentName": "Benefit", "intentId": 100}]),
+        "kdInfo": _json.dumps([{"answerType": 2, "multipleAppointId": "cuid", "id": "d1"}]),
+    }
+    bot = tmp_path / "speech1.json"
+    bot.write_text(_json.dumps({
+        "BizKnowledgeInfo": _json.dumps([kb_simple, kb_mr_only]),
+        "SpeechIntent": "[]", "SpeechVariable": "[]", "BizSpeechComponent": "[]",
+        "SentenceCutSpeech": "[]", "kbTag": [],
+    }), encoding="utf-8")
+    out = tmp_path / "kb.xls"
+    rc = main(["--export-kb", str(out), "--in", str(bot)])
+    assert rc == 0
+
+    from wizmodifier.xlsx import read_rows
+    rows = read_rows(out)
+    data = [r for r in rows if r and r[0] in ("KB Benefit", "KB MR")]
+    # simple KB exported; multi-round-only KB skipped (no answerType:1)
+    assert [r[0] for r in data] == ["KB Benefit"]
+    assert data[0][1] == "Benefit"
+    assert data[0][2] == "[Allianz covers you.]"   # bracket-wrapped answer

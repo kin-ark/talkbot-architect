@@ -144,6 +144,50 @@ def _run_export_intents(args) -> int:
     return 0
 
 
+def _run_export_kb(args) -> int:
+    if not args.in_path:
+        print("--export-kb requires --in", file=sys.stderr)
+        return 2
+    try:
+        from wizmodifier.io import InputBundle
+        from wizmodifier.xlsx import write_sheet
+
+        bundle = InputBundle.load(Path(args.in_path))
+        bk = json.loads(bundle.data.get("BizKnowledgeInfo", "[]")) or []
+        si = json.loads(bundle.data.get("SpeechIntent", "[]")) or []
+        name_by_id = {i.get("intentId"): i.get("intentName") for i in si}
+        rows = []
+        skipped = 0
+        for kb in bk:
+            info = kb.get("kdInfo")
+            info = json.loads(info) if isinstance(info, str) else (info or [])
+            answers = [it.get("answer") for it in info
+                       if isinstance(it, dict) and it.get("answerType") == 1 and it.get("answer")]
+            if not answers:
+                skipped += 1
+                continue
+            intents = kb.get("intents")
+            intents = json.loads(intents) if isinstance(intents, str) else (intents or [])
+            intent_name = ""
+            if intents:
+                first = intents[0]
+                intent_name = first.get("intentName") or name_by_id.get(first.get("intentId"), "")
+            rows.append([kb.get("kdTitle", ""), intent_name, f"[{answers[0]}]"])
+        _NOTE = "Note:\nTitle = KB name; Intent = trigger intent; Dialogue Content = answer"
+        write_sheet(Path(args.export_kb), ["Title", "Intent", "Dialogue Content"], rows, note=_NOTE)
+    except ValueError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 2
+    except Exception:
+        traceback.print_exc()
+        return 4
+    if skipped:
+        print(f"note: skipped {skipped} KB(s) with no single-sentence answer (e.g. multi-round)",
+              file=sys.stderr)
+    print(f"wrote {args.export_kb}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(
         description="Modify a WIZ.AI export or build the import-test matrix."
@@ -154,12 +198,16 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--out", type=Path, help="Output dir (preset mode)")
     p.add_argument("--export-intents", dest="export_intents", type=Path,
                    help="Write the input's intents to a WIZ intent .xlsx")
+    p.add_argument("--export-kb", dest="export_kb", type=Path,
+                   help="Write the input's knowledge bases to a WIZ KB .xlsx")
     p.add_argument("--force", action="store_true")
     p.add_argument("--no-check", action="store_true", help="Skip the advisory checker")
     args = p.parse_args(argv)
 
     if args.export_intents:
         return _run_export_intents(args)
+    if args.export_kb:
+        return _run_export_kb(args)
     if args.preset:
         if not args.in_path or not args.out:
             print("--preset requires --in and --out", file=sys.stderr)
