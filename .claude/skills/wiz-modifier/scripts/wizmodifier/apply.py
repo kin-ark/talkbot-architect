@@ -37,7 +37,7 @@ _RESULTS_TEMPLATE = """# Import Test Results
 _COMPONENT_FORBIDDEN_OPS = frozenset({
     "add-kb", "rename-kb", "set-kb-intents", "add-kb-answer", "edit-kb-answer",
     "remove-kb-answer", "set-kb-multiround", "delete-kb", "set-hotwords", "set-node-tags",
-    "import-intents-xlsx",
+    "import-intents-xlsx", "import-kb-xlsx",
 })
 _COMPONENT_FORBIDDEN_NODE_TYPES = frozenset({"goto_kb", "goto_mr", "talk_continue"})
 
