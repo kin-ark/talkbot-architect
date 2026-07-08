@@ -406,13 +406,13 @@ def dispatch(name: str, args: dict, data: dict) -> dict:
              "diff": "(new dialogue scaffolded)", "checker_delta": None,
              "proposed_summary": after_summary, "change_set": cs,
              "change_summary": _pm.change_summary(cs, None)}
-        return _as_proposal(p)
+        return _as_proposal(p, mature=True)
     if name == "scaffold_bot":
         p = agents.propose_scaffold(args)
         if p.get("ok") and args.get("name"):
             import speechname as _sn
             p["proposed_data"] = _sn.set_speech_name(p["proposed_data"], args["name"])
-        return _as_proposal(p)
+        return _as_proposal(p, mature=True)
     if name == "get_schema":
         return {"result": agents.get_schema(), "proposal": None}
     if name == "get_playbook":
@@ -562,19 +562,24 @@ def dispatch(name: str, args: dict, data: dict) -> dict:
     return {"result": {"error": f"unknown tool {name!r}"}, "proposal": None}
 
 
-def _as_proposal(p: dict) -> dict:
+def _as_proposal(p: dict, *, mature: bool = False) -> dict:
     if not p.get("ok"):
         return {"result": {"ok": False, "error": p.get("error"),
                            "known_ops": p.get("known_ops")}, "proposal": None}
-    # Maturity gate: auto-mature the proposal before validation
-    matured, maturity = agents.ensure_mature(p["proposed_data"])
-    proposal = {"proposed_data": matured, "diff": p["diff"],
-                "checker_delta": p["checker_delta"], "maturity": maturity}
+    proposed_data = p["proposed_data"]
+    maturity = None
+    # Maturity gate: only auto-mature fresh builds/scaffolds
+    if mature:
+        proposed_data, maturity = agents.ensure_mature(p["proposed_data"])
+    proposal = {"proposed_data": proposed_data, "diff": p["diff"],
+                "checker_delta": p["checker_delta"]}
+    if maturity is not None:
+        proposal["maturity"] = maturity
     for k in ("proposed_summary", "change_set", "change_summary"):
         if k in p:
             proposal[k] = p[k]
-    # Validate the matured data so findings reflect the improved doc
-    findings = agents.validate(matured)
+    # Validate the data (matured if mature=True, original if False)
+    findings = agents.validate(proposed_data)
     proposal["findings"] = findings
     result = {"ok": True, "diff": p["diff"], "checker_delta": p["checker_delta"],
               "change_summary": p.get("change_summary")}

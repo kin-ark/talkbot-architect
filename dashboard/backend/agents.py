@@ -404,9 +404,10 @@ def component_export_warnings(data: dict) -> list[str]:
 def ensure_mature(data: dict) -> tuple[dict, dict]:
     """Deterministically lift a built export to the maturity bar (model-independent).
 
-    Runs the modifier `complete-component` op on every component (idempotent:
-    adds a missing Exit, Unclassified out-ports, wires unconnected branches),
-    then re-validates. Never mutates `data`; best-effort (a component that can't
+    Runs the modifier `complete-component` op on components that need it (idempotent:
+    adds a missing Exit, Unclassified out-ports, wires unconnected branches).
+    Skips multi-round components (category==2) and components that already have
+    a terminal node. Never mutates `data`; best-effort (a component that can't
     be completed is left as-is). Returns (matured_data, report).
     """
     from wizcheck.report import DEPLOY_BLOCKER_CODES
@@ -414,20 +415,50 @@ def ensure_mature(data: dict) -> tuple[dict, dict]:
     work = copy.deepcopy(data)
     comps = unwrap(work.get("BizSpeechComponent")) or []
     auto_fixed: list[str] = []
-    if comps:
-        ops = [{"op": "complete-component", "component": i} for i in range(len(comps))]
+    ops: list[dict] = []
+
+    # Filter to components that need completion: not multi-round and no terminal nodes
+    for i, comp in enumerate(comps):
+        # Skip multi-round components (category==2)
+        if comp.get("category") == 2:
+            continue
+        # Check if component already has a terminal node (type 2/4/8/13 or exit_port)
+        details_raw = comp.get("details")
+        has_terminal = False
+        if details_raw is not None:
+            try:
+                details = unwrap(details_raw)
+                if isinstance(details, dict):
+                    for node in details.values():
+                        if isinstance(node, dict):
+                            node_type = node.get("data", {}).get("type")
+                            # Terminal types: 2 (exit), 4 (goto/exit_port), 8 (goto_kb), 13 (transfer)
+                            if node_type in (2, 4, 8, 13):
+                                has_terminal = True
+                                break
+            except Exception:  # noqa: BLE001 — malformed details; skip
+                pass
+        if not has_terminal:
+            ops.append({"op": "complete-component", "component": i})
+
+    if ops:
         try:
             r = propose_mods(work, yaml.safe_dump(ops))
             if r.get("ok"):
                 work = r["proposed_data"]
                 delta = r.get("checker_delta") or {}
-                auto_fixed.append(f"auto-completed {len(comps)} component(s)")
+                auto_fixed.append(f"auto-completed {len(ops)} component(s)")
                 if delta:
                     auto_fixed.append(f"checker delta: {delta}")
         except Exception as e:  # noqa: BLE001 — best-effort; never break the proposal
             auto_fixed.append(f"auto-complete skipped: {e}")
 
-    findings = validate(work)
+    try:
+        findings = validate(work)
+    except Exception as e:  # noqa: BLE001 — validation failure; return original
+        findings = []
+        auto_fixed.append(f"validation failed: {e}")
+
     report = {
         "auto_fixed": auto_fixed,
         "residual_blockers": [f for f in findings if f.get("code") in DEPLOY_BLOCKER_CODES],

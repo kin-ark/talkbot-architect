@@ -10,13 +10,13 @@ describe('SampleGallery', () => {
   it('renders sample cards and fires onPick on click', async () => {
     api.listSamples.mockResolvedValue([
       { id: 'greeting_faq', title: 'Greeting & FAQ', description: 'minimal' },
-      { id: 'debt_collector', title: 'Debt Collector', description: 'transfer' },
+      { id: 'debt_dpd1_5', title: 'Debt Collector', description: 'transfer' },
     ]);
     const onPick = vi.fn();
     render(<SampleGallery onPick={onPick} />);
     await waitFor(() => expect(screen.getByText('Greeting & FAQ')).toBeInTheDocument());
     fireEvent.click(screen.getByText('Debt Collector'));
-    expect(onPick).toHaveBeenCalledWith('debt_collector');
+    expect(onPick).toHaveBeenCalledWith('debt_dpd1_5');
   });
 
   it('renders nothing when the list is empty', async () => {
