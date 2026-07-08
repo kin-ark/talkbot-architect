@@ -399,3 +399,38 @@ def component_export_warnings(data: dict) -> list[str]:
     if hw:
         out.append(f"{hw} hot-word row{'s' if hw != 1 else ''} will not be included in the component export")
     return out
+
+
+def ensure_mature(data: dict) -> tuple[dict, dict]:
+    """Deterministically lift a built export to the maturity bar (model-independent).
+
+    Runs the modifier `complete-component` op on every component (idempotent:
+    adds a missing Exit, Unclassified out-ports, wires unconnected branches),
+    then re-validates. Never mutates `data`; best-effort (a component that can't
+    be completed is left as-is). Returns (matured_data, report).
+    """
+    from wizcheck.report import DEPLOY_BLOCKER_CODES
+
+    work = copy.deepcopy(data)
+    comps = unwrap(work.get("BizSpeechComponent")) or []
+    auto_fixed: list[str] = []
+    if comps:
+        ops = [{"op": "complete-component", "component": i} for i in range(len(comps))]
+        try:
+            r = propose_mods(work, yaml.safe_dump(ops))
+            if r.get("ok"):
+                work = r["proposed_data"]
+                delta = r.get("checker_delta") or {}
+                auto_fixed.append(f"auto-completed {len(comps)} component(s)")
+                if delta:
+                    auto_fixed.append(f"checker delta: {delta}")
+        except Exception as e:  # noqa: BLE001 — best-effort; never break the proposal
+            auto_fixed.append(f"auto-complete skipped: {e}")
+
+    findings = validate(work)
+    report = {
+        "auto_fixed": auto_fixed,
+        "residual_blockers": [f for f in findings if f.get("code") in DEPLOY_BLOCKER_CODES],
+        "errors": [f for f in findings if f.get("severity") == "error"],
+    }
+    return work, report
