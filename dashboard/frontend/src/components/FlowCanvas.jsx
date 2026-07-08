@@ -3,6 +3,7 @@ import { ReactFlow, Background, Controls, Handle, Position } from '@xyflow/react
 import '@xyflow/react/dist/style.css';
 import { buildGraph } from '../flow/buildGraph';
 import { layoutComponents } from '../flow/componentLayout';
+import { tagColor } from './ui/tagColor';
 
 const TYPE_COLOR = {
   talk: 'var(--c-node-talk)', conditional: 'var(--c-node-conditional)',
@@ -49,7 +50,30 @@ function ComponentNode({ data }) {
   );
 }
 
-const nodeTypes = { componentNode: ComponentNode };
+function FlowNode({ data }) {
+  return (
+    <div className="w-full h-full">
+      <Handle type="target" position={Position.Top} />
+      <div style={{ fontSize: 12 }}>{data.label}</div>
+      {data.tags?.length > 0 && (
+        <div style={{ marginTop: 4, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+          {data.tags.slice(0, 3).map((t, i) => (
+            <span key={i} data-testid="node-tag"
+              className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] ${tagColor(t.category)}`}
+              style={{ fontSize: 10 }}
+              title={`${t.category}: ${t.value}`}>
+              <span style={{ fontSize: 8 }}>●</span>{t.value}
+            </span>
+          ))}
+          {data.tags.length > 3 && <span style={{ fontSize: 10 }}>+{data.tags.length - 3}</span>}
+        </div>
+      )}
+      <Handle type="source" position={Position.Bottom} />
+    </div>
+  );
+}
+
+const nodeTypes = { componentNode: ComponentNode, flow: FlowNode };
 
 export default function FlowCanvas({ summary, onSelectNode, focusComponentId, highlight, onSelectKb }) {
   const [expanded, setExpanded] = useState(() => new Set());

@@ -36,8 +36,8 @@ export function buildGraph(summary) {
         ? `${node.label} → ${componentName[gotoBranch.target_component] || 'component'}`
         : node.label;
       nodes.push({
-        id: node.uuid, parentId: comp.uuid, extent: 'parent', position: { x: 0, y: 0 },
-        data: { ...node, label: nodeLabel },
+        id: node.uuid, type: 'flow', parentId: comp.uuid, extent: 'parent', position: { x: 0, y: 0 },
+        data: { ...node, label: nodeLabel, tags: node.tags || [] },
       });
       if (node.allowed_kbs?.length) kbBadges[node.uuid] = node.allowed_kbs;
       for (let i = 0; i < (node.branches || []).length; i++) {
