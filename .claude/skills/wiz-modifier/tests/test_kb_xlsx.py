@@ -115,12 +115,12 @@ def test_export_kb_cli_roundtrip(tmp_path):
     import json as _json
     from modify import main
     kb_simple = {
-        "kdTitle": "KB Benefit", "knowledgeId": 5,
+        "kdTitle": "KB Benefit", "knowledgeId": 5, "isInit": 0, "isDelete": 0,
         "intents": _json.dumps([{"intentName": "Benefit", "intentId": 100}]),
         "kdInfo": _json.dumps([{"answerType": 1, "answer": "Allianz covers you.", "id": "a1"}]),
     }
     kb_mr_only = {
-        "kdTitle": "KB MR", "knowledgeId": 6,
+        "kdTitle": "KB MR", "knowledgeId": 6, "isInit": 0, "isDelete": 0,
         "intents": _json.dumps([{"intentName": "Benefit", "intentId": 100}]),
         "kdInfo": _json.dumps([{"answerType": 2, "multipleAppointId": "cuid", "id": "d1"}]),
     }
@@ -141,3 +141,37 @@ def test_export_kb_cli_roundtrip(tmp_path):
     assert [r[0] for r in data] == ["KB Benefit"]
     assert data[0][1] == "Benefit"
     assert data[0][2] == "[Allianz covers you.]"   # bracket-wrapped answer
+
+
+def test_export_kb_filters_system_kbs(tmp_path):
+    import json as _json
+    from modify import main
+    # a bot with a user KB (isInit=0) and a system KB (isInit=1)
+    kb_user = {
+        "kdTitle": "KB Benefit", "knowledgeId": 5, "isInit": 0, "isDelete": 0,
+        "intents": _json.dumps([{"intentName": "Benefit", "intentId": 100}]),
+        "kdInfo": _json.dumps([{"answerType": 1, "answer": "Allianz covers you.", "id": "a1"}]),
+    }
+    kb_system = {
+        "kdTitle": "IOS Enter", "knowledgeId": 4, "isInit": 1, "isDelete": 0,
+        "intents": _json.dumps([]),
+        "kdInfo": _json.dumps([{"answerType": 1, "answer": "system KB", "id": "s1"}]),
+    }
+    bot = tmp_path / "speech1.json"
+    bot.write_text(_json.dumps({
+        "BizKnowledgeInfo": _json.dumps([kb_user, kb_system]),
+        "SpeechIntent": _json.dumps([{"intentId": 100, "intentName": "Benefit"}]),
+        "SpeechVariable": "[]", "BizSpeechComponent": "[]",
+        "SentenceCutSpeech": "[]", "kbTag": [],
+    }), encoding="utf-8")
+    out = tmp_path / "kb.xls"
+    rc = main(["--export-kb", str(out), "--in", str(bot)])
+    assert rc == 0
+
+    from wizmodifier.xlsx import read_rows
+    rows = read_rows(out)
+    data = [r for r in rows if r and r[0]]
+    # Should only have KB Benefit (user KB), not IOS Enter (system KB)
+    kb_titles = {r[0] for r in data}
+    assert "KB Benefit" in kb_titles
+    assert "IOS Enter" not in kb_titles

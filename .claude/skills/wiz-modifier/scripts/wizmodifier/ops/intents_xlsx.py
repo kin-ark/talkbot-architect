@@ -23,6 +23,14 @@ _LANG_CODE_TO_DISPLAY = {
 }
 
 
+def _unbracket(value: str, sep: str) -> list[str]:
+    """Inverse of bracket syntax: '[a<sep>b]' -> ['a','b']. Tolerant of empty/[]."""
+    s = (value or "").strip()
+    if s.startswith("[") and s.endswith("]"):
+        s = s[1:-1]
+    return [p for p in s.split(sep) if p != ""] if s else []
+
+
 def _lang_code(display: str, warnings: list[str]) -> str:
     code = _LANG_DISPLAY_TO_CODE.get((display or "").strip().lower())
     if code is None:
@@ -126,3 +134,25 @@ def import_intents_xlsx(bundle: InputBundle, params: dict, minter) -> None:
                 bundle, {"name": name, "keywords": g["keywords"],
                          "user_responses": g["user_responses"],
                          "language": _lang_code(g["language"], bundle.warnings)}, minter)
+
+
+def intent_export_rows(speech_intent: list) -> list[list]:
+    """Export user intents (isInit==1) as rows for Excel output.
+
+    For each user intent, emit one row per keyword and one per user_response.
+    Row format: [intentName, type, content, languageDisplay]
+    System intents (isInit==0) are skipped.
+    Returns DATA rows only (no header/note).
+    """
+    rows = []
+    for intent in speech_intent:
+        if intent.get("isInit") != 1:  # Skip system intents (isInit==0)
+            continue
+        name = intent.get("intentName", "")
+        lang = str(intent.get("language", "IDN"))
+        disp = _LANG_CODE_TO_DISPLAY.get(lang, lang)
+        for kw in _unbracket(intent.get("keyWordInIntent", ""), ","):
+            rows.append([name, "Keyword", kw, disp])
+        for ur in _unbracket(intent.get("userResponseInIntent", ""), ";"):
+            rows.append([name, "User response", ur, disp])
+    return rows

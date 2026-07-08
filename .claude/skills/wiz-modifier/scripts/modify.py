@@ -39,14 +39,6 @@ _PROJECT_ROOT = _SCRIPTS_DIR.parents[3]
 _CHECKER_CLI = _PROJECT_ROOT / ".claude" / "skills" / "wiz-checker" / "scripts" / "check.py"
 
 
-def _unbracket(value: str, sep: str) -> list[str]:
-    """Inverse of _bracket_join: '[a<sep>b]' -> ['a','b']. Tolerant of empty/[]."""
-    s = (value or "").strip()
-    if s.startswith("[") and s.endswith("]"):
-        s = s[1:-1]
-    return [p for p in s.split(sep) if p != ""] if s else []
-
-
 def _advisory_check(json_path: Path) -> None:
     """Run wiz-checker and print its findings; never blocks or deletes output."""
     proc = subprocess.run(
@@ -116,20 +108,12 @@ def _run_export_intents(args) -> int:
         return 2
     try:
         from wizmodifier.io import InputBundle
-        from wizmodifier.ops.intents_xlsx import _LANG_CODE_TO_DISPLAY
+        from wizmodifier.ops.intents_xlsx import intent_export_rows
         from wizmodifier.xlsx import write_sheet
 
         bundle = InputBundle.load(Path(args.in_path))
         si = json.loads(bundle.data.get("SpeechIntent", "[]")) or []
-        rows = []
-        for intent in si:
-            name = intent.get("intentName", "")
-            lang = str(intent.get("language"))
-            disp = _LANG_CODE_TO_DISPLAY.get(lang, lang)
-            for kw in _unbracket(intent.get("keyWordInIntent", ""), ","):
-                rows.append([name, "Keyword", kw, disp])
-            for ur in _unbracket(intent.get("userResponseInIntent", ""), ";"):
-                rows.append([name, "User response", ur, disp])
+        rows = intent_export_rows(si)
         _NOTE = ("Note:\n1,Intent column is the intent name;\n"
                  "2,Type is Keyword or User response;\n3,Content per type")
         write_sheet(Path(args.export_intents), ["Intent", "Type", "Content", "Language"],
@@ -150,29 +134,13 @@ def _run_export_kb(args) -> int:
         return 2
     try:
         from wizmodifier.io import InputBundle
+        from wizmodifier.ops.kb_xlsx import kb_export_rows
         from wizmodifier.xlsx import write_sheet
 
         bundle = InputBundle.load(Path(args.in_path))
         bk = json.loads(bundle.data.get("BizKnowledgeInfo", "[]")) or []
         si = json.loads(bundle.data.get("SpeechIntent", "[]")) or []
-        name_by_id = {i.get("intentId"): i.get("intentName") for i in si}
-        rows = []
-        skipped = 0
-        for kb in bk:
-            info = kb.get("kdInfo")
-            info = json.loads(info) if isinstance(info, str) else (info or [])
-            answers = [it.get("answer") for it in info
-                       if isinstance(it, dict) and it.get("answerType") == 1 and it.get("answer")]
-            if not answers:
-                skipped += 1
-                continue
-            intents = kb.get("intents")
-            intents = json.loads(intents) if isinstance(intents, str) else (intents or [])
-            intent_name = ""
-            if intents:
-                first = intents[0]
-                intent_name = first.get("intentName") or name_by_id.get(first.get("intentId"), "")
-            rows.append([kb.get("kdTitle", ""), intent_name, f"[{answers[0]}]"])
+        rows = kb_export_rows(bk, si)
         _NOTE = "Note:\nTitle = KB name; Intent = trigger intent; Dialogue Content = answer"
         write_sheet(Path(args.export_kb), ["Title", "Intent", "Dialogue Content"], rows, note=_NOTE)
     except ValueError as e:
@@ -181,9 +149,6 @@ def _run_export_kb(args) -> int:
     except Exception:
         traceback.print_exc()
         return 4
-    if skipped:
-        print(f"note: skipped {skipped} KB(s) with no single-sentence answer (e.g. multi-round)",
-              file=sys.stderr)
     print(f"wrote {args.export_kb}")
     return 0
 

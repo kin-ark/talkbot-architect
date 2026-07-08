@@ -189,3 +189,36 @@ def test_export_intents_cli_roundtrip(tmp_path):
     # language mapped back to display
     assert all(r[3] == "Bahasa Indonesia" for r in data if r[0] == "Positive")
     assert all(r[3] == "English" for r in data if r[0] == "Will pay")
+
+
+def test_export_intents_filters_system_intents(tmp_path):
+    import json as _json
+    from modify import main
+    # a bot with a user intent (isInit=1) and a system intent (isInit=0)
+    si = [
+        {"branch": "dev", "createTime": 0, "intentId": 1, "intentName": "Positive",
+         "isDelete": 0, "isInit": 1, "keyWordInIntent": "[yes]", "language": "IDN",
+         "nodeId": "", "speechId": 9, "templateCode": "T", "updateTime": 0,
+         "userResponseInIntent": "[]"},
+        {"branch": "dev", "createTime": 0, "intentId": 2, "intentName": "Answering Machine",
+         "isDelete": 0, "isInit": 0, "keyWordInIntent": "[beep]", "language": "IDN",
+         "nodeId": "", "speechId": 9, "templateCode": "T", "updateTime": 0,
+         "userResponseInIntent": "[]"},
+    ]
+    bot = tmp_path / "speech1.json"
+    bot.write_text(_json.dumps({
+        "SpeechIntent": _json.dumps(si), "SpeechVariable": "[]",
+        "BizSpeechComponent": "[]", "SentenceCutSpeech": "[]",
+        "BizKnowledgeInfo": "[]", "kbTag": [],
+    }), encoding="utf-8")
+    out = tmp_path / "intents.xls"
+    rc = main(["--export-intents", str(out), "--in", str(bot)])
+    assert rc == 0
+
+    from wizmodifier.xlsx import read_rows
+    rows = read_rows(out)
+    data = [r for r in rows if r and r[0]]
+    # Should only have Positive (user intent), not Answering Machine (system intent)
+    intent_names = {r[0] for r in data}
+    assert "Positive" in intent_names
+    assert "Answering Machine" not in intent_names
