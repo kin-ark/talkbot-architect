@@ -69,4 +69,37 @@ describe('NodePropertiesPanel', () => {
     expect(screen.queryByTestId('edit-dialogue')).toBeNull();
     expect(screen.getByTestId('edit-label')).toBeInTheDocument();   // label still editable
   });
+
+  it('shows Tags section when node has tags', () => {
+    const nodeWithTags = {
+      uuid: 'n2',
+      label: 'MyNode',
+      node_type: 'talk',
+      text: 'What is your name?',
+      referenced_vars: [],
+      allowed_kbs: [],
+      branches: [],
+      tags: [
+        { category: 'Sentiment', value: 'Positive' },
+        { category: 'Type', value: 'Query' },
+      ],
+    };
+    render(<NodePropertiesPanel node={nodeWithTags} summary={{ knowledge_bases: [] }} onEditNode={() => {}} />);
+    expect(screen.getByTestId('properties-tags')).toBeInTheDocument();
+    expect(screen.getByText('Sentiment:')).toBeInTheDocument();
+    expect(screen.getByText('Type:')).toBeInTheDocument();
+    expect(screen.getByText('Positive')).toBeInTheDocument();
+    expect(screen.getByText('Query')).toBeInTheDocument();
+  });
+
+  it('hides Tags section when node has no tags', () => {
+    render(<NodePropertiesPanel node={NODE} summary={{ knowledge_bases: [] }} onEditNode={() => {}} />);
+    expect(screen.queryByTestId('properties-tags')).toBeNull();
+  });
+
+  it('hides Tags section when node tags is empty array', () => {
+    const nodeWithEmptyTags = { ...NODE, tags: [] };
+    render(<NodePropertiesPanel node={nodeWithEmptyTags} summary={{ knowledge_bases: [] }} onEditNode={() => {}} />);
+    expect(screen.queryByTestId('properties-tags')).toBeNull();
+  });
 });

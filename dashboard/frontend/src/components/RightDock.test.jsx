@@ -41,6 +41,57 @@ describe('RightDock Intents tab', () => {
   });
 });
 
+describe('RightDock Tags tab', () => {
+  const summaryWithTags = {
+    components: [],
+    knowledge_bases: [],
+    tags: [
+      {
+        category: 'Sentiment',
+        category_id: 'cat1',
+        values: ['Positive', 'Negative'],
+        node_count: 5,
+      },
+      {
+        category: 'Type',
+        category_id: 'cat2',
+        values: ['Question'],
+        node_count: 2,
+      },
+    ],
+  };
+
+  const baseProps = {
+    activeTab: 'tags', onTabChange: vi.fn(), summary: summaryWithTags, findings: [],
+    selectedNode: null, onSelectNode: () => {}, chat, intents: [],
+  };
+
+  it('renders tags-panel when tags tab is active', () => {
+    render(<RightDock {...baseProps} />);
+    expect(screen.getByTestId('tags-panel')).toBeInTheDocument();
+  });
+
+  it('displays tag categories and values', () => {
+    render(<RightDock {...baseProps} />);
+    expect(screen.getByText('Sentiment')).toBeInTheDocument();
+    expect(screen.getByText('Type')).toBeInTheDocument();
+    expect(screen.getByText('Positive')).toBeInTheDocument();
+    expect(screen.getByText('Negative')).toBeInTheDocument();
+    expect(screen.getByText('Question')).toBeInTheDocument();
+    expect(screen.getByText('5 nodes')).toBeInTheDocument();
+    expect(screen.getByText('2 nodes')).toBeInTheDocument();
+  });
+
+  it('shows empty state when no tags', () => {
+    const emptyProps = {
+      activeTab: 'tags', onTabChange: vi.fn(), summary: SUMMARY, findings: [],
+      selectedNode: null, onSelectNode: () => {}, chat, intents: [],
+    };
+    render(<RightDock {...emptyProps} />);
+    expect(screen.getByText('No tags.')).toBeInTheDocument();
+  });
+});
+
 describe('RightDock KB tab', () => {
   const summaryWithKb = {
     components: [],

@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { Pencil } from 'lucide-react';
+import { tagColor } from './ui/tagColor';
 
 function Field({ label, children }) {
   return (
@@ -102,6 +103,18 @@ export default function NodePropertiesPanel({ node, summary, onEditNode }) {
             ))}
           </ul>
         </Field>
+      )}
+      {node?.tags?.length > 0 && (
+        <div data-testid="properties-tags" className="mt-3">
+          <div className="text-xs font-semibold uppercase tracking-wide text-text-tertiary mb-1">Tags</div>
+          <div className="flex flex-wrap gap-1.5">
+            {node.tags.map((t, i) => (
+              <span key={i} className={`inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs ${tagColor(t.category)}`}>
+                <span className="text-text-tertiary">{t.category}:</span> {t.value}
+              </span>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );

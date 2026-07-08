@@ -6,6 +6,7 @@ import NodePropertiesPanel from './NodePropertiesPanel';
 import KBPlane from './KBPlane';
 import KBDetailPanel from './KBDetailPanel';
 import IntentsPanel from './IntentsPanel';
+import TagsPanel from './TagsPanel';
 import FlowCanvas from './FlowCanvas';
 import ComponentsRail from './ComponentsRail';
 
@@ -40,6 +41,7 @@ export default function RightDock({ activeTab, onTabChange, summary, findings, s
     { id: 'properties', label: 'Properties' },
     { id: 'kb', label: 'KB' },
     { id: 'intents', label: 'Intents' },
+    { id: 'tags', label: 'Tags' },
     { id: 'components', label: 'Components' },
   ];
 
@@ -101,6 +103,7 @@ export default function RightDock({ activeTab, onTabChange, summary, findings, s
           <KBPlane knowledgeBases={summary?.knowledge_bases || []} onSelect={setSelectedKb} />
         )}
         {activeTab === 'intents' && <IntentsPanel intents={intents || []} />}
+        {activeTab === 'tags' && <TagsPanel tags={summary?.tags || []} />}
         {activeTab === 'components' && (
           <ComponentsRail summary={summary} selectedComponentId={focusComponentId}
             onSelectComponent={onSelectComponent} onExportComponent={onExportComponent} />
