@@ -217,13 +217,16 @@ def get_schema() -> dict:
 
 
 def get_playbook(vertical: str) -> dict:
-    """Corpus-derived blueprint for a bot vertical (e.g. 'debt_collection')."""
+    """Corpus-derived blueprint for a bot vertical (e.g. 'debt_collection').
+    Always includes general playbook as the maturity baseline."""
     import playbooks
     text = playbooks.get_playbook(vertical)
+    general = playbooks.get_playbook("general")
     return {
         "found": text is not None,
         "vertical": vertical,
         "playbook": text,
+        "general": general,             # always present — the maturity baseline
         "available": [p["id"] for p in playbooks.list_playbooks()],
     }
 
