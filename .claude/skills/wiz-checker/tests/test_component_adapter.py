@@ -469,3 +469,59 @@ def test_splice_category_filter():
         "SentenceCutSpeech": "[]", "SpeechIntent": "[]", "SpeechVariable": "[]"}
     mr = full_to_component_export(full, base=base, category=2)
     assert {e["componentUuid"] for e in mr["componentImportAndExportDTOS"]} == {"r1"}
+
+
+def _mixed_component_export():
+    # a component-export envelope containing one category:1 + one category:2 component
+    return {
+        "name": "Mixed",
+        "componentImportAndExportDTOS": [
+            {"componentName": "Main", "componentUuid": "a227ff42-008d-4970-9eff-c43b3d18fd22",
+             "speechComponentDTO": {"componentUuid": "a227ff42-008d-4970-9eff-c43b3d18fd22", "name": "Main", "category": 1,
+                                    "details": {}, "routes": {}, "inboundPorts": []},
+             "sentenceCutDTOList": []},
+            {"componentName": "MR", "componentUuid": "b227ff42-008d-4970-9eff-c43b3d18fd22",
+             "speechComponentDTO": {"componentUuid": "b227ff42-008d-4970-9eff-c43b3d18fd22", "name": "MR", "category": 2,
+                                    "details": {}, "routes": {}, "inboundPorts": []},
+             "sentenceCutDTOList": []},
+        ],
+        "speechIntentDTO": [], "speechVariableDTO": [],
+        "speechEntiEntityList": [], "speechEntityData": [],
+        "speechFunctionDTO": [], "tagDTOList": [],
+    }
+
+
+def test_wiz009_fires_on_mixed_component_export():
+    from wizcheck.checks import run_all_checks
+    wf = parse_dict(_mixed_component_export())
+    codes = [f.code for f in run_all_checks(wf)]
+    assert "WIZ009" in codes
+    wiz009 = [f for f in run_all_checks(wf) if f.code == "WIZ009"][0]
+    assert wiz009.severity.value == "error"
+
+
+def test_wiz009_absent_on_single_category_component_export():
+    from wizcheck.checks import run_all_checks
+    env = _mixed_component_export()
+    # keep only the category:1 component
+    env["componentImportAndExportDTOS"] = env["componentImportAndExportDTOS"][:1]
+    wf = parse_dict(env)
+    assert "WIZ009" not in [f.code for f in run_all_checks(wf)]
+
+
+def test_wiz009_absent_on_full_export():
+    # a FULL export legitimately mixes categories -> must NOT flag
+    from wizcheck.checks import run_all_checks
+    import json
+    comps = [
+        {"componentUuid": "a227ff42-008d-4970-9eff-c43b3d18fd22", "name": "Main", "category": 1, "parentUuid": "0",
+         "details": "{}", "routes": "{}", "inboundPorts": "[]"},
+        {"componentUuid": "b227ff42-008d-4970-9eff-c43b3d18fd22", "name": "MR", "category": 2, "parentUuid": "0",
+         "details": "{}", "routes": "{}", "inboundPorts": "[]"},
+    ]
+    full = {"BizSpeechComponent": json.dumps(comps), "SpeechIntent": "[]",
+            "SpeechVariable": "[]", "SentenceCutSpeech": "[]", "SpeechAudio": "[]",
+            "BizKnowledgeInfo": "[]"}
+    wf = parse_dict(full)
+    assert wf.is_component_export is False
+    assert "WIZ009" not in [f.code for f in run_all_checks(wf)]

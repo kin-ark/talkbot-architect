@@ -78,6 +78,18 @@ If the CLI exits with code 3, report a parse failure with the stderr text.
 | WIZ200–299 | Variable consistency: undeclared / unused.          |
 | WIZ300–399 | Intent coverage: required intents, fallback intents.|
 
+### Schema codes (WIZ001–009)
+
+- **WIZ001** (ERROR) — missing required top-level key
+- **WIZ002** (WARNING) — unknown component category
+- **WIZ003** (WARNING) — unknown branch name
+- **WIZ004** (WARNING) — unknown intent language
+- **WIZ005** (ERROR) — component with zero createTime and updateTime
+- **WIZ006** (WARNING) — empty canvas (no nodes)
+- **WIZ007** (WARNING) — Wait/Exit node with blank or empty script
+- **WIZ008** (WARNING) — text ends with `...` (truncated)
+- **WIZ009** (ERROR) — component export mixes category 1 (main-flow) and category 2 (multi-round); component-mode only
+
 ## Troubleshooting
 
 - **Exit code 3 / parse error:** the file is unreadable, not valid JSON, or

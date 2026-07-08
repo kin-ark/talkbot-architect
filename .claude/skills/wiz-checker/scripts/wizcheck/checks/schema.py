@@ -37,6 +37,7 @@ def check_schema(wf: WizFile) -> list[Finding]:
     findings: list[Finding] = []
     findings.extend(_check_required_top_level(wf))
     findings.extend(_check_component_categories(wf))
+    findings.extend(_check_mixed_component_categories(wf))
     findings.extend(_check_component_branches(wf))
     findings.extend(_check_intent_languages(wf))
     findings.extend(_check_component_timestamps(wf))
@@ -110,6 +111,25 @@ def _check_component_categories(wf: WizFile) -> list[Finding]:
                 message=f"Unknown component category {comp.category!r} (known: {sorted(known)}).",
             ))
     return out
+
+
+def _check_mixed_component_categories(wf: WizFile) -> list[Finding]:
+    """WIZ009: a component export must not mix main-flow (category 1) and
+    multi-round (category 2) components — WIZ rejects such an import."""
+    if not wf.is_component_export:
+        return []
+    cats = {str(c.category) for c in wf.components.values() if c.category is not None}
+    if {"1", "2"} <= cats:
+        return [Finding(
+            code="WIZ009",
+            severity=Severity.ERROR,
+            location=Location(entity="WizFile", id=None,
+                              field="componentImportAndExportDTOS"),
+            message=("Component export mixes main-flow (category 1) and multi-round "
+                     "(category 2) components; WIZ import requires them in separate "
+                     "exports."),
+        )]
+    return []
 
 
 def _check_component_branches(wf: WizFile) -> list[Finding]:
