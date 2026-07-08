@@ -21,7 +21,7 @@ export default function ComponentsRail({ summary, selectedComponentId, onSelectC
   });
 
   return (
-    <div className="w-56 shrink-0 h-full border-r border-border bg-surface flex flex-col" data-testid="components-rail">
+    <div className="w-full h-full bg-surface flex flex-col" data-testid="components-rail">
       <div className="px-3 py-2 border-b border-divider space-y-2">
         <div className="text-xs font-semibold uppercase tracking-wide text-text-tertiary">Components</div>
         <FilterChips options={options} value={filter} onChange={setFilter} />
