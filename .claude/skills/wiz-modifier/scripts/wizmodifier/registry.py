@@ -7,7 +7,16 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from wizmodifier.ops import content, generic, identity, kb_edit, mutate, structure, tags
+from wizmodifier.ops import (
+    content,
+    generic,
+    identity,
+    intents_xlsx,
+    kb_edit,
+    mutate,
+    structure,
+    tags,
+)
 
 OP_REGISTRY: dict[str, Callable] = {
     "set-speech-id": identity.set_speech_id,
@@ -23,6 +32,7 @@ OP_REGISTRY: dict[str, Callable] = {
     "add-kb": content.add_kb,
     "set-hotwords": content.set_hotwords,
     "set-intent-training": content.set_intent_training,
+    "import-intents-xlsx": intents_xlsx.import_intents_xlsx,
     "rename-kb": kb_edit.rename_kb,
     "set-kb-intents": kb_edit.set_kb_intents,
     "add-kb-answer": kb_edit.add_kb_answer,
