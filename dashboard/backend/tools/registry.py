@@ -243,6 +243,14 @@ _SPECS = [
                  "keywords": {"type": "array", "items": {"type": "string"}},
                  "user_responses": {"type": "array", "items": {"type": "string"}}},
               "required": ["name"]}),
+    ToolSpec("import_intents_xlsx",
+             "Import the intent Excel the user attached this turn into the current bot "
+             "(proposal). Call only when the user attached an intent spreadsheet.",
+             {"type": "object", "properties": {}}),
+    ToolSpec("import_kb_xlsx",
+             "Import the KB Excel the user attached this turn into the current bot "
+             "(proposal). Call only when the user attached a KB spreadsheet.",
+             {"type": "object", "properties": {}}),
     ToolSpec("add_kb",
              "Add a Knowledge Base (triggering intents + answer(s); optional multi_round = a "
              "canvas/component name to delegate into). Proposes a dry-run.",
@@ -466,6 +474,15 @@ def dispatch(name: str, args: dict, data: dict) -> dict:
         if args.get("user_responses"):
             op["user_responses"] = args["user_responses"]
         return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
+    if name in ("import_intents_xlsx", "import_kb_xlsx"):
+        path = args.get("path")
+        if not path:
+            return {"result": {"ok": False,
+                    "error": f"no {'intent' if 'intents' in name else 'KB'} Excel attached this turn"},
+                    "proposal": None}
+        import yaml
+        op = "import-intents-xlsx" if name == "import_intents_xlsx" else "import-kb-xlsx"
+        return _as_proposal(agents.propose_mods(data, yaml.safe_dump([{"op": op, "path": path}])))
     if name == "add_kb":
         import yaml
         op = {"op": "add-kb", "name": args["name"], "intents": args["intents"],

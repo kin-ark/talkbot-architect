@@ -59,3 +59,34 @@ def test_attach_endpoint_sets_session_attachment():
     assert r.status_code == 200
     body = r.json()
     assert body["kind"] == "intent-xlsx" and body["name"] == "intents.xls"
+
+
+def test_import_tools_registered():
+    from tools import registry
+    names = {s.name for s in registry.tool_specs()}
+    assert {"import_intents_xlsx", "import_kb_xlsx"} <= names
+
+
+def test_import_intents_tool_uses_attachment_path(tmp_path):
+    # dispatch import_intents_xlsx with the server path in args -> proposal
+    from tools import registry
+    import json as _json
+    # a minimal bot with SpeechIntent baseline so add/set-intent works
+    data = {"SpeechIntent": _json.dumps([{"intentName": "Positive", "intentId": 1,
+             "isInit": 1, "keyWordInIntent": "[]", "language": "IDN", "branch": "dev",
+             "isDelete": 0, "nodeId": "", "speechId": 9, "templateCode": "T",
+             "createTime": 0, "updateTime": 0, "userResponseInIntent": "[]"}]),
+            "SpeechVariable": "[]", "BizSpeechComponent": "[]",
+            "SentenceCutSpeech": "[]", "BizKnowledgeInfo": "[]", "kbTag": []}
+    p = tmp_path / "intents.xls"
+    p.write_bytes(_xlsx_bytes(["Intent", "Type", "Content", "Language"],
+                              [["Newbie", "Keyword", "halo", "Bahasa Indonesia"]]))
+    out = registry.dispatch("import_intents_xlsx", {"path": str(p)}, data)
+    assert out["proposal"] is not None
+    assert "Newbie" in _json.dumps(out["proposal"]["proposed_data"])
+
+
+def test_import_intents_tool_without_path_errors():
+    from tools import registry
+    out = registry.dispatch("import_intents_xlsx", {}, {"SpeechIntent": "[]"})
+    assert out["proposal"] is None and out["result"]["ok"] is False

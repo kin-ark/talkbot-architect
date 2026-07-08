@@ -8,6 +8,24 @@ from llm.base import LLMClient, LLMResponse, Message
 from session import Session
 from tools import registry
 
+_ATTACH_TOOLS = ("import_intents_xlsx", "import_kb_xlsx")
+
+
+def _attachment_note(att: dict) -> str:
+    kind = att["kind"]
+    name = att["name"]
+    if kind == "intent-xlsx":
+        return (f"The user attached an intent Excel named {name!r}. To import its intents "
+                f"into the current bot, call the import_intents_xlsx tool (it uses the "
+                f"attached file automatically). It is a proposal the user then applies.")
+    if kind == "kb-xlsx":
+        return (f"The user attached a KB Excel named {name!r}. To import its knowledge bases, "
+                f"call the import_kb_xlsx tool (it uses the attached file automatically). "
+                f"Proposal only.")
+    return (f"The user attached a file named {name!r}. Its contents:\n```\n"
+            f"{att.get('excerpt') or ''}\n```\nUse this to answer the user.")
+
+
 _SYSTEM = (
     "You are a WIZ.AI talkbot dialogue assistant. You help the user understand, "
     "validate, create, and edit a dialogue export. You never see the raw JSON; use "
@@ -82,6 +100,8 @@ def run_turn_stream(client, session, user_message: str) -> Iterator[dict]:
     mark = len(session.transcript)
     session.transcript.append(Message(role="user", content=user_message))
     messages = [Message(role="system", content=_SYSTEM), *session.transcript]
+    if session.attachment:
+        messages.append(Message(role="user", content=_attachment_note(session.attachment)))
     proposal: dict | None = None
     text_acc = ""
     turn_usage: dict = {"input_tokens": 0, "output_tokens": 0}
@@ -95,6 +115,10 @@ def run_turn_stream(client, session, user_message: str) -> Iterator[dict]:
     for _ in range(_MAX_TOOL_ITERS):
         if session.cancel_requested:
             _rollback()
+            if session.attachment:
+                from pathlib import Path as _P
+                _P(session.attachment.get("path", "")).unlink(missing_ok=True) if session.attachment.get("path") else None
+                session.attachment = None
             yield {"type": "done", "canceled": True, "text": ""}
             return
 
@@ -103,6 +127,10 @@ def run_turn_stream(client, session, user_message: str) -> Iterator[dict]:
         for chunk in client.stream_chat(messages, registry.tool_specs()):
             if session.cancel_requested:
                 _rollback()
+                if session.attachment:
+                    from pathlib import Path as _P
+                    _P(session.attachment.get("path", "")).unlink(missing_ok=True) if session.attachment.get("path") else None
+                    session.attachment = None
                 yield {"type": "done", "canceled": True, "text": ""}
                 return
             if chunk.thinking_delta:
@@ -170,6 +198,10 @@ def run_turn_stream(client, session, user_message: str) -> Iterator[dict]:
             session.usage["output_tokens"] += turn_usage["output_tokens"]
             session.usage["turns"] += 1
             session.usage["model"] = getattr(client, "model", session.usage.get("model"))
+            if session.attachment:
+                from pathlib import Path as _P
+                _P(session.attachment.get("path", "")).unlink(missing_ok=True) if session.attachment.get("path") else None
+                session.attachment = None
             yield {"type": "usage", **session.usage}
             yield {"type": "done", "canceled": False, "text": text_acc}
             return
@@ -180,7 +212,10 @@ def run_turn_stream(client, session, user_message: str) -> Iterator[dict]:
                 continue
             seen_call_ids.add(call.id)
             yield {"type": "tool_start", "name": call.name, "args": call.arguments}
-            out = registry.dispatch(call.name, call.arguments, session.current())
+            call_args = dict(call.arguments)
+            if call.name in _ATTACH_TOOLS and session.attachment:
+                call_args["path"] = session.attachment["path"]
+            out = registry.dispatch(call.name, call_args, session.current())
             yield {"type": "tool_result", "name": call.name, "result": out["result"],
                    "summary": _summarize_tool_result(call.name, out["result"])}
             if out["proposal"] is not None:
@@ -197,6 +232,10 @@ def run_turn_stream(client, session, user_message: str) -> Iterator[dict]:
     session.usage["output_tokens"] += turn_usage["output_tokens"]
     session.usage["turns"] += 1
     session.usage["model"] = getattr(client, "model", session.usage.get("model"))
+    if session.attachment:
+        from pathlib import Path as _P
+        _P(session.attachment.get("path", "")).unlink(missing_ok=True) if session.attachment.get("path") else None
+        session.attachment = None
     yield {"type": "usage", **session.usage}
     yield {"type": "done", "canceled": False, "text": text_acc or "(stopped after tool-iteration limit)"}
 
