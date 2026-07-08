@@ -37,6 +37,14 @@ export async function activateSession(id) { return (await axios.post(`${BASE}/se
 export async function renameSession(id, name) { return (await axios.patch(`${BASE}/sessions/${id}`, { name })).data; }
 export async function deleteSession(id) { return (await axios.delete(`${BASE}/sessions/${id}`)).data; }
 
+export async function attachFile(file) {
+  const fd = new FormData();
+  fd.append('file', file);
+  const r = await fetch(`${BASE}/chat/attach`, { method: 'POST', body: fd, credentials: 'include' });
+  if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail || 'attach failed');
+  return r.json();
+}
+
 export async function streamChat(message, { onEvent, signal } = {}) {
   let resp;
   try {

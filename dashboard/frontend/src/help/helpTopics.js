@@ -84,6 +84,9 @@ The Chat agent operates on the **single export in the active session**. It works
 ### Escape hatches
 - **Apply raw modifier ops** (reaches every operation the engine supports) and **set / delete a JSON path** for anything not covered by a dedicated tool.
 
+### Attach a file
+- **In Chat** — attach one file per turn. A KB/intent Excel is imported as a proposal; any other file (e.g. a FailureList) is read for analysis.
+
 ### Best-practice guardrail
 
 When a proposed change would leave **error-level** findings, the agent sees them and tries to fix them before handing the result to you — so proposals tend to arrive checker-clean.`,
