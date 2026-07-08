@@ -94,19 +94,23 @@ When a proposed change would leave **error-level** findings, the agent sees them
     icon: Workflow,
     body: `## Node types & limits
 
-**Nine** node types are supported:
+**Eleven** node types are supported:
 
-| Type | What it does |
-|---|---|
-| **talk** | Speaks a prompt and branches on the caller's reply. |
-| **exit** | Ends the call (hang up). |
-| **transfer** | Hands the call to a human agent. |
-| **goto** | Jumps to another component by name. |
-| **goto_kb** | Jumps into a **Knowledge Base** by name. |
-| **conditional** | Routes on a variable (branches with operators). |
-| **assign** | Silently sets a variable to a value. |
-| **nested** | Delegates to a child canvas; its out-ports mirror the child's **exit_port**s. |
-| **exit_port** | A named terminal return inside a child canvas (surfaces as a port on the parent nested node). |
+In the WIZ.AI editor most terminal/jump nodes appear as a single **Exit Node** with a **Next Step** setting; the internal \`type\` names below are those variants.
+
+| Type | WIZ.AI name | What it does |
+|---|---|---|
+| **talk** | Talk Node | Speaks a prompt and branches on the caller's reply. |
+| **exit** | Exit Node (Next Step: Hang up) | Ends the call (hang up). |
+| **transfer** | Transfer to Human Agent | Hands the call to a human agent. |
+| **goto** | Exit Node → Go to Component | Jumps to another component by name. |
+| **goto_kb** | Exit Node → Go to Knowledge Base | Jumps into a **Knowledge Base** by name. |
+| **goto_mr** | Exit Node → Go to specific multi-round dialogue | Jumps to another Multi-Round Dialogue; only valid inside a Multi-Round Dialogue. |
+| **talk_continue** | Exit Node → Wait For User Response | Speaks then waits for the caller's next turn; only inside a Multi-Round Dialogue. |
+| **conditional** | Conditional Judgment Node | Routes on a variable (branches with operators). |
+| **assign** | Variable Assignment Node | Silently sets a variable to a value. |
+| **nested** | Nested Component Node | Delegates to a child canvas; its out-ports mirror the child's **exit_port**s. |
+| **exit_port** | Exit Node → Component Exit | A named terminal return inside a child canvas (surfaces as a port on the parent nested node). |
 
 @@fig:node-types@@
 
@@ -115,7 +119,7 @@ When a proposed change would leave **error-level** findings, the agent sees them
 - **IDN only** today (Indonesian). Other languages are not yet enabled.
 - A **conditional** can only branch on a variable that *holds a value at runtime* — a system/collected variable, or a custom variable an **assign** node set **earlier** in the flow. Branching on a never-assigned variable will fail on deploy.
 - Put **assign before the conditional** that reads the variable.
-- Every path should end in a terminal node (**exit**, **transfer**, **goto**, **goto_kb**, or an **exit_port**), and every **talk** node should have its **Unclassified** branch connected.`,
+- Every path should end in a terminal node (**exit**, **transfer**, **goto**, **goto_kb**, **goto_mr**, **talk_continue**, or an **exit_port** — Exit Node variants), and every **talk** node should have its **Unclassified** branch connected.`,
   },
   {
     id: 'knowledge-bases',
