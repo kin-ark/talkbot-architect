@@ -25,4 +25,15 @@ describe('SampleGallery', () => {
     await waitFor(() => expect(api.listSamples).toHaveBeenCalled());
     expect(screen.queryByTestId('sample-gallery')).toBeNull();
   });
+
+  it('groups debt vs starters and renders cards', async () => {
+    api.listSamples.mockResolvedValue([
+      { id: 'greeting_faq', title: 'Greeting', description: 'x' },
+      { id: 'debt_dpd1_5', title: 'DPD1-5', description: 'y' },
+    ]);
+    render(<SampleGallery onPick={() => {}} />);
+    expect(await screen.findByText('Debt Collection')).toBeInTheDocument();
+    expect(screen.getByText('Starters')).toBeInTheDocument();
+    expect(screen.getAllByTestId('sample-card')).toHaveLength(2);
+  });
 });
