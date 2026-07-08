@@ -6,13 +6,13 @@ import SessionRail from './components/SessionRail';
 import FlowCanvas from './components/FlowCanvas';
 import RightDock from './components/RightDock';
 import EmptyState from './components/EmptyState';
+import FlowSkeleton from './components/FlowSkeleton';
 import PageOverlay from './components/PageOverlay';
 import StatisticsPage from './components/StatisticsPage';
 import DocsPage from './components/DocsPage';
 import SettingsPage from './components/SettingsPage';
 import { useTheme } from './theme/useTheme';
 import { exportUrl, componentExportUrl, getConfig } from './api';
-import { toast } from './toast/toastStore';
 
 export default function App() {
   const s = useSession();
@@ -143,6 +143,8 @@ export default function App() {
                   onSelectKb={(id) => { setDockTab('kb'); setFocusKb((f) => ({ id, nonce: (f?.nonce || 0) + 1 })); }} />
               </div>
             </>
+          ) : s.loading ? (
+            <FlowSkeleton />
           ) : (
             <EmptyState keySet={keySet} loading={s.loading}
               onUpload={s.upload} onStartBlank={s.startBlank} onLoadSample={s.loadSample}

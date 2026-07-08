@@ -1,5 +1,5 @@
 import { useMemo, useState, useCallback, useEffect } from 'react';
-import { ReactFlow, Background, Controls, MiniMap, Handle, Position } from '@xyflow/react';
+import { ReactFlow, Background, Controls, Handle, Position } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { buildGraph } from '../flow/buildGraph';
 import { layoutComponents } from '../flow/componentLayout';
@@ -235,7 +235,6 @@ export default function FlowCanvas({ summary, onSelectNode, focusComponentId, hi
         >
           <Background gap={16} color="var(--c-border)" />
           <Controls />
-          <MiniMap pannable zoomable />
         </ReactFlow>
       </div>
     </div>
