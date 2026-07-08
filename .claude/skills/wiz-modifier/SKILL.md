@@ -10,6 +10,32 @@ Applies transformations to an existing WIZ.AI export. Two modes:
 - **Free-form modification** — the user describes a change ("change the speechId", "rename the bot", "add a variable") against a `speech*.json` or export `.zip`.
 - **Import-test matrix** — generate the T0–T12 bisection files from `docs/original-vs-builder-deep-comparison.md` 6 in one command.
 
+## WIZ terminology
+
+WIZ.AI models most terminal/jump nodes as a single "Exit Node" with a "Next Step" setting; our internal `type` names are its variants. This table maps internal names to WIZ.AI platform terminology:
+
+| Internal name (type) | WIZ.AI platform name |
+|---|---|
+| talk (type 1) | Talk Node |
+| conditional (type 7) | Conditional Judgment Node |
+| assign (type 10) | Variable Assignment Node |
+| nested (type 11) | Nested Component Node |
+| exit (type 2) | Exit Node (Next Step: Hang up) |
+| transfer (type 13) | Transfer to Human Agent |
+| goto_component (type 4) | Exit Node → Go to Component |
+| goto_kb (type 8) | Exit Node → Go to Knowledge Base |
+| goto_mr (type 9) | Exit Node → Go to specific multi-round dialogue |
+| talk_continue (type 5) | Exit Node → Wait For User Response |
+| exit_port | Exit Node → Component Exit (named return to the parent component) |
+| component (category:1) | Component — Main Talk-Flow |
+| component (category:2) | Multi-Round Dialogue |
+| Knowledge Base | Knowledge Base |
+| Intent | Intent |
+| Tag | Tag (disposition/label) |
+| Hot Words | Hot Words |
+| Variable | Variable |
+| speech*.json | Talkbot / Dialogue |
+
 ## Chat protocol
 
 1. **Identify the target.** Which file or ZIP? Confirm it exists. (Default baseline for import tests: `talkbot/Empty+Dialogue.zip` — a ZIP so the WAV is carried into T0–T10 and T11 tests the WAV's absence.)
@@ -39,7 +65,7 @@ Applies transformations to an existing WIZ.AI export. Two modes:
 
 ## Knowledge-Base ops
 
-A KB's Default Response = **Single Sentence** (`kdInfo` `answerType:1` answers) OR **Multi-Round** (an `answerType:2` delegate → component). `after` = "After The Answers": `wait` (afterSentence 0, default) | `hangup` (1).
+A KB's Default Response = **Single Sentence** (`kdInfo` `answerType:1` answers) OR **Multi-Round** (WIZ: Multi-Round Dialogue; an `answerType:2` delegate → component). `after` = "After The Answers": `wait` (afterSentence 0, default) | `hangup` (1).
 
 | Op | Params | Notes |
 |----|--------|-------|
@@ -49,7 +75,7 @@ A KB's Default Response = **Single Sentence** (`kdInfo` `answerType:1` answers) 
 | `add-kb-answer` | `name`, `text`, optional `after` | appends an answer + SCK row |
 | `edit-kb-answer` | `name`, `new_text`, `old_text`\|`index`, optional `after` | **resets audio** (`sentenceTextUrl=""`) → re-synth on deploy; `after` omitted = unchanged |
 | `remove-kb-answer` | `name`, `text`\|`index` | guards ≥1 response remains |
-| `set-kb-multiround` | `name`, `target_component`\|`null` | set → target `category=2`; remove guards against emptying the KB; leave-old+warn |
+| `set-kb-multiround` | `name`, `target_component`\|`null` | set → target `category=2` (WIZ: Multi-Round Dialogue); remove guards against emptying the KB; leave-old+warn |
 | `delete-kb` | `name` | **user-created only** (`isInit=0`); **blocks** if a goto_kb node references it |
 
 KB-edit ops route through a shared `KbEditor` (decode→mutate→flush, ids preserved). Checker side: `WIZ302` (intent declared), `WIZ303` (goto_kb → missing KB, WARNING+deploy-blocker, library-tolerant), `WIZ304` (user KB with no Default Response, WARNING+deploy-blocker, system KBs exempt). The 6 flow-mutation ops (`rewire-edge`, `delete-edge`, `delete-node`, `move-node`, `rename-node`, `complete-component`) live alongside these.
@@ -74,7 +100,7 @@ The modifier reads and writes the WIZ intent Excel format (`.xls`-named xlsx fil
 The modifier reads and writes the WIZ KB (Knowledge Base) Excel format (`.xls`-named xlsx files):
 
 - **Import op: `import-kb-xlsx`** — Load a sheet into an existing export. One row = one KB. Title is the KB name; Intent is a single trigger intent (must exist in `SpeechIntent`, else warning + skipped). Dialogue Content is the answer text, bracket-wrapped (e.g., `[Allianz covers you.]`). Composes `add_kb` (new) or `set_kb_intents` + `edit_kb_answer` (existing KB). Duplicate title → warning + skipped. Forbidden in component mode (bot-scope).
-- **Export CLI: `--export-kb <path> --in <bot.json>`** — Dump the input's `BizKnowledgeInfo` to a single-sheet `.xlsx`. Exports Title (KB name), Intent (first trigger intent name), and Dialogue Content (first single-sentence answer, bracket-wrapped). Multi-round-only KBs (no `answerType:1` answer) are skipped with a note to stderr. Output file is named `.xls` (WIZ format: xlsx bytes, `.xls` name extension).
+- **Export CLI: `--export-kb <path> --in <bot.json>`** — Dump the input's `BizKnowledgeInfo` to a single-sheet `.xlsx`. Exports Title (KB name), Intent (first trigger intent name), and Dialogue Content (first single-sentence answer, bracket-wrapped). Multi-round-only (WIZ: Multi-Round Dialogue) KBs (no `answerType:1` answer) are skipped with a note to stderr. Output file is named `.xls` (WIZ format: xlsx bytes, `.xls` name extension).
 
 ## Mod-manifest format
 
@@ -96,7 +122,7 @@ The modifier auto-detects a WIZ component-library export (`componentImportAndExp
 
 A component is a standalone reusable unit; component-mode op restrictions forbid bot-scope operations:
 - **Forbidden ops:** `add-kb`, `rename-kb`, `set-kb-intents`, `add-kb-answer`, `edit-kb-answer`, `remove-kb-answer`, `set-kb-multiround`, `delete-kb`, `set-hotwords`, `set-node-tags` (all bot-level).
-- **Forbidden node types:** `goto_kb`, `goto_mr`, `talk_continue` (all require bot context).
+- **Forbidden node types:** `goto_kb` (WIZ: Exit Node → Go to Knowledge Base), `goto_mr` (WIZ: Exit Node → Go to specific multi-round dialogue), `talk_continue` (WIZ: Exit Node → Wait For User Response) (all require bot context).
 
 These ops raise `ValueError("component mode: ... unsupported")` before any mutation. Component input requesting ZIP output raises; JSON is the only valid output format.
 

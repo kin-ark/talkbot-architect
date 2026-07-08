@@ -8,6 +8,32 @@ description: Validates WIZ.AI exported talkbot dialogue JSON files. Use when the
 This skill validates a WIZ.AI exported dialogue JSON file and presents findings.
 It does **not** modify the file.
 
+## WIZ terminology
+
+WIZ.AI models most terminal/jump nodes as a single "Exit Node" with a "Next Step" setting; our internal `type` names are its variants. This table maps internal names to WIZ.AI platform terminology:
+
+| Internal name (type) | WIZ.AI platform name |
+|---|---|
+| talk (type 1) | Talk Node |
+| conditional (type 7) | Conditional Judgment Node |
+| assign (type 10) | Variable Assignment Node |
+| nested (type 11) | Nested Component Node |
+| exit (type 2) | Exit Node (Next Step: Hang up) |
+| transfer (type 13) | Transfer to Human Agent |
+| goto_component (type 4) | Exit Node → Go to Component |
+| goto_kb (type 8) | Exit Node → Go to Knowledge Base |
+| goto_mr (type 9) | Exit Node → Go to specific multi-round dialogue |
+| talk_continue (type 5) | Exit Node → Wait For User Response |
+| exit_port | Exit Node → Component Exit (named return to the parent component) |
+| component (category:1) | Component — Main Talk-Flow |
+| component (category:2) | Multi-Round Dialogue |
+| Knowledge Base | Knowledge Base |
+| Intent | Intent |
+| Tag | Tag (disposition/label) |
+| Hot Words | Hot Words |
+| Variable | Variable |
+| speech*.json | Talkbot / Dialogue |
+
 ## When to use this skill
 
 Invoke when the user:

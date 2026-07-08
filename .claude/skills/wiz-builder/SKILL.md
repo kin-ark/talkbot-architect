@@ -10,6 +10,32 @@ human-readable manifest. The manifest captures the user's intent (name, language
 canvases, custom variables, custom intents); a Python compiler mutates a parsed
 copy of the Empty+Dialogue baseline into the final `speech*.json`.
 
+## WIZ terminology
+
+WIZ.AI models most terminal/jump nodes as a single "Exit Node" with a "Next Step" setting; our internal `type` names are its variants. This table maps internal names to WIZ.AI platform terminology:
+
+| Internal name (type) | WIZ.AI platform name |
+|---|---|
+| talk (type 1) | Talk Node |
+| conditional (type 7) | Conditional Judgment Node |
+| assign (type 10) | Variable Assignment Node |
+| nested (type 11) | Nested Component Node |
+| exit (type 2) | Exit Node (Next Step: Hang up) |
+| transfer (type 13) | Transfer to Human Agent |
+| goto_component (type 4) | Exit Node → Go to Component |
+| goto_kb (type 8) | Exit Node → Go to Knowledge Base |
+| goto_mr (type 9) | Exit Node → Go to specific multi-round dialogue |
+| talk_continue (type 5) | Exit Node → Wait For User Response |
+| exit_port | Exit Node → Component Exit (named return to the parent component) |
+| component (category:1) | Component — Main Talk-Flow |
+| component (category:2) | Multi-Round Dialogue |
+| Knowledge Base | Knowledge Base |
+| Intent | Intent |
+| Tag | Tag (disposition/label) |
+| Hot Words | Hot Words |
+| Variable | Variable |
+| speech*.json | Talkbot / Dialogue |
+
 ## When to use this skill
 
 Invoke when the user:
@@ -60,7 +86,7 @@ Do **not** invoke for:
      --out talkbot/<slug>/component.json
    ```
 
-   Component mode compiles each canvas into a reusable component (`componentImportAndExportDTOS` envelope). Bot-level features—`knowledge_bases`, `hot_words`, and node types `goto_kb`/`goto_mr`/`talk_continue`—are unsupported in component mode; the builder will reject them with a clear error.
+   Component mode compiles each canvas into a reusable component (`componentImportAndExportDTOS` envelope). Bot-level features—`knowledge_bases`, `hot_words`, and node types `goto_kb` (WIZ: Exit Node → Go to Knowledge Base) / `goto_mr` (WIZ: Exit Node → Go to specific multi-round dialogue) / `talk_continue` (WIZ: Exit Node → Wait For User Response)—are unsupported in component mode; the builder will reject them with a clear error.
 
    The CLI prints a JSON result:
    ```json
