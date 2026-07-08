@@ -686,6 +686,14 @@ async def chat_attach(file: UploadFile = File(...), s: Session = Depends(_requir
     return {"name": s.attachment["name"], "kind": kind}
 
 
+@app.delete("/chat/attach")
+async def chat_clear_attach(s: Session = Depends(_require_session)):
+    if s.attachment and s.attachment.get("path"):
+        Path(s.attachment["path"]).unlink(missing_ok=True)
+    s.attachment = None
+    return {"cleared": True}
+
+
 @app.post("/apply")
 async def apply_pending(s: Session = Depends(_require_session),
                         store: SessionStore = Depends(current_store)):

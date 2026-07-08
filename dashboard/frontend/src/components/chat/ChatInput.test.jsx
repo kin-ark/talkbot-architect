@@ -3,7 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import ChatInput from './ChatInput';
 import * as api from '../../api';
 
-vi.mock('../../api', { attachFile: vi.fn() });
+vi.mock('../../api', { attachFile: vi.fn(), clearAttachment: vi.fn() });
 
 const base = {
   value: '', onChange: () => {}, onSubmit: () => {}, sending: false, onCancel: () => {},
@@ -111,6 +111,7 @@ describe('ChatInput', () => {
 
   it('clearing attachment chip with X button', async () => {
     api.attachFile.mockResolvedValue({ name: 'test.xls', kind: 'intent-xlsx' });
+    api.clearAttachment.mockResolvedValue({ cleared: true });
     render(<ChatInput {...base} />);
     const fileInput = screen.getByTestId('file-input');
     const file = new File(['content'], 'test.xls', { type: 'application/vnd.ms-excel' });
@@ -120,6 +121,9 @@ describe('ChatInput', () => {
     });
     const clearButton = screen.getByText('test.xls').parentElement.querySelector('button');
     fireEvent.click(clearButton);
+    await waitFor(() => {
+      expect(api.clearAttachment).toHaveBeenCalled();
+    });
     expect(screen.queryByText('test.xls')).toBeNull();
   });
 });

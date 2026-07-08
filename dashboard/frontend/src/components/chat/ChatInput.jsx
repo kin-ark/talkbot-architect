@@ -1,6 +1,6 @@
 import { useRef, useState, useLayoutEffect } from 'react';
 import { Paperclip, X } from 'lucide-react';
-import { attachFile } from '../../api';
+import { attachFile, clearAttachment } from '../../api';
 
 const MAX_H = 144; // ~6 lines
 
@@ -98,7 +98,10 @@ export default function ChatInput({ value, onChange, onSubmit, sending, onCancel
             <div className="text-[11px] text-text-tertiary mt-0.5 px-1 flex items-center gap-2">
               <span className="inline-flex items-center gap-1.5 bg-surface-muted px-2 py-1 rounded">
                 {attachment.name}
-                <button type="button" onClick={() => setAttachment(null)} disabled={sending} className="p-0 text-text-tertiary hover:text-text">
+                <button type="button" onClick={() => {
+                  clearAttachment().catch(err => console.error('clear failed:', err));
+                  setAttachment(null);
+                }} disabled={sending} className="p-0 text-text-tertiary hover:text-text">
                   <X size={14} />
                 </button>
               </span>

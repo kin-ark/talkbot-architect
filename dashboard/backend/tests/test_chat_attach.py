@@ -90,3 +90,51 @@ def test_import_intents_tool_without_path_errors():
     from tools import registry
     out = registry.dispatch("import_intents_xlsx", {}, {"SpeechIntent": "[]"})
     assert out["proposal"] is None and out["result"]["ok"] is False
+
+
+def test_delete_chat_attach_endpoint():
+    # Test that DELETE /chat/attach clears the session attachment
+    c = _client_with_session()
+    data = _xlsx_bytes(["Intent", "Type", "Content", "Language"],
+                       [["Positive", "Keyword", "ya", "Bahasa Indonesia"]])
+    # Attach a file
+    r = c.post("/chat/attach", files={"file": ("intents.xls", data,
+               "application/vnd.ms-excel")})
+    assert r.status_code == 200
+    # Verify it was stored
+    assert r.json()["name"] == "intents.xls"
+    # Delete it
+    r = c.delete("/chat/attach")
+    assert r.status_code == 200
+    assert r.json()["cleared"] is True
+
+
+def test_delete_chat_attach_idempotent():
+    # Test that DELETE /chat/attach is idempotent (no error if none armed)
+    c = _client_with_session()
+    # Delete without attaching anything
+    r = c.delete("/chat/attach")
+    assert r.status_code == 200
+    assert r.json()["cleared"] is True
+
+
+def test_orchestrator_nulls_path_for_attach_tools_when_unarmed():
+    # Test FIX 3: the orchestrator always overwrites the path for attach tools
+    # (either from the attachment, or None if unarmed).
+    # This prevents a hallucinated path from being trusted.
+    from tools import registry
+    from unittest.mock import patch
+    import json as _json
+
+    # a minimal bot with SpeechIntent baseline
+    data = {"SpeechIntent": _json.dumps([{"intentName": "Positive", "intentId": 1,
+             "isInit": 1, "keyWordInIntent": "[]", "language": "IDN", "branch": "dev",
+             "isDelete": 0, "nodeId": "", "speechId": 9, "templateCode": "T",
+             "createTime": 0, "updateTime": 0, "userResponseInIntent": "[]"}]),
+            "SpeechVariable": "[]", "BizSpeechComponent": "[]",
+            "SentenceCutSpeech": "[]", "BizKnowledgeInfo": "[]", "kbTag": []}
+
+    # Call import_intents_xlsx with a hallucinated path but no attachment armed.
+    # The dispatcher should null the path, so the tool fails with "no path" error.
+    out = registry.dispatch("import_intents_xlsx", {"path": "/etc/passwd"}, data)
+    assert out["proposal"] is None and out["result"]["ok"] is False

@@ -97,6 +97,8 @@ def _summarize_tool_result(name: str, result) -> str:
 
 
 def run_turn_stream(client, session, user_message: str) -> Iterator[dict]:
+    from pathlib import Path as _P
+
     mark = len(session.transcript)
     session.transcript.append(Message(role="user", content=user_message))
     messages = [Message(role="system", content=_SYSTEM), *session.transcript]
@@ -112,132 +114,124 @@ def run_turn_stream(client, session, user_message: str) -> Iterator[dict]:
         del session.transcript[mark:]
         session.cancel_requested = False
 
-    for _ in range(_MAX_TOOL_ITERS):
-        if session.cancel_requested:
-            _rollback()
-            if session.attachment:
-                from pathlib import Path as _P
-                _P(session.attachment.get("path", "")).unlink(missing_ok=True) if session.attachment.get("path") else None
-                session.attachment = None
-            yield {"type": "done", "canceled": True, "text": ""}
-            return
+    def _clear_attachment():
+        if session.attachment:
+            _P(session.attachment.get("path", "")).unlink(missing_ok=True) if session.attachment.get("path") else None
+            session.attachment = None
 
-        resp = None
-        turn_text = ""
-        for chunk in client.stream_chat(messages, registry.tool_specs()):
+    try:
+        for _ in range(_MAX_TOOL_ITERS):
             if session.cancel_requested:
                 _rollback()
-                if session.attachment:
-                    from pathlib import Path as _P
-                    _P(session.attachment.get("path", "")).unlink(missing_ok=True) if session.attachment.get("path") else None
-                    session.attachment = None
                 yield {"type": "done", "canceled": True, "text": ""}
                 return
-            if chunk.thinking_delta:
-                yield {"type": "thinking", "delta": chunk.thinking_delta}
-            if chunk.text_delta:
-                turn_text += chunk.text_delta
-                yield {"type": "token", "delta": chunk.text_delta}
-            if chunk.response is not None:
-                resp = chunk.response
-            if chunk.usage:
-                turn_usage["input_tokens"] += chunk.usage.get("input_tokens", 0)
-                turn_usage["output_tokens"] += chunk.usage.get("output_tokens", 0)
-        if resp is None:                       # defensive: empty stream
-            resp = LLMResponse(text=turn_text or None, tool_calls=[])
 
-        assistant = Message(role="assistant", content=resp.text, tool_calls=resp.tool_calls,
-                            thinking_blocks=getattr(resp, "thinking_blocks", []))
-        messages.append(assistant)
-        session.transcript.append(assistant)
-        if resp.text:
-            text_acc = resp.text
+            resp = None
+            turn_text = ""
+            for chunk in client.stream_chat(messages, registry.tool_specs()):
+                if session.cancel_requested:
+                    _rollback()
+                    yield {"type": "done", "canceled": True, "text": ""}
+                    return
+                if chunk.thinking_delta:
+                    yield {"type": "thinking", "delta": chunk.thinking_delta}
+                if chunk.text_delta:
+                    turn_text += chunk.text_delta
+                    yield {"type": "token", "delta": chunk.text_delta}
+                if chunk.response is not None:
+                    resp = chunk.response
+                if chunk.usage:
+                    turn_usage["input_tokens"] += chunk.usage.get("input_tokens", 0)
+                    turn_usage["output_tokens"] += chunk.usage.get("output_tokens", 0)
+            if resp is None:                       # defensive: empty stream
+                resp = LLMResponse(text=turn_text or None, tool_calls=[])
 
-        if not resp.tool_calls:
-            # Soft enrichment nudge: one-shot coverage advisory (BEFORE hard backstops)
-            # Only nudge if model produced no text (hasn't already finished the turn)
-            if not coverage_nudged and not resp.text and proposal and "feature_coverage" in proposal:
-                missing = proposal.get("feature_coverage", {}).get("missing", [])
-                if missing:
-                    coverage_nudged = True
-                    nudge_msg = (
-                        "This bot doesn't use: " + ", ".join(missing) + ". "
-                        "If any of these fit the domain, add them (e.g. disposition tags for call "
-                        "outcomes, a KB for FAQs/objections, hot-words for domain terms, "
-                        "conditional/assign for routing). Only add what genuinely fits — do NOT "
-                        "force features. Then finish."
-                    )
-                    messages.append(Message(role="user", content=nudge_msg))
-                    yield {"type": "autofix", "count": 0, "round": 0}
+            assistant = Message(role="assistant", content=resp.text, tool_calls=resp.tool_calls,
+                                thinking_blocks=getattr(resp, "thinking_blocks", []))
+            messages.append(assistant)
+            session.transcript.append(assistant)
+            if resp.text:
+                text_acc = resp.text
+
+            if not resp.tool_calls:
+                # Soft enrichment nudge: one-shot coverage advisory (BEFORE hard backstops)
+                # Only nudge if model produced no text (hasn't already finished the turn)
+                if not coverage_nudged and not resp.text and proposal and "feature_coverage" in proposal:
+                    missing = proposal.get("feature_coverage", {}).get("missing", [])
+                    if missing:
+                        coverage_nudged = True
+                        nudge_msg = (
+                            "This bot doesn't use: " + ", ".join(missing) + ". "
+                            "If any of these fit the domain, add them (e.g. disposition tags for call "
+                            "outcomes, a KB for FAQs/objections, hot-words for domain terms, "
+                            "conditional/assign for routing). Only add what genuinely fits — do NOT "
+                            "force features. Then finish."
+                        )
+                        messages.append(Message(role="user", content=nudge_msg))
+                        yield {"type": "autofix", "count": 0, "round": 0}
+                        continue
+                errs = [f for f in (proposal or {}).get("findings", []) if f.get("severity") == "error"]
+                maturity_blockers = (proposal or {}).get("maturity", {}).get("residual_blockers", [])
+                # Avoid double-counting: extract blocker codes from errs to exclude from count
+                err_codes = {e.get("code") for e in errs}
+                unique_blockers = [b for b in maturity_blockers if b.get("code") not in err_codes]
+                if (errs or maturity_blockers) and fix_rounds < _MAX_FIX_BACKSTOPS:
+                    fix_rounds += 1
+                    messages_to_add = []
+                    if errs:
+                        msg = (f"The current proposal still has {len(errs)} "
+                               f"error{'s' if len(errs) != 1 else ''} and cannot be applied as-is:\n"
+                               + "\n".join(f"- {e['code']} ({e.get('id') or '-'}): {e['message']}" for e in errs[:10])
+                               + "\nFix these (call the right tool to revise) and re-propose before finishing.")
+                        messages_to_add.append(msg)
+                    if unique_blockers:
+                        msg = (f"{len(unique_blockers)} maturity gap{'s' if len(unique_blockers) != 1 else ''} remain:\n"
+                               + "\n".join(f"- {b['code']} ({b.get('id') or '-'}): {b['message']}" for b in unique_blockers[:10])
+                               + "\nFix these and re-propose.")
+                        messages_to_add.append(msg)
+                    note = "\n\n".join(messages_to_add)
+                    messages.append(Message(role="user", content=note))   # messages-only, NOT session.transcript
+                    yield {"type": "autofix", "count": len(errs) + len(unique_blockers), "round": fix_rounds}
                     continue
-            errs = [f for f in (proposal or {}).get("findings", []) if f.get("severity") == "error"]
-            maturity_blockers = (proposal or {}).get("maturity", {}).get("residual_blockers", [])
-            # Avoid double-counting: extract blocker codes from errs to exclude from count
-            err_codes = {e.get("code") for e in errs}
-            unique_blockers = [b for b in maturity_blockers if b.get("code") not in err_codes]
-            if (errs or maturity_blockers) and fix_rounds < _MAX_FIX_BACKSTOPS:
-                fix_rounds += 1
-                messages_to_add = []
-                if errs:
-                    msg = (f"The current proposal still has {len(errs)} "
-                           f"error{'s' if len(errs) != 1 else ''} and cannot be applied as-is:\n"
-                           + "\n".join(f"- {e['code']} ({e.get('id') or '-'}): {e['message']}" for e in errs[:10])
-                           + "\nFix these (call the right tool to revise) and re-propose before finishing.")
-                    messages_to_add.append(msg)
-                if unique_blockers:
-                    msg = (f"{len(unique_blockers)} maturity gap{'s' if len(unique_blockers) != 1 else ''} remain:\n"
-                           + "\n".join(f"- {b['code']} ({b.get('id') or '-'}): {b['message']}" for b in unique_blockers[:10])
-                           + "\nFix these and re-propose.")
-                    messages_to_add.append(msg)
-                note = "\n\n".join(messages_to_add)
-                messages.append(Message(role="user", content=note))   # messages-only, NOT session.transcript
-                yield {"type": "autofix", "count": len(errs) + len(unique_blockers), "round": fix_rounds}
-                continue
-            session.cancel_requested = False
-            session.usage["input_tokens"] += turn_usage["input_tokens"]
-            session.usage["output_tokens"] += turn_usage["output_tokens"]
-            session.usage["turns"] += 1
-            session.usage["model"] = getattr(client, "model", session.usage.get("model"))
-            if session.attachment:
-                from pathlib import Path as _P
-                _P(session.attachment.get("path", "")).unlink(missing_ok=True) if session.attachment.get("path") else None
-                session.attachment = None
-            yield {"type": "usage", **session.usage}
-            yield {"type": "done", "canceled": False, "text": text_acc}
-            return
+                session.cancel_requested = False
+                session.usage["input_tokens"] += turn_usage["input_tokens"]
+                session.usage["output_tokens"] += turn_usage["output_tokens"]
+                session.usage["turns"] += 1
+                session.usage["model"] = getattr(client, "model", session.usage.get("model"))
+                yield {"type": "usage", **session.usage}
+                yield {"type": "done", "canceled": False, "text": text_acc}
+                return
 
-        seen_call_ids: set[str] = set()
-        for call in resp.tool_calls:
-            if call.id in seen_call_ids:
-                continue
-            seen_call_ids.add(call.id)
-            yield {"type": "tool_start", "name": call.name, "args": call.arguments}
-            call_args = dict(call.arguments)
-            if call.name in _ATTACH_TOOLS and session.attachment:
-                call_args["path"] = session.attachment["path"]
-            out = registry.dispatch(call.name, call_args, session.current())
-            yield {"type": "tool_result", "name": call.name, "result": out["result"],
-                   "summary": _summarize_tool_result(call.name, out["result"])}
-            if out["proposal"] is not None:
-                proposal = out["proposal"]
-                session.pending = proposal
-                yield {"type": "proposal", "proposal": proposal}
-            tool_msg = Message(role="tool", tool_call_id=call.id,
-                               content=json.dumps(out["result"], ensure_ascii=False, default=str))
-            messages.append(tool_msg)
-            session.transcript.append(tool_msg)
+            seen_call_ids: set[str] = set()
+            for call in resp.tool_calls:
+                if call.id in seen_call_ids:
+                    continue
+                seen_call_ids.add(call.id)
+                yield {"type": "tool_start", "name": call.name, "args": call.arguments}
+                call_args = dict(call.arguments)
+                if call.name in _ATTACH_TOOLS:
+                    call_args["path"] = session.attachment["path"] if session.attachment else None
+                out = registry.dispatch(call.name, call_args, session.current())
+                yield {"type": "tool_result", "name": call.name, "result": out["result"],
+                       "summary": _summarize_tool_result(call.name, out["result"])}
+                if out["proposal"] is not None:
+                    proposal = out["proposal"]
+                    session.pending = proposal
+                    yield {"type": "proposal", "proposal": proposal}
+                tool_msg = Message(role="tool", tool_call_id=call.id,
+                                   content=json.dumps(out["result"], ensure_ascii=False, default=str))
+                messages.append(tool_msg)
+                session.transcript.append(tool_msg)
 
-    session.cancel_requested = False
-    session.usage["input_tokens"] += turn_usage["input_tokens"]
-    session.usage["output_tokens"] += turn_usage["output_tokens"]
-    session.usage["turns"] += 1
-    session.usage["model"] = getattr(client, "model", session.usage.get("model"))
-    if session.attachment:
-        from pathlib import Path as _P
-        _P(session.attachment.get("path", "")).unlink(missing_ok=True) if session.attachment.get("path") else None
-        session.attachment = None
-    yield {"type": "usage", **session.usage}
-    yield {"type": "done", "canceled": False, "text": text_acc or "(stopped after tool-iteration limit)"}
+        session.cancel_requested = False
+        session.usage["input_tokens"] += turn_usage["input_tokens"]
+        session.usage["output_tokens"] += turn_usage["output_tokens"]
+        session.usage["turns"] += 1
+        session.usage["model"] = getattr(client, "model", session.usage.get("model"))
+        yield {"type": "usage", **session.usage}
+        yield {"type": "done", "canceled": False, "text": text_acc or "(stopped after tool-iteration limit)"}
+    finally:
+        _clear_attachment()
 
 
 def run_turn(client: LLMClient, session: Session, user_message: str) -> dict:

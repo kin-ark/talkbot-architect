@@ -45,6 +45,12 @@ export async function attachFile(file) {
   return r.json();
 }
 
+export async function clearAttachment() {
+  const r = await fetch(`${BASE}/chat/attach`, { method: 'DELETE', credentials: 'include' });
+  if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail || 'clear failed');
+  return r.json();
+}
+
 export async function streamChat(message, { onEvent, signal } = {}) {
   let resp;
   try {
