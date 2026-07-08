@@ -47,6 +47,7 @@ except Exception as e:  # pragma: no cover
     log.error("", extra={"ev": "backup_error", "err": f"scheduler start: {e}"}, exc_info=e)
 
 _THINKING_BUDGET = 2048
+_ATTACH_MAX_BYTES = 5 * 1024 * 1024
 _STARTED = time.time()
 
 app = FastAPI(title="Talkbot Architect API")
@@ -139,6 +140,32 @@ def _require_session(s: Session = Depends(current_session)) -> Session:
     if not s._stack:
         raise HTTPException(status_code=503, detail="no session loaded")
     return s
+
+
+def _classify_attachment(name: str, path: str) -> tuple[str, str | None]:
+    """Return (kind, excerpt). kind: intent-xlsx | kb-xlsx | read."""
+    lower = name.lower()
+    if lower.endswith((".xls", ".xlsx")):
+        try:
+            from wizmodifier.xlsx import read_rows
+            rows = read_rows(path)
+        except Exception:
+            return "read", "(unreadable spreadsheet)"
+        for row in rows[:5]:
+            cells = {str(c).strip().lower() for c in row if c is not None}
+            if {"intent", "type", "content"} <= cells:
+                return "intent-xlsx", None
+            if {"title", "intent", "dialogue content"} <= cells:
+                return "kb-xlsx", None
+        excerpt = "\n".join(
+            " | ".join("" if c is None else str(c) for c in r) for r in rows[:40])
+        return "read", excerpt[:8000]
+    # text / json / other -> read
+    try:
+        text = Path(path).read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return "read", "(unreadable file)"
+    return "read", text[:8000]
 
 
 def _reconstruct_transcript(messages) -> list[dict]:
@@ -636,6 +663,27 @@ def chat_cancel(s: Session = Depends(current_session)):
     # Must NOT take the lock — it runs while a turn holds it.
     s.cancel_requested = True
     return {"canceling": True}
+
+
+@app.post("/chat/attach")
+async def chat_attach(file: UploadFile = File(...), s: Session = Depends(_require_session)):
+    raw = await file.read()
+    if not raw:
+        raise HTTPException(status_code=400, detail="empty file")
+    if len(raw) > _ATTACH_MAX_BYTES:
+        raise HTTPException(status_code=413, detail="file too large (max 5 MB)")
+    # replace any prior unconsumed attachment
+    prior = s.attachment
+    if prior and prior.get("path"):
+        Path(prior["path"]).unlink(missing_ok=True)
+    suffix = Path(file.filename or "upload").suffix or ".bin"
+    with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
+        tmp.write(raw)
+        tmp_path = tmp.name
+    kind, excerpt = _classify_attachment(file.filename or "upload", tmp_path)
+    s.attachment = {"name": file.filename or "upload", "path": tmp_path,
+                    "kind": kind, "excerpt": excerpt}
+    return {"name": s.attachment["name"], "kind": kind}
 
 
 @app.post("/apply")
