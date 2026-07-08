@@ -581,6 +581,9 @@ def _as_proposal(p: dict, *, mature: bool = False) -> dict:
     # Validate the data (matured if mature=True, original if False)
     findings = agents.validate(proposed_data)
     proposal["findings"] = findings
+    # Attach feature_coverage only on mature builds/scaffolds
+    if mature:
+        proposal["feature_coverage"] = agents.feature_coverage(proposed_data)
     result = {"ok": True, "diff": p["diff"], "checker_delta": p["checker_delta"],
               "change_summary": p.get("change_summary")}
     if findings:

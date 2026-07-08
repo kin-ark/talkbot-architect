@@ -86,6 +86,7 @@ def run_turn_stream(client, session, user_message: str) -> Iterator[dict]:
     text_acc = ""
     turn_usage: dict = {"input_tokens": 0, "output_tokens": 0}
     fix_rounds = 0
+    coverage_nudged = False
 
     def _rollback():
         del session.transcript[mark:]
@@ -125,6 +126,22 @@ def run_turn_stream(client, session, user_message: str) -> Iterator[dict]:
             text_acc = resp.text
 
         if not resp.tool_calls:
+            # Soft enrichment nudge: one-shot coverage advisory (BEFORE hard backstops)
+            # Only nudge if model produced no text (hasn't already finished the turn)
+            if not coverage_nudged and not resp.text and proposal and "feature_coverage" in proposal:
+                missing = proposal.get("feature_coverage", {}).get("missing", [])
+                if missing:
+                    coverage_nudged = True
+                    nudge_msg = (
+                        "This bot doesn't use: " + ", ".join(missing) + ". "
+                        "If any of these fit the domain, add them (e.g. disposition tags for call "
+                        "outcomes, a KB for FAQs/objections, hot-words for domain terms, "
+                        "conditional/assign for routing). Only add what genuinely fits — do NOT "
+                        "force features. Then finish."
+                    )
+                    messages.append(Message(role="user", content=nudge_msg))
+                    yield {"type": "autofix", "count": 0, "round": 0}
+                    continue
             errs = [f for f in (proposal or {}).get("findings", []) if f.get("severity") == "error"]
             maturity_blockers = (proposal or {}).get("maturity", {}).get("residual_blockers", [])
             # Avoid double-counting: extract blocker codes from errs to exclude from count
