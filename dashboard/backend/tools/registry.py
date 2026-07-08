@@ -566,12 +566,15 @@ def _as_proposal(p: dict) -> dict:
     if not p.get("ok"):
         return {"result": {"ok": False, "error": p.get("error"),
                            "known_ops": p.get("known_ops")}, "proposal": None}
-    proposal = {"proposed_data": p["proposed_data"], "diff": p["diff"],
-                "checker_delta": p["checker_delta"]}
+    # Maturity gate: auto-mature the proposal before validation
+    matured, maturity = agents.ensure_mature(p["proposed_data"])
+    proposal = {"proposed_data": matured, "diff": p["diff"],
+                "checker_delta": p["checker_delta"], "maturity": maturity}
     for k in ("proposed_summary", "change_set", "change_summary"):
         if k in p:
             proposal[k] = p[k]
-    findings = agents.validate(p["proposed_data"])
+    # Validate the matured data so findings reflect the improved doc
+    findings = agents.validate(matured)
     proposal["findings"] = findings
     result = {"ok": True, "diff": p["diff"], "checker_delta": p["checker_delta"],
               "change_summary": p.get("change_summary")}

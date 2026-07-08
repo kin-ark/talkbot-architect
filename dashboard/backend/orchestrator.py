@@ -126,14 +126,24 @@ def run_turn_stream(client, session, user_message: str) -> Iterator[dict]:
 
         if not resp.tool_calls:
             errs = [f for f in (proposal or {}).get("findings", []) if f.get("severity") == "error"]
-            if errs and fix_rounds < _MAX_FIX_BACKSTOPS:
+            maturity_blockers = (proposal or {}).get("maturity", {}).get("residual_blockers", [])
+            if (errs or maturity_blockers) and fix_rounds < _MAX_FIX_BACKSTOPS:
                 fix_rounds += 1
-                note = (f"The current proposal still has {len(errs)} "
-                        f"error{'s' if len(errs) != 1 else ''} and cannot be applied as-is:\n"
-                        + "\n".join(f"- {e['code']} ({e.get('id') or '-'}): {e['message']}" for e in errs[:10])
-                        + "\nFix these (call the right tool to revise) and re-propose before finishing.")
+                messages_to_add = []
+                if errs:
+                    msg = (f"The current proposal still has {len(errs)} "
+                           f"error{'s' if len(errs) != 1 else ''} and cannot be applied as-is:\n"
+                           + "\n".join(f"- {e['code']} ({e.get('id') or '-'}): {e['message']}" for e in errs[:10])
+                           + "\nFix these (call the right tool to revise) and re-propose before finishing.")
+                    messages_to_add.append(msg)
+                if maturity_blockers:
+                    msg = (f"{len(maturity_blockers)} maturity gap{'s' if len(maturity_blockers) != 1 else ''} remain:\n"
+                           + "\n".join(f"- {b['code']} ({b.get('id') or '-'}): {b['message']}" for b in maturity_blockers[:10])
+                           + "\nFix these and re-propose.")
+                    messages_to_add.append(msg)
+                note = " ".join(messages_to_add)
                 messages.append(Message(role="user", content=note))   # messages-only, NOT session.transcript
-                yield {"type": "autofix", "count": len(errs), "round": fix_rounds}
+                yield {"type": "autofix", "count": len(errs) + len(maturity_blockers), "round": fix_rounds}
                 continue
             session.cancel_requested = False
             session.usage["input_tokens"] += turn_usage["input_tokens"]

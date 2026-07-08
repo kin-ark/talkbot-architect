@@ -31,7 +31,9 @@ def test_chat_apply_undo(monkeypatch):
     fake = FakeLLMClient(script=[
         LLMResponse(text=None, tool_calls=[ToolCall(id="t1", name="apply_mods",
                     arguments={"mods_yaml": "- op: set-speech-id\n  value: 999\n"})]),
-        LLMResponse(text="Proposed.", tool_calls=[]),
+        LLMResponse(text=None, tool_calls=[]),  # Fix-loop round 1 triggered
+        LLMResponse(text=None, tool_calls=[]),  # Fix-loop round 2 triggered
+        LLMResponse(text="Proposed.", tool_calls=[]),  # Turn ends
     ])
     app.dependency_overrides[get_client] = lambda: fake
     r = _client.post("/chat", json={"message": "set speech id to 999"})

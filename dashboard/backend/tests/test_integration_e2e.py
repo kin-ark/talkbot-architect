@@ -36,6 +36,8 @@ def test_e2e_upload_edit_apply_export():
     fake = FakeLLMClient(script=[
         LLMResponse(text=None, tool_calls=[ToolCall(id="t1", name="apply_mods",
                     arguments={"mods_yaml": "- op: set-speech-id\n  value: 424242\n"})]),
+        LLMResponse(text=None, tool_calls=[]),  # Fix-loop round 1 triggered
+        LLMResponse(text=None, tool_calls=[]),  # Fix-loop round 2 triggered
         LLMResponse(text="Proposed setting speechId to 424242.", tool_calls=[]),
     ])
     app.dependency_overrides[get_client] = lambda: fake
