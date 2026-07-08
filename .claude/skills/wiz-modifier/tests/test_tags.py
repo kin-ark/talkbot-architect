@@ -166,3 +166,12 @@ def test_set_node_tags_component_mode_rejected():
         run_mods(b, [{"op": "set-node-tags", "node": {"uuid": n1_uuid},
                       "tags": [{"category": "Debt Result", "values": ["Willing to Repay"]}]}],
                  manifest_hash="h")
+
+
+def test_set_node_tags_empty_values_rejected():
+    """set-node-tags with empty values list for a category should raise ValueError."""
+    b, n1_uuid = _bundle_with_speechtag()
+    with pytest.raises(ValueError, match="has no values"):
+        run_mods(b, [{"op": "set-node-tags", "node": {"uuid": n1_uuid},
+                      "tags": [{"category": "Debt Result", "values": []}]}],
+                 manifest_hash="h")

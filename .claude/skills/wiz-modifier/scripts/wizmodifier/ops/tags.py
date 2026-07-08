@@ -111,6 +111,10 @@ def set_node_tags(bundle: InputBundle, params: dict, minter) -> None:
     for a in assignments:
         if not isinstance(a, dict) or "category" not in a or not isinstance(a.get("values"), list):
             raise ValueError("set-node-tags: each tag needs 'category' and a 'values' list")
+        if len(a.get("values", [])) == 0:
+            raise ValueError(
+                f"set-node-tags: tag assignment for category {a['category']!r} has no values"
+            )
 
     comps = get_components(bundle)
     idx, fe, uuid = _find_node_component(comps, node_ref)

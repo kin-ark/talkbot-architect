@@ -184,33 +184,27 @@ def test_set_intent_training_name_only(nlu_doc):
 
 def test_set_node_tags_with_speechtag(nlu_doc):
     """set_node_tags dispatch with a real SpeechTag and node uuid returns a proposal."""
-    # Find a node uuid from the fixture
-    bsc = nlu_doc.get("BizSpeechComponent", [])
-    if bsc and isinstance(bsc, list) and bsc:
-        if isinstance(bsc[0], dict) and "details" in bsc[0]:
-            details_str = bsc[0]["details"]
-            if isinstance(details_str, str):
-                try:
-                    details = json.loads(details_str)
-                    node_uuids = list(details.keys())
-                    if node_uuids:
-                        node_uuid = node_uuids[0]
-                        out = registry.dispatch("set_node_tags", {
-                            "node": {"uuid": node_uuid},
-                            "tags": [{"category": "Test Category", "values": ["Test Value"]}],
-                        }, nlu_doc)
-                        assert out["result"]["ok"] is True, out["result"].get("error")
-                        assert out["proposal"] is not None
-                        assert isinstance(out["proposal"]["proposed_data"], dict)
-                        return
-                except (json.JSONDecodeError, ValueError):
-                    pass
+    # Extract node uuid up-front from fixture; fail loudly if fixture is malformed.
+    # BizSpeechComponent is a JSON-encoded string in a full-export doc.
+    bsc_raw = nlu_doc.get("BizSpeechComponent")
+    assert isinstance(bsc_raw, str) and bsc_raw.strip(), \
+        "fixture must provide a BizSpeechComponent JSON string"
+    bsc = json.loads(bsc_raw)
+    assert isinstance(bsc, list) and bsc and "details" in bsc[0], \
+        "fixture component must have a 'details' field"
+    details = json.loads(bsc[0]["details"])
+    node_uuids = list(details.keys())
+    assert node_uuids, "fixture component details must contain at least one node"
 
-    # Fallback: dispatch with a generic node ref (even if target not found, should fail gracefully)
+    node_uuid = node_uuids[0]
+
+    # Dispatch with the resolved node uuid
     out = registry.dispatch("set_node_tags", {
-        "node": {"uuid": "00000000-0000-0000-0000-000000000001"},
+        "node": {"uuid": node_uuid},
         "tags": [{"category": "Test Category", "values": ["Test Value"]}],
     }, nlu_doc)
-    # Should either succeed or fail with a clear error
-    assert isinstance(out, dict)
-    assert "result" in out
+
+    # Assert real result
+    assert out["result"]["ok"] is True, out["result"].get("error")
+    assert out["proposal"] is not None
+    assert isinstance(out["proposal"]["proposed_data"], dict)
