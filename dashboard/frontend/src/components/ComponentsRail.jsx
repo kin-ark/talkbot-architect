@@ -40,9 +40,9 @@ export default function ComponentsRail({ summary, selectedComponentId, onSelectC
               <button type="button" onClick={() => onSelectComponent(c.uuid)}
                 className={`flex-1 min-w-0 text-left px-2.5 py-1.5 text-sm rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                   active ? 'bg-surface-muted text-primary font-semibold' : 'text-text-secondary hover:bg-surface-muted'}`}>
-                <span className="truncate">{c.name}</span>
+                <span className="block truncate">{c.name}</span>
               </button>
-              <span className="px-1 text-xs text-text-tertiary">{count}</span>
+              <span className="px-1 text-xs text-text-tertiary shrink-0">{count}</span>
               {onExportComponent && (
                 <IconButton label="Export as component" data-testid={`export-component-${c.uuid}`}
                   onClick={(e) => { e.stopPropagation(); onExportComponent(c.uuid); }} className="h-6 w-6 shrink-0 mr-1">
