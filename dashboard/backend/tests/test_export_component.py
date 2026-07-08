@@ -57,18 +57,25 @@ def _cd_filename(resp):
 
 
 def test_api_export_component_whole_dialog(tmp_path, monkeypatch):
-    """GET /export/component (no uuid) → 200 with whole-dialog envelope"""
+    """GET /export/component (no uuid) → 200 with ZIP bundle (components + intent/KB Excel)"""
+    import zipfile
+    import io
     monkeypatch.setattr(persistence, "SESSIONS_DIR", tmp_path / ".sessions")
     with TestClient(main.app) as client:
         # Load a full bot
         client.post("/samples/greeting_faq")
         r = client.get("/export/component")
         assert r.status_code == 200
-        assert r.headers["content-type"] == "application/json"
+        assert r.headers["content-type"] == "application/zip"
         filename = _cd_filename(r)
-        assert filename.endswith(".component.json")
-        dto = json.loads(r.content)
-        assert is_component_export(dto)
+        assert filename.endswith(".components.zip")
+        # Verify ZIP contents
+        zf = zipfile.ZipFile(io.BytesIO(r.content))
+        names = zf.namelist()
+        # Should have component JSON(s) and Excel files
+        assert any(".component.json" in name for name in names), f"No .component.json in {names}"
+        assert any("intents.xls" in name for name in names), f"No intents.xls in {names}"
+        assert any("KB.xls" in name for name in names), f"No KB.xls in {names}"
 
 
 def test_api_export_component_single_uuid(tmp_path, monkeypatch):

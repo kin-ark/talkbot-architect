@@ -54,8 +54,6 @@ export default function App() {
   };
 
   const onExportComponent = (uuid) => {
-    const kbs = s.summary?.knowledge_bases?.length || 0;
-    if (!uuid && kbs) toast.info(`${kbs} knowledge base${kbs === 1 ? '' : 's'} won't be included in the component export`);
     window.open(componentExportUrl(uuid), '_blank');
   };
 
