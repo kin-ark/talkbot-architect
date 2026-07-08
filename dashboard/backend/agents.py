@@ -116,7 +116,6 @@ def _node_tags(node: dict) -> list[dict]:
 
 def list_tags(data: dict) -> list[dict]:
     """SpeechTag categories → [{category, category_id, values, node_count}]. Never raises."""
-    import json as _json
     cats: list[dict] = []
     try:
         for c in unwrap(data.get("SpeechTag")) or []:
@@ -136,7 +135,7 @@ def list_tags(data: dict) -> list[dict]:
             det = comp.get("details") if isinstance(comp, dict) else None
             if not det or det in ("null", ""):
                 continue
-            tree = _json.loads(det) if isinstance(det, str) else det
+            tree = json.loads(det) if isinstance(det, str) else det
             for node in (tree.values() if isinstance(tree, dict) else []):
                 for entry in ((node.get("data") or {}).get("tag_list") or []):
                     cid = str(entry.get("id", "")) if isinstance(entry, dict) else ""
