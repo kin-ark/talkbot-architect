@@ -196,12 +196,16 @@ def _to_variable_dto(row: dict) -> dict:
 
 
 def full_to_component_export(
-    full: dict, *, name: str | None = None, base: dict | None = None
+    full: dict, *, name: str | None = None, base: dict | None = None,
+    category: int | None = None,
 ) -> dict:
     """Inverse of component_export_to_full: full-export dict -> component-export DTO.
 
     Accepts a builder-produced full-export dict (sections may be escaped-JSON
     strings or already-decoded). Emits the componentImportAndExportDTOS envelope.
+
+    When ``category`` is given, filters components to only those matching the
+    category (1=main-flow, 2=multi-round); when None (default), includes all.
 
     When ``base`` is given (the original envelope the modifier loaded), the
     modeled sections are regenerated from ``full`` and overlaid onto a deep copy
@@ -217,6 +221,10 @@ def full_to_component_export(
     variables = _dec(full.get("SpeechVariable")) or []
     if not isinstance(comps, list):
         comps = []
+
+    if category is not None:
+        comps = [c for c in comps
+                 if isinstance(c, dict) and str(c.get("category")) == str(category)]
 
     cuts_by_comp: dict[str, list] = {}
     if isinstance(scs, list):

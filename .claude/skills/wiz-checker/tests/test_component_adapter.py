@@ -405,3 +405,67 @@ def test_no_over_prune_zero_value():
     dto = full_to_component_export(full_str, base=base)
     scd = dto["componentImportAndExportDTOS"][0]["speechComponentDTO"]
     assert "sortIndex" in scd and scd["sortIndex"] == 0, "sortIndex:0 should NOT be pruned"
+
+
+def test_full_to_component_export_category_filter():
+    import json
+    comps = [
+        {"componentUuid": "m1", "name": "Main", "category": 1, "details": "{}",
+         "routes": "{}", "inboundPorts": "[]"},
+        {"componentUuid": "m2", "name": "Main2", "category": 1, "details": "{}",
+         "routes": "{}", "inboundPorts": "[]"},
+        {"componentUuid": "r1", "name": "MR", "category": 2, "details": "{}",
+         "routes": "{}", "inboundPorts": "[]"},
+    ]
+    scs = [
+        {"componentUuid": "m1", "id": "s1", "sentenceText": "hi"},
+        {"componentUuid": "r1", "id": "s2", "sentenceText": "mr"},
+    ]
+    full = {"BizSpeechComponent": json.dumps(comps), "SentenceCutSpeech": json.dumps(scs),
+            "SpeechIntent": "[]", "SpeechVariable": "[]"}
+
+    main = full_to_component_export(full, name="X", category=1)
+    assert {e["componentUuid"] for e in main["componentImportAndExportDTOS"]} == {"m1", "m2"}
+    # only m1's sentence-cut travels (m2 has none; r1's excluded)
+    m1 = next(e for e in main["componentImportAndExportDTOS"] if e["componentUuid"] == "m1")
+    assert [c["id"] for c in m1["sentenceCutDTOList"]] == ["s1"]
+
+    mr = full_to_component_export(full, name="X", category=2)
+    assert {e["componentUuid"] for e in mr["componentImportAndExportDTOS"]} == {"r1"}
+
+    allc = full_to_component_export(full, name="X")           # category=None
+    assert {e["componentUuid"] for e in allc["componentImportAndExportDTOS"]} == {"m1", "m2", "r1"}
+
+
+def test_full_to_component_export_category_none_unchanged():
+    # byte-identical guard: category=None == the default call
+    import json
+    full = {"BizSpeechComponent": json.dumps([
+        {"componentUuid": "m1", "name": "Main", "category": 1, "details": "{}",
+         "routes": "{}", "inboundPorts": "[]"}]),
+        "SentenceCutSpeech": "[]", "SpeechIntent": "[]", "SpeechVariable": "[]"}
+    assert full_to_component_export(full, name="X") == full_to_component_export(full, name="X", category=None)
+
+
+def test_splice_category_filter():
+    import json
+    base = {
+        "name": "B",
+        "componentImportAndExportDTOS": [
+            {"componentUuid": "m1", "componentName": "Main",
+             "speechComponentDTO": {"componentUuid": "m1", "name": "Main", "category": 1}},
+            {"componentUuid": "r1", "componentName": "MR",
+             "speechComponentDTO": {"componentUuid": "r1", "name": "MR", "category": 2}},
+        ],
+        "speechIntentDTO": [], "speechVariableDTO": [],
+        "speechEntiEntityList": [], "speechEntityData": [],
+        "speechFunctionDTO": [], "tagDTOList": [],
+    }
+    full = {"BizSpeechComponent": json.dumps([
+        {"componentUuid": "m1", "name": "Main", "category": 1, "details": "{}",
+         "routes": "{}", "inboundPorts": "[]"},
+        {"componentUuid": "r1", "name": "MR", "category": 2, "details": "{}",
+         "routes": "{}", "inboundPorts": "[]"}]),
+        "SentenceCutSpeech": "[]", "SpeechIntent": "[]", "SpeechVariable": "[]"}
+    mr = full_to_component_export(full, base=base, category=2)
+    assert {e["componentUuid"] for e in mr["componentImportAndExportDTOS"]} == {"r1"}
