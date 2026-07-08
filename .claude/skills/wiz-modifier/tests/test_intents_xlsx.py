@@ -114,3 +114,41 @@ def test_import_component_mode_rejected(tmp_path):
     b = _bundle(); b.is_component = True
     with pytest.raises(ValueError, match="component mode"):
         run_mods(b, [{"op": "import-intents-xlsx", "path": str(p)}], manifest_hash="h")
+
+
+def test_export_intents_cli_roundtrip(tmp_path):
+    import json as _json
+    from modify import main
+    # a bot JSON with 2 intents carrying keywords + user_responses
+    si = [
+        {"branch": "dev", "createTime": 0, "intentId": 1, "intentName": "Positive",
+         "isDelete": 0, "isInit": 1, "keyWordInIntent": "[ya,boleh]", "language": "IDN",
+         "nodeId": "", "speechId": 9, "templateCode": "T", "updateTime": 0,
+         "userResponseInIntent": "[ya boleh]"},
+        {"branch": "dev", "createTime": 0, "intentId": 2, "intentName": "Will pay",
+         "isDelete": 0, "isInit": 1, "keyWordInIntent": "[bayar]", "language": "ENG",
+         "nodeId": "", "speechId": 9, "templateCode": "T", "updateTime": 0,
+         "userResponseInIntent": "[]"},
+    ]
+    bot = tmp_path / "speech1.json"
+    bot.write_text(_json.dumps({
+        "SpeechIntent": _json.dumps(si), "SpeechVariable": "[]",
+        "BizSpeechComponent": "[]", "SentenceCutSpeech": "[]",
+        "BizKnowledgeInfo": "[]", "kbTag": [],
+    }), encoding="utf-8")
+    out = tmp_path / "intents.xls"
+    rc = main(["--export-intents", str(out), "--in", str(bot)])
+    assert rc == 0
+
+    from wizmodifier.xlsx import read_rows
+    rows = read_rows(out)
+    data = [r for r in rows if r and r[0] in ("Positive", "Will pay")]
+    # Positive: 2 keywords + 1 user response; Will pay: 1 keyword
+    kw = [(r[0], r[2]) for r in data if r[1] == "Keyword"]
+    ur = [(r[0], r[2]) for r in data if r[1] == "User response"]
+    assert ("Positive", "ya") in kw and ("Positive", "boleh") in kw
+    assert ("Will pay", "bayar") in kw
+    assert ("Positive", "ya boleh") in ur
+    # language mapped back to display
+    assert all(r[3] == "Bahasa Indonesia" for r in data if r[0] == "Positive")
+    assert all(r[3] == "English" for r in data if r[0] == "Will pay")

@@ -62,6 +62,13 @@ KB-edit ops route through a shared `KbEditor` (decode→mutate→flush, ids pres
 
 `set-node-tags` assigns disposition tags to a node by name. It resolves `category` and each value against the export's existing `SpeechTag` (real tenant ids); auto-appends absent category/value rows so all refs resolve. Replaces the node's denormalized `tag_list` wholesale; empty `tags: []` clears tags. Recomputes the bot-level `kbTag` (sorted unique category ids referenced by any node). Forbidden in component mode (bot-scope). Checker-clean: output has 0 `WIZ401`/`WIZ402` tag-ref findings by construction.
 
+## Intent Excel
+
+The modifier reads and writes the WIZ intent Excel format (`.xls`-named xlsx files):
+
+- **Import op: `import-intents-xlsx`** — Load a sheet into an existing export. Groups rows by intent name and composes `add_intent` / `set_intent_training` ops. Maps **Keyword** → `keywords` list, **User response** → `user_responses` list. Include/Exclude rows (advanced rules without full-export representation) are warned and skipped. Language column mapped from display names (e.g., "Bahasa Indonesia" → IDN, "English" → ENG, "Chinese" → ZHO, "Thai" → THA); unknown languages warned and default to IDN. Forbidden in component mode (bot-scope).
+- **Export CLI: `--export-intents <path> --in <bot.json>`** — Unbracket intent keywords/user-responses and write to a single-sheet `.xlsx`. Language codes mapped back to display names. Each keyword/user-response becomes a row: Intent | Type | Content | Language. Output file is named `.xls` (WIZ format: xlsx bytes, `.xls` name extension).
+
 ## Mod-manifest format
 
 ```yaml

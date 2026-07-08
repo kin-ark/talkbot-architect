@@ -18,6 +18,7 @@ Exit codes:
 from __future__ import annotations
 
 import argparse
+import json
 import subprocess
 import sys
 import traceback
@@ -36,6 +37,14 @@ from wizmodifier.mods import ModManifestError, load_mods  # noqa: E402
 
 _PROJECT_ROOT = _SCRIPTS_DIR.parents[3]
 _CHECKER_CLI = _PROJECT_ROOT / ".claude" / "skills" / "wiz-checker" / "scripts" / "check.py"
+
+
+def _unbracket(value: str, sep: str) -> list[str]:
+    """Inverse of _bracket_join: '[a<sep>b]' -> ['a','b']. Tolerant of empty/[]."""
+    s = (value or "").strip()
+    if s.startswith("[") and s.endswith("]"):
+        s = s[1:-1]
+    return [p for p in s.split(sep) if p != ""] if s else []
 
 
 def _advisory_check(json_path: Path) -> None:
@@ -101,6 +110,40 @@ def _run_preset(args) -> int:
     return 0
 
 
+def _run_export_intents(args) -> int:
+    if not args.in_path:
+        print("--export-intents requires --in", file=sys.stderr)
+        return 2
+    try:
+        from wizmodifier.io import InputBundle
+        from wizmodifier.ops.intents_xlsx import _LANG_CODE_TO_DISPLAY
+        from wizmodifier.xlsx import write_sheet
+
+        bundle = InputBundle.load(Path(args.in_path))
+        si = json.loads(bundle.data.get("SpeechIntent", "[]")) or []
+        rows = []
+        for intent in si:
+            name = intent.get("intentName", "")
+            lang = str(intent.get("language"))
+            disp = _LANG_CODE_TO_DISPLAY.get(lang, lang)
+            for kw in _unbracket(intent.get("keyWordInIntent", ""), ","):
+                rows.append([name, "Keyword", kw, disp])
+            for ur in _unbracket(intent.get("userResponseInIntent", ""), ";"):
+                rows.append([name, "User response", ur, disp])
+        _NOTE = ("Note:\n1,Intent column is the intent name;\n"
+                 "2,Type is Keyword or User response;\n3,Content per type")
+        write_sheet(Path(args.export_intents), ["Intent", "Type", "Content", "Language"],
+                    rows, note=_NOTE)
+    except ValueError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 2
+    except Exception:
+        traceback.print_exc()
+        return 4
+    print(f"wrote {args.export_intents}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(
         description="Modify a WIZ.AI export or build the import-test matrix."
@@ -109,10 +152,14 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--preset", type=str, help="Preset name (e.g. import-test-matrix)")
     p.add_argument("--in", dest="in_path", type=Path, help="Input json|zip (preset mode)")
     p.add_argument("--out", type=Path, help="Output dir (preset mode)")
+    p.add_argument("--export-intents", dest="export_intents", type=Path,
+                   help="Write the input's intents to a WIZ intent .xlsx")
     p.add_argument("--force", action="store_true")
     p.add_argument("--no-check", action="store_true", help="Skip the advisory checker")
     args = p.parse_args(argv)
 
+    if args.export_intents:
+        return _run_export_intents(args)
     if args.preset:
         if not args.in_path or not args.out:
             print("--preset requires --in and --out", file=sys.stderr)
