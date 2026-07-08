@@ -93,13 +93,75 @@ def validate(data: dict) -> list[dict]:
     ]
 
 
+def _node_tags(node: dict) -> list[dict]:
+    """Flatten a node's data.tag_list → [{category, value}] (active values first)."""
+    out: list[dict] = []
+    try:
+        tl = (node.get("data") or {}).get("tag_list") or []
+        for entry in tl:
+            if not isinstance(entry, dict):
+                continue
+            cat = entry.get("name") or ""
+            props = entry.get("bizTagPropertyDTOS") or []
+            active = [p for p in props if isinstance(p, dict) and p.get("active")]
+            chosen = active or [p for p in props if isinstance(p, dict)]
+            for p in chosen:
+                v = p.get("value")
+                if v:
+                    out.append({"category": cat, "value": v})
+    except Exception:  # noqa: BLE001
+        pass
+    return out
+
+
+def list_tags(data: dict) -> list[dict]:
+    """SpeechTag categories → [{category, category_id, values, node_count}]. Never raises."""
+    import json as _json
+    cats: list[dict] = []
+    try:
+        for c in unwrap(data.get("SpeechTag")) or []:
+            if not isinstance(c, dict):
+                continue
+            cid = str(c.get("id", ""))
+            vals = [p.get("value") for p in (c.get("bizTagPropertyDTOS") or [])
+                    if isinstance(p, dict) and p.get("value")]
+            cats.append({"category": c.get("name", ""), "category_id": cid,
+                         "values": vals, "node_count": 0})
+    except Exception:  # noqa: BLE001
+        return []
+    # count nodes referencing each category id
+    by_id = {c["category_id"]: c for c in cats}
+    try:
+        for comp in unwrap(data.get("BizSpeechComponent")) or []:
+            det = comp.get("details") if isinstance(comp, dict) else None
+            if not det or det in ("null", ""):
+                continue
+            tree = _json.loads(det) if isinstance(det, str) else det
+            for node in (tree.values() if isinstance(tree, dict) else []):
+                for entry in ((node.get("data") or {}).get("tag_list") or []):
+                    cid = str(entry.get("id", "")) if isinstance(entry, dict) else ""
+                    if cid in by_id:
+                        by_id[cid]["node_count"] += 1
+    except Exception:  # noqa: BLE001
+        pass
+    return cats
+
+
 def summarize(data: dict) -> dict:
     """Build a FlowModel from *data* and return it as a JSON-compatible dict.
 
     Uses the envelope-based FlowModel (build_flow_model), NOT the checker
     parser's FlowNodes (which read the UI nav tree where node type is None).
     """
-    return flow_model_to_dict(build_flow_model(data))
+    s = flow_model_to_dict(build_flow_model(data))
+    try:
+        s["tags"] = list_tags(data)
+        for comp in s.get("components", []):
+            for node in (comp.get("nodes") or {}).values():
+                node["tags"] = _node_tags(node)
+    except Exception:  # noqa: BLE001 — enrich is additive, never break summarize
+        s.setdefault("tags", [])
+    return s
 
 
 def read_node(data: dict, uuid: str) -> dict | None:
