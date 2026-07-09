@@ -36,4 +36,14 @@ describe('SampleGallery', () => {
     expect(screen.getByText('Starters')).toBeInTheDocument();
     expect(screen.getAllByTestId('sample-card')).toHaveLength(2);
   });
+
+  it('title does not truncate (wraps with line-clamp)', async () => {
+    api.listSamples.mockResolvedValue([
+      { id: 'debt_x', title: 'Debt Collection — Payment Reminder Full Flow', description: 'long' },
+    ]);
+    render(<SampleGallery onPick={() => {}} />);
+    const title = await screen.findByText('Debt Collection — Payment Reminder Full Flow');
+    expect(title.className).not.toContain('truncate');
+    expect(title.className).toContain('line-clamp-2');
+  });
 });
