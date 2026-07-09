@@ -645,8 +645,10 @@ def chat(req: ChatRequest, s: Session = Depends(current_session),
     if not s._stack:
         raise HTTPException(status_code=503, detail="no session loaded")
     cfg = config_store.config_for(cid)
-    provider = cfg.provider or os.environ.get("LLM_PROVIDER")
-    model = cfg.model or os.environ.get("LLM_MODEL")
+    # Log the model actually built/sent (catalog-resolved), not the raw cfg —
+    # the new UI sends only model_id, so cfg.model is None and the old
+    # `cfg.model or LLM_MODEL` would mislabel every turn as the env default.
+    provider, model, _ = _resolve_model(cfg)
     t0 = time.perf_counter()
     try:
         with s._lock:
@@ -669,8 +671,8 @@ def chat_stream(req: ChatRequest, s: Session = Depends(current_session),
     if not s._stack:
         raise HTTPException(status_code=503, detail="no session loaded")
     cfg = config_store.config_for(cid)
-    provider = cfg.provider or os.environ.get("LLM_PROVIDER")
-    model = cfg.model or os.environ.get("LLM_MODEL")
+    # Catalog-resolved model for the audit log (see /chat note above).
+    provider, model, _ = _resolve_model(cfg)
 
     def _gen():
         t0 = time.perf_counter()

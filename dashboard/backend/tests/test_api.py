@@ -78,3 +78,66 @@ def test_put_config_sets_model_id_and_returns_derived():
     assert body["base_url"] == "https://api.deepseek.com/anthropic"
     assert body["provider"] == "anthropic"
     assert "model_id" in body and body["model_id"] == "deepseek-chat"
+
+
+def test_chat_audit_log_uses_resolved_model_not_env(monkeypatch):
+    # Regression: /chat logged `cfg.model or LLM_MODEL`, so the new UI (sends
+    # only model_id -> cfg.model is None) mislabeled every turn as the env
+    # default (opus). The log must record the catalog-resolved model.
+    import logging
+
+    import config_store
+    import main
+
+    monkeypatch.setenv("LLM_MODEL", "claude-opus-4-8")  # the leaky env default
+
+    class _FakeClient:
+        def __init__(self):
+            self.model = "deepseek-chat"
+
+    class _FakeSession:
+        _stack = [object()]
+
+        class _Lock:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *a):
+                return False
+
+        _lock = _Lock()
+
+        def _autosave(self):
+            pass
+
+    cid = "test-cid-chatlog"
+    cfg = config_store.config_for(cid)
+    cfg.model_id = "deepseek-chat"
+
+    main.app.dependency_overrides[main.get_client] = lambda: _FakeClient()
+    main.app.dependency_overrides[main.current_session] = lambda: _FakeSession()
+    main.app.dependency_overrides[main.client_id] = lambda: cid
+    monkeypatch.setattr(main, "run_turn", lambda client, s, msg: {"ok": True})
+
+    # The app logger ("tba") has propagate=False + a JSON stdout handler, so
+    # neither caplog nor capsys see it; attach a list handler directly.
+    records = []
+
+    class _ListHandler(logging.Handler):
+        def emit(self, record):
+            records.append(record)
+
+    handler = _ListHandler()
+    main.log.addHandler(handler)
+    try:
+        from fastapi.testclient import TestClient
+        c = TestClient(main.app)
+        r = c.post("/chat", json={"message": "hi"})
+        assert r.status_code == 200
+        llm_recs = [r for r in records if getattr(r, "ev", None) == "llm"]
+        assert llm_recs, "no llm audit log record emitted"
+        assert llm_recs[-1].model == "deepseek-chat"
+        assert llm_recs[-1].model != "claude-opus-4-8"
+    finally:
+        main.log.removeHandler(handler)
+        main.app.dependency_overrides.clear()
