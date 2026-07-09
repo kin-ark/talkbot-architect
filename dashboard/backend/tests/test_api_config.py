@@ -53,19 +53,19 @@ def test_put_config_sets_fields_and_returns_correct_shape():
     """PUT /config with model_id updates provider/model/base_url and returns GET-shaped response."""
     import models_catalog
     payload = {
-        "model_id": "deepseek-chat",
+        "model_id": "claude-opus-4-8",
         "api_key": "sk-x",
     }
     r = http.put("/config", json=payload)
     assert r.status_code == 200
     body = r.json()
-    entry = models_catalog.entry_by_id("deepseek-chat")
+    entry = models_catalog.entry_by_id("claude-opus-4-8")
     assert body["provider"] == entry.provider
     assert body["model"] == entry.model
     assert body["base_url"] == entry.base_url
     assert body["key_set"] is True
     assert body["source"] == "override"
-    assert body["model_id"] == "deepseek-chat"
+    assert body["model_id"] == "claude-opus-4-8"
     # The key value must NEVER appear in the response
     assert "sk-x" not in r.text
     # Confirm the "api_key" field itself is absent (not just masked)
@@ -104,19 +104,19 @@ def test_get_config_after_put_shows_override(monkeypatch):
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     http.put("/config", json={
-        "model_id": "deepseek-chat",
+        "model_id": "claude-opus-4-8",
         "api_key": "sk-x",
     })
     r = http.get("/config")
     assert r.status_code == 200
     body = r.json()
-    entry = models_catalog.entry_by_id("deepseek-chat")
+    entry = models_catalog.entry_by_id("claude-opus-4-8")
     assert body["provider"] == entry.provider
     assert body["model"] == entry.model
     assert body["base_url"] == entry.base_url
     assert body["key_set"] is True
     assert body["source"] == "override"
-    assert body["model_id"] == "deepseek-chat"
+    assert body["model_id"] == "claude-opus-4-8"
     assert "sk-x" not in r.text
 
 
@@ -161,7 +161,7 @@ def test_get_client_uses_config_override(monkeypatch):
 
     # Set config via API (using the shared http client's tbid)
     http.put("/config", json={
-        "model_id": "deepseek-chat",
+        "model_id": "claude-opus-4-8",
         "api_key": "sk-override",
     })
 
@@ -171,7 +171,7 @@ def test_get_client_uses_config_override(monkeypatch):
     # Directly invoke get_client with the cid (bypassing FastAPI dependency injection)
     client_obj = main.get_client(cid=tbid)
 
-    entry = models_catalog.entry_by_id("deepseek-chat")
+    entry = models_catalog.entry_by_id("claude-opus-4-8")
     assert captured["provider"] == entry.provider
     assert captured["model"] == entry.model
     assert captured["base_url"] == entry.base_url
