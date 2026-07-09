@@ -51,6 +51,17 @@ _THINKING_BUDGET = 2048
 _ATTACH_MAX_BYTES = 5 * 1024 * 1024
 _STARTED = time.time()
 
+_IMAGE_MAGIC = {
+    b"\x89PNG\r\n\x1a\n": "image/png",
+    b"\xff\xd8\xff": "image/jpeg",
+    b"GIF87a": "image/gif",
+    b"GIF89a": "image/gif",
+    b"RIFF": "image/webp",   # RIFF....WEBP; good enough with the ext check below
+}
+_IMAGE_EXTS = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
+               ".gif": "image/gif", ".webp": "image/webp"}
+_MAX_IMAGES = 4
+
 app = FastAPI(title="Talkbot Architect API")
 # With allow_credentials=True a wildcard origin is invalid, so we list origins.
 # Prod sets CORS_ORIGINS explicitly (or serves the SPA same-origin → CORS unused).
@@ -136,6 +147,17 @@ class NodeTextRequest(BaseModel):
 # ---------------------------------------------------------------------------
 # Helpers / dependencies
 # ---------------------------------------------------------------------------
+
+def _image_media_type(name: str, raw: bytes) -> str | None:
+    """Return an image media_type if the bytes/name look like a supported image, else None."""
+    for magic, mt in _IMAGE_MAGIC.items():
+        if raw.startswith(magic):
+            if mt == "image/webp" and b"WEBP" not in raw[:16]:
+                continue
+            return mt
+    ext = Path(name).suffix.lower()
+    return _IMAGE_EXTS.get(ext)
+
 
 def _require_session(s: Session = Depends(current_session)) -> Session:
     """Raise 503 if no data has been loaded into the active session yet."""
@@ -718,22 +740,37 @@ async def chat_attach(file: UploadFile = File(...), s: Session = Depends(_requir
         raise HTTPException(status_code=400, detail="empty file")
     if len(raw) > _ATTACH_MAX_BYTES:
         raise HTTPException(status_code=413, detail="file too large (max 5 MB)")
-    # replace any prior unconsumed attachment
+    name = file.filename or "upload"
+    media_type = _image_media_type(name, raw)
+    if media_type is not None:
+        if len(s.images) >= _MAX_IMAGES:
+            raise HTTPException(status_code=400, detail=f"too many images (max {_MAX_IMAGES})")
+        import base64 as _b64
+        s.images.append({"name": name, "media_type": media_type,
+                         "data": _b64.b64encode(raw).decode("ascii")})
+        return {"name": name, "kind": "image", "count": len(s.images)}
+    # non-image → existing single-attachment path
     prior = s.attachment
     if prior and prior.get("path"):
         Path(prior["path"]).unlink(missing_ok=True)
-    suffix = Path(file.filename or "upload").suffix or ".bin"
+    suffix = Path(name).suffix or ".bin"
     with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
         tmp.write(raw)
         tmp_path = tmp.name
-    kind, excerpt = _classify_attachment(file.filename or "upload", tmp_path)
-    s.attachment = {"name": file.filename or "upload", "path": tmp_path,
-                    "kind": kind, "excerpt": excerpt}
-    return {"name": s.attachment["name"], "kind": kind}
+    kind, excerpt = _classify_attachment(name, tmp_path)
+    s.attachment = {"name": name, "path": tmp_path, "kind": kind, "excerpt": excerpt}
+    return {"name": name, "kind": kind}
 
 
 @app.delete("/chat/attach")
-async def chat_clear_attach(s: Session = Depends(_require_session)):
+async def chat_clear_attach(kind: str | None = None, index: int | None = None,
+                            s: Session = Depends(_require_session)):
+    if kind == "image":
+        if index is None:
+            s.images = []
+        elif 0 <= index < len(s.images):
+            s.images.pop(index)
+        return {"cleared": True, "count": len(s.images)}
     if s.attachment and s.attachment.get("path"):
         Path(s.attachment["path"]).unlink(missing_ok=True)
     s.attachment = None

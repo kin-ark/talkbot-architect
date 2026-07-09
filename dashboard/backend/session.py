@@ -26,6 +26,7 @@ class Session:
         self.component_base: dict | None = None
         self.cancel_requested: bool = False
         self.attachment: dict | None = None
+        self.images: list = []
         self._lock = threading.Lock()
 
     def _autosave(self) -> None:
@@ -51,6 +52,7 @@ class Session:
         self.transcript = []
         self.pending = None
         self.attachment = None
+        self.images = []
         self.speech_name = speech_name
         self.wavs = wavs if wavs is not None else {}
         self.is_component = is_component
