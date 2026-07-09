@@ -98,7 +98,12 @@ class AnthropicClient(LLMClient):
                                 emitted = True
                                 yield StreamChunk(thinking_delta=event.delta.thinking)
                             # signature_delta / other: ignore
-                    final = stream.get_final_message()
+                    try:
+                        final = stream.get_final_message()
+                    except AssertionError as e:
+                        raise RuntimeError(
+                            "model returned no response (the endpoint may not "
+                            f"support model {self._model!r}): {e}") from e
                 text, calls, tblocks = None, [], []
                 for block in final.content:
                     if block.type == "text":

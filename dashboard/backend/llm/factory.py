@@ -47,19 +47,23 @@ def make_client(
         key = api_key or os.environ.get("ANTHROPIC_API_KEY")
         if not key:
             raise LLMConfigError("ANTHROPIC_API_KEY not set")
+        if not model:
+            raise LLMConfigError("no model configured; pick a model in Settings")
         effective_base = base_url or os.environ.get("ANTHROPIC_BASE_URL")
         # Use monkeypatchable reference when set, else real class
         cls = _anthropic_client_class
         if cls is None:
             from llm.anthropic_client import AnthropicClient
             cls = AnthropicClient
-        return cls(api_key=key, model=model or "claude-opus-4-8",
+        return cls(api_key=key, model=model,
                    base_url=effective_base, thinking_budget=thinking_budget)
 
     if resolved_provider in ("openai", "openai-compatible"):
         key = api_key or os.environ.get("OPENAI_API_KEY")
         if not key:
             raise LLMConfigError("OPENAI_API_KEY not set")
+        if not model:
+            raise LLMConfigError("no model configured; pick a model in Settings")
         effective_base = base_url or os.environ.get("OPENAI_BASE_URL")
         if resolved_provider == "openai-compatible" and not effective_base:
             raise LLMConfigError(
@@ -70,6 +74,6 @@ def make_client(
         if cls is None:
             from llm.openai_client import OpenAIClient
             cls = OpenAIClient
-        return cls(api_key=key, model=model or "gpt-4o", base_url=effective_base)
+        return cls(api_key=key, model=model, base_url=effective_base)
 
     raise LLMConfigError(f"unknown provider {resolved_provider!r}")
