@@ -2,6 +2,10 @@ name: "Debt Collection - DPD 6-30"
 branch: dev
 language: IDN
 
+tags:
+  - name: Disposition
+    values: [PTP, Refused, WrongNumber, AlreadyPaid]
+
 custom_variables:
   - name: Salutation
   - name: GenderX
@@ -319,6 +323,7 @@ canvases:
       - id: end_pos
         type: exit
         prompt: "Selamat siang."
+        tags: [{category: Disposition, values: [PTP]}]
     edges:
       - {from: close_pos, branch: Unclassified, to: end_pos}
 
@@ -330,6 +335,7 @@ canvases:
       - id: end_neg
         type: exit
         prompt: "Selamat siang."
+        tags: [{category: Disposition, values: [Refused]}]
     edges:
       - {from: close_neg, branch: Unclassified, to: end_neg}
 
@@ -356,6 +362,7 @@ canvases:
       - id: apology_exit
         type: exit
         prompt: "Oh, mohon maaf sudah mengganggu waktu Anda, terima kasih dan semoga hari anda menyenangkan."
+        tags: [{category: Disposition, values: [WrongNumber]}]
     edges:
       - {from: verify, branch: Positive, to: tc_resume}
       - {from: verify, branch: Negative, to: apology_exit}

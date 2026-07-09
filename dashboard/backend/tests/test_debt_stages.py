@@ -100,3 +100,10 @@ def test_stages_are_differentiated():
     assert "3. Second Convincer" not in predue_comps
     assert "4. Third Convincer" not in predue_comps
     assert "DPD Info" not in predue_comps
+
+
+def test_debt_samples_have_disposition_tags():
+    """Verify all 6 debt-collection samples have disposition tags feature."""
+    for sid in ("debt_predue_d1", "debt_dpd0", "debt_dpd1_5", "debt_dpd6_30", "debt_overdue_90", "debt_ptp_reminder"):
+        data = _build(sid)
+        assert "disposition_tags" in agents.feature_coverage(data)["used"], f"{sid}: no tags"

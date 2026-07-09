@@ -12,11 +12,11 @@ def test_rich_bot_reports_used_features():
     cov = agents.feature_coverage(data)
     assert set(cov) == {"used", "missing"}
     assert set(cov["used"]) | set(cov["missing"]) == PALETTE
-    # debt_dpd1_5 uses: talk, conditional, assign, goto, goto_kb, talk_continue, exit, knowledge_base, multi_round, hot_words, trained_intents
-    expected_used = {"talk", "exit", "conditional", "assign", "goto", "goto_kb", "talk_continue", "knowledge_base", "trained_intents", "hot_words", "multi_round"}
+    # debt_dpd1_5 uses: talk, conditional, assign, goto, goto_kb, talk_continue, exit, knowledge_base, multi_round, hot_words, trained_intents, disposition_tags
+    expected_used = {"talk", "exit", "conditional", "assign", "goto", "goto_kb", "talk_continue", "knowledge_base", "trained_intents", "hot_words", "multi_round", "disposition_tags"}
     assert set(cov["used"]) == expected_used
-    # it has no disposition tags, nested, goto_mr, transfer → missing
-    expected_missing = {"disposition_tags", "nested", "goto_mr", "transfer"}
+    # it has no nested, goto_mr, transfer → missing
+    expected_missing = {"nested", "goto_mr", "transfer"}
     assert set(cov["missing"]) == expected_missing
 
 
