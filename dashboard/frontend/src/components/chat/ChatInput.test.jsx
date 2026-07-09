@@ -3,7 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import ChatInput from './ChatInput';
 import * as api from '../../api';
 
-vi.mock('../../api', { attachFile: vi.fn(), clearAttachment: vi.fn() });
+vi.mock('../../api', { attachFile: vi.fn(), clearAttachment: vi.fn(), clearImage: vi.fn() });
 
 const base = {
   value: '', onChange: () => {}, onSubmit: () => {}, sending: false, onCancel: () => {},

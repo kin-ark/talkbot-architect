@@ -61,7 +61,7 @@ function ChipRow({ onSend }) {
   );
 }
 
-export default function ChatPane({ transcript, proposal, sending, onSend, onRetry, onApply, onReject, onCancel, onPreview, summary, onSelectNode, canUndo = false, canRedo = false, onUndo, onRedo }) {
+export default function ChatPane({ transcript, proposal, sending, onSend, onRetry, onApply, onReject, onCancel, onPreview, summary, onSelectNode, canUndo = false, canRedo = false, onUndo, onRedo, canSendImages = true }) {
   const [input, setInput] = useState('');
   const { scrollRef, onScroll, atBottom, scrollToBottom } = useChatScroll(transcript);
 
@@ -123,7 +123,7 @@ export default function ChatPane({ transcript, proposal, sending, onSend, onRetr
       <div className="px-4 pb-2"><ChipRow onSend={onSend} /></div>
       <ChatInput value={input} onChange={setInput} onSubmit={submit} sending={sending} onCancel={onCancel}
         slashMatches={slashMatches} mentionMatches={mentionMatches}
-        onPickSlash={pickSlash} onPickMention={pickMention} />
+        onPickSlash={pickSlash} onPickMention={pickMention} canSendImages={canSendImages} />
     </div>
   );
 }

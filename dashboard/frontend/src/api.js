@@ -52,6 +52,10 @@ export async function clearAttachment() {
   return r.json();
 }
 
+export async function clearImage(index) {
+  return (await axios.delete(`${BASE}/chat/attach`, { params: { kind: 'image', index } })).data;
+}
+
 export async function streamChat(message, { onEvent, signal } = {}) {
   let resp;
   try {

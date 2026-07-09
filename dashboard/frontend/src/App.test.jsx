@@ -6,6 +6,7 @@ import App from './App';
 
 beforeEach(() => {
   api.getConfig.mockResolvedValue({ key_set: true });
+  api.getModels.mockResolvedValue({ models: [], custom_id: '' });
   api.listSamples.mockResolvedValue([]);
   api.listIntents.mockResolvedValue([]);
 });

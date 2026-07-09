@@ -15,6 +15,7 @@ export default function SettingsPage() {
   const [provider, setProvider] = useState('anthropic');
   const [customModel, setCustomModel] = useState('');
   const [baseUrl, setBaseUrl] = useState('');
+  const [customVision, setCustomVision] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -31,6 +32,7 @@ export default function SettingsPage() {
         setModelId(cfg.model_id || m.default);
         setShowReasoning(cfg.show_reasoning !== false);
         setBaseUrl(cfg.base_url || '');
+        setCustomVision(cfg.custom_vision || false);
         if (cfg.model_id === m.custom_id) {
           setProvider(cfg.provider || 'anthropic');
           setCustomModel(cfg.model || '');
@@ -48,6 +50,7 @@ export default function SettingsPage() {
     if (isCustom) {
       payload.provider = provider;
       payload.model = customModel;
+      payload.custom_vision = customVision;
     }
     if (apiKey) payload.api_key = apiKey;
     try {
@@ -132,6 +135,12 @@ export default function SettingsPage() {
                 <input id="cfg-custom-model" data-testid="cfg-custom-model" type="text" value={customModel}
                   onChange={(e) => setCustomModel(e.target.value)} placeholder="e.g. deepseek-chat, gpt-4o"
                   className="mt-1 w-full border border-border rounded px-2 py-1.5 text-sm bg-surface text-text" />
+              </label>
+              <label className="flex items-center gap-2 pt-1" htmlFor="cfg-custom-vision">
+                <input id="cfg-custom-vision" data-testid="cfg-custom-vision" type="checkbox"
+                  checked={customVision} onChange={(e) => setCustomVision(e.target.checked)}
+                  className="h-4 w-4 accent-primary" />
+                <span className="text-text-secondary text-xs">Model supports image input (vision)</span>
               </label>
             </>
           );

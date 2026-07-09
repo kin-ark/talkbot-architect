@@ -10,7 +10,7 @@ import TagsPanel from './TagsPanel';
 import FlowCanvas from './FlowCanvas';
 import ComponentsRail from './ComponentsRail';
 
-export default function RightDock({ activeTab, onTabChange, summary, findings, selectedNode, onSelectNode, chat, onPreview, onAskFix, onSelectComponent, focusComponentId, onEditNode, intents, focusKb, onExportComponent }) {
+export default function RightDock({ activeTab, onTabChange, summary, findings, selectedNode, onSelectNode, chat, onPreview, onAskFix, onSelectComponent, focusComponentId, onEditNode, intents, focusKb, onExportComponent, canSendImages = true }) {
   const [drill, setDrill] = useState(null);
   const [selectedKb, setSelectedKb] = useState(null);
   // Reset KB selection when a new export/summary loads (e.g. after apply/undo).
@@ -73,7 +73,8 @@ export default function RightDock({ activeTab, onTabChange, summary, findings, s
           <ChatPane transcript={chat.transcript} proposal={chat.proposal} sending={chat.sending}
             onSend={chat.onSend} onRetry={chat.onRetry} onApply={chat.onApply} onReject={chat.onReject} onCancel={chat.onCancel}
             onPreview={onPreview} summary={summary} onSelectNode={onSelectNode}
-            canUndo={chat.canUndo} canRedo={chat.canRedo} onUndo={chat.onUndo} onRedo={chat.onRedo} />
+            canUndo={chat.canUndo} canRedo={chat.canRedo} onUndo={chat.onUndo} onRedo={chat.onRedo}
+            canSendImages={canSendImages} />
         )}
         {activeTab === 'findings' && <FindingList findings={findings} onSelect={onSelectNode} onAskFix={onAskFix} />}
         {activeTab === 'properties' && <NodePropertiesPanel node={selectedNode} summary={summary} onEditNode={onEditNode} />}

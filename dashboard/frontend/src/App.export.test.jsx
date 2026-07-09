@@ -20,7 +20,7 @@ function mockSession(findings) {
     startNew: vi.fn(), renameBot: vi.fn(), editNodeText: vi.fn(),
   });
 }
-beforeEach(() => { vi.clearAllMocks(); api.getConfig.mockResolvedValue({ key_set: true }); api.listSamples.mockResolvedValue([]); });
+beforeEach(() => { vi.clearAllMocks(); api.getConfig.mockResolvedValue({ key_set: true }); api.getModels.mockResolvedValue({ models: [], custom_id: '' }); api.listSamples.mockResolvedValue([]); });
 const renderApp = () => render(<ConfirmProvider><App /></ConfirmProvider>);
 
 describe('App export gate', () => {

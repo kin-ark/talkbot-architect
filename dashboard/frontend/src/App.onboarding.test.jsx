@@ -19,7 +19,7 @@ function mockSession() {
   });
 }
 
-beforeEach(() => { vi.clearAllMocks(); mockSession(); api.listSamples.mockResolvedValue([]); });
+beforeEach(() => { vi.clearAllMocks(); mockSession(); api.getModels.mockResolvedValue({ models: [], custom_id: '' }); api.listSamples.mockResolvedValue([]); });
 
 describe('App onboarding key-nudge', () => {
   it('shows the key nudge when no key is set', async () => {

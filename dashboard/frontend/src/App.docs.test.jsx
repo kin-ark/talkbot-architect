@@ -20,6 +20,7 @@ const HOOKS = {
 beforeEach(() => {
   vi.clearAllMocks();
   api.getConfig.mockResolvedValue({ key_set: true });
+  api.getModels.mockResolvedValue({ models: [], custom_id: '' });
   api.listSamples.mockResolvedValue([]);
   useSession.mockReturnValue(HOOKS);
 });

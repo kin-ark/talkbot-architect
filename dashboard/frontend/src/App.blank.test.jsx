@@ -6,6 +6,7 @@ vi.mock('./api', () => ({
   __esModule: true,
   startBlank: vi.fn().mockResolvedValue({ summary: { components: [] }, findings: [] }),
   getConfig: vi.fn().mockResolvedValue({}),
+  getModels: vi.fn().mockResolvedValue({ models: [], custom_id: '' }),
   exportUrl: vi.fn(() => '/export'),
   getSession: vi.fn().mockResolvedValue(null),
   listSamples: vi.fn().mockResolvedValue([]),

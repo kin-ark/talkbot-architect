@@ -12,7 +12,7 @@ import StatisticsPage from './components/StatisticsPage';
 import DocsPage from './components/DocsPage';
 import SettingsPage from './components/SettingsPage';
 import { useTheme } from './theme/useTheme';
-import { exportUrl, componentExportUrl, getConfig } from './api';
+import { exportUrl, componentExportUrl, getConfig, getModels } from './api';
 
 export default function App() {
   const s = useSession();
@@ -33,10 +33,21 @@ export default function App() {
   const [leftPage, setLeftPage] = useState(null);
   const { theme, toggle: toggleTheme } = useTheme();
   const [keySet, setKeySet] = useState(true);   // assume set until known (no false flash)
+  const [models, setModels] = useState([]);
+  const [config, setConfig] = useState(null);
+  const [customId, setCustomId] = useState('');
   useEffect(() => {
     if (s.summary) return;                       // only probe on the empty state
     let off = false;
-    getConfig().then((c) => { if (!off) setKeySet(!!c.key_set); }).catch(() => {});
+    Promise.all([getConfig(), getModels()])
+      .then(([c, m]) => {
+        if (off) return;
+        setKeySet(!!c.key_set);
+        setConfig(c);
+        setModels(m.models || []);
+        setCustomId(m.custom_id || '');
+      })
+      .catch(() => {});
     return () => { off = true; };
   }, [s.summary]);
 
@@ -94,6 +105,17 @@ export default function App() {
       {leftPage === 'settings' && <SettingsPage />}
     </PageOverlay>
   );
+
+  const canSendImages = (() => {
+    if (!config) return false;
+    const modelId = config.model_id;
+    if (!modelId) return false;
+    if (modelId === customId) {
+      return config.custom_vision === true;
+    }
+    const model = models.find((m) => m.id === modelId);
+    return model?.vision === true;
+  })();
 
   const onAskFix = (f) => {
     setDockTab('chat');
@@ -157,7 +179,8 @@ export default function App() {
             onPreview={onPreview} onAskFix={onAskFix}
             onSelectComponent={setFocusComponentId} focusComponentId={focusComponentId}
             onEditNode={(uuid, fields) => s.editNodeText(uuid, fields)}
-            intents={s.intents} focusKb={focusKb} onExportComponent={s.isComponent ? undefined : onExportComponent} />
+            intents={s.intents} focusKb={focusKb} onExportComponent={s.isComponent ? undefined : onExportComponent}
+            canSendImages={canSendImages} />
         )}
       </div>
       {pageOverlay}
