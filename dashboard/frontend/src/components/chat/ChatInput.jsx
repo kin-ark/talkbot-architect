@@ -63,7 +63,7 @@ export default function ChatInput({ value, onChange, onSubmit, sending, onCancel
       <div className="relative flex gap-2 items-end">
         {slashOpen && (
           <div data-testid="slash-menu"
-            className="absolute bottom-full mb-1 left-0 w-72 rounded-lg border border-border bg-surface shadow-card overflow-hidden z-30">
+            className="absolute bottom-full mb-1 left-0 w-80 max-h-72 overflow-y-auto rounded-lg border border-border bg-surface shadow-card z-30">
             {slashMatches.map((c) => (
               <button key={c.cmd} type="button" onClick={() => onPickSlash(c)}
                 className="block w-full text-left px-3 py-1.5 text-sm text-text hover:bg-surface-muted">
@@ -75,12 +75,30 @@ export default function ChatInput({ value, onChange, onSubmit, sending, onCancel
         )}
         {mentionOpen && (
           <div data-testid="mention-menu"
-            className="absolute bottom-full mb-1 left-0 w-72 max-h-60 overflow-y-auto rounded-lg border border-border bg-surface shadow-card z-30">
+            className="absolute bottom-full mb-1 left-0 w-80 max-h-72 overflow-y-auto rounded-lg border border-border bg-surface shadow-card z-30">
             {mentionMatches.map((e2) => (
               <button key={`${e2.kind}-${e2.uuid}`} type="button" onClick={() => onPickMention(e2)}
-                className="block w-full text-left px-3 py-1.5 text-sm text-text hover:bg-surface-muted">
-                <span className="text-text-tertiary text-xs uppercase mr-2">{e2.kind === 'component' ? 'comp' : 'node'}</span>
-                {e2.label}
+                className="block w-full text-left px-3 py-2 hover:bg-surface-muted border-b border-border last:border-b-0">
+                {e2.kind === 'component'
+                  ? (
+                    <div className="flex items-baseline gap-2">
+                      <span className="shrink-0 text-[10px] font-mono uppercase text-primary bg-primary/10 rounded px-1 py-0.5">comp</span>
+                      <span className="text-sm text-text font-medium truncate">{e2.label}</span>
+                      <span className="ml-auto shrink-0 text-[11px] text-text-tertiary">{e2.count} node{e2.count === 1 ? '' : 's'}</span>
+                    </div>
+                  )
+                  : (
+                    <>
+                      <div className="flex items-baseline gap-2">
+                        <span className="shrink-0 text-[10px] font-mono uppercase text-text-secondary bg-surface-muted rounded px-1 py-0.5">{e2.nodeType || 'node'}</span>
+                        <span className="text-sm text-text truncate">{e2.label}</span>
+                        <span className="ml-auto shrink-0 text-[11px] text-text-tertiary truncate max-w-[45%]">in {e2.comp}</span>
+                      </div>
+                      {e2.snippet && (
+                        <div className="text-[11px] text-text-tertiary truncate mt-0.5 pl-1">{e2.snippet}</div>
+                      )}
+                    </>
+                  )}
               </button>
             ))}
           </div>

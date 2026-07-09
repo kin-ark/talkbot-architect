@@ -9,9 +9,17 @@ import { useChatScroll } from './chat/useChatScroll';
 function mentionEntries(summary) {
   const out = [];
   for (const c of summary?.components || []) {
-    out.push({ kind: 'component', label: c.name, uuid: c.uuid });
-    for (const n of Object.values(c.nodes || {})) {
-      out.push({ kind: 'node', label: n.label || n.uuid, uuid: n.uuid });
+    const nodes = Object.values(c.nodes || {});
+    out.push({ kind: 'component', label: c.name, uuid: c.uuid, count: nodes.length });
+    for (const n of nodes) {
+      out.push({
+        kind: 'node',
+        label: n.label || n.uuid,
+        uuid: n.uuid,
+        comp: c.name,
+        nodeType: n.node_type || '',
+        snippet: (n.text || '').trim(),
+      });
     }
   }
   return out;
@@ -19,10 +27,18 @@ function mentionEntries(summary) {
 
 const SLASH = [
   { cmd: '/validate', mode: 'send', text: 'Validate the dialogue and list all findings.' },
-  { cmd: '/explain', mode: 'send', text: 'Explain what this bot does, step by step.' },
   { cmd: '/summary', mode: 'send', text: 'Summarize the dialogue flow.' },
-  { cmd: '/add-node', mode: 'fill', text: 'Add a node: ' },
+  { cmd: '/explain', mode: 'send', text: 'Explain what this bot does, step by step.' },
+  { cmd: '/playbook', mode: 'send', text: 'Show the authoring playbook for building a great, feature-rich bot.' },
+  { cmd: '/scaffold', mode: 'fill', text: 'Scaffold a bot: ' },
   { cmd: '/add-component', mode: 'fill', text: 'Add a component named ' },
+  { cmd: '/add-node', mode: 'fill', text: 'Add a node: ' },
+  { cmd: '/connect', mode: 'fill', text: 'Connect component ' },
+  { cmd: '/add-intent', mode: 'fill', text: 'Add an intent named ' },
+  { cmd: '/add-variable', mode: 'fill', text: 'Add a variable named ' },
+  { cmd: '/import-intents', mode: 'fill', text: 'Import intents from the attached Excel file.' },
+  { cmd: '/import-kb', mode: 'fill', text: 'Import knowledge bases from the attached Excel file.' },
+  { cmd: '/facts', mode: 'fill', text: 'Look up WIZ facts about ' },
 ];
 
 const SUGGESTIONS = [
@@ -60,7 +76,8 @@ export default function ChatPane({ transcript, proposal, sending, onSend, onRetr
   const mentionQuery = mentionMatch ? mentionMatch[1].toLowerCase() : null;
   const entries = useMemo(() => mentionEntries(summary), [summary]);
   const mentionMatches = mentionQuery !== null
-    ? entries.filter((e) => e.label.toLowerCase().includes(mentionQuery)).slice(0, 8)
+    ? entries.filter((e) => `${e.label} ${e.comp || ''} ${e.nodeType || ''}`
+        .toLowerCase().includes(mentionQuery)).slice(0, 8)
     : [];
   const pickMention = (e) => setInput(input.replace(/@(\S*)$/, `@${e.label} (${e.uuid}) `));
 
