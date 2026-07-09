@@ -23,6 +23,7 @@ export function componentExportUrl(uuid) {
 export async function getConfig() { return (await axios.get(`${BASE}/config`)).data; }
 export async function updateConfig(body) { return (await axios.put(`${BASE}/config`, body)).data; }
 export async function clearConfig() { return (await axios.post(`${BASE}/config/clear`)).data; }
+export async function getModels() { return (await axios.get(`${BASE}/models`)).data; }
 export async function startBlank() { return (await axios.post(`${BASE}/session/blank`)).data; }
 export async function listSamples() { return (await axios.get(`${BASE}/samples`)).data; }
 export async function loadSample(id) { return (await axios.post(`${BASE}/samples/${id}`)).data; }

@@ -1,16 +1,13 @@
 import { useState, useEffect } from 'react';
-import { getConfig, updateConfig, clearConfig } from '../api';
+import { getConfig, updateConfig, clearConfig, getModels } from '../api';
 import Button from './ui/Button';
-
-const PROVIDERS = ['anthropic', 'openai', 'openai-compatible'];
 
 export default function SettingsPage() {
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState(null);
-  const [provider, setProvider] = useState('anthropic');
-  const [model, setModel] = useState('');
-  const [baseUrl, setBaseUrl] = useState('');
+  const [models, setModels] = useState([]);
+  const [modelId, setModelId] = useState('');
   const [apiKey, setApiKey] = useState('');
   const [showReasoning, setShowReasoning] = useState(true);
 
@@ -19,13 +16,12 @@ export default function SettingsPage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- legitimate async-fetch loader pattern; setLoading/setNotice reset before an async call, not as a derived-state sync
     setLoading(true);
     setNotice(null);
-    getConfig()
-      .then((cfg) => {
+    Promise.all([getModels(), getConfig()])
+      .then(([m, cfg]) => {
         if (cancelled) return;
+        setModels(m.models);
         setStatus(cfg);
-        setProvider(cfg.provider || 'anthropic');
-        setModel(cfg.model || '');
-        setBaseUrl(cfg.base_url || '');
+        setModelId(cfg.model_id || m.default);
         setShowReasoning(cfg.show_reasoning !== false);
       })
       .catch(() => { if (!cancelled) setNotice({ type: 'err', text: 'Failed to load config.' }); })
@@ -35,8 +31,7 @@ export default function SettingsPage() {
 
   const handleSave = async () => {
     setNotice(null);
-    const payload = { provider, model, show_reasoning: showReasoning };
-    if (baseUrl) payload.base_url = baseUrl;
+    const payload = { model_id: modelId, show_reasoning: showReasoning };
     if (apiKey) payload.api_key = apiKey;
     try {
       const cfg = await updateConfig(payload);
@@ -53,9 +48,7 @@ export default function SettingsPage() {
     try {
       const cfg = await clearConfig();
       setStatus(cfg);
-      setProvider(cfg.provider || 'anthropic');
-      setModel(cfg.model || '');
-      setBaseUrl(cfg.base_url || '');
+      setModelId(cfg.model_id || '');
       setShowReasoning(cfg.show_reasoning !== false);
       setApiKey('');
       setNotice({ type: 'ok', text: 'Reset to env defaults.' });
@@ -78,25 +71,26 @@ export default function SettingsPage() {
         </p>
       )}
       <div className="space-y-3 mb-4">
-        <label className="block" htmlFor="cfg-provider">
-          <span className="text-text-secondary text-xs">Provider</span>
-          <select id="cfg-provider" value={provider} onChange={(e) => setProvider(e.target.value)}
+        <label className="block" htmlFor="cfg-model-select">
+          <span className="text-text-secondary text-xs">Model</span>
+          <select id="cfg-model-select" data-testid="cfg-model-select" value={modelId}
+            onChange={(e) => setModelId(e.target.value)}
             className="mt-1 w-full border border-border rounded px-2 py-1.5 text-sm bg-surface text-text">
-            {PROVIDERS.map((p) => <option key={p} value={p}>{p}</option>)}
+            {Object.entries(models.reduce((acc, m) => {
+              (acc[m.group] ||= []).push(m); return acc;
+            }, {})).map(([group, items]) => (
+              <optgroup key={group} label={group}>
+                {items.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
+              </optgroup>
+            ))}
           </select>
         </label>
-        <label className="block" htmlFor="cfg-model">
-          <span className="text-text-secondary text-xs">Model</span>
-          <input id="cfg-model" type="text" value={model} onChange={(e) => setModel(e.target.value)}
-            placeholder="e.g. claude-opus-4-8, gpt-4o"
-            className="mt-1 w-full border border-border rounded px-2 py-1.5 text-sm bg-surface text-text" />
-        </label>
-        <label className="block" htmlFor="cfg-baseurl">
-          <span className="text-text-secondary text-xs">Base URL</span>
-          <input id="cfg-baseurl" type="text" value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)}
-            placeholder="optional — for gateways / OpenAI-compatible endpoints"
-            className="mt-1 w-full border border-border rounded px-2 py-1.5 text-sm bg-surface text-text" />
-        </label>
+        {(() => {
+          const sel = models.find((m) => m.id === modelId);
+          return sel?.base_url ? (
+            <p className="text-text-tertiary text-xs -mt-2">Endpoint: <span className="font-mono">{sel.base_url}</span></p>
+          ) : null;
+        })()}
         <label className="block" htmlFor="cfg-apikey">
           <span className="text-text-secondary text-xs">API key</span>
           <input id="cfg-apikey" type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)}

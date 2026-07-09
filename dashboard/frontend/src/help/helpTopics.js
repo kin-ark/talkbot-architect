@@ -265,9 +265,10 @@ Orphan nodes (referenced but not defined in this export — usually links to WIZ
 
 The Chat agent needs an LLM provider and API key. Open **Settings** from the rail footer.
 
-- Choose a **provider** and **model**, and set your **API key** (and a base URL if you use a custom endpoint).
+- Pick your **model** from the dropdown (Claude or a compatible provider like DeepSeek). Picking sets the endpoint automatically; you supply only an **API key**.
 - The key is held for the running app and is **never shown back** to you once set.
 - If no key is set, the landing screen shows a nudge with a shortcut to Settings.
+- Stats show the exact model used.
 
 You can still **upload, view, validate, and load samples** without a key — only the Chat agent (building/editing by conversation) requires one.`,
   },
