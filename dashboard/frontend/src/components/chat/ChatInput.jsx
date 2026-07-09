@@ -85,42 +85,39 @@ export default function ChatInput({ value, onChange, onSubmit, sending, onCancel
             ))}
           </div>
         )}
-        <div className="flex-1 min-w-0">
-          <textarea ref={taRef} rows={1} value={value}
-            onChange={(e) => { setDismissed(false); onChange(e.target.value); }}
-            onInput={resize}
-            onKeyDown={onKeyDown}
-            aria-label="Chat message"
-            placeholder="Ask about or edit the dialogue…"
-            className="w-full resize-none border border-border rounded-xl px-3 py-2 text-sm text-text bg-surface focus:outline-none focus:ring-2 focus:ring-primary"
-            style={{ maxHeight: MAX_H }} />
-          {attachment && (
-            <div className="text-[11px] text-text-tertiary mt-0.5 px-1 flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 bg-surface-muted px-2 py-1 rounded">
-                {attachment.name}
-                <button type="button" onClick={() => {
-                  clearAttachment().catch(err => console.error('clear failed:', err));
-                  setAttachment(null);
-                }} disabled={sending} className="p-0 text-text-tertiary hover:text-text">
-                  <X size={14} />
-                </button>
-              </span>
-            </div>
-          )}
-          {!attachment && (
-            <div className="text-[11px] text-text-tertiary mt-0.5 px-1">Enter to send · Shift+Enter for newline</div>
-          )}
-        </div>
+        <textarea ref={taRef} rows={1} value={value}
+          onChange={(e) => { setDismissed(false); onChange(e.target.value); }}
+          onInput={resize}
+          onKeyDown={onKeyDown}
+          aria-label="Chat message"
+          placeholder="Ask about or edit the dialogue…"
+          className="flex-1 min-w-0 resize-none border border-border rounded-xl px-3 py-2 text-sm text-text bg-surface focus:outline-none focus:ring-2 focus:ring-primary"
+          style={{ maxHeight: MAX_H }} />
         <input ref={fileInputRef} type="file" onChange={handleFileSelect} className="hidden" data-testid="file-input" />
         <button type="button" onClick={() => fileInputRef.current?.click()} disabled={sending || attaching}
-          className="p-2 text-text-tertiary hover:text-text hover:bg-surface-muted rounded-lg transition-colors"
+          className="shrink-0 h-[38px] w-[38px] flex items-center justify-center text-text-tertiary hover:text-text hover:bg-surface-muted rounded-lg transition-colors"
           title="Attach file" data-testid="attach-button">
           <Paperclip size={20} />
         </button>
         {sending
-          ? <button type="button" onClick={onCancel} className="px-4 h-[38px] bg-error text-primary-fg rounded-xl hover:opacity-90">Stop</button>
-          : <button type="submit" className="px-4 h-[38px] bg-primary text-primary-fg rounded-xl hover:bg-primary-hover">Send</button>}
+          ? <button type="button" onClick={onCancel} className="shrink-0 px-4 h-[38px] bg-error text-primary-fg rounded-xl hover:opacity-90">Stop</button>
+          : <button type="submit" className="shrink-0 px-4 h-[38px] bg-primary text-primary-fg rounded-xl hover:bg-primary-hover">Send</button>}
       </div>
+      {attachment
+        ? (
+          <div className="text-[11px] text-text-tertiary mt-1 px-1 flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 bg-surface-muted px-2 py-1 rounded">
+              {attachment.name}
+              <button type="button" onClick={() => {
+                clearAttachment().catch(err => console.error('clear failed:', err));
+                setAttachment(null);
+              }} disabled={sending} className="p-0 text-text-tertiary hover:text-text">
+                <X size={14} />
+              </button>
+            </span>
+          </div>
+        )
+        : <div className="text-[11px] text-text-tertiary mt-1 px-1">Enter to send · Shift+Enter for newline</div>}
     </form>
   );
 }
