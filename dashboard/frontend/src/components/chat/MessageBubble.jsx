@@ -5,6 +5,7 @@ import rehypeHighlight from 'rehype-highlight';
 import { Copy, Check, Brain, ChevronRight } from 'lucide-react';
 import IconButton from '../ui/IconButton';
 import ToolTrace from './ToolTrace';
+import ErrorBubble from './ErrorBubble';
 import { narrate } from './narration';
 
 const LABEL = { user: 'You', error: 'Error', agent: 'Assistant' };
@@ -62,6 +63,8 @@ export default function MessageBubble({ role, text, toolTrace, reasoning, isLast
   };
 
   const showWaiting = !plain && isLast && sending && !text;
+
+  if (role === 'error') return <ErrorBubble text={text} onRetry={onRetry} />;
 
   return (
     <div className={`group ${role === 'user' ? 'text-right' : 'text-left'}`}>
