@@ -134,6 +134,7 @@ export function useSession() {
       touched.current = true;
       queue.current = [];
       if (ctrl.current) ctrl.current.abort();
+      _revokeUrls();   // switched-away bubble attachments are frontend-only + never rehydrated
       const r = await api.activateSession(id);
       _applyPayload(r);
       await refreshSessions();
@@ -145,6 +146,7 @@ export function useSession() {
     touched.current = true;
     queue.current = [];
     if (ctrl.current) ctrl.current.abort();
+    _revokeUrls();
     const r = await api.createSession();
     _applyPayload(r);
     setTranscript([{ role: 'agent', text: "Blank canvas. Describe the bot you want — e.g. \"make me a Debt Collector talkbot\"." }]);
