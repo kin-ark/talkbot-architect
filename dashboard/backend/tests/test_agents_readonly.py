@@ -1,6 +1,6 @@
 """Tests for agents.py read-only wrappers (Task 7).
 
-Uses the real export file at repo-root/speech2572824560161596380.unpacked.json.
+Uses the committed synthetic fixture tests/fixtures/sample_export.json.
 """
 from __future__ import annotations
 
