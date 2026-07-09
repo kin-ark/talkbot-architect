@@ -41,15 +41,12 @@ _BUILTIN: list[CatalogEntry] = [
                  "claude-sonnet-5", None, "Claude"),
     CatalogEntry("claude-haiku-4-5", "Claude Haiku 4.5", "anthropic",
                  "claude-haiku-4-5-20251001", None, "Claude"),
-    CatalogEntry("deepseek-chat", "DeepSeek Chat", "anthropic",
-                 "deepseek-chat", "https://api.deepseek.com/anthropic",
-                 "DeepSeek"),
-    CatalogEntry("deepseek-reasoner", "DeepSeek Reasoner", "anthropic",
-                 "deepseek-reasoner", "https://api.deepseek.com/anthropic",
-                 "DeepSeek"),
 ]
 
 _BUILTIN_DEFAULT = "claude-opus-4-8"
+
+CUSTOM_MODEL_ID = "__custom__"
+PROVIDERS = ["anthropic", "openai", "openai-compatible"]
 
 
 def _coerce_entries(raw) -> list[CatalogEntry]:

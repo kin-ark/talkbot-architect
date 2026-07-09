@@ -3,19 +3,20 @@ import json
 import pytest
 
 
-def test_builtin_catalog_has_starter_entries():
+def test_builtin_catalog_is_claude_defaults_only():
     import models_catalog as mc
-    entries = mc.load_catalog()
-    ids = {e.id for e in entries}
-    assert {"claude-opus-4-8", "claude-sonnet-5", "claude-haiku-4-5",
-            "deepseek-chat", "deepseek-reasoner"} <= ids
-    ds = mc.entry_by_id("deepseek-chat")
-    assert ds.provider == "anthropic"
-    assert ds.model == "deepseek-chat"
-    assert ds.base_url == "https://api.deepseek.com/anthropic"
-    assert ds.group == "DeepSeek"
-    opus = mc.entry_by_id("claude-opus-4-8")
-    assert opus.base_url is None and opus.model == "claude-opus-4-8"
+    ids = {e.id for e in mc.load_catalog()}
+    assert {"claude-opus-4-8", "claude-sonnet-5", "claude-haiku-4-5"} <= ids
+    assert "deepseek-chat" not in ids and "deepseek-reasoner" not in ids  # now via Custom
+    for e in mc.load_catalog():
+        assert e.provider == "anthropic" and e.base_url is None
+
+
+def test_custom_sentinel_and_providers_exported():
+    import models_catalog as mc
+    assert mc.CUSTOM_MODEL_ID == "__custom__"
+    assert mc.entry_by_id(mc.CUSTOM_MODEL_ID) is None       # sentinel is NOT a catalog entry
+    assert mc.PROVIDERS == ["anthropic", "openai", "openai-compatible"]
 
 
 def test_default_entry_id_is_a_real_entry():
@@ -46,7 +47,7 @@ def test_malformed_env_json_falls_back_to_builtin(monkeypatch):
 
 def test_default_model_id_env_override(monkeypatch):
     import models_catalog as mc
-    monkeypatch.setenv("LLM_DEFAULT_MODEL_ID", "deepseek-chat")
-    assert mc.default_entry_id() == "deepseek-chat"
+    monkeypatch.setenv("LLM_DEFAULT_MODEL_ID", "claude-sonnet-5")
+    assert mc.default_entry_id() == "claude-sonnet-5"
     monkeypatch.setenv("LLM_DEFAULT_MODEL_ID", "does-not-exist")
     assert mc.entry_by_id(mc.default_entry_id()) is not None   # bad value ignored
