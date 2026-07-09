@@ -225,20 +225,28 @@ def _parse_or_400(content: bytes) -> dict:
 
 
 def _resolve_model(cfg) -> tuple[str, str, str | None]:
-    """Return (provider, model, base_url) from the picked catalog entry.
+    """Return (provider, model, base_url).
 
-    The model is ALWAYS an explicit catalog value — never the LLM_MODEL env
-    default (the original DeepSeek-got-Opus bug). Falls back to the catalog
-    default entry when the client has not picked one.
+    Custom (model_id == CUSTOM_MODEL_ID): the user-typed provider/model + base_url.
+    Otherwise: the picked catalog entry, with the user's base_url overriding the
+    entry's default. The model is ALWAYS explicit — never the LLM_MODEL env
+    default (the DeepSeek-got-Opus bug).
     """
-    entry = models_catalog.entry_by_id(cfg.model_id)
-    if entry is None and cfg.model_id:
-        raise LLMConfigError(
-            f"configured model '{cfg.model_id}' is not in the catalog; "
-            f"pick one in Settings")
-    if entry is None:
-        entry = models_catalog.entry_by_id(models_catalog.default_entry_id())
-    return entry.provider, entry.model, entry.base_url
+    if cfg.model_id == models_catalog.CUSTOM_MODEL_ID:
+        provider = cfg.provider or "anthropic"
+        model = cfg.model
+        entry_base = None
+    else:
+        entry = models_catalog.entry_by_id(cfg.model_id)
+        if entry is None and cfg.model_id:
+            raise LLMConfigError(
+                f"configured model '{cfg.model_id}' is not in the catalog; "
+                f"pick one in Settings")
+        if entry is None:
+            entry = models_catalog.entry_by_id(models_catalog.default_entry_id())
+        provider, model, entry_base = entry.provider, entry.model, entry.base_url
+    base_url = cfg.base_url or entry_base
+    return provider, model, base_url
 
 
 def get_client(cid: str = Depends(client_id)) -> LLMClient:
@@ -354,6 +362,8 @@ async def list_models():
         "models": [{"id": e.id, "label": e.label, "provider": e.provider,
                     "base_url": e.base_url, "group": e.group} for e in cat],
         "default": models_catalog.default_entry_id(),
+        "custom_id": models_catalog.CUSTOM_MODEL_ID,
+        "providers": models_catalog.PROVIDERS,
     }
 
 
