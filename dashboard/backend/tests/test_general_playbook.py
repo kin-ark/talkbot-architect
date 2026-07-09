@@ -25,3 +25,12 @@ def test_get_playbook_known_vertical_still_works():
     r = agents.get_playbook("debt_collection")
     assert r["found"] is True and r["playbook"]
     assert r.get("general")  # general is also always present
+
+
+def test_general_playbook_includes_disposition_tags():
+    """General playbook documents disposition tags for call outcomes."""
+    txt = playbooks.get_playbook("general")
+    txt_lower = txt.lower()
+    assert "disposition" in txt_lower
+    assert "tags:" in txt_lower
+    assert "category" in txt_lower

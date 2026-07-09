@@ -55,6 +55,21 @@ Each component must end in a **terminal node** (exit or transfer). All talk node
 - **Rotation variants** (`/`-separated text in a node) are essential for sounding human. Always author 2-3 variants for talk nodes.
 - **IDN-only:** The engine currently supports Indonesian (`node_language: "3"`) exclusively. Other languages are deferred.
 
+## Disposition Tags for Call Outcomes
+
+Track call outcomes (e.g., PTP, Refused, Wrong Number, Already Paid) by tagging terminal and branch nodes with **disposition tags**. Declare a `Disposition` tag category and its values at the manifest level; then tag each closing node with the appropriate outcome:
+
+```yaml
+tags:
+  - name: Disposition
+    values: [PTP, Refused, WrongNumber, AlreadyPaid]
+
+# Tag a closing node with the outcome it represents:
+  - {id: close_pos, type: exit, prompt: "Thank you for calling.", tags: [{category: Disposition, values: [PTP]}]}
+```
+
+Declare the category once at top level, then tag each terminal or branch node with its outcome. Both `scaffold_bot` (typed `tags` parameter) and `build` (manifest YAML) support disposition tags.
+
 ## Common Gotchas
 
 - **Missing Exit = import failure.** `WIZ107` warns, `--deploy` gate blocks.
