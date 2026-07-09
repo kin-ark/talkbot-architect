@@ -105,6 +105,13 @@ class OpenAIClient(LLMClient):
                                             "function": {"name": c.name,
                                                          "arguments": json.dumps(c.arguments)}}
                                            for c in m.tool_calls]})
+            elif m.role == "user" and m.images:
+                parts = [{"type": "image_url",
+                          "image_url": {"url": f"data:{im['media_type']};base64,{im['data']}"}}
+                         for im in m.images]
+                if m.content:
+                    parts.append({"type": "text", "text": m.content})
+                out.append({"role": "user", "content": parts})
             else:
                 out.append({"role": m.role, "content": m.content or ""})
         return out

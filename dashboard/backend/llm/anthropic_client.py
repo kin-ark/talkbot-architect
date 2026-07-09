@@ -161,6 +161,13 @@ class AnthropicClient(LLMClient):
                            + ([{"type": "text", "text": m.content}] if m.content else [])
                            + tool_use)
                 out.append({"role": "assistant", "content": content})
+            elif m.role == "user" and m.images:
+                parts = [{"type": "image",
+                          "source": {"type": "base64", "media_type": im["media_type"],
+                                     "data": im["data"]}} for im in m.images]
+                if m.content:
+                    parts.append({"type": "text", "text": m.content})
+                out.append({"role": "user", "content": parts})
             else:
                 out.append({"role": m.role, "content": m.content or ""})
             i += 1

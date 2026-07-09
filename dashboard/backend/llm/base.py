@@ -35,6 +35,7 @@ class Message:
     tool_calls: list[ToolCall] = field(default_factory=list)
     tool_call_id: str | None = None   # set when role == "tool"
     thinking_blocks: list[dict] = field(default_factory=list)
+    images: list[dict] = field(default_factory=list)   # each {"media_type", "data"(base64)}
 
     def to_dict(self) -> dict:
         return {
@@ -43,6 +44,7 @@ class Message:
             "tool_calls": [tc.to_dict() for tc in self.tool_calls],
             "tool_call_id": self.tool_call_id,
             "thinking_blocks": self.thinking_blocks,
+            "images": self.images,
         }
 
     @classmethod
@@ -53,6 +55,7 @@ class Message:
             tool_calls=[ToolCall.from_dict(tc) for tc in d.get("tool_calls", [])],
             tool_call_id=d.get("tool_call_id"),
             thinking_blocks=d.get("thinking_blocks", []),
+            images=d.get("images", []),
         )
 
 
