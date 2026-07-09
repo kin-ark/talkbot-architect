@@ -25,6 +25,7 @@ export function useSession() {
   const turnSeq = useRef(0);
   const touched = useRef(false);
   const lastSent = useRef(null);
+  const urlsRef = useRef(new Set());
 
   const _applyPayload = useCallback((r) => {
     setSummary(r.summary || null);
@@ -75,6 +76,10 @@ export function useSession() {
     }).catch(() => { if (!cancelled) refreshSessions(); });
     return () => { cancelled = true; };
   }, [refreshSessions, refreshIntents]);
+
+  useEffect(() => () => { urlsRef.current.forEach((u) => URL.revokeObjectURL(u)); }, []);
+
+  const _revokeUrls = () => { urlsRef.current.forEach((u) => URL.revokeObjectURL(u)); urlsRef.current.clear(); };
 
   const errText = (e) =>
     e?.response?.data?.detail
@@ -160,6 +165,7 @@ export function useSession() {
         return;
       } else if (id === activeSessionId && !r?.active) {
         // deleted the only session → blank landing
+        _revokeUrls();
         setSummary(null); setFindings([]); setTranscript([]); setProposal(null);
         setCanUndo(false); setCanRedo(false); setUsage(null); setActiveSessionId(null);
       }
@@ -212,10 +218,16 @@ export function useSession() {
     }
   }, [refreshSessions]);
 
-  const send = useCallback(async (message) => {
+  const send = useCallback(async (arg) => {
+    const payload = typeof arg === 'string' ? { text: arg } : (arg || {});
+    const message = payload.text || '';
+    const images = payload.images || [];
+    const file = payload.attachment || null;
     touched.current = true;
     lastSent.current = message;
-    setTranscript((t) => [...t, { role: 'user', text: message }]);
+    setTranscript((t) => [...t, { role: 'user', text: message, images, file }]);
+    images.forEach((im) => im?.url && urlsRef.current.add(im.url));
+    if (file?.url) urlsRef.current.add(file.url);
     queue.current.push(message);
     await drain();
   }, [drain]);
@@ -290,6 +302,7 @@ export function useSession() {
     queue.current = [];
     if (ctrl.current) ctrl.current.abort();
     try { await api.clearSession(); } catch { /* best-effort */ }
+    _revokeUrls();
     setSummary(null); setFindings([]); setTranscript([]); setProposal(null);
     setCanUndo(false); setCanRedo(false); setUsage(null); setBotName(null); setActiveSessionId(null);
     setIsComponent(false); setComponentWarnings([]);
@@ -303,6 +316,7 @@ export function useSession() {
   const startNew = useCallback(() => {
     queue.current = [];
     if (ctrl.current) ctrl.current.abort();
+    _revokeUrls();
     setSummary(null); setFindings([]); setTranscript([]); setProposal(null);
     setCanUndo(false); setCanRedo(false); setBotName(null);
     setIsComponent(false); setComponentWarnings([]);

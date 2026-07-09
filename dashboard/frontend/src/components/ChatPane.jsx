@@ -65,7 +65,7 @@ export default function ChatPane({ transcript, proposal, sending, onSend, onRetr
   const [input, setInput] = useState('');
   const { scrollRef, onScroll, atBottom, scrollToBottom } = useChatScroll(transcript);
 
-  const submit = () => { if (!input.trim()) return; onSend(input.trim()); setInput(''); };
+  const submit = (payload) => { onSend(payload); setInput(''); };
 
   const slashMatches = input.startsWith('/')
     ? SLASH.filter((c) => c.cmd.startsWith(input.split(' ')[0].toLowerCase()))

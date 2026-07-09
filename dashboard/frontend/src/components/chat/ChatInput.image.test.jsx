@@ -30,4 +30,32 @@ describe('ChatInput image paste', () => {
     render(<ChatInput {...base} canSendImages={false} />);
     expect(screen.getByTestId('no-vision-hint')).toBeTruthy();
   });
+
+  it('submits a payload with text + images', async () => {
+    const { attachFile } = await import('../../api');
+    attachFile.mockResolvedValue({ name: 'p.png', kind: 'image', count: 1 });
+    const onSubmit = vi.fn();
+    render(<ChatInput {...base} value="hello" onSubmit={onSubmit} />);
+    const ta = screen.getByPlaceholderText(/ask about/i);
+    const file = new File([new Uint8Array([1])], 'p.png', { type: 'image/png' });
+    fireEvent.paste(ta, { clipboardData: { items: [{ kind: 'file', type: 'image/png', getAsFile: () => file }], files: [file] } });
+    await screen.findByTestId('image-chip');
+    fireEvent.submit(screen.getByTestId('chat-form'));
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({
+      text: 'hello', images: expect.arrayContaining([expect.objectContaining({ name: 'p.png' })]),
+    }));
+  });
+
+  it('allows image-only submit (no text)', async () => {
+    const { attachFile } = await import('../../api');
+    attachFile.mockResolvedValue({ name: 'p.png', kind: 'image', count: 1 });
+    const onSubmit = vi.fn();
+    render(<ChatInput {...base} value="" onSubmit={onSubmit} />);
+    const ta = screen.getByPlaceholderText(/ask about/i);
+    const file = new File([new Uint8Array([1])], 'p.png', { type: 'image/png' });
+    fireEvent.paste(ta, { clipboardData: { items: [{ kind: 'file', type: 'image/png', getAsFile: () => file }], files: [file] } });
+    await screen.findByTestId('image-chip');
+    fireEvent.submit(screen.getByTestId('chat-form'));
+    expect(onSubmit).toHaveBeenCalled();
+  });
 });

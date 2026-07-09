@@ -26,13 +26,11 @@ export default function ChatInput({ value, onChange, onSubmit, sending, onCancel
   useLayoutEffect(resize, [value]);
 
   const trySubmit = () => {
-    // Allow an image-only message (no text) — the backend + both LLM clients
-    // support images with no text block.
-    if ((!value.trim() && images.length === 0) || sending) return;
-    onSubmit();
+    // Allow text-only, image-only, or file-only.
+    if ((!value.trim() && images.length === 0 && !attachment) || sending) return;
+    onSubmit({ text: value, images, attachment });
     setAttachment(null);
-    images.forEach((im) => URL.revokeObjectURL(im.url));
-    setImages([]);
+    setImages([]);   // clear chips; ownership of the object URLs transfers to the sent bubble — do NOT revoke here
   };
 
   const uploadImage = async (file) => {
