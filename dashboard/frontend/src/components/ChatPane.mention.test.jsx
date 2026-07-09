@@ -14,7 +14,9 @@ describe('ChatPane @-mention', () => {
     render(<ChatPane {...base} summary={SUMMARY} />);
     fireEvent.change(screen.getByPlaceholderText(/ask about/i), { target: { value: 'edit @' } });
     expect(screen.getByTestId('mention-menu')).toBeInTheDocument();
-    expect(screen.getByText(/Greeting/)).toBeInTheDocument();
+    // richer mention rows render the component label AND "in Greeting" on its
+    // node row, so /Greeting/ now matches more than once.
+    expect(screen.getAllByText(/Greeting/).length).toBeGreaterThan(0);
     expect(screen.getByText(/AskName/)).toBeInTheDocument();
   });
   it('filters by the text after @', () => {
