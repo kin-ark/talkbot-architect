@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
-import { Copy, Check, Brain, ChevronRight } from 'lucide-react';
+import { Copy, Check, Brain, ChevronRight, Paperclip } from 'lucide-react';
 import IconButton from '../ui/IconButton';
 import ToolTrace from './ToolTrace';
 import ErrorBubble from './ErrorBubble';
@@ -41,7 +41,7 @@ function WaitingHeader({ toolTrace, hasText }) {
   );
 }
 
-export default function MessageBubble({ role, text, toolTrace, reasoning, isLast, sending, mdComponents, onRetry, onSend }) {
+export default function MessageBubble({ role, text, toolTrace, reasoning, isLast, sending, mdComponents, onRetry, onSend, images, file }) {
   const [copied, setCopied] = useState(false);
   const [open, setOpen] = useState(false);
   const userToggled = useRef(false);
@@ -92,6 +92,22 @@ export default function MessageBubble({ role, text, toolTrace, reasoning, isLast
           : <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]} components={mdComponents}>{text || ''}</ReactMarkdown>}
         {!plain && isLast && sending && text && (
           <span data-testid="stream-caret" className="inline-block w-1.5 animate-pulse">▍</span>
+        )}
+        {images?.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-2">
+            {images.map((im, i) => (
+              <a key={i} href={im.url} target="_blank" rel="noopener noreferrer" title={im.name}>
+                <img src={im.url} alt={im.name}
+                     className="h-24 w-24 object-cover rounded border border-border" />
+              </a>
+            ))}
+          </div>
+        )}
+        {file && (
+          <a href={file.url} target="_blank" rel="noopener noreferrer" download={file.name}
+             className="mt-2 inline-flex items-center gap-1.5 text-xs underline decoration-dotted">
+            <Paperclip size={12} /> {file.name}
+          </a>
         )}
       </div>
       {!plain && text && (

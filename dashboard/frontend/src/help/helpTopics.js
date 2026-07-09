@@ -253,7 +253,7 @@ Orphan nodes (referenced but not defined in this export — usually links to WIZ
 - **@-mention** — type \`@\` to reference a component or node by name.
 - **Inline links** — \`#node:<id>\` in a reply is clickable and selects that node in the graph.
 - **Suggestions** — chips above the input offer sensible next steps.
-- **Attach or paste images** — click the paperclip for multi-select or paste with Ctrl+V. Pick a Claude vision model in Settings to have the agent read them — multiple images per message.
+- **Attach or paste images** — click the paperclip for multi-select or paste with Ctrl+V. Pick a Claude vision model in Settings to have the agent read them — multiple images per message. Images and files you attach appear in your sent message — click a thumbnail or file to open it in a new tab.
 - **Retry / Regenerate** — re-run the last message if a turn fails, or to get a different result.
 - **Cancel** — stop a turn that's still running.
 - **Be specific** — name the component or node you mean ("add an exit to the *Greeting* canvas"). The agent reads the schema and facts first, so concrete asks get cleaner proposals.`,

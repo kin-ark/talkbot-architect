@@ -15,6 +15,6 @@ describe('ChatPane controls', () => {
   it('renders an error bubble', () => {
     render(<ChatPane transcript={[{ role: 'error', text: 'boom happened' }]} proposal={null}
       sending={false} onSend={() => {}} onApply={() => {}} onReject={() => {}} onCancel={() => {}} />);
-    expect(screen.getByText('boom happened')).toBeInTheDocument();
+    expect(screen.getByText('Something went wrong')).toBeInTheDocument();
   });
 });
