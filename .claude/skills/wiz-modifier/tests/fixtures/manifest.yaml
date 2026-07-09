@@ -1,0 +1,16 @@
+name: Fixture Component
+branch: dev
+language: IDN
+canvases:
+  - name: Greeting
+    nodes:
+      - id: start
+        type: talk
+        prompt: "Hello, this is a test."
+      - id: bye
+        type: exit
+        prompt: "Goodbye."
+    edges:
+      - {from: start, branch: Unclassified, to: bye}
+custom_variables: []
+custom_intents: []

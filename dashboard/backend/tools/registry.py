@@ -54,7 +54,9 @@ _SPECS = [
              "config.variable to config.value. goto_kb is a terminal jump into a Knowledge Base "
              "(config.target = a KB name). "
              "Optionally declare knowledge_bases (each has a name, triggering intents list, "
-             "answer(s), and optional multi_round = a canvas name to delegate multi-turn Q&A into).",
+             "answer(s), and optional multi_round = a canvas name to delegate multi-turn Q&A into). "
+             "Optionally declare disposition tags (top-level categories: [{name, values}]) and tag nodes "
+             "(per-node: [{category, values}]).",
              {"type": "object",
               "properties": {
                   "name": {"type": "string"},
@@ -77,6 +79,10 @@ _SPECS = [
                           "answers": {"type": "array", "items": {"type": "string"}},
                           "multi_round": {"type": "string"}},
                       "required": ["name", "intents"]}},
+                  "tags": {"type": "array", "items": {"type": "object",
+                      "properties": {"name": {"type": "string"},
+                                     "values": {"type": "array", "items": {"type": "string"}}},
+                      "required": ["name", "values"]}},
                   "canvases": {"type": "array", "items": {
                       "type": "object", "properties": {
                           "name": {"type": "string"},
@@ -104,6 +110,10 @@ _SPECS = [
                                               "value_var": {"type": "string"},
                                               "to": {"type": "string"}},
                                           "required": ["name", "to"]}}}}},
+                                  "tags": {"type": "array", "items": {"type": "object",
+                                      "properties": {"category": {"type": "string"},
+                                                     "values": {"type": "array", "items": {"type": "string"}}},
+                                      "required": ["category", "values"]}},
                               "required": ["id", "prompt"]}},
                           "edges": {"type": "array", "items": {
                               "type": "object", "properties": {
