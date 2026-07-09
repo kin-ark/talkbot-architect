@@ -1,0 +1,157 @@
+name: Sample Support Bot
+branch: dev
+language: IDN
+
+custom_intents:
+  - name: UserProblemResolved
+    language: IDN
+    keywords:
+      - resolved
+      - fixed
+      - working
+      - thanks
+    user_responses:
+      - great
+      - problem solved
+      - all set
+  - name: UserNeedsMoreHelp
+    language: IDN
+    keywords:
+      - help
+      - assistance
+      - more
+      - support
+      - issue
+    user_responses:
+      - still having problem
+      - need more help
+      - doesn't work yet
+  - name: UserConfused
+    language: IDN
+    # Intentionally untrained (no keywords, no user_responses) to trigger WIZ305 warning
+    keywords: []
+    user_responses: []
+
+custom_variables:
+  - name: IssueCategory
+  - name: ResolutionTime
+
+tags:
+  - name: Disposition
+    values:
+      - Resolved
+      - Unresolved
+      - Escalated
+
+canvases:
+  - name: Greeting
+    nodes:
+      - id: greeting_entry
+        type: talk
+        prompt: Hi there! Welcome to Sample Support Bot. How can I help you today?
+      - id: greeting_exit
+        type: exit
+        prompt: Thank you for using Sample Support Bot!
+    edges:
+      - from: greeting_entry
+        branch: Positive
+        to: greeting_exit
+      - from: greeting_entry
+        branch: Negative
+        to: greeting_exit
+      - from: greeting_entry
+        branch: Unclassified
+        to: greeting_exit
+
+  - name: TechSupport
+    nodes:
+      - id: tech_entry
+        type: talk
+        prompt: I can help you with technical issues. Please describe what's happening.
+      - id: tech_exit
+        type: exit
+        prompt: Thank you for contacting technical support. Goodbye!
+        tags:
+          - category: Disposition
+            values:
+              - Resolved
+    edges:
+      - from: tech_entry
+        branch: Positive
+        to: tech_exit
+      - from: tech_entry
+        branch: Negative
+        to: tech_exit
+      - from: tech_entry
+        branch: Unclassified
+        to: tech_exit
+
+  - name: Billing
+    nodes:
+      - id: billing_entry
+        type: talk
+        prompt: I can help with billing questions. What would you like to know?
+      - id: billing_kb
+        type: goto_kb
+        config:
+          target: BillingFAQ
+      - id: billing_exit
+        type: exit
+        prompt: Thank you for your inquiry!
+    edges:
+      - from: billing_entry
+        branch: Positive
+        to: billing_kb
+      - from: billing_entry
+        branch: Negative
+        to: billing_exit
+      - from: billing_entry
+        branch: Unclassified
+        to: billing_exit
+
+  - name: FAQResolution
+    nodes:
+      - id: faq_entry
+        type: talk
+        prompt: Let me walk you through this. What specific question do you have?
+      - id: faq_answer
+        type: talk
+        prompt: Your account is active and in good standing. You can manage your billing online.
+      - id: faq_exit
+        type: exit
+        prompt: Is there anything else I can help with today?
+    edges:
+      - from: faq_entry
+        branch: Positive
+        to: faq_answer
+      - from: faq_entry
+        branch: Negative
+        to: faq_exit
+      - from: faq_entry
+        branch: Unclassified
+        to: faq_exit
+      - from: faq_answer
+        branch: Positive
+        to: faq_exit
+      - from: faq_answer
+        branch: Negative
+        to: faq_exit
+      - from: faq_answer
+        branch: Unclassified
+        to: faq_exit
+
+knowledge_bases:
+  - name: BillingFAQ
+    intents:
+      - UserNeedsMoreHelp
+    answers:
+      - We offer flexible billing options. Your account is active and in good standing.
+    multi_round: FAQResolution
+
+hot_words:
+  - urgent
+  - help
+  - support
+  - issue
+  - problem
+  - error
