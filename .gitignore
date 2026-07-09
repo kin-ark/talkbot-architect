@@ -31,3 +31,7 @@ dashboard/backend/.sessions/
 
 # CLAUDE.md — local project guidance, kept on disk only (not tracked)
 CLAUDE.md
+
+# Dashboard runtime output — never track
+dashboard/backend/backups/
+dashboard/backend/logs/
