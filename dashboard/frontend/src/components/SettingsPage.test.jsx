@@ -12,6 +12,8 @@ beforeEach(() => {
       { id: 'gpt-4o', label: 'GPT-4o', provider: 'openai', base_url: null, group: 'OpenAI' },
     ],
     default: 'claude-opus-4-8',
+    custom_id: '__custom__',
+    providers: ['anthropic', 'openai', 'openai-compatible'],
   });
   api.getConfig.mockResolvedValue({ model_id: 'claude-opus-4-8', key_set: true, source: 'env', show_reasoning: false });
   api.updateConfig.mockResolvedValue({ model_id: 'gpt-4o', model: 'gpt-4o', key_set: true, source: 'override', show_reasoning: true });
@@ -49,5 +51,39 @@ describe('SettingsPage', () => {
     fireEvent.click(box);
     fireEvent.click(screen.getByText('Save'));
     await waitFor(() => expect(api.updateConfig).toHaveBeenCalledWith(expect.objectContaining({ show_reasoning: expect.any(Boolean) })));
+  });
+
+  it('reveals provider + model fields for Custom and saves them', async () => {
+    const { getModels, getConfig, updateConfig } = await import('../api');
+    getModels.mockResolvedValue({
+      models: [{ id: 'claude-opus-4-8', label: 'Claude Opus 4.8', provider: 'anthropic', base_url: null, group: 'Claude' }],
+      default: 'claude-opus-4-8', custom_id: '__custom__',
+      providers: ['anthropic', 'openai', 'openai-compatible'],
+    });
+    getConfig.mockResolvedValue({ model_id: 'claude-opus-4-8', key_set: false, source: 'env', show_reasoning: true });
+    updateConfig.mockResolvedValue({ model_id: '__custom__', model: 'deepseek-chat', key_set: true, source: 'override', show_reasoning: true });
+    render(<SettingsPage />);
+    const select = await screen.findByTestId('cfg-model-select');
+    fireEvent.change(select, { target: { value: '__custom__' } });
+    // custom fields appear
+    fireEvent.change(screen.getByTestId('cfg-provider-select'), { target: { value: 'openai-compatible' } });
+    fireEvent.change(screen.getByTestId('cfg-custom-model'), { target: { value: 'deepseek-chat' } });
+    fireEvent.change(screen.getByTestId('cfg-baseurl'), { target: { value: 'https://api.deepseek.com/anthropic' } });
+    fireEvent.click(screen.getByText('Save'));
+    await waitFor(() => expect(updateConfig).toHaveBeenCalledWith(
+      expect.objectContaining({ model_id: '__custom__', provider: 'openai-compatible', model: 'deepseek-chat', base_url: 'https://api.deepseek.com/anthropic' })));
+  });
+
+  it('shows base_url field for a Claude default (proxy) without provider/model inputs', async () => {
+    const { getModels, getConfig } = await import('../api');
+    getModels.mockResolvedValue({
+      models: [{ id: 'claude-opus-4-8', label: 'Claude Opus 4.8', provider: 'anthropic', base_url: null, group: 'Claude' }],
+      default: 'claude-opus-4-8', custom_id: '__custom__', providers: ['anthropic', 'openai', 'openai-compatible'],
+    });
+    getConfig.mockResolvedValue({ model_id: 'claude-opus-4-8', key_set: false, source: 'env', show_reasoning: true });
+    render(<SettingsPage />);
+    await screen.findByTestId('cfg-model-select');
+    expect(screen.getByTestId('cfg-baseurl')).toBeTruthy();
+    expect(screen.queryByTestId('cfg-custom-model')).toBeNull();   // hidden unless Custom
   });
 });
