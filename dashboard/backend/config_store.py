@@ -18,6 +18,7 @@ class RuntimeConfig:
     api_key: str | None = None  # in-memory only; never persisted/logged/returned
     show_reasoning: bool = True
     model_id: str | None = None
+    custom_vision: bool = False
 
 
 _CONFIGS: dict[str, RuntimeConfig] = {}

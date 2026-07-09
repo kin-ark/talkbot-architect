@@ -101,7 +101,8 @@ def run_turn_stream(client, session, user_message: str) -> Iterator[dict]:
     from pathlib import Path as _P
 
     mark = len(session.transcript)
-    session.transcript.append(Message(role="user", content=user_message))
+    user_turn = Message(role="user", content=user_message, images=list(session.images))
+    session.transcript.append(user_turn)
     messages = [Message(role="system", content=_SYSTEM), *session.transcript]
     if session.attachment:
         messages.append(Message(role="user", content=_attachment_note(session.attachment)))
@@ -119,6 +120,7 @@ def run_turn_stream(client, session, user_message: str) -> Iterator[dict]:
         if session.attachment:
             _P(session.attachment.get("path", "")).unlink(missing_ok=True) if session.attachment.get("path") else None
             session.attachment = None
+        session.images = []
 
     try:
         for _ in range(_MAX_TOOL_ITERS):

@@ -32,6 +32,7 @@ class CatalogEntry:
     model: str
     base_url: str | None
     group: str
+    vision: bool = True
 
 
 _BUILTIN: list[CatalogEntry] = [
@@ -60,6 +61,7 @@ def _coerce_entries(raw) -> list[CatalogEntry]:
             model=str(d["model"]),
             base_url=(d.get("base_url") or None),
             group=str(d.get("group", "Custom")),
+            vision=bool(d.get("vision", True)),
         ))
     return out
 

@@ -13,7 +13,7 @@ def test_models_endpoint_lists_catalog_no_secrets():
     assert {"claude-opus-4-8"} <= ids
     assert body["default"] in ids
     for m in body["models"]:
-        assert set(m) == {"id", "label", "provider", "base_url", "group"}
+        assert set(m) == {"id", "label", "provider", "base_url", "group", "vision"}
         assert "api_key" not in m and "model" not in m   # no secret / exact-model leak
 
 
@@ -101,6 +101,7 @@ def test_chat_audit_log_uses_resolved_model_not_env(monkeypatch):
 
     class _FakeSession:
         _stack = [object()]
+        images = []
 
         class _Lock:
             def __enter__(self):
@@ -155,7 +156,7 @@ def test_models_endpoint_exposes_custom_and_providers():
     assert body["custom_id"] == "__custom__"
     assert body["providers"] == ["anthropic", "openai", "openai-compatible"]
     for m in body["models"]:
-        assert set(m) == {"id", "label", "provider", "base_url", "group"}
+        assert set(m) == {"id", "label", "provider", "base_url", "group", "vision"}
         assert "api_key" not in m
 
 

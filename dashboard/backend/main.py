@@ -129,6 +129,7 @@ class ConfigUpdate(BaseModel):
     api_key: Optional[str] = None
     show_reasoning: Optional[bool] = None
     model_id: Optional[str] = None
+    custom_vision: Optional[bool] = None
 
 
 class RenameRequest(BaseModel):
@@ -271,6 +272,15 @@ def _resolve_model(cfg) -> tuple[str, str, str | None]:
     return provider, model, base_url
 
 
+def _model_is_vision(cfg) -> bool:
+    """Return True if the resolved model can process images."""
+    if cfg.model_id == models_catalog.CUSTOM_MODEL_ID:
+        return bool(cfg.custom_vision)
+    entry = models_catalog.entry_by_id(cfg.model_id) or \
+        models_catalog.entry_by_id(models_catalog.default_entry_id())
+    return bool(getattr(entry, "vision", False))
+
+
 def get_client(cid: str = Depends(client_id)) -> LLMClient:
     """Build an LLMClient from per-client config overrides + catalog."""
     cfg = config_store.config_for(cid)
@@ -302,6 +312,7 @@ def _config_response(cfg) -> dict:
         "key_set": effective_key_set(provider, cfg),
         "source": "override" if any_override(cfg) else "env",
         "show_reasoning": cfg.show_reasoning,
+        "custom_vision": cfg.custom_vision,
     }
 
 
@@ -363,6 +374,8 @@ async def put_config(update: ConfigUpdate, cid: str = Depends(client_id)):
         cfg.show_reasoning = update.show_reasoning
     if update.model_id is not None:
         cfg.model_id = update.model_id
+    if update.custom_vision is not None:
+        cfg.custom_vision = update.custom_vision
     return _config_response(cfg)
 
 
@@ -373,6 +386,7 @@ async def clear_config(cid: str = Depends(client_id)):
     cfg.provider = cfg.model = cfg.base_url = cfg.api_key = None
     cfg.model_id = None
     cfg.show_reasoning = True
+    cfg.custom_vision = False
     return _config_response(cfg)
 
 
@@ -382,7 +396,7 @@ async def list_models():
     cat = models_catalog.load_catalog()
     return {
         "models": [{"id": e.id, "label": e.label, "provider": e.provider,
-                    "base_url": e.base_url, "group": e.group} for e in cat],
+                    "base_url": e.base_url, "group": e.group, "vision": e.vision} for e in cat],
         "default": models_catalog.default_entry_id(),
         "custom_id": models_catalog.CUSTOM_MODEL_ID,
         "providers": models_catalog.PROVIDERS,
@@ -677,6 +691,10 @@ def chat(req: ChatRequest, s: Session = Depends(current_session),
     if not s._stack:
         raise HTTPException(status_code=503, detail="no session loaded")
     cfg = config_store.config_for(cid)
+    if s.images and not _model_is_vision(cfg):
+        s.images = []
+        raise HTTPException(status_code=400,
+            detail="the current model can't read images; pick a Claude vision model in Settings")
     # Log the model actually built/sent (catalog-resolved), not the raw cfg —
     # the new UI sends only model_id, so cfg.model is None and the old
     # `cfg.model or LLM_MODEL` would mislabel every turn as the env default.
@@ -703,6 +721,10 @@ def chat_stream(req: ChatRequest, s: Session = Depends(current_session),
     if not s._stack:
         raise HTTPException(status_code=503, detail="no session loaded")
     cfg = config_store.config_for(cid)
+    if s.images and not _model_is_vision(cfg):
+        s.images = []
+        raise HTTPException(status_code=400,
+            detail="the current model can't read images; pick a Claude vision model in Settings")
     # Catalog-resolved model for the audit log (see /chat note above).
     provider, model, _ = _resolve_model(cfg)
 

@@ -1,7 +1,5 @@
 import json
 
-import pytest
-
 
 def test_builtin_catalog_is_claude_defaults_only():
     import models_catalog as mc
@@ -33,7 +31,7 @@ def test_env_json_appends_and_overrides(monkeypatch):
          "model": "claude-opus-4-8", "base_url": None, "group": "Claude"},
     ]
     monkeypatch.setenv("LLM_MODELS_JSON", json.dumps(override))
-    entries = mc.load_catalog()
+    mc.load_catalog()
     assert mc.entry_by_id("my-model") is not None       # appended
     assert mc.entry_by_id("claude-opus-4-8").label == "Opus (renamed)"  # overridden by id
 
@@ -41,7 +39,7 @@ def test_env_json_appends_and_overrides(monkeypatch):
 def test_malformed_env_json_falls_back_to_builtin(monkeypatch):
     import models_catalog as mc
     monkeypatch.setenv("LLM_MODELS_JSON", "{not json")
-    entries = mc.load_catalog()          # must not raise
+    mc.load_catalog()          # must not raise
     assert mc.entry_by_id("claude-opus-4-8") is not None
 
 
@@ -51,3 +49,9 @@ def test_default_model_id_env_override(monkeypatch):
     assert mc.default_entry_id() == "claude-sonnet-5"
     monkeypatch.setenv("LLM_DEFAULT_MODEL_ID", "does-not-exist")
     assert mc.entry_by_id(mc.default_entry_id()) is not None   # bad value ignored
+
+
+def test_claude_entries_are_vision_capable():
+    import models_catalog as mc
+    for e in mc.load_catalog():
+        assert e.vision is True     # all built-ins are Claude vision models
