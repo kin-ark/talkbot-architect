@@ -32,7 +32,13 @@ def test_config_is_per_client(tmp_path, monkeypatch):
     # is deterministic on a machine with a populated .env (LLM_MODEL/LLM_PROVIDER).
     monkeypatch.delenv("LLM_MODEL", raising=False)
     monkeypatch.delenv("LLM_PROVIDER", raising=False)
+    import models_catalog
     with TestClient(main.app) as alice, TestClient(main.app) as bob:
-        alice.put("/config", json={"provider": "anthropic", "model": "claude-opus-4-8"})
-        assert bob.get("/config").json()["model"] is None
-        assert alice.get("/config").json()["model"] == "claude-opus-4-8"
+        alice.put("/config", json={"model_id": "deepseek-chat"})
+        # Bob's model_id should be the default, not Alice's
+        bob_config = bob.get("/config").json()
+        alice_config = alice.get("/config").json()
+        assert bob_config["model_id"] == models_catalog.default_entry_id()
+        assert alice_config["model_id"] == "deepseek-chat"
+        # They should have different models
+        assert bob_config["model"] != alice_config["model"]

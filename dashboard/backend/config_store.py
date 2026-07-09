@@ -17,6 +17,7 @@ class RuntimeConfig:
     base_url: str | None = None
     api_key: str | None = None  # in-memory only; never persisted/logged/returned
     show_reasoning: bool = True
+    model_id: str | None = None
 
 
 _CONFIGS: dict[str, RuntimeConfig] = {}
@@ -41,4 +42,4 @@ def effective_key_set(provider: str | None, cfg: RuntimeConfig) -> bool:
 
 
 def any_override(cfg: RuntimeConfig) -> bool:
-    return any([cfg.provider, cfg.model, cfg.base_url, cfg.api_key])
+    return any([cfg.provider, cfg.model, cfg.base_url, cfg.api_key, cfg.model_id])

@@ -50,21 +50,22 @@ def test_get_config_key_value_never_in_response(monkeypatch):
 # ---------------------------------------------------------------------------
 
 def test_put_config_sets_fields_and_returns_correct_shape():
-    """PUT /config updates provider/model/base_url and returns GET-shaped response."""
+    """PUT /config with model_id updates provider/model/base_url and returns GET-shaped response."""
+    import models_catalog
     payload = {
-        "provider": "openai",
-        "model": "gpt-4o",
-        "base_url": "http://lite",
+        "model_id": "deepseek-chat",
         "api_key": "sk-x",
     }
     r = http.put("/config", json=payload)
     assert r.status_code == 200
     body = r.json()
-    assert body["provider"] == "openai"
-    assert body["model"] == "gpt-4o"
-    assert body["base_url"] == "http://lite"
+    entry = models_catalog.entry_by_id("deepseek-chat")
+    assert body["provider"] == entry.provider
+    assert body["model"] == entry.model
+    assert body["base_url"] == entry.base_url
     assert body["key_set"] is True
     assert body["source"] == "override"
+    assert body["model_id"] == "deepseek-chat"
     # The key value must NEVER appear in the response
     assert "sk-x" not in r.text
     # Confirm the "api_key" field itself is absent (not just masked)
@@ -98,23 +99,24 @@ def test_put_config_key_value_never_in_response():
 # ---------------------------------------------------------------------------
 
 def test_get_config_after_put_shows_override(monkeypatch):
-    """GET /config after a PUT should reflect the overridden values."""
+    """GET /config after a PUT should reflect the catalog-resolved values."""
+    import models_catalog
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     http.put("/config", json={
-        "provider": "openai",
-        "model": "gpt-4o",
-        "base_url": "http://lite",
+        "model_id": "deepseek-chat",
         "api_key": "sk-x",
     })
     r = http.get("/config")
     assert r.status_code == 200
     body = r.json()
-    assert body["provider"] == "openai"
-    assert body["model"] == "gpt-4o"
-    assert body["base_url"] == "http://lite"
+    entry = models_catalog.entry_by_id("deepseek-chat")
+    assert body["provider"] == entry.provider
+    assert body["model"] == entry.model
+    assert body["base_url"] == entry.base_url
     assert body["key_set"] is True
     assert body["source"] == "override"
+    assert body["model_id"] == "deepseek-chat"
     assert "sk-x" not in r.text
 
 
@@ -142,7 +144,8 @@ def test_config_clear_resets_to_env(monkeypatch):
 # ---------------------------------------------------------------------------
 
 def test_get_client_uses_config_override(monkeypatch):
-    """get_client() should build client from config override when set."""
+    """get_client() should build client from catalog entry specified by model_id."""
+    import models_catalog
     captured = {}
 
     def fake_make_client(provider, api_key, model, base_url=None, thinking_budget=None):
@@ -158,9 +161,7 @@ def test_get_client_uses_config_override(monkeypatch):
 
     # Set config via API (using the shared http client's tbid)
     http.put("/config", json={
-        "provider": "openai",
-        "model": "gpt-4o",
-        "base_url": "http://lite",
+        "model_id": "deepseek-chat",
         "api_key": "sk-override",
     })
 
@@ -170,8 +171,9 @@ def test_get_client_uses_config_override(monkeypatch):
     # Directly invoke get_client with the cid (bypassing FastAPI dependency injection)
     client_obj = main.get_client(cid=tbid)
 
-    assert captured["provider"] == "openai"
-    assert captured["model"] == "gpt-4o"
-    assert captured["base_url"] == "http://lite"
+    entry = models_catalog.entry_by_id("deepseek-chat")
+    assert captured["provider"] == entry.provider
+    assert captured["model"] == entry.model
+    assert captured["base_url"] == entry.base_url
     assert captured["api_key"] == "sk-override"
     _ = client_obj  # used

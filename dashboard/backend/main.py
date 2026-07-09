@@ -24,6 +24,7 @@ from pydantic import BaseModel  # noqa: E402
 import agents  # noqa: E402
 import backup  # noqa: E402
 import config_store  # noqa: E402
+import models_catalog  # noqa: E402
 import samples  # noqa: E402
 import speechname  # noqa: E402
 from auth import PasswordGateMiddleware  # noqa: E402
@@ -116,6 +117,7 @@ class ConfigUpdate(BaseModel):
     base_url: Optional[str] = None
     api_key: Optional[str] = None
     show_reasoning: Optional[bool] = None
+    model_id: Optional[str] = None
 
 
 class RenameRequest(BaseModel):
@@ -222,12 +224,30 @@ def _parse_or_400(content: bytes) -> dict:
     return data
 
 
+def _resolve_model(cfg) -> tuple[str, str, str | None]:
+    """Return (provider, model, base_url) from the picked catalog entry.
+
+    The model is ALWAYS an explicit catalog value — never the LLM_MODEL env
+    default (the original DeepSeek-got-Opus bug). Falls back to the catalog
+    default entry when the client has not picked one.
+    """
+    entry = models_catalog.entry_by_id(cfg.model_id)
+    if entry is None and cfg.model_id:
+        raise LLMConfigError(
+            f"configured model '{cfg.model_id}' is not in the catalog; "
+            f"pick one in Settings")
+    if entry is None:
+        entry = models_catalog.entry_by_id(models_catalog.default_entry_id())
+    return entry.provider, entry.model, entry.base_url
+
+
 def get_client(cid: str = Depends(client_id)) -> LLMClient:
-    """Build an LLMClient from per-client config overrides + env fallbacks."""
+    """Build an LLMClient from per-client config overrides + catalog."""
     cfg = config_store.config_for(cid)
-    provider = cfg.provider or os.environ.get("LLM_PROVIDER")
-    model = cfg.model or os.environ.get("LLM_MODEL")
-    base_url = cfg.base_url
+    try:
+        provider, model, base_url = _resolve_model(cfg)
+    except LLMConfigError as e:
+        raise HTTPException(status_code=503, detail=str(e))
     api_key = cfg.api_key
     resolved = (provider or "anthropic").lower()
     thinking_budget = _THINKING_BUDGET if (cfg.show_reasoning and resolved == "anthropic") else None
@@ -240,15 +260,15 @@ def get_client(cid: str = Depends(client_id)) -> LLMClient:
 
 def _config_response(cfg) -> dict:
     """Build the /config response body. NEVER includes the api_key value."""
-    provider = cfg.provider or os.environ.get("LLM_PROVIDER")
-    model = cfg.model or os.environ.get("LLM_MODEL")
-    base_url = cfg.base_url or os.environ.get(
-        "ANTHROPIC_BASE_URL" if (provider or "anthropic").lower() == "anthropic" else "OPENAI_BASE_URL"
-    )
+    try:
+        provider, model, base_url = _resolve_model(cfg)
+    except LLMConfigError:
+        provider, model, base_url = None, None, None
     return {
         "provider": provider,
         "model": model,
         "base_url": base_url,
+        "model_id": cfg.model_id or models_catalog.default_entry_id(),
         "key_set": effective_key_set(provider, cfg),
         "source": "override" if any_override(cfg) else "env",
         "show_reasoning": cfg.show_reasoning,
@@ -311,6 +331,8 @@ async def put_config(update: ConfigUpdate, cid: str = Depends(client_id)):
         cfg.api_key = update.api_key
     if update.show_reasoning is not None:
         cfg.show_reasoning = update.show_reasoning
+    if update.model_id is not None:
+        cfg.model_id = update.model_id
     return _config_response(cfg)
 
 
@@ -319,8 +341,20 @@ async def clear_config(cid: str = Depends(client_id)):
     """Reset all CONFIG overrides — effective config reverts to env vars."""
     cfg = config_store.config_for(cid)
     cfg.provider = cfg.model = cfg.base_url = cfg.api_key = None
+    cfg.model_id = None
     cfg.show_reasoning = True
     return _config_response(cfg)
+
+
+@app.get("/models")
+async def list_models():
+    """List the curated model catalog for the Settings dropdown. No secrets."""
+    cat = models_catalog.load_catalog()
+    return {
+        "models": [{"id": e.id, "label": e.label, "provider": e.provider,
+                    "base_url": e.base_url, "group": e.group} for e in cat],
+        "default": models_catalog.default_entry_id(),
+    }
 
 
 @app.get("/export")
