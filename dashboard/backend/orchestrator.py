@@ -101,9 +101,16 @@ def run_turn_stream(client, session, user_message: str) -> Iterator[dict]:
     from pathlib import Path as _P
 
     mark = len(session.transcript)
-    user_turn = Message(role="user", content=user_message, images=list(session.images))
-    session.transcript.append(user_turn)
+    # Transcript keeps a CLEAN text-only user turn — images are one-turn and
+    # must NOT be persisted to disk, replayed on reload, or re-sent on later
+    # turns (spec: per-session in-memory, cleared after the turn).
+    session.transcript.append(Message(role="user", content=user_message))
     messages = [Message(role="system", content=_SYSTEM), *session.transcript]
+    if session.images:
+        # Attach images to THIS send's user message only (a copy, not the
+        # persisted transcript object) so the model sees them this turn.
+        messages[-1] = Message(role="user", content=user_message,
+                               images=list(session.images))
     if session.attachment:
         messages.append(Message(role="user", content=_attachment_note(session.attachment)))
     proposal: dict | None = None

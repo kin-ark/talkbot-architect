@@ -26,9 +26,12 @@ export default function ChatInput({ value, onChange, onSubmit, sending, onCancel
   useLayoutEffect(resize, [value]);
 
   const trySubmit = () => {
-    if (!value.trim() || sending) return;
+    // Allow an image-only message (no text) — the backend + both LLM clients
+    // support images with no text block.
+    if ((!value.trim() && images.length === 0) || sending) return;
     onSubmit();
     setAttachment(null);
+    images.forEach((im) => URL.revokeObjectURL(im.url));
     setImages([]);
   };
 
@@ -50,6 +53,8 @@ export default function ChatInput({ value, onChange, onSubmit, sending, onCancel
     try {
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
+        // Don't upload images on a non-vision model — they'd only 400 on send.
+        if (file.type.startsWith('image/') && !canSendImages) continue;
         const result = await attachFile(file);
         if (result.kind === 'image') {
           setImages((xs) => [...xs, { name: result.name, url: URL.createObjectURL(file) }]);
@@ -164,7 +169,7 @@ export default function ChatInput({ value, onChange, onSubmit, sending, onCancel
           {images.map((im, i) => (
             <span key={i} className="relative inline-block">
               <img src={im.url} alt={im.name} className="h-12 w-12 object-cover rounded border border-border" />
-              <button type="button" onClick={() => { clearImage(i).catch(err => console.error('clear image failed:', err)); setImages((xs) => xs.filter((_, j) => j !== i)); }}
+              <button type="button" onClick={() => { clearImage(i).catch(err => console.error('clear image failed:', err)); URL.revokeObjectURL(im.url); setImages((xs) => xs.filter((_, j) => j !== i)); }}
                 className="absolute -top-1 -right-1 bg-surface rounded-full text-text-tertiary hover:text-text">
                 <X size={12} />
               </button>

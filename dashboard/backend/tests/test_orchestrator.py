@@ -38,3 +38,20 @@ def test_run_turn_surfaces_proposal():
     out = run_turn(fake, session, "rename speech id")
     assert session.pending is not None
     assert out["proposal"]["checker_delta"] is not None or out["proposal"]["diff"]
+
+
+def test_images_not_persisted_to_transcript():
+    # Final-review fix: one-turn images must NOT be baked into session.transcript
+    # (else they hit disk, replay on reload, re-send every turn, and dodge the
+    # vision gate). The model gets them this turn; the transcript stays clean.
+    session = Session()
+    session.load({"BizSpeechComponent": "[]"})
+    session.images = [{"name": "a.png", "media_type": "image/png", "data": "AAAA"}]
+    fake = FakeLLMClient(script=[LLMResponse(text="I see it.", tool_calls=[])])
+    out = run_turn(fake, session, "what is this?")
+    assert out["text"] == "I see it."
+    # transcript user turn carries NO images (clean for persistence/replay)
+    user_turns = [m for m in session.transcript if m.role == "user"]
+    assert user_turns and all(not m.images for m in user_turns)
+    # and the one-turn images were cleared
+    assert session.images == []
