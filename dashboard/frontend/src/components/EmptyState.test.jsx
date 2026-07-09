@@ -9,9 +9,11 @@ const base = { keySet: true, loading: false, onUpload: () => {}, onStartBlank: (
 beforeEach(() => { vi.clearAllMocks(); localStorage.clear(); api.listSamples.mockResolvedValue([]); });
 
 describe('EmptyState', () => {
-  it('renders the welcome card, upload zone, and start-from-scratch', () => {
+  it('renders the hero title, subtitle, upload zone, and start-from-scratch', () => {
     render(<EmptyState {...base} />);
-    expect(screen.getByTestId('welcome-card')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Talkbot Architect' })).toBeInTheDocument();
+    expect(screen.getByText(/the assistant builds and validates it for you/i)).toBeInTheDocument();
+    expect(screen.queryByTestId('welcome-card')).toBeNull();
     expect(screen.getByTestId('upload-zone')).toBeInTheDocument();
     expect(screen.getByText(/Start from scratch/i)).toBeInTheDocument();
   });
