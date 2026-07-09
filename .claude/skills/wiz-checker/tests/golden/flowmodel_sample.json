@@ -1,0 +1,2415 @@
+{
+  "components": [
+    {
+      "uuid": "f058fb8c-6903-52b8-b7a1-88db9f127e92",
+      "name": "Greeting",
+      "sort_index": 1,
+      "entry_uuid": "fdce746c-fe23-5a51-a8b6-03654b1624fa",
+      "root_uuids": [
+        "fdce746c-fe23-5a51-a8b6-03654b1624fa"
+      ],
+      "nodes": {
+        "fdce746c-fe23-5a51-a8b6-03654b1624fa": {
+          "uuid": "fdce746c-fe23-5a51-a8b6-03654b1624fa",
+          "label": "Talk Node",
+          "node_type": "talk",
+          "text": "Hi there! Welcome to Sample Support Bot. How can I help you today?",
+          "referenced_vars": [],
+          "allowed_kbs": [
+            244811,
+            244812,
+            244813,
+            244814,
+            244815,
+            244816,
+            244817,
+            244818,
+            244819,
+            244820,
+            244821,
+            244822,
+            1261863233
+          ],
+          "data": {
+            "speakType": 1,
+            "all_client_intent": [
+              {
+                "intents": [
+                  {
+                    "intentId": "463428"
+                  }
+                ],
+                "name": "Positive",
+                "match": false,
+                "checked": true,
+                "language": "3",
+                "threshold": "",
+                "id": "05be7f63-5ff1-52d8-80a7-8830ea65ee59"
+              },
+              {
+                "intents": [
+                  {
+                    "intentId": "463429"
+                  }
+                ],
+                "name": "Negative",
+                "match": false,
+                "checked": true,
+                "language": "3",
+                "threshold": "",
+                "id": "a99a1fb3-7180-5a3e-acaf-71c2d83dae91"
+              },
+              {
+                "intents": [
+                  {
+                    "intentId": "463430"
+                  }
+                ],
+                "name": "Reject",
+                "match": false,
+                "checked": false,
+                "language": "3",
+                "threshold": ""
+              },
+              {
+                "intents": [
+                  {
+                    "intentId": "463431"
+                  }
+                ],
+                "name": "Unclassified",
+                "match": false,
+                "checked": true,
+                "language": "3",
+                "threshold": "",
+                "id": "c27cdecd-eb30-5850-b2a1-f657814df7d3"
+              },
+              {
+                "intents": [
+                  {
+                    "intentId": "463433"
+                  }
+                ],
+                "name": "No answer",
+                "match": false,
+                "checked": false,
+                "language": "3",
+                "threshold": ""
+              }
+            ],
+            "node_language_item": "3",
+            "intention_judgment_time": 2,
+            "type": 1,
+            "repeat_script_type": 0,
+            "hot_words_list": [],
+            "dialog_list": [
+              {
+                "xml": "<speak xmlns:wiz=\"http://www.wiz.ai/develop/xml/tts\"><wiz:express-as style=\"default\">Hi there! Welcome to Sample Support Bot. How can I help you today?</wiz:express-as></speak>",
+                "html": "<p>Hi there! Welcome to Sample Support Bot. How can I help you today?</p>",
+                "text": "Hi there! Welcome to Sample Support Bot. How can I help you today?"
+              }
+            ],
+            "user_response_mode": "voice",
+            "tag_list": [],
+            "openChasingDedayTime": false,
+            "openUserPauseDuration": false,
+            "can_be_interrupted": 0,
+            "id": "fdce746c-fe23-5a51-a8b6-03654b1624fa",
+            "node_repetition": 0,
+            "open_pause_duration": false,
+            "selected": false,
+            "openChasingDedayTim": false,
+            "allow_jump_knowledges_switch": 0,
+            "client_intent": [
+              "Positive",
+              "Negative",
+              "Unclassified"
+            ],
+            "intent_rollback_enable": false,
+            "node_variables": [],
+            "allow_jump_knowledges": [
+              "244811",
+              "244812",
+              "244813",
+              "244814",
+              "244815",
+              "244816",
+              "244817",
+              "244818",
+              "244819",
+              "244820",
+              "244821",
+              "244822",
+              "1261863233"
+            ],
+            "is_transfer": 0,
+            "value_assignment": [],
+            "global_unclassified_switch": 0,
+            "list": [
+              "Hi there! Welcome to Sample Support Bot. How can I help you today?"
+            ],
+            "is_default": true,
+            "nodeLabelArr": [],
+            "node_language": "3",
+            "agent_type": "SYSTEM",
+            "tts_language": "3",
+            "intent_tag_def": {
+              "No answer": {
+                "tag_list": [],
+                "intent_code": ""
+              },
+              "Reject": {
+                "tag_list": [],
+                "intent_code": ""
+              },
+              "Negative": {
+                "tag_list": [],
+                "intent_code": ""
+              },
+              "Positive": {
+                "tag_list": [],
+                "intent_code": ""
+              },
+              "Unclassified": {
+                "tag_list": [],
+                "intent_code": ""
+              }
+            },
+            "open_talk_finish": false,
+            "can_interrupt_percent": 0.8,
+            "name": "Talk Node",
+            "notices_info": [],
+            "notice_send_type": 0,
+            "position": {
+              "x": 120,
+              "y": 80
+            },
+            "top": 80,
+            "left": 120
+          },
+          "branches": [
+            {
+              "label": "Positive",
+              "kind": "intent",
+              "target_uuid": "d9b813b1-eec7-52c4-b80b-b2830a87153f",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            },
+            {
+              "label": "Negative",
+              "kind": "intent",
+              "target_uuid": "d9b813b1-eec7-52c4-b80b-b2830a87153f",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            },
+            {
+              "label": "Unclassified",
+              "kind": "intent",
+              "target_uuid": "d9b813b1-eec7-52c4-b80b-b2830a87153f",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            }
+          ],
+          "hot_words": []
+        },
+        "d9b813b1-eec7-52c4-b80b-b2830a87153f": {
+          "uuid": "d9b813b1-eec7-52c4-b80b-b2830a87153f",
+          "label": "Exit Node",
+          "node_type": "exit",
+          "text": "Thank you for using Sample Support Bot!",
+          "referenced_vars": [],
+          "allowed_kbs": [
+            244811,
+            244812,
+            244813,
+            244814,
+            244815,
+            244816,
+            244817,
+            244818,
+            244819,
+            244820,
+            244821,
+            244822,
+            1261863233
+          ],
+          "data": {
+            "appoint_node_id": "",
+            "speakType": 1,
+            "hitKnowledgeRate": [],
+            "intention_judgment_time": 2,
+            "type": 2,
+            "repeat_script_type": 0,
+            "hot_words_list": [],
+            "hangupRate": "0.0%",
+            "exclusive_key_words": [],
+            "dialog_list": [
+              {
+                "xml": "<speak xmlns:wiz=\"http://www.wiz.ai/develop/xml/tts\"><wiz:express-as style=\"default\">Thank you for using Sample Support Bot!</wiz:express-as></speak>",
+                "html": "<p>Thank you for using Sample Support Bot!</p>",
+                "text": "Thank you for using Sample Support Bot!"
+              }
+            ],
+            "tag_list": [],
+            "openUserPauseDuration": false,
+            "can_be_interrupted": 0,
+            "id": "d9b813b1-eec7-52c4-b80b-b2830a87153f",
+            "node_repetition": 0,
+            "open_pause_duration": false,
+            "selected": false,
+            "hitKnowledgeCountsRate": "0.0%",
+            "multiple_appoint_id": "",
+            "openChasingDedayTim": false,
+            "allow_jump_knowledges_switch": 0,
+            "allow_jump_knowledges": [
+              "244811",
+              "244812",
+              "244813",
+              "244814",
+              "244815",
+              "244816",
+              "244817",
+              "244818",
+              "244819",
+              "244820",
+              "244821",
+              "244822",
+              "1261863233"
+            ],
+            "is_transfer": 0,
+            "appoint_knowledge_id": "",
+            "list": [
+              "Thank you for using Sample Support Bot!"
+            ],
+            "is_default": false,
+            "textareaList": [
+              ""
+            ],
+            "nodeLabelArr": [],
+            "node_language": "3",
+            "agent_type": "SYSTEM",
+            "tts_language": "3",
+            "sms_id": "",
+            "can_interrupt_percent": 0.8,
+            "name": "Exit Node",
+            "notices_info": [],
+            "notice_send_type": 0,
+            "position": {
+              "x": 120,
+              "y": 230
+            },
+            "top": 230,
+            "left": 120
+          },
+          "branches": [
+            {
+              "label": "hang up",
+              "kind": "exit",
+              "target_uuid": null,
+              "target_component": null,
+              "target_kb": null,
+              "terminal": "hangup"
+            }
+          ],
+          "hot_words": []
+        }
+      },
+      "parent_uuid": "0"
+    },
+    {
+      "uuid": "e0e26ace-ef62-5618-8b64-8cddc14921db",
+      "name": "TechSupport",
+      "sort_index": 2,
+      "entry_uuid": "4f8e65ac-f60d-5b3e-ac6f-3b68dde55a9a",
+      "root_uuids": [
+        "4f8e65ac-f60d-5b3e-ac6f-3b68dde55a9a"
+      ],
+      "nodes": {
+        "4f8e65ac-f60d-5b3e-ac6f-3b68dde55a9a": {
+          "uuid": "4f8e65ac-f60d-5b3e-ac6f-3b68dde55a9a",
+          "label": "Talk Node",
+          "node_type": "talk",
+          "text": "I can help you with technical issues. Please describe what's happening.",
+          "referenced_vars": [],
+          "allowed_kbs": [
+            244811,
+            244812,
+            244813,
+            244814,
+            244815,
+            244816,
+            244817,
+            244818,
+            244819,
+            244820,
+            244821,
+            244822,
+            1261863233
+          ],
+          "data": {
+            "speakType": 1,
+            "all_client_intent": [
+              {
+                "intents": [
+                  {
+                    "intentId": "463428"
+                  }
+                ],
+                "name": "Positive",
+                "match": false,
+                "checked": true,
+                "language": "3",
+                "threshold": "",
+                "id": "b5aaa47c-3279-57a1-8c01-6140ddbfeaea"
+              },
+              {
+                "intents": [
+                  {
+                    "intentId": "463429"
+                  }
+                ],
+                "name": "Negative",
+                "match": false,
+                "checked": true,
+                "language": "3",
+                "threshold": "",
+                "id": "f510b54d-d2f2-52b9-ad2f-7056d597a58f"
+              },
+              {
+                "intents": [
+                  {
+                    "intentId": "463430"
+                  }
+                ],
+                "name": "Reject",
+                "match": false,
+                "checked": false,
+                "language": "3",
+                "threshold": ""
+              },
+              {
+                "intents": [
+                  {
+                    "intentId": "463431"
+                  }
+                ],
+                "name": "Unclassified",
+                "match": false,
+                "checked": true,
+                "language": "3",
+                "threshold": "",
+                "id": "6506e7b1-9ee8-5774-8d52-4c1aa1d0344b"
+              },
+              {
+                "intents": [
+                  {
+                    "intentId": "463433"
+                  }
+                ],
+                "name": "No answer",
+                "match": false,
+                "checked": false,
+                "language": "3",
+                "threshold": ""
+              }
+            ],
+            "node_language_item": "3",
+            "intention_judgment_time": 2,
+            "type": 1,
+            "repeat_script_type": 0,
+            "hot_words_list": [],
+            "dialog_list": [
+              {
+                "xml": "<speak xmlns:wiz=\"http://www.wiz.ai/develop/xml/tts\"><wiz:express-as style=\"default\">I can help you with technical issues. Please describe what's happening.</wiz:express-as></speak>",
+                "html": "<p>I can help you with technical issues. Please describe what's happening.</p>",
+                "text": "I can help you with technical issues. Please describe what's happening."
+              }
+            ],
+            "user_response_mode": "voice",
+            "tag_list": [],
+            "openChasingDedayTime": false,
+            "openUserPauseDuration": false,
+            "can_be_interrupted": 0,
+            "id": "4f8e65ac-f60d-5b3e-ac6f-3b68dde55a9a",
+            "node_repetition": 0,
+            "open_pause_duration": false,
+            "selected": false,
+            "openChasingDedayTim": false,
+            "allow_jump_knowledges_switch": 0,
+            "client_intent": [
+              "Positive",
+              "Negative",
+              "Unclassified"
+            ],
+            "intent_rollback_enable": false,
+            "node_variables": [],
+            "allow_jump_knowledges": [
+              "244811",
+              "244812",
+              "244813",
+              "244814",
+              "244815",
+              "244816",
+              "244817",
+              "244818",
+              "244819",
+              "244820",
+              "244821",
+              "244822",
+              "1261863233"
+            ],
+            "is_transfer": 0,
+            "value_assignment": [],
+            "global_unclassified_switch": 0,
+            "list": [
+              "I can help you with technical issues. Please describe what's happening."
+            ],
+            "is_default": true,
+            "nodeLabelArr": [],
+            "node_language": "3",
+            "agent_type": "SYSTEM",
+            "tts_language": "3",
+            "intent_tag_def": {
+              "No answer": {
+                "tag_list": [],
+                "intent_code": ""
+              },
+              "Reject": {
+                "tag_list": [],
+                "intent_code": ""
+              },
+              "Negative": {
+                "tag_list": [],
+                "intent_code": ""
+              },
+              "Positive": {
+                "tag_list": [],
+                "intent_code": ""
+              },
+              "Unclassified": {
+                "tag_list": [],
+                "intent_code": ""
+              }
+            },
+            "open_talk_finish": false,
+            "can_interrupt_percent": 0.8,
+            "name": "Talk Node",
+            "notices_info": [],
+            "notice_send_type": 0,
+            "position": {
+              "x": 120,
+              "y": 80
+            },
+            "top": 80,
+            "left": 120
+          },
+          "branches": [
+            {
+              "label": "Positive",
+              "kind": "intent",
+              "target_uuid": "30f65e8b-137a-5bc0-9610-2861414cb788",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            },
+            {
+              "label": "Negative",
+              "kind": "intent",
+              "target_uuid": "30f65e8b-137a-5bc0-9610-2861414cb788",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            },
+            {
+              "label": "Unclassified",
+              "kind": "intent",
+              "target_uuid": "30f65e8b-137a-5bc0-9610-2861414cb788",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            }
+          ],
+          "hot_words": []
+        },
+        "30f65e8b-137a-5bc0-9610-2861414cb788": {
+          "uuid": "30f65e8b-137a-5bc0-9610-2861414cb788",
+          "label": "Exit Node",
+          "node_type": "exit",
+          "text": "Thank you for contacting technical support. Goodbye!",
+          "referenced_vars": [],
+          "allowed_kbs": [
+            244811,
+            244812,
+            244813,
+            244814,
+            244815,
+            244816,
+            244817,
+            244818,
+            244819,
+            244820,
+            244821,
+            244822,
+            1261863233
+          ],
+          "data": {
+            "appoint_node_id": "",
+            "speakType": 1,
+            "hitKnowledgeRate": [],
+            "intention_judgment_time": 2,
+            "type": 2,
+            "repeat_script_type": 0,
+            "hot_words_list": [],
+            "hangupRate": "0.0%",
+            "exclusive_key_words": [],
+            "dialog_list": [
+              {
+                "xml": "<speak xmlns:wiz=\"http://www.wiz.ai/develop/xml/tts\"><wiz:express-as style=\"default\">Thank you for contacting technical support. Goodbye!</wiz:express-as></speak>",
+                "html": "<p>Thank you for contacting technical support. Goodbye!</p>",
+                "text": "Thank you for contacting technical support. Goodbye!"
+              }
+            ],
+            "tag_list": [
+              {
+                "id": "2095192319",
+                "name": "Disposition",
+                "isMutex": 0,
+                "type": 0,
+                "tagProperty": 0,
+                "entId": "379641257",
+                "createTime": 1700000000000,
+                "modifyTime": 1700000000000,
+                "bizTagPropertyDTOS": [
+                  {
+                    "id": "1082654558",
+                    "tagId": "2095192319",
+                    "value": "Resolved",
+                    "active": true
+                  }
+                ]
+              }
+            ],
+            "openUserPauseDuration": false,
+            "can_be_interrupted": 0,
+            "id": "30f65e8b-137a-5bc0-9610-2861414cb788",
+            "node_repetition": 0,
+            "open_pause_duration": false,
+            "selected": false,
+            "hitKnowledgeCountsRate": "0.0%",
+            "multiple_appoint_id": "",
+            "openChasingDedayTim": false,
+            "allow_jump_knowledges_switch": 0,
+            "allow_jump_knowledges": [
+              "244811",
+              "244812",
+              "244813",
+              "244814",
+              "244815",
+              "244816",
+              "244817",
+              "244818",
+              "244819",
+              "244820",
+              "244821",
+              "244822",
+              "1261863233"
+            ],
+            "is_transfer": 0,
+            "appoint_knowledge_id": "",
+            "list": [
+              "Thank you for contacting technical support. Goodbye!"
+            ],
+            "is_default": false,
+            "textareaList": [
+              ""
+            ],
+            "nodeLabelArr": [],
+            "node_language": "3",
+            "agent_type": "SYSTEM",
+            "tts_language": "3",
+            "sms_id": "",
+            "can_interrupt_percent": 0.8,
+            "name": "Exit Node",
+            "notices_info": [],
+            "notice_send_type": 0,
+            "position": {
+              "x": 120,
+              "y": 230
+            },
+            "top": 230,
+            "left": 120
+          },
+          "branches": [
+            {
+              "label": "hang up",
+              "kind": "exit",
+              "target_uuid": null,
+              "target_component": null,
+              "target_kb": null,
+              "terminal": "hangup"
+            }
+          ],
+          "hot_words": []
+        }
+      },
+      "parent_uuid": "0"
+    },
+    {
+      "uuid": "2e57a3b1-d294-556e-b5b9-6fb57551e299",
+      "name": "Billing",
+      "sort_index": 3,
+      "entry_uuid": "2b08b854-de90-50a5-bd16-ab2d6c57d63c",
+      "root_uuids": [
+        "2b08b854-de90-50a5-bd16-ab2d6c57d63c"
+      ],
+      "nodes": {
+        "2b08b854-de90-50a5-bd16-ab2d6c57d63c": {
+          "uuid": "2b08b854-de90-50a5-bd16-ab2d6c57d63c",
+          "label": "Talk Node",
+          "node_type": "talk",
+          "text": "I can help with billing questions. What would you like to know?",
+          "referenced_vars": [],
+          "allowed_kbs": [
+            244811,
+            244812,
+            244813,
+            244814,
+            244815,
+            244816,
+            244817,
+            244818,
+            244819,
+            244820,
+            244821,
+            244822,
+            1261863233
+          ],
+          "data": {
+            "speakType": 1,
+            "all_client_intent": [
+              {
+                "intents": [
+                  {
+                    "intentId": "463428"
+                  }
+                ],
+                "name": "Positive",
+                "match": false,
+                "checked": true,
+                "language": "3",
+                "threshold": "",
+                "id": "b914768e-b5a3-5a7b-919e-e0cb1b1f9cdb"
+              },
+              {
+                "intents": [
+                  {
+                    "intentId": "463429"
+                  }
+                ],
+                "name": "Negative",
+                "match": false,
+                "checked": true,
+                "language": "3",
+                "threshold": "",
+                "id": "e6f3e9ed-4c00-58f5-86af-82f047be8519"
+              },
+              {
+                "intents": [
+                  {
+                    "intentId": "463430"
+                  }
+                ],
+                "name": "Reject",
+                "match": false,
+                "checked": false,
+                "language": "3",
+                "threshold": ""
+              },
+              {
+                "intents": [
+                  {
+                    "intentId": "463431"
+                  }
+                ],
+                "name": "Unclassified",
+                "match": false,
+                "checked": true,
+                "language": "3",
+                "threshold": "",
+                "id": "59bee71b-05f7-501b-8bc6-534913d1f804"
+              },
+              {
+                "intents": [
+                  {
+                    "intentId": "463433"
+                  }
+                ],
+                "name": "No answer",
+                "match": false,
+                "checked": false,
+                "language": "3",
+                "threshold": ""
+              }
+            ],
+            "node_language_item": "3",
+            "intention_judgment_time": 2,
+            "type": 1,
+            "repeat_script_type": 0,
+            "hot_words_list": [],
+            "dialog_list": [
+              {
+                "xml": "<speak xmlns:wiz=\"http://www.wiz.ai/develop/xml/tts\"><wiz:express-as style=\"default\">I can help with billing questions. What would you like to know?</wiz:express-as></speak>",
+                "html": "<p>I can help with billing questions. What would you like to know?</p>",
+                "text": "I can help with billing questions. What would you like to know?"
+              }
+            ],
+            "user_response_mode": "voice",
+            "tag_list": [],
+            "openChasingDedayTime": false,
+            "openUserPauseDuration": false,
+            "can_be_interrupted": 0,
+            "id": "2b08b854-de90-50a5-bd16-ab2d6c57d63c",
+            "node_repetition": 0,
+            "open_pause_duration": false,
+            "selected": false,
+            "openChasingDedayTim": false,
+            "allow_jump_knowledges_switch": 0,
+            "client_intent": [
+              "Positive",
+              "Negative",
+              "Unclassified"
+            ],
+            "intent_rollback_enable": false,
+            "node_variables": [],
+            "allow_jump_knowledges": [
+              "244811",
+              "244812",
+              "244813",
+              "244814",
+              "244815",
+              "244816",
+              "244817",
+              "244818",
+              "244819",
+              "244820",
+              "244821",
+              "244822",
+              "1261863233"
+            ],
+            "is_transfer": 0,
+            "value_assignment": [],
+            "global_unclassified_switch": 0,
+            "list": [
+              "I can help with billing questions. What would you like to know?"
+            ],
+            "is_default": true,
+            "nodeLabelArr": [],
+            "node_language": "3",
+            "agent_type": "SYSTEM",
+            "tts_language": "3",
+            "intent_tag_def": {
+              "No answer": {
+                "tag_list": [],
+                "intent_code": ""
+              },
+              "Reject": {
+                "tag_list": [],
+                "intent_code": ""
+              },
+              "Negative": {
+                "tag_list": [],
+                "intent_code": ""
+              },
+              "Positive": {
+                "tag_list": [],
+                "intent_code": ""
+              },
+              "Unclassified": {
+                "tag_list": [],
+                "intent_code": ""
+              }
+            },
+            "open_talk_finish": false,
+            "can_interrupt_percent": 0.8,
+            "name": "Talk Node",
+            "notices_info": [],
+            "notice_send_type": 0,
+            "position": {
+              "x": 120,
+              "y": 80
+            },
+            "top": 80,
+            "left": 120
+          },
+          "branches": [
+            {
+              "label": "Positive",
+              "kind": "intent",
+              "target_uuid": "4ec1b752-823d-579b-bfb1-06eaf50bfc3a",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            },
+            {
+              "label": "Negative",
+              "kind": "intent",
+              "target_uuid": "b99f6fb2-1768-5f53-87e2-d1afc13d2897",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            },
+            {
+              "label": "Unclassified",
+              "kind": "intent",
+              "target_uuid": "b99f6fb2-1768-5f53-87e2-d1afc13d2897",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            }
+          ],
+          "hot_words": []
+        },
+        "4ec1b752-823d-579b-bfb1-06eaf50bfc3a": {
+          "uuid": "4ec1b752-823d-579b-bfb1-06eaf50bfc3a",
+          "label": "Exit Node",
+          "node_type": "goto_kb",
+          "text": "",
+          "referenced_vars": [],
+          "allowed_kbs": [
+            244811,
+            244812,
+            244813,
+            244814,
+            244815,
+            244816,
+            244817,
+            244818,
+            244819,
+            244820,
+            244821,
+            244822,
+            1261863233
+          ],
+          "data": {
+            "appoint_node_id": "",
+            "speakType": 1,
+            "hitKnowledgeRate": [],
+            "intention_judgment_time": 2,
+            "type": 8,
+            "repeat_script_type": 0,
+            "hot_words_list": [],
+            "specificComponentName": "",
+            "hangupRate": "0.0%",
+            "exclusive_key_words": [],
+            "openUserPauseDuration": false,
+            "can_be_interrupted": 0,
+            "id": "4ec1b752-823d-579b-bfb1-06eaf50bfc3a",
+            "node_repetition": 0,
+            "open_pause_duration": false,
+            "selected": false,
+            "hitKnowledgeCountsRate": "0.0%",
+            "multiple_appoint_id": "",
+            "openChasingDedayTim": false,
+            "allow_jump_knowledges_switch": 0,
+            "allow_jump_knowledges": [
+              "244811",
+              "244812",
+              "244813",
+              "244814",
+              "244815",
+              "244816",
+              "244817",
+              "244818",
+              "244819",
+              "244820",
+              "244821",
+              "244822",
+              "1261863233"
+            ],
+            "is_transfer": 0,
+            "appoint_knowledge_id": "1261863233",
+            "is_default": false,
+            "textareaList": [
+              ""
+            ],
+            "nodeLabelArr": [],
+            "node_language": "3",
+            "agent_type": "SYSTEM",
+            "sms_id": "",
+            "can_interrupt_percent": 80,
+            "name": "Exit Node",
+            "notices_info": [],
+            "notice_send_type": 0,
+            "position": {
+              "x": 380,
+              "y": 230
+            },
+            "top": 230,
+            "left": 380
+          },
+          "branches": [
+            {
+              "label": "go to KB",
+              "kind": "exit",
+              "target_uuid": null,
+              "target_component": null,
+              "target_kb": 1261863233,
+              "terminal": null
+            }
+          ],
+          "hot_words": []
+        },
+        "b99f6fb2-1768-5f53-87e2-d1afc13d2897": {
+          "uuid": "b99f6fb2-1768-5f53-87e2-d1afc13d2897",
+          "label": "Exit Node",
+          "node_type": "exit",
+          "text": "Thank you for your inquiry!",
+          "referenced_vars": [],
+          "allowed_kbs": [
+            244811,
+            244812,
+            244813,
+            244814,
+            244815,
+            244816,
+            244817,
+            244818,
+            244819,
+            244820,
+            244821,
+            244822,
+            1261863233
+          ],
+          "data": {
+            "appoint_node_id": "",
+            "speakType": 1,
+            "hitKnowledgeRate": [],
+            "intention_judgment_time": 2,
+            "type": 2,
+            "repeat_script_type": 0,
+            "hot_words_list": [],
+            "hangupRate": "0.0%",
+            "exclusive_key_words": [],
+            "dialog_list": [
+              {
+                "xml": "<speak xmlns:wiz=\"http://www.wiz.ai/develop/xml/tts\"><wiz:express-as style=\"default\">Thank you for your inquiry!</wiz:express-as></speak>",
+                "html": "<p>Thank you for your inquiry!</p>",
+                "text": "Thank you for your inquiry!"
+              }
+            ],
+            "tag_list": [],
+            "openUserPauseDuration": false,
+            "can_be_interrupted": 0,
+            "id": "b99f6fb2-1768-5f53-87e2-d1afc13d2897",
+            "node_repetition": 0,
+            "open_pause_duration": false,
+            "selected": false,
+            "hitKnowledgeCountsRate": "0.0%",
+            "multiple_appoint_id": "",
+            "openChasingDedayTim": false,
+            "allow_jump_knowledges_switch": 0,
+            "allow_jump_knowledges": [
+              "244811",
+              "244812",
+              "244813",
+              "244814",
+              "244815",
+              "244816",
+              "244817",
+              "244818",
+              "244819",
+              "244820",
+              "244821",
+              "244822",
+              "1261863233"
+            ],
+            "is_transfer": 0,
+            "appoint_knowledge_id": "",
+            "list": [
+              "Thank you for your inquiry!"
+            ],
+            "is_default": false,
+            "textareaList": [
+              ""
+            ],
+            "nodeLabelArr": [],
+            "node_language": "3",
+            "agent_type": "SYSTEM",
+            "tts_language": "3",
+            "sms_id": "",
+            "can_interrupt_percent": 0.8,
+            "name": "Exit Node",
+            "notices_info": [],
+            "notice_send_type": 0,
+            "position": {
+              "x": 120,
+              "y": 230
+            },
+            "top": 230,
+            "left": 120
+          },
+          "branches": [
+            {
+              "label": "hang up",
+              "kind": "exit",
+              "target_uuid": null,
+              "target_component": null,
+              "target_kb": null,
+              "terminal": "hangup"
+            }
+          ],
+          "hot_words": []
+        }
+      },
+      "parent_uuid": "0"
+    },
+    {
+      "uuid": "1589ae56-034f-5e33-9eb8-c19f3bd45f7a",
+      "name": "FAQResolution",
+      "sort_index": 4,
+      "entry_uuid": "55731bda-7b9a-535b-9cd8-139289a0646f",
+      "root_uuids": [
+        "55731bda-7b9a-535b-9cd8-139289a0646f"
+      ],
+      "nodes": {
+        "55731bda-7b9a-535b-9cd8-139289a0646f": {
+          "uuid": "55731bda-7b9a-535b-9cd8-139289a0646f",
+          "label": "Talk Node",
+          "node_type": "talk",
+          "text": "Let me walk you through this. What specific question do you have?",
+          "referenced_vars": [],
+          "allowed_kbs": [
+            244811,
+            244812,
+            244813,
+            244814,
+            244815,
+            244816,
+            244817,
+            244818,
+            244819,
+            244820,
+            244821,
+            244822,
+            1261863233
+          ],
+          "data": {
+            "speakType": 1,
+            "all_client_intent": [
+              {
+                "intents": [
+                  {
+                    "intentId": "463428"
+                  }
+                ],
+                "name": "Positive",
+                "match": false,
+                "checked": true,
+                "language": "3",
+                "threshold": "",
+                "id": "f384d080-edc6-5dcd-af1d-5d4027a3c149"
+              },
+              {
+                "intents": [
+                  {
+                    "intentId": "463429"
+                  }
+                ],
+                "name": "Negative",
+                "match": false,
+                "checked": true,
+                "language": "3",
+                "threshold": "",
+                "id": "a0e5f6b9-b318-5877-9f26-166d21df805d"
+              },
+              {
+                "intents": [
+                  {
+                    "intentId": "463430"
+                  }
+                ],
+                "name": "Reject",
+                "match": false,
+                "checked": false,
+                "language": "3",
+                "threshold": ""
+              },
+              {
+                "intents": [
+                  {
+                    "intentId": "463431"
+                  }
+                ],
+                "name": "Unclassified",
+                "match": false,
+                "checked": true,
+                "language": "3",
+                "threshold": "",
+                "id": "b854d2ce-49c2-584c-ade0-4a992f16acf4"
+              },
+              {
+                "intents": [
+                  {
+                    "intentId": "463433"
+                  }
+                ],
+                "name": "No answer",
+                "match": false,
+                "checked": false,
+                "language": "3",
+                "threshold": ""
+              }
+            ],
+            "node_language_item": "3",
+            "intention_judgment_time": 2,
+            "type": 1,
+            "repeat_script_type": 0,
+            "hot_words_list": [],
+            "dialog_list": [
+              {
+                "xml": "<speak xmlns:wiz=\"http://www.wiz.ai/develop/xml/tts\"><wiz:express-as style=\"default\">Let me walk you through this. What specific question do you have?</wiz:express-as></speak>",
+                "html": "<p>Let me walk you through this. What specific question do you have?</p>",
+                "text": "Let me walk you through this. What specific question do you have?"
+              }
+            ],
+            "user_response_mode": "voice",
+            "tag_list": [],
+            "openChasingDedayTime": false,
+            "openUserPauseDuration": false,
+            "can_be_interrupted": 0,
+            "id": "55731bda-7b9a-535b-9cd8-139289a0646f",
+            "node_repetition": 0,
+            "open_pause_duration": false,
+            "selected": false,
+            "openChasingDedayTim": false,
+            "allow_jump_knowledges_switch": 0,
+            "client_intent": [
+              "Positive",
+              "Negative",
+              "Unclassified"
+            ],
+            "intent_rollback_enable": false,
+            "node_variables": [],
+            "allow_jump_knowledges": [
+              "244811",
+              "244812",
+              "244813",
+              "244814",
+              "244815",
+              "244816",
+              "244817",
+              "244818",
+              "244819",
+              "244820",
+              "244821",
+              "244822",
+              "1261863233"
+            ],
+            "is_transfer": 0,
+            "value_assignment": [],
+            "global_unclassified_switch": 0,
+            "list": [
+              "Let me walk you through this. What specific question do you have?"
+            ],
+            "is_default": true,
+            "nodeLabelArr": [],
+            "node_language": "3",
+            "agent_type": "SYSTEM",
+            "tts_language": "3",
+            "intent_tag_def": {
+              "No answer": {
+                "tag_list": [],
+                "intent_code": ""
+              },
+              "Reject": {
+                "tag_list": [],
+                "intent_code": ""
+              },
+              "Negative": {
+                "tag_list": [],
+                "intent_code": ""
+              },
+              "Positive": {
+                "tag_list": [],
+                "intent_code": ""
+              },
+              "Unclassified": {
+                "tag_list": [],
+                "intent_code": ""
+              }
+            },
+            "open_talk_finish": false,
+            "can_interrupt_percent": 0.8,
+            "name": "Talk Node",
+            "notices_info": [],
+            "notice_send_type": 0,
+            "position": {
+              "x": 120,
+              "y": 80
+            },
+            "top": 80,
+            "left": 120
+          },
+          "branches": [
+            {
+              "label": "Positive",
+              "kind": "intent",
+              "target_uuid": "1703565c-9c73-5845-aee8-ac90f6a06b4b",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            },
+            {
+              "label": "Negative",
+              "kind": "intent",
+              "target_uuid": "5475af9f-d503-58cc-b1f3-6690a6596579",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            },
+            {
+              "label": "Unclassified",
+              "kind": "intent",
+              "target_uuid": "5475af9f-d503-58cc-b1f3-6690a6596579",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            }
+          ],
+          "hot_words": []
+        },
+        "1703565c-9c73-5845-aee8-ac90f6a06b4b": {
+          "uuid": "1703565c-9c73-5845-aee8-ac90f6a06b4b",
+          "label": "Talk Node",
+          "node_type": "talk",
+          "text": "Your account is active and in good standing. You can manage your billing online.",
+          "referenced_vars": [],
+          "allowed_kbs": [
+            244811,
+            244812,
+            244813,
+            244814,
+            244815,
+            244816,
+            244817,
+            244818,
+            244819,
+            244820,
+            244821,
+            244822,
+            1261863233
+          ],
+          "data": {
+            "speakType": 1,
+            "all_client_intent": [
+              {
+                "intents": [
+                  {
+                    "intentId": "463428"
+                  }
+                ],
+                "name": "Positive",
+                "match": false,
+                "checked": true,
+                "language": "3",
+                "threshold": "",
+                "id": "9c048193-5b86-5d38-8111-63b20b2e10a8"
+              },
+              {
+                "intents": [
+                  {
+                    "intentId": "463429"
+                  }
+                ],
+                "name": "Negative",
+                "match": false,
+                "checked": true,
+                "language": "3",
+                "threshold": "",
+                "id": "a1ca5f15-c62b-5777-abed-6d6bf0c56eb1"
+              },
+              {
+                "intents": [
+                  {
+                    "intentId": "463430"
+                  }
+                ],
+                "name": "Reject",
+                "match": false,
+                "checked": false,
+                "language": "3",
+                "threshold": ""
+              },
+              {
+                "intents": [
+                  {
+                    "intentId": "463431"
+                  }
+                ],
+                "name": "Unclassified",
+                "match": false,
+                "checked": true,
+                "language": "3",
+                "threshold": "",
+                "id": "aca0fcea-c4f0-59fd-934a-8877744fc49b"
+              },
+              {
+                "intents": [
+                  {
+                    "intentId": "463433"
+                  }
+                ],
+                "name": "No answer",
+                "match": false,
+                "checked": false,
+                "language": "3",
+                "threshold": ""
+              }
+            ],
+            "node_language_item": "3",
+            "intention_judgment_time": 2,
+            "type": 1,
+            "repeat_script_type": 0,
+            "hot_words_list": [],
+            "dialog_list": [
+              {
+                "xml": "<speak xmlns:wiz=\"http://www.wiz.ai/develop/xml/tts\"><wiz:express-as style=\"default\">Your account is active and in good standing. You can manage your billing online.</wiz:express-as></speak>",
+                "html": "<p>Your account is active and in good standing. You can manage your billing online.</p>",
+                "text": "Your account is active and in good standing. You can manage your billing online."
+              }
+            ],
+            "user_response_mode": "voice",
+            "tag_list": [],
+            "openChasingDedayTime": false,
+            "openUserPauseDuration": false,
+            "can_be_interrupted": 0,
+            "id": "1703565c-9c73-5845-aee8-ac90f6a06b4b",
+            "node_repetition": 0,
+            "open_pause_duration": false,
+            "selected": false,
+            "openChasingDedayTim": false,
+            "allow_jump_knowledges_switch": 0,
+            "client_intent": [
+              "Positive",
+              "Negative",
+              "Unclassified"
+            ],
+            "intent_rollback_enable": false,
+            "node_variables": [],
+            "allow_jump_knowledges": [
+              "244811",
+              "244812",
+              "244813",
+              "244814",
+              "244815",
+              "244816",
+              "244817",
+              "244818",
+              "244819",
+              "244820",
+              "244821",
+              "244822",
+              "1261863233"
+            ],
+            "is_transfer": 0,
+            "value_assignment": [],
+            "global_unclassified_switch": 0,
+            "list": [
+              "Your account is active and in good standing. You can manage your billing online."
+            ],
+            "is_default": false,
+            "nodeLabelArr": [],
+            "node_language": "3",
+            "agent_type": "SYSTEM",
+            "tts_language": "3",
+            "intent_tag_def": {
+              "No answer": {
+                "tag_list": [],
+                "intent_code": ""
+              },
+              "Reject": {
+                "tag_list": [],
+                "intent_code": ""
+              },
+              "Negative": {
+                "tag_list": [],
+                "intent_code": ""
+              },
+              "Positive": {
+                "tag_list": [],
+                "intent_code": ""
+              },
+              "Unclassified": {
+                "tag_list": [],
+                "intent_code": ""
+              }
+            },
+            "open_talk_finish": false,
+            "can_interrupt_percent": 0.8,
+            "name": "Talk Node",
+            "notices_info": [],
+            "notice_send_type": 0,
+            "position": {
+              "x": 380,
+              "y": 230
+            },
+            "top": 230,
+            "left": 380
+          },
+          "branches": [
+            {
+              "label": "Positive",
+              "kind": "intent",
+              "target_uuid": "5475af9f-d503-58cc-b1f3-6690a6596579",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            },
+            {
+              "label": "Negative",
+              "kind": "intent",
+              "target_uuid": "5475af9f-d503-58cc-b1f3-6690a6596579",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            },
+            {
+              "label": "Unclassified",
+              "kind": "intent",
+              "target_uuid": "5475af9f-d503-58cc-b1f3-6690a6596579",
+              "target_component": null,
+              "target_kb": null,
+              "terminal": null
+            }
+          ],
+          "hot_words": []
+        },
+        "5475af9f-d503-58cc-b1f3-6690a6596579": {
+          "uuid": "5475af9f-d503-58cc-b1f3-6690a6596579",
+          "label": "Exit Node",
+          "node_type": "exit",
+          "text": "Is there anything else I can help with today?",
+          "referenced_vars": [],
+          "allowed_kbs": [
+            244811,
+            244812,
+            244813,
+            244814,
+            244815,
+            244816,
+            244817,
+            244818,
+            244819,
+            244820,
+            244821,
+            244822,
+            1261863233
+          ],
+          "data": {
+            "appoint_node_id": "",
+            "speakType": 1,
+            "hitKnowledgeRate": [],
+            "intention_judgment_time": 2,
+            "type": 2,
+            "repeat_script_type": 0,
+            "hot_words_list": [],
+            "hangupRate": "0.0%",
+            "exclusive_key_words": [],
+            "dialog_list": [
+              {
+                "xml": "<speak xmlns:wiz=\"http://www.wiz.ai/develop/xml/tts\"><wiz:express-as style=\"default\">Is there anything else I can help with today?</wiz:express-as></speak>",
+                "html": "<p>Is there anything else I can help with today?</p>",
+                "text": "Is there anything else I can help with today?"
+              }
+            ],
+            "tag_list": [],
+            "openUserPauseDuration": false,
+            "can_be_interrupted": 0,
+            "id": "5475af9f-d503-58cc-b1f3-6690a6596579",
+            "node_repetition": 0,
+            "open_pause_duration": false,
+            "selected": false,
+            "hitKnowledgeCountsRate": "0.0%",
+            "multiple_appoint_id": "",
+            "openChasingDedayTim": false,
+            "allow_jump_knowledges_switch": 0,
+            "allow_jump_knowledges": [
+              "244811",
+              "244812",
+              "244813",
+              "244814",
+              "244815",
+              "244816",
+              "244817",
+              "244818",
+              "244819",
+              "244820",
+              "244821",
+              "244822",
+              "1261863233"
+            ],
+            "is_transfer": 0,
+            "appoint_knowledge_id": "",
+            "list": [
+              "Is there anything else I can help with today?"
+            ],
+            "is_default": false,
+            "textareaList": [
+              ""
+            ],
+            "nodeLabelArr": [],
+            "node_language": "3",
+            "agent_type": "SYSTEM",
+            "tts_language": "3",
+            "sms_id": "",
+            "can_interrupt_percent": 0.8,
+            "name": "Exit Node",
+            "notices_info": [],
+            "notice_send_type": 0,
+            "position": {
+              "x": 120,
+              "y": 230
+            },
+            "top": 230,
+            "left": 120
+          },
+          "branches": [
+            {
+              "label": "hang up",
+              "kind": "exit",
+              "target_uuid": null,
+              "target_component": null,
+              "target_kb": null,
+              "terminal": "hangup"
+            }
+          ],
+          "hot_words": []
+        }
+      },
+      "parent_uuid": "0"
+    }
+  ],
+  "knowledge_bases": [
+    {
+      "knowledge_id": 244811,
+      "title": "Can not hear clearly",
+      "kd_type": 0,
+      "intents": [
+        463432
+      ],
+      "multi_round": null,
+      "intent_names": [
+        "Can not hear clearly"
+      ],
+      "answers": [],
+      "trigger_type": "intent",
+      "is_user_created": false,
+      "multi_round_target": null
+    },
+    {
+      "knowledge_id": 244812,
+      "title": "No answer",
+      "kd_type": 0,
+      "intents": [
+        463433
+      ],
+      "multi_round": null,
+      "intent_names": [
+        "No answer"
+      ],
+      "answers": [
+        {
+          "text": "Halo, apa kamu disana?",
+          "after": "wait"
+        },
+        {
+          "text": "Halo, masih bisakah kau mendengarku?",
+          "after": "wait"
+        },
+        {
+          "text": "Saya tidak bisa mendengar suara Anda di sini, jangan repot-repot, saya berharap Anda hidup bahagia, selamat tinggal.",
+          "after": "hangup"
+        }
+      ],
+      "trigger_type": "system",
+      "is_user_created": false,
+      "multi_round_target": null
+    },
+    {
+      "knowledge_id": 244813,
+      "title": "AI can not hear clearly",
+      "kd_type": 0,
+      "intents": [
+        463434
+      ],
+      "multi_round": null,
+      "intent_names": [
+        "AI can not hear clearly"
+      ],
+      "answers": [
+        {
+          "text": "Ya dengar, ada apa?",
+          "after": "wait"
+        },
+        {
+          "text": "maaf suaranya nya kurang jelas boleh diulang?",
+          "after": "wait"
+        },
+        {
+          "text": "Um maaf suaranya kurang jelas, nanti saya telp lagi ya, terimakasih",
+          "after": "hangup"
+        }
+      ],
+      "trigger_type": "system",
+      "is_user_created": false,
+      "multi_round_target": null
+    },
+    {
+      "knowledge_id": 244814,
+      "title": "Transferring to Human Agent",
+      "kd_type": 0,
+      "intents": [
+        463435
+      ],
+      "multi_round": null,
+      "intent_names": [
+        "Transferring to Human Agent"
+      ],
+      "answers": [
+        {
+          "text": "Suara latar mentransfer ke Agen Manusia",
+          "after": "wait"
+        },
+        {
+          "text": "Maaf, semua agent sedang sibuk. Kami akan menghubungi anda kembali nanti. Sampai jumpa!",
+          "after": "hangup"
+        }
+      ],
+      "trigger_type": "system",
+      "is_user_created": false,
+      "multi_round_target": null
+    },
+    {
+      "knowledge_id": 244815,
+      "title": "Interrupt",
+      "kd_type": 0,
+      "intents": [
+        463436
+      ],
+      "multi_round": null,
+      "intent_names": [
+        "Interrupt"
+      ],
+      "answers": [
+        {
+          "text": "OK, tolong katakan",
+          "after": "wait"
+        },
+        {
+          "text": "Apa maksudmu?",
+          "after": "wait"
+        }
+      ],
+      "trigger_type": "intent",
+      "is_user_created": false,
+      "multi_round_target": null
+    },
+    {
+      "knowledge_id": 244816,
+      "title": "AI wait",
+      "kd_type": 0,
+      "intents": [
+        463437
+      ],
+      "multi_round": null,
+      "intent_names": [
+        "AI wait"
+      ],
+      "answers": [
+        {
+          "text": "OK",
+          "after": "wait"
+        }
+      ],
+      "trigger_type": "intent",
+      "is_user_created": false,
+      "multi_round_target": null
+    },
+    {
+      "knowledge_id": 244817,
+      "title": "User hesitate",
+      "kd_type": 0,
+      "intents": [
+        463438
+      ],
+      "multi_round": null,
+      "intent_names": [
+        "User hesitate"
+      ],
+      "answers": [],
+      "trigger_type": "intent",
+      "is_user_created": false,
+      "multi_round_target": null
+    },
+    {
+      "knowledge_id": 244818,
+      "title": "Global unclassified",
+      "kd_type": 0,
+      "intents": [
+        463431
+      ],
+      "multi_round": null,
+      "intent_names": [
+        "Unclassified"
+      ],
+      "answers": [
+        {
+          "text": "Maaf, aku tak bisa mendengarmu,Bisa kau ulangi lagi?",
+          "after": "wait"
+        },
+        {
+          "text": "Eh, apa itu tadi?",
+          "after": "wait"
+        },
+        {
+          "text": "Maaf, aku tidak mengerti pertanyaanmu,Bisa kau ulangi?",
+          "after": "wait"
+        }
+      ],
+      "trigger_type": "system",
+      "is_user_created": false,
+      "multi_round_target": null
+    },
+    {
+      "knowledge_id": 244819,
+      "title": "Chasing statement",
+      "kd_type": 0,
+      "intents": [
+        463439
+      ],
+      "multi_round": null,
+      "intent_names": [
+        "Chasing statement"
+      ],
+      "answers": [],
+      "trigger_type": "intent",
+      "is_user_created": false,
+      "multi_round_target": null
+    },
+    {
+      "knowledge_id": 244820,
+      "title": "Answering Machine",
+      "kd_type": 0,
+      "intents": [
+        463440
+      ],
+      "multi_round": null,
+      "intent_names": [
+        "Answering Machine"
+      ],
+      "answers": [
+        {
+          "text": "Selamat tinggal",
+          "after": "hangup"
+        }
+      ],
+      "trigger_type": "intent",
+      "is_user_created": false,
+      "multi_round_target": null
+    },
+    {
+      "knowledge_id": 244821,
+      "title": "DNC",
+      "kd_type": 0,
+      "intents": [
+        463441
+      ],
+      "multi_round": null,
+      "intent_names": [
+        "DNC"
+      ],
+      "answers": [],
+      "trigger_type": "intent",
+      "is_user_created": false,
+      "multi_round_target": null
+    },
+    {
+      "knowledge_id": 244822,
+      "title": "Echo Monitoring",
+      "kd_type": 0,
+      "intents": [
+        463442
+      ],
+      "multi_round": null,
+      "intent_names": [
+        "Echo Monitoring"
+      ],
+      "answers": [],
+      "trigger_type": "system",
+      "is_user_created": false,
+      "multi_round_target": null
+    },
+    {
+      "knowledge_id": 1261863233,
+      "title": "BillingFAQ",
+      "kd_type": 0,
+      "intents": [
+        1734246168
+      ],
+      "multi_round": {
+        "components": [
+          {
+            "uuid": "1589ae56-034f-5e33-9eb8-c19f3bd45f7a",
+            "name": "FAQResolution",
+            "sort_index": 4,
+            "entry_uuid": "55731bda-7b9a-535b-9cd8-139289a0646f",
+            "root_uuids": [
+              "55731bda-7b9a-535b-9cd8-139289a0646f"
+            ],
+            "nodes": {
+              "55731bda-7b9a-535b-9cd8-139289a0646f": {
+                "uuid": "55731bda-7b9a-535b-9cd8-139289a0646f",
+                "label": "Talk Node",
+                "node_type": "talk",
+                "text": "Let me walk you through this. What specific question do you have?",
+                "referenced_vars": [],
+                "allowed_kbs": [
+                  244811,
+                  244812,
+                  244813,
+                  244814,
+                  244815,
+                  244816,
+                  244817,
+                  244818,
+                  244819,
+                  244820,
+                  244821,
+                  244822,
+                  1261863233
+                ],
+                "data": {
+                  "speakType": 1,
+                  "all_client_intent": [
+                    {
+                      "intents": [
+                        {
+                          "intentId": "463428"
+                        }
+                      ],
+                      "name": "Positive",
+                      "match": false,
+                      "checked": true,
+                      "language": "3",
+                      "threshold": "",
+                      "id": "f384d080-edc6-5dcd-af1d-5d4027a3c149"
+                    },
+                    {
+                      "intents": [
+                        {
+                          "intentId": "463429"
+                        }
+                      ],
+                      "name": "Negative",
+                      "match": false,
+                      "checked": true,
+                      "language": "3",
+                      "threshold": "",
+                      "id": "a0e5f6b9-b318-5877-9f26-166d21df805d"
+                    },
+                    {
+                      "intents": [
+                        {
+                          "intentId": "463430"
+                        }
+                      ],
+                      "name": "Reject",
+                      "match": false,
+                      "checked": false,
+                      "language": "3",
+                      "threshold": ""
+                    },
+                    {
+                      "intents": [
+                        {
+                          "intentId": "463431"
+                        }
+                      ],
+                      "name": "Unclassified",
+                      "match": false,
+                      "checked": true,
+                      "language": "3",
+                      "threshold": "",
+                      "id": "b854d2ce-49c2-584c-ade0-4a992f16acf4"
+                    },
+                    {
+                      "intents": [
+                        {
+                          "intentId": "463433"
+                        }
+                      ],
+                      "name": "No answer",
+                      "match": false,
+                      "checked": false,
+                      "language": "3",
+                      "threshold": ""
+                    }
+                  ],
+                  "node_language_item": "3",
+                  "intention_judgment_time": 2,
+                  "type": 1,
+                  "repeat_script_type": 0,
+                  "hot_words_list": [],
+                  "dialog_list": [
+                    {
+                      "xml": "<speak xmlns:wiz=\"http://www.wiz.ai/develop/xml/tts\"><wiz:express-as style=\"default\">Let me walk you through this. What specific question do you have?</wiz:express-as></speak>",
+                      "html": "<p>Let me walk you through this. What specific question do you have?</p>",
+                      "text": "Let me walk you through this. What specific question do you have?"
+                    }
+                  ],
+                  "user_response_mode": "voice",
+                  "tag_list": [],
+                  "openChasingDedayTime": false,
+                  "openUserPauseDuration": false,
+                  "can_be_interrupted": 0,
+                  "id": "55731bda-7b9a-535b-9cd8-139289a0646f",
+                  "node_repetition": 0,
+                  "open_pause_duration": false,
+                  "selected": false,
+                  "openChasingDedayTim": false,
+                  "allow_jump_knowledges_switch": 0,
+                  "client_intent": [
+                    "Positive",
+                    "Negative",
+                    "Unclassified"
+                  ],
+                  "intent_rollback_enable": false,
+                  "node_variables": [],
+                  "allow_jump_knowledges": [
+                    "244811",
+                    "244812",
+                    "244813",
+                    "244814",
+                    "244815",
+                    "244816",
+                    "244817",
+                    "244818",
+                    "244819",
+                    "244820",
+                    "244821",
+                    "244822",
+                    "1261863233"
+                  ],
+                  "is_transfer": 0,
+                  "value_assignment": [],
+                  "global_unclassified_switch": 0,
+                  "list": [
+                    "Let me walk you through this. What specific question do you have?"
+                  ],
+                  "is_default": true,
+                  "nodeLabelArr": [],
+                  "node_language": "3",
+                  "agent_type": "SYSTEM",
+                  "tts_language": "3",
+                  "intent_tag_def": {
+                    "No answer": {
+                      "tag_list": [],
+                      "intent_code": ""
+                    },
+                    "Reject": {
+                      "tag_list": [],
+                      "intent_code": ""
+                    },
+                    "Negative": {
+                      "tag_list": [],
+                      "intent_code": ""
+                    },
+                    "Positive": {
+                      "tag_list": [],
+                      "intent_code": ""
+                    },
+                    "Unclassified": {
+                      "tag_list": [],
+                      "intent_code": ""
+                    }
+                  },
+                  "open_talk_finish": false,
+                  "can_interrupt_percent": 0.8,
+                  "name": "Talk Node",
+                  "notices_info": [],
+                  "notice_send_type": 0,
+                  "position": {
+                    "x": 120,
+                    "y": 80
+                  },
+                  "top": 80,
+                  "left": 120
+                },
+                "branches": [
+                  {
+                    "label": "Positive",
+                    "kind": "intent",
+                    "target_uuid": "1703565c-9c73-5845-aee8-ac90f6a06b4b",
+                    "target_component": null,
+                    "target_kb": null,
+                    "terminal": null
+                  },
+                  {
+                    "label": "Negative",
+                    "kind": "intent",
+                    "target_uuid": "5475af9f-d503-58cc-b1f3-6690a6596579",
+                    "target_component": null,
+                    "target_kb": null,
+                    "terminal": null
+                  },
+                  {
+                    "label": "Unclassified",
+                    "kind": "intent",
+                    "target_uuid": "5475af9f-d503-58cc-b1f3-6690a6596579",
+                    "target_component": null,
+                    "target_kb": null,
+                    "terminal": null
+                  }
+                ],
+                "hot_words": []
+              },
+              "1703565c-9c73-5845-aee8-ac90f6a06b4b": {
+                "uuid": "1703565c-9c73-5845-aee8-ac90f6a06b4b",
+                "label": "Talk Node",
+                "node_type": "talk",
+                "text": "Your account is active and in good standing. You can manage your billing online.",
+                "referenced_vars": [],
+                "allowed_kbs": [
+                  244811,
+                  244812,
+                  244813,
+                  244814,
+                  244815,
+                  244816,
+                  244817,
+                  244818,
+                  244819,
+                  244820,
+                  244821,
+                  244822,
+                  1261863233
+                ],
+                "data": {
+                  "speakType": 1,
+                  "all_client_intent": [
+                    {
+                      "intents": [
+                        {
+                          "intentId": "463428"
+                        }
+                      ],
+                      "name": "Positive",
+                      "match": false,
+                      "checked": true,
+                      "language": "3",
+                      "threshold": "",
+                      "id": "9c048193-5b86-5d38-8111-63b20b2e10a8"
+                    },
+                    {
+                      "intents": [
+                        {
+                          "intentId": "463429"
+                        }
+                      ],
+                      "name": "Negative",
+                      "match": false,
+                      "checked": true,
+                      "language": "3",
+                      "threshold": "",
+                      "id": "a1ca5f15-c62b-5777-abed-6d6bf0c56eb1"
+                    },
+                    {
+                      "intents": [
+                        {
+                          "intentId": "463430"
+                        }
+                      ],
+                      "name": "Reject",
+                      "match": false,
+                      "checked": false,
+                      "language": "3",
+                      "threshold": ""
+                    },
+                    {
+                      "intents": [
+                        {
+                          "intentId": "463431"
+                        }
+                      ],
+                      "name": "Unclassified",
+                      "match": false,
+                      "checked": true,
+                      "language": "3",
+                      "threshold": "",
+                      "id": "aca0fcea-c4f0-59fd-934a-8877744fc49b"
+                    },
+                    {
+                      "intents": [
+                        {
+                          "intentId": "463433"
+                        }
+                      ],
+                      "name": "No answer",
+                      "match": false,
+                      "checked": false,
+                      "language": "3",
+                      "threshold": ""
+                    }
+                  ],
+                  "node_language_item": "3",
+                  "intention_judgment_time": 2,
+                  "type": 1,
+                  "repeat_script_type": 0,
+                  "hot_words_list": [],
+                  "dialog_list": [
+                    {
+                      "xml": "<speak xmlns:wiz=\"http://www.wiz.ai/develop/xml/tts\"><wiz:express-as style=\"default\">Your account is active and in good standing. You can manage your billing online.</wiz:express-as></speak>",
+                      "html": "<p>Your account is active and in good standing. You can manage your billing online.</p>",
+                      "text": "Your account is active and in good standing. You can manage your billing online."
+                    }
+                  ],
+                  "user_response_mode": "voice",
+                  "tag_list": [],
+                  "openChasingDedayTime": false,
+                  "openUserPauseDuration": false,
+                  "can_be_interrupted": 0,
+                  "id": "1703565c-9c73-5845-aee8-ac90f6a06b4b",
+                  "node_repetition": 0,
+                  "open_pause_duration": false,
+                  "selected": false,
+                  "openChasingDedayTim": false,
+                  "allow_jump_knowledges_switch": 0,
+                  "client_intent": [
+                    "Positive",
+                    "Negative",
+                    "Unclassified"
+                  ],
+                  "intent_rollback_enable": false,
+                  "node_variables": [],
+                  "allow_jump_knowledges": [
+                    "244811",
+                    "244812",
+                    "244813",
+                    "244814",
+                    "244815",
+                    "244816",
+                    "244817",
+                    "244818",
+                    "244819",
+                    "244820",
+                    "244821",
+                    "244822",
+                    "1261863233"
+                  ],
+                  "is_transfer": 0,
+                  "value_assignment": [],
+                  "global_unclassified_switch": 0,
+                  "list": [
+                    "Your account is active and in good standing. You can manage your billing online."
+                  ],
+                  "is_default": false,
+                  "nodeLabelArr": [],
+                  "node_language": "3",
+                  "agent_type": "SYSTEM",
+                  "tts_language": "3",
+                  "intent_tag_def": {
+                    "No answer": {
+                      "tag_list": [],
+                      "intent_code": ""
+                    },
+                    "Reject": {
+                      "tag_list": [],
+                      "intent_code": ""
+                    },
+                    "Negative": {
+                      "tag_list": [],
+                      "intent_code": ""
+                    },
+                    "Positive": {
+                      "tag_list": [],
+                      "intent_code": ""
+                    },
+                    "Unclassified": {
+                      "tag_list": [],
+                      "intent_code": ""
+                    }
+                  },
+                  "open_talk_finish": false,
+                  "can_interrupt_percent": 0.8,
+                  "name": "Talk Node",
+                  "notices_info": [],
+                  "notice_send_type": 0,
+                  "position": {
+                    "x": 380,
+                    "y": 230
+                  },
+                  "top": 230,
+                  "left": 380
+                },
+                "branches": [
+                  {
+                    "label": "Positive",
+                    "kind": "intent",
+                    "target_uuid": "5475af9f-d503-58cc-b1f3-6690a6596579",
+                    "target_component": null,
+                    "target_kb": null,
+                    "terminal": null
+                  },
+                  {
+                    "label": "Negative",
+                    "kind": "intent",
+                    "target_uuid": "5475af9f-d503-58cc-b1f3-6690a6596579",
+                    "target_component": null,
+                    "target_kb": null,
+                    "terminal": null
+                  },
+                  {
+                    "label": "Unclassified",
+                    "kind": "intent",
+                    "target_uuid": "5475af9f-d503-58cc-b1f3-6690a6596579",
+                    "target_component": null,
+                    "target_kb": null,
+                    "terminal": null
+                  }
+                ],
+                "hot_words": []
+              },
+              "5475af9f-d503-58cc-b1f3-6690a6596579": {
+                "uuid": "5475af9f-d503-58cc-b1f3-6690a6596579",
+                "label": "Exit Node",
+                "node_type": "exit",
+                "text": "Is there anything else I can help with today?",
+                "referenced_vars": [],
+                "allowed_kbs": [
+                  244811,
+                  244812,
+                  244813,
+                  244814,
+                  244815,
+                  244816,
+                  244817,
+                  244818,
+                  244819,
+                  244820,
+                  244821,
+                  244822,
+                  1261863233
+                ],
+                "data": {
+                  "appoint_node_id": "",
+                  "speakType": 1,
+                  "hitKnowledgeRate": [],
+                  "intention_judgment_time": 2,
+                  "type": 2,
+                  "repeat_script_type": 0,
+                  "hot_words_list": [],
+                  "hangupRate": "0.0%",
+                  "exclusive_key_words": [],
+                  "dialog_list": [
+                    {
+                      "xml": "<speak xmlns:wiz=\"http://www.wiz.ai/develop/xml/tts\"><wiz:express-as style=\"default\">Is there anything else I can help with today?</wiz:express-as></speak>",
+                      "html": "<p>Is there anything else I can help with today?</p>",
+                      "text": "Is there anything else I can help with today?"
+                    }
+                  ],
+                  "tag_list": [],
+                  "openUserPauseDuration": false,
+                  "can_be_interrupted": 0,
+                  "id": "5475af9f-d503-58cc-b1f3-6690a6596579",
+                  "node_repetition": 0,
+                  "open_pause_duration": false,
+                  "selected": false,
+                  "hitKnowledgeCountsRate": "0.0%",
+                  "multiple_appoint_id": "",
+                  "openChasingDedayTim": false,
+                  "allow_jump_knowledges_switch": 0,
+                  "allow_jump_knowledges": [
+                    "244811",
+                    "244812",
+                    "244813",
+                    "244814",
+                    "244815",
+                    "244816",
+                    "244817",
+                    "244818",
+                    "244819",
+                    "244820",
+                    "244821",
+                    "244822",
+                    "1261863233"
+                  ],
+                  "is_transfer": 0,
+                  "appoint_knowledge_id": "",
+                  "list": [
+                    "Is there anything else I can help with today?"
+                  ],
+                  "is_default": false,
+                  "textareaList": [
+                    ""
+                  ],
+                  "nodeLabelArr": [],
+                  "node_language": "3",
+                  "agent_type": "SYSTEM",
+                  "tts_language": "3",
+                  "sms_id": "",
+                  "can_interrupt_percent": 0.8,
+                  "name": "Exit Node",
+                  "notices_info": [],
+                  "notice_send_type": 0,
+                  "position": {
+                    "x": 120,
+                    "y": 230
+                  },
+                  "top": 230,
+                  "left": 120
+                },
+                "branches": [
+                  {
+                    "label": "hang up",
+                    "kind": "exit",
+                    "target_uuid": null,
+                    "target_component": null,
+                    "target_kb": null,
+                    "terminal": "hangup"
+                  }
+                ],
+                "hot_words": []
+              }
+            },
+            "parent_uuid": "0"
+          }
+        ],
+        "knowledge_bases": [],
+        "global_hot_words": []
+      },
+      "intent_names": [
+        "UserNeedsMoreHelp"
+      ],
+      "answers": [
+        {
+          "text": "We offer flexible billing options. Your account is active and in good standing.",
+          "after": "wait"
+        }
+      ],
+      "trigger_type": "intent",
+      "is_user_created": true,
+      "multi_round_target": "FAQResolution"
+    }
+  ],
+  "global_hot_words": [
+    "urgent",
+    "help",
+    "support",
+    "issue",
+    "problem",
+    "error"
+  ]
+}

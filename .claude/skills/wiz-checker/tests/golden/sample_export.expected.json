@@ -1,0 +1,47 @@
+{
+  "file": "sample_export.json",
+  "summary": {
+    "errors": 0,
+    "warnings": 3,
+    "checks_run": [
+      "schema",
+      "graph",
+      "variables",
+      "intents",
+      "platform",
+      "tags"
+    ]
+  },
+  "findings": [
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "1265388768",
+        "field": "name"
+      },
+      "message": "Variable {IssueCategory} is declared but never referenced."
+    },
+    {
+      "code": "WIZ202",
+      "severity": "warning",
+      "location": {
+        "entity": "Variable",
+        "id": "461084805",
+        "field": "name"
+      },
+      "message": "Variable {ResolutionTime} is declared but never referenced."
+    },
+    {
+      "code": "WIZ305",
+      "severity": "warning",
+      "location": {
+        "entity": "SpeechIntent",
+        "id": "913394393",
+        "field": null
+      },
+      "message": "Intent 'UserConfused' (id 913394393) is user-created but has no keywords and no training phrases \u2014 it has no NLU signal to trigger on."
+    }
+  ]
+}

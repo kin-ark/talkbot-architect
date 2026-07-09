@@ -16,11 +16,12 @@ SKILL_DIR = Path(__file__).resolve().parents[1]
 PROJECT_ROOT = SKILL_DIR.parents[2]  # .claude/skills/wiz-checker -> project root
 CLI = SKILL_DIR / "scripts" / "check.py"
 GOLDEN_DIR = SKILL_DIR / "tests" / "golden"
+FIXTURE_DIR = SKILL_DIR / "tests" / "fixtures"
 
 SAMPLES = [
+    FIXTURE_DIR / "sample_export.json",
     PROJECT_ROOT / "talkbot" / "Test+Kinan" / "speech13139256226648334285.json",
     PROJECT_ROOT / "talkbot" / "Tiktok+Paylater+DPD0" / "speech4892384019254584542.json",
-    PROJECT_ROOT / "talkbot" / "TSP+Matchmaking" / "speech2572824560161596380.json",
     PROJECT_ROOT / "talkbot" / "Empty+Dialogue" / "speech4010869963530658988.json",
     PROJECT_ROOT
     / "talkbot"
