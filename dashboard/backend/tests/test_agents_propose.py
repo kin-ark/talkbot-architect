@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 import agents
 
-_REAL = Path(__file__).resolve().parents[3] / "speech2572824560161596380.unpacked.json"
+_REAL = Path(__file__).resolve().parent / "fixtures" / "sample_export.json"
 _DATA = json.loads(_REAL.read_text(encoding="utf-8"))
 
 

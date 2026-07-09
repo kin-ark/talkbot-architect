@@ -13,13 +13,12 @@ _BACKEND = Path(__file__).resolve().parents[1]
 if str(_BACKEND) not in sys.path:
     sys.path.insert(0, str(_BACKEND))
 
-# Real export: repo-root is parents[3] from this test file
-# (tests/ -> backend/ -> dashboard/ -> repo-root/)
-_REAL_EXPORT = Path(__file__).resolve().parents[3] / "speech2572824560161596380.unpacked.json"
+# Fixture: tests/fixtures/sample_export.json
+_REAL_EXPORT = Path(__file__).resolve().parent / "fixtures" / "sample_export.json"
 _DATA = json.loads(_REAL_EXPORT.read_text("utf-8"))
 
-# First component's entry node uuid from the golden file (known-good)
-_KNOWN_NODE_UUID = "5e77a1e3-58ff-4daf-9c93-843813f45ac7"
+# A stable talk-node uuid present in the fixture (for read_node / node-text tests)
+_KNOWN_NODE_UUID = "fdce746c-fe23-5a51-a8b6-03654b1624fa"
 
 
 import agents  # noqa: E402  (after sys.path setup)

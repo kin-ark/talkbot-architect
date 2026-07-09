@@ -2,7 +2,7 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 from main import app
 
-_REAL = Path(__file__).resolve().parents[3] / "speech2572824560161596380.unpacked.json"
+_REAL = Path(__file__).resolve().parent / "fixtures" / "sample_export.json"
 _COMPONENT_EXPORT = Path(__file__).resolve().parents[3] / ".claude" / "skills" / "wiz-checker" / "tests" / "fixtures" / "component_export_min.json"
 client = TestClient(app)
 

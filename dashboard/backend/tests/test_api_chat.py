@@ -6,7 +6,7 @@ import main
 from main import app, get_client
 from llm.base import FakeLLMClient, LLMResponse, ToolCall
 
-_REAL = Path(__file__).resolve().parents[3] / "speech2572824560161596380.unpacked.json"
+_REAL = Path(__file__).resolve().parent / "fixtures" / "sample_export.json"
 _client = TestClient(app)
 
 

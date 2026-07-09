@@ -53,7 +53,7 @@ def test_specs_have_all_tools():
 # dispatch – read-only tools
 # ---------------------------------------------------------------------------
 
-_REAL_EXPORT = Path(__file__).resolve().parents[3] / "speech2572824560161596380.unpacked.json"
+_REAL_EXPORT = Path(__file__).resolve().parent / "fixtures" / "sample_export.json"
 _DATA = json.loads(_REAL_EXPORT.read_text("utf-8"))
 
 
@@ -78,7 +78,7 @@ def test_dispatch_summarize():
 
 
 def test_dispatch_read_node():
-    uuid = "5e77a1e3-58ff-4daf-9c93-843813f45ac7"
+    uuid = "fdce746c-fe23-5a51-a8b6-03654b1624fa"
     out = registry.dispatch("read_node", {"uuid": uuid}, _DATA)
     assert out["proposal"] is None
     assert out["result"] is not None
