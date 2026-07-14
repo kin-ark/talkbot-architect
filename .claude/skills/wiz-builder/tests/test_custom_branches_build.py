@@ -5,7 +5,6 @@ from pathlib import Path
 
 import pytest
 import yaml
-
 from wizbuilder.compile import compile_manifest
 from wizbuilder.manifest import ManifestError, load_manifest
 
@@ -58,7 +57,8 @@ def test_custom_branch_compiles_checker_clean(tmp_path):
 
 
 def test_undeclared_intent_raises(tmp_path):
-    p = _manifest(tmp_path, custom_intents=[{"name": "PaidCash", "language": "IDN", "keywords": ["x"]}])
+    p = _manifest(tmp_path,
+                  custom_intents=[{"name": "PaidCash", "language": "IDN", "keywords": ["x"]}])
     with pytest.raises(ManifestError, match="not a declared custom_intent"):
         load_manifest(str(p))
 

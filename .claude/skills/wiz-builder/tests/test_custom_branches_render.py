@@ -1,4 +1,4 @@
-from wizbuilder.noderender import NodeSpec, EdgeSpec, render_component_nodes
+from wizbuilder.noderender import EdgeSpec, NodeSpec, render_component_nodes
 
 
 class _Minter:
