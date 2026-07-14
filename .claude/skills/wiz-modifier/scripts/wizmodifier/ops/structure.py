@@ -33,9 +33,6 @@ _SECONDARY_STRIP_KEYS = frozenset({
     "nluConf", "outboundPorts", "updateBy",
 })
 
-# System branch names used to resolve branch_intent_ids from SpeechIntent.
-_SYSTEM_BRANCH_NAMES = {"Positive", "Negative", "Reject", "Unclassified", "No answer"}
-
 # Default node_language code: "3" = Bahasa Indonesia (IDN).
 # The modifier operates on an existing export and has no manifest language field.
 # We default to IDN ("3") because it is the only validated language code in this MVP.
@@ -152,6 +149,7 @@ def _validate_special_node(
     comp_by_name: dict[str, dict] | None = None,
     edge_branches_from_node: set[str] | None = None,
     current_comp_name: str | None = None,
+    intent_names: set[str] | None = None,
 ) -> None:
     """Validate a conditional/assign/exit_port/nested node's config before rendering.
 
@@ -164,8 +162,29 @@ def _validate_special_node(
         — used to validate that nested out-edges name real child exit ports.
     current_comp_name: optional name of the component receiving this node — used to
         skip self when scanning for existing nested references (M2).
+    intent_names: optional set of intent names declared in the export's SpeechIntent —
+        used to validate a talk node's config.branch_intents references.
     """
     ntype = node.get("type")
+
+    if ntype in (None, "talk"):
+        bi = (node.get("config") or {}).get("branch_intents") or {}
+        if bi:
+            nid = node.get("id", "<no-id>")
+            known = intent_names or set()
+            for label, names in bi.items():
+                for iname in (names or []):
+                    if iname not in known:
+                        raise ValueError(
+                            f"{prefix} talk node {nid!r} branch {label!r} references "
+                            f"{iname!r} which is not an intent in this export"
+                        )
+            if "Unclassified" not in (edge_branches_from_node or set()):
+                raise ValueError(
+                    f"{prefix} talk node {nid!r} declares branch_intents but has "
+                    f"no connected Unclassified branch"
+                )
+
     if ntype not in (
         "conditional", "assign", "exit_port", "nested", "goto_kb", "goto", "goto_mr",
         "talk_continue"
@@ -332,7 +351,7 @@ def _resolve_context(bundle: InputBundle) -> tuple[int, dict[str, int], list[str
     branch_intent_ids: dict[str, int] = {
         i["intentName"]: i["intentId"]
         for i in speech_intents
-        if i.get("intentName") in _SYSTEM_BRANCH_NAMES
+        if i.get("intentName")
     }
 
     # kb_ids from BizKnowledgeInfo
@@ -693,9 +712,12 @@ def append_node(bundle: InputBundle, params: dict, minter) -> None:
     # Validate special nodes BEFORE rendering.
     current_comp_name = comp.get("name")
     if node_type_str in (
-        "conditional", "assign", "exit_port", "nested", "goto", "goto_kb", "goto_mr",
+        "talk", "conditional", "assign", "exit_port", "nested", "goto", "goto_kb", "goto_mr",
         "talk_continue"
     ):
+        _si_raw = bundle.data.get("SpeechIntent", "[]")
+        _si = json.loads(_si_raw) if isinstance(_si_raw, str) else _si_raw
+        _intent_names = {i["intentName"] for i in _si if i.get("intentName")}
         _validate_special_node(
             node,
             _declared_var_names(bundle),
@@ -704,6 +726,7 @@ def append_node(bundle: InputBundle, params: dict, minter) -> None:
             comp_by_name=comp_by_name,
             edge_branches_from_node=edge_branches_from_node or None,
             current_comp_name=current_comp_name,
+            intent_names=_intent_names,
         )
 
     # Build nested_exit_map for nested nodes: {target-name: {exit-name: child-exit-uuid}}.
