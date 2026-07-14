@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Play, RotateCcw, X } from 'lucide-react';
 import { neededVars, defaultStartComponent } from '../sim/prep';
 import { start as simStart, choose as simChoose } from '../sim/engine';
@@ -26,6 +26,19 @@ export default function SimulatorPanel({ summary, onCurrentNode }) {
   const begin = () => push(simStart(summary, startComp, varInputs));
   const pick = (i) => push(simChoose(state, summary, i));
   const exitSim = () => { setState(null); onCurrentNode?.(null); };
+
+  // Clear the canvas ring when the panel unmounts (e.g. switching dock tabs).
+  useEffect(() => () => { onCurrentNode?.(null); }, []);   // eslint-disable-line react-hooks/exhaustive-deps
+
+  // A new document (apply/undo/sample) invalidates the run: reset the panel and
+  // clear the ring so neither points at a stale summary.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- summary-change reset
+    setState(null);
+    setStartComp(defaultStartComponent(summary) || '');
+    setVarInputs({});
+    onCurrentNode?.(null);
+  }, [summary]);   // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!summary || components.length === 0) {
     return <div className="p-4 text-sm text-text-tertiary" data-testid="sim-empty">Load or build a bot first.</div>;
