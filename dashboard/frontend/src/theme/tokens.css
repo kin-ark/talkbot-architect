@@ -38,23 +38,23 @@
 }
 
 .dark {
-  --c-canvas: #0F1115;
+  --c-canvas: #0E1014;
   --c-surface: #1A1D23;
-  --c-surface-muted: #22262E;
-  --c-border: #2B313A;
-  --c-divider: #23272F;
-  --c-text: #E5E7EB;
-  --c-text-2: #A1A8B3;
-  --c-text-3: #6B7280;
-  --c-primary: #4C82FF;
-  --c-primary-hover: #3370FF;
+  --c-surface-muted: #23272F;
+  --c-border: #353C47;
+  --c-divider: #2A2F38;
+  --c-text: #ECEEF1;
+  --c-text-2: #B4BBC6;
+  --c-text-3: #8B939F;
+  --c-primary: #5B8DFF;
+  --c-primary-hover: #4C82FF;
   --c-on-primary: #FFFFFF;
-  --c-success: #34C724;
-  --c-success-bg: #15291B;
-  --c-error: #F54A45;
-  --c-error-bg: #2A1517;
-  --c-warning: #FF8800;
-  --c-warning-bg: #2A2010;
+  --c-success: #4ADE80;
+  --c-success-bg: #16311E;
+  --c-error: #F87171;
+  --c-error-bg: #37191B;
+  --c-warning: #FBA94C;
+  --c-warning-bg: #33270F;
   --shadow-card: 0 1px 3px rgba(0, 0, 0, .4);
   --c-edge-intent: #E8A24B;
   --c-edge-condition: #A98AF0;
@@ -62,8 +62,8 @@
   --c-edge-next: #7E8794;
   --c-edge-exit: #4CA9E8;
   --c-edge-xcomp: #8189F0;
-  --c-kb-bg: #2A2510;
-  --c-kb-border: #B8860B;
+  --c-kb-bg: #2E2911;
+  --c-kb-border: #D4A72C;
   --c-code-bg: #0F1115;
   --c-code-fg: #E5E7EB;
   --c-node-talk: #60A5FA;
