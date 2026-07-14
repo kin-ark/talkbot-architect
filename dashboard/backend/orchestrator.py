@@ -143,6 +143,8 @@ def run_turn_stream(client, session, user_message: str) -> Iterator[dict]:
                     _rollback()
                     yield {"type": "done", "canceled": True, "text": ""}
                     return
+                if chunk.status:
+                    yield {"type": "status", **chunk.status}
                 if chunk.thinking_delta:
                     yield {"type": "thinking", "delta": chunk.thinking_delta}
                 if chunk.text_delta:

@@ -54,6 +54,21 @@ describe('useSession streaming', () => {
     });
   });
 
+  it('dispatches a retry status onto the streaming bubble, cleared on next token', async () => {
+    scriptStream([
+      { type: 'status', kind: 'retrying', attempt: 1, attempts: 3, wait: 1.0 },
+      { type: 'token', delta: 'ok' },
+      { type: 'done', canceled: false, text: 'ok' },
+    ]);
+    const { result } = renderHook(() => useSession());
+    await act(async () => { await result.current.send('hi'); });
+    await waitFor(() => {
+      const agent = result.current.transcript.filter((m) => m.role === 'agent').at(-1);
+      expect(agent.text).toBe('ok');
+      expect(agent.status).toBeNull(); // token cleared the retry status
+    });
+  });
+
   it('stores the tool result on the trace entry', async () => {
     scriptStream([
       { type: 'tool_start', name: 'validate', args: { x: 1 } },

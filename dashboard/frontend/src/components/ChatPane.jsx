@@ -92,7 +92,7 @@ export default function ChatPane({ transcript, proposal, sending, onSend, onRetr
             <MessageBubble key={i} role={m.role} text={m.text} toolTrace={m.tool_trace}
               reasoning={m.reasoning}
               isLast={i === lastIdx} sending={sending} mdComponents={mdComponents}
-              onRetry={onRetry} onSend={onSend} images={m.images} file={m.file} />
+              onRetry={onRetry} onSend={onSend} images={m.images} file={m.file} status={m.status} />
           ))}
           {!sending && transcript.length > 0 && transcript[lastIdx].role === 'agent' && (
             <div className="text-left">

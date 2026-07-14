@@ -194,8 +194,9 @@ export function useSession() {
           await api.streamChat(msg, {
             signal: ctrl.current.signal,
             onEvent: (e) => {
-              if (e.type === 'thinking') patch((m) => ({ ...m, reasoning: (m.reasoning || '') + e.delta }));
-              else if (e.type === 'token') patch((m) => ({ ...m, text: m.text + e.delta }));
+              if (e.type === 'status') patch((m) => ({ ...m, status: e }));
+              else if (e.type === 'thinking') patch((m) => ({ ...m, status: null, reasoning: (m.reasoning || '') + e.delta }));
+              else if (e.type === 'token') patch((m) => ({ ...m, status: null, text: m.text + e.delta }));
               else if (e.type === 'tool_start') patch((m) => ({ ...m, tool_trace: [...m.tool_trace, { name: e.name, arguments: e.args, status: 'running' }] }));
               else if (e.type === 'tool_result') patch((m) => ({ ...m, tool_trace: m.tool_trace.map((tt, i) => (i === m.tool_trace.length - 1 ? { ...tt, status: 'done', summary: e.summary, result: e.result } : tt)) }));
               else if (e.type === 'usage') setUsage({ input_tokens: e.input_tokens, output_tokens: e.output_tokens, turns: e.turns, model: e.model });

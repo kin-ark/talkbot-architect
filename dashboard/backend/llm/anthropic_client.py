@@ -6,6 +6,8 @@ from collections.abc import Iterator
 from llm import retry
 from llm.base import LLMClient, LLMResponse, Message, StreamChunk, ToolCall, ToolSpec
 
+_CALL_TIMEOUT = 120.0
+
 
 class AnthropicClient(LLMClient):
     def __init__(self, api_key: str, model: str, base_url: str | None = None,
@@ -13,7 +15,7 @@ class AnthropicClient(LLMClient):
         import anthropic
         # max_retries=0: with_retry is the single retry authority. Without this
         # the SDK's own default (2) compounds under our loop → up to ~9 calls.
-        kwargs: dict = {"api_key": api_key, "max_retries": 0}
+        kwargs: dict = {"api_key": api_key, "max_retries": 0, "timeout": _CALL_TIMEOUT}
         if base_url:
             kwargs["base_url"] = base_url
         self._client = anthropic.Anthropic(**kwargs)
@@ -123,8 +125,11 @@ class AnthropicClient(LLMClient):
                 attempts = getattr(self, "_attempts", 1)
                 if emitted or not self._is_retryable(e) or attempt >= attempts:
                     raise
+                wait = retry.backoff_wait(attempt, 1.0, retry.retry_after_seconds(e))
+                yield StreamChunk(status={"kind": "retrying", "attempt": attempt,
+                                          "attempts": attempts, "wait": round(wait, 1)})
                 sleep_fn = getattr(self, "_sleep", lambda s: None)
-                sleep_fn(retry.backoff_wait(attempt, 1.0, retry.retry_after_seconds(e)))
+                sleep_fn(wait)
 
     @staticmethod
     def _to_anthropic_messages(messages: list[Message]) -> list[dict]:

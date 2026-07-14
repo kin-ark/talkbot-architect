@@ -72,6 +72,7 @@ class StreamChunk:
     thinking_delta: str | None = None   # incremental extended-thinking text (Anthropic only)
     response: LLMResponse | None = None  # set once, on the final chunk
     usage: dict | None = None
+    status: dict | None = None   # transient control signal (e.g. {"kind":"retrying",...}); display-only
 
 
 class LLMClient(ABC):

@@ -24,24 +24,31 @@ function fmtElapsed(sec) {
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 
-function WaitingHeader({ toolTrace, hasText }) {
+function WaitingHeader({ toolTrace, hasText, status }) {
   const [sec, setSec] = useState(0);
   useEffect(() => {
     const id = setInterval(() => setSec((x) => x + 1), 1000);
     return () => clearInterval(id);
   }, []);
   const running = toolTrace?.find((t) => t.status === 'running');
-  const label = hasText ? 'Writing…' : running ? narrate(running.name) : 'Thinking';
+  const label = status?.kind === 'retrying'
+    ? `Provider busy — retrying (${status.attempt}/${status.attempts})`
+    : hasText ? 'Writing' : running ? narrate(running.name) : 'Thinking';
   return (
-    <div data-testid="thinking-header" className="text-xs text-text-tertiary mb-1 flex items-center gap-1.5">
-      <span className="inline-block animate-pulse">◐</span>
-      <span>{label}…</span>
-      <span className="font-mono">{fmtElapsed(sec)}</span>
+    <div data-testid="thinking-header" className="text-xs text-text-tertiary mb-1">
+      <div className="flex items-center gap-1.5">
+        <span className="inline-block animate-pulse">◐</span>
+        <span>{label}…</span>
+        <span className="font-mono">{fmtElapsed(sec)}</span>
+      </div>
+      {sec > 90 && !hasText && (
+        <div className="mt-0.5 text-text-tertiary text-xs">Taking longer than usual — you can Stop and retry.</div>
+      )}
     </div>
   );
 }
 
-export default function MessageBubble({ role, text, toolTrace, reasoning, isLast, sending, mdComponents, onRetry, onSend, images, file }) {
+export default function MessageBubble({ role, text, toolTrace, reasoning, isLast, sending, mdComponents, onRetry, onSend, images, file, status }) {
   const [copied, setCopied] = useState(false);
   const [open, setOpen] = useState(false);
   const userToggled = useRef(false);
@@ -69,7 +76,7 @@ export default function MessageBubble({ role, text, toolTrace, reasoning, isLast
   return (
     <div className={`group ${role === 'user' ? 'text-right' : 'text-left'}`}>
       <div className="text-xs text-text-tertiary mb-0.5">{LABEL[role] || 'Assistant'}</div>
-      {showWaiting && <WaitingHeader toolTrace={toolTrace} hasText={Boolean(text)} />}
+      {showWaiting && <WaitingHeader toolTrace={toolTrace} hasText={Boolean(text)} status={status} />}
       {!plain && reasoning && (
         <div data-testid="reasoning-block" className="mb-1 text-left">
           <button type="button" data-testid="reasoning-toggle" onClick={toggle}

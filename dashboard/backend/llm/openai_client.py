@@ -6,6 +6,8 @@ from collections.abc import Iterator
 
 from llm.base import LLMClient, LLMResponse, Message, StreamChunk, ToolCall, ToolSpec
 
+_CALL_TIMEOUT = 120.0
+
 
 class OpenAIClient(LLMClient):
     def __init__(self, api_key: str, model: str, base_url: str | None = None,
@@ -13,7 +15,7 @@ class OpenAIClient(LLMClient):
         from openai import OpenAI
         # max_retries=0: with_retry is the single retry authority (SDK default 2
         # would compound under our loop).
-        kwargs: dict = {"api_key": api_key, "max_retries": 0}
+        kwargs: dict = {"api_key": api_key, "max_retries": 0, "timeout": _CALL_TIMEOUT}
         if base_url:
             kwargs["base_url"] = base_url
         self._client = OpenAI(**kwargs)
@@ -89,9 +91,13 @@ class OpenAIClient(LLMClient):
                 return
             except Exception as e:  # noqa: BLE001
                 attempt += 1
-                if emitted or not self._is_retryable(e) or attempt >= self._attempts:
+                attempts = getattr(self, "_attempts", 1)
+                if emitted or not self._is_retryable(e) or attempt >= attempts:
                     raise
-                self._sleep(retry.backoff_wait(attempt, 1.0, retry.retry_after_seconds(e)))
+                wait = retry.backoff_wait(attempt, 1.0, retry.retry_after_seconds(e))
+                yield StreamChunk(status={"kind": "retrying", "attempt": attempt,
+                                          "attempts": attempts, "wait": round(wait, 1)})
+                self._sleep(wait)
 
     @staticmethod
     def _to_openai_messages(messages: list[Message]) -> list[dict]:
