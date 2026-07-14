@@ -67,7 +67,7 @@ export function buildGraph(summary) {
             const title = kbTitleMap[b.target_kb] || String(b.target_kb);
             nodes.push({
               id: kbNodeId, position: { x: 0, y: 0 }, data: { label: `KB: ${title}`, kbNode: true, knowledge_id: b.target_kb },
-              style: { background: 'var(--c-kb-bg)', border: '2px solid var(--c-kb-border)', borderRadius: 8, padding: 8, fontSize: 12 },
+              style: { background: 'var(--c-kb-bg)', border: '2px solid var(--c-kb-border)', borderRadius: 8, padding: 8, fontSize: 12, color: 'var(--c-text)' },
             });
           }
           edges.push({
@@ -80,6 +80,9 @@ export function buildGraph(summary) {
           nodes.push({
             id: tid, parentId: comp.uuid, extent: 'parent', position: { x: 0, y: 0 },
             data: { terminal: b.terminal, label: b.terminal === 'hangup' ? 'Hang up' : 'Transfer' },
+            style: { background: 'var(--c-surface-muted)', border: '1px solid var(--c-border)',
+                     borderLeft: '4px solid var(--c-node-exit)', borderRadius: 8, padding: 8,
+                     fontSize: 12, color: 'var(--c-text)' },
           });
           edges.push({
             id: `e-${node.uuid}-${tid}-${b.kind}-${i}`, source: node.uuid, target: tid, type: 'smoothstep',
