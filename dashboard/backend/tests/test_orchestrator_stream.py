@@ -65,3 +65,17 @@ def test_run_turn_still_works_via_drainer():
     assert out["text"] == "No errors found."
     assert out["tool_trace"][0]["name"] == "validate"
     assert out["canceled"] is False
+
+
+def test_run_turn_stream_emits_status_event():
+    from llm.base import LLMResponse
+    class _C:
+        model = "x"
+        def stream_chat(self, messages, tools):
+            from llm.base import StreamChunk
+            yield StreamChunk(status={"kind": "retrying", "attempt": 1, "attempts": 3, "wait": 1.0})
+            yield StreamChunk(response=LLMResponse(text="ok", tool_calls=[]), usage={"input_tokens": 1, "output_tokens": 1})
+    s = Session()
+    s.load({"BizSpeechComponent": "[]"})
+    evs = list(run_turn_stream(_C(), s, "hi"))
+    assert any(e.get("type") == "status" and e.get("kind") == "retrying" for e in evs)

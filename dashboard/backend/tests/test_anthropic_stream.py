@@ -52,3 +52,30 @@ def test_anthropic_stream_yields_deltas_then_final(monkeypatch):
     assert len(finals) == 1
     assert finals[0].text == "hi there"
     assert isinstance(chunks[-1], StreamChunk) and chunks[-1].response is not None
+
+
+def test_anthropic_stream_yields_retry_status_then_succeeds(monkeypatch):
+    import anthropic
+    c = AnthropicClient.__new__(AnthropicClient)
+    c._model = "x"
+    c._attempts = 3
+    slept = []
+    c._sleep = lambda s: slept.append(s)
+    calls = {"n": 0}
+
+    class _Msgs:
+        def stream(self, **kw):
+            calls["n"] += 1
+            if calls["n"] == 1:
+                raise anthropic.APIConnectionError(request=None)  # retryable, pre-emit
+            return _FakeStreamCtx()   # 2nd attempt streams "hi there"
+    class _Client:
+        messages = _Msgs()
+    c._client = _Client()
+
+    chunks = list(c.stream_chat([], []))
+    status = [ch.status for ch in chunks if ch.status]
+    assert status and status[0]["kind"] == "retrying"
+    assert status[0]["attempt"] == 1 and status[0]["attempts"] == 3
+    assert len(slept) == 1                      # slept once before the retry
+    assert any(ch.response for ch in chunks)    # eventually succeeded
