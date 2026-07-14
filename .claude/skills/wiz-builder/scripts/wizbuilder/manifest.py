@@ -245,6 +245,12 @@ def _validate_cross_field_invariants(data: dict, path: Path) -> None:
                 continue
             nid = node["id"]
             for label, intent_names in bi.items():
+                if label in _VALID_BRANCHES:
+                    raise ManifestError(
+                        f"{path}: canvas {cname!r}: talk node {nid!r} branch_intents label "
+                        f"{label!r} collides with a system branch name; custom labels must "
+                        f"be distinct"
+                    )
                 for iname in (intent_names or []):
                     if iname not in declared_intents:
                         raise ManifestError(

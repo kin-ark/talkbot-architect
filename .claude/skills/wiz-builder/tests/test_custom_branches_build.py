@@ -71,3 +71,18 @@ def test_custom_branch_without_unclassified_raises(tmp_path):
     p.write_text(yaml.safe_dump(m), encoding="utf-8")
     with pytest.raises(ManifestError, match="no connected Unclassified branch"):
         load_manifest(str(p))
+
+
+def test_system_name_collision_raises(tmp_path):
+    m = yaml.safe_load(_manifest(tmp_path).read_text(encoding="utf-8"))
+    m["canvases"][0]["nodes"][0]["config"]["branch_intents"] = {"Positive": ["PaidCash"]}
+    m["canvases"][0]["edges"] = [
+        {"from": "ask", "branch": "Positive", "to": "thanks"},
+        {"from": "ask", "branch": "Unclassified", "to": "retry"},
+        {"from": "thanks", "branch": "Unclassified", "to": "bye"},
+        {"from": "retry", "branch": "Unclassified", "to": "bye"},
+    ]
+    p = tmp_path / "m3.yaml"
+    p.write_text(yaml.safe_dump(m), encoding="utf-8")
+    with pytest.raises(ManifestError, match="collides"):
+        load_manifest(str(p))

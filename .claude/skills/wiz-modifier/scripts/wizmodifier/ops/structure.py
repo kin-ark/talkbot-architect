@@ -50,6 +50,11 @@ _VALID_OPERATORS = frozenset(
 )
 _UNARY_OPERATORS = frozenset({"IsNull", "NotNull"})
 
+# The 5 system branch names a talk node's canvas.ports.items always carries. Mirrors
+# manifest.py's _VALID_BRANCHES — a custom branch_intents label equal to one of these
+# would produce duplicate ports/all_client_intent rows, so it is rejected outright.
+_SYSTEM_BRANCH_NAMES = frozenset({"Positive", "Negative", "Reject", "Unclassified", "No answer"})
+
 
 def _speech_variables(bundle: InputBundle) -> list[dict]:
     """Decode the export's current SpeechVariable list (empty list on absence/parse miss)."""
@@ -173,6 +178,11 @@ def _validate_special_node(
             nid = node.get("id", "<no-id>")
             known = intent_names or set()
             for label, names in bi.items():
+                if label in _SYSTEM_BRANCH_NAMES:
+                    raise ValueError(
+                        f"{prefix} talk node {nid!r} branch_intents label {label!r} "
+                        f"collides with a system branch name; custom labels must be distinct"
+                    )
                 for iname in (names or []):
                     if iname not in known:
                         raise ValueError(
@@ -431,14 +441,18 @@ def _render_nodes(
     # so pass None — the single-parent check is enforced in append_node directly.
     declared_vars = _declared_var_names(bundle)
     batch_node_ids = {n["id"] for n in params["nodes"]}
+    _si_raw = bundle.data.get("SpeechIntent", "[]")
+    _si = json.loads(_si_raw) if isinstance(_si_raw, str) else _si_raw
+    _intent_names = {i["intentName"] for i in _si if i.get("intentName")}
     for n in params["nodes"]:
-        ntype = n.get("type")
-        if ntype in ("conditional", "assign", "exit_port", "nested"):
+        ntype = n.get("type", "talk")
+        if ntype in ("talk", "conditional", "assign", "exit_port", "nested"):
             _validate_special_node(
                 n, declared_vars, batch_node_ids, "add-component:",
                 comp_by_name=comp_by_name,
                 edge_branches_from_node=branches_by_node.get(n["id"]),
                 current_comp_name=None,
+                intent_names=_intent_names,
             )
 
     # Build nested_exit_map: {target-name: {exit-name: child-exit-uuid}} for all nested nodes.
