@@ -9,8 +9,9 @@ import IntentsPanel from './IntentsPanel';
 import TagsPanel from './TagsPanel';
 import FlowCanvas from './FlowCanvas';
 import ComponentsRail from './ComponentsRail';
+import SimulatorPanel from './SimulatorPanel';
 
-export default function RightDock({ activeTab, onTabChange, summary, findings, selectedNode, onSelectNode, chat, onPreview, onAskFix, onSelectComponent, focusComponentId, onEditNode, intents, focusKb, onExportComponent, canSendImages = true }) {
+export default function RightDock({ activeTab, onTabChange, summary, findings, selectedNode, onSelectNode, chat, onPreview, onAskFix, onSelectComponent, focusComponentId, onEditNode, intents, focusKb, onExportComponent, canSendImages = true, onSimNode }) {
   const [drill, setDrill] = useState(null);
   const [selectedKb, setSelectedKb] = useState(null);
   // Reset KB selection when a new export/summary loads (e.g. after apply/undo).
@@ -43,6 +44,7 @@ export default function RightDock({ activeTab, onTabChange, summary, findings, s
     { id: 'intents', label: 'Intents' },
     { id: 'tags', label: 'Tags' },
     { id: 'components', label: 'Components' },
+    { id: 'simulate', label: 'Simulate' },
   ];
 
   // Drag the left edge to resize; clamp to [320px, 70vw] and persist.
@@ -108,6 +110,9 @@ export default function RightDock({ activeTab, onTabChange, summary, findings, s
         {activeTab === 'components' && (
           <ComponentsRail summary={summary} selectedComponentId={focusComponentId}
             onSelectComponent={onSelectComponent} onExportComponent={onExportComponent} />
+        )}
+        {activeTab === 'simulate' && (
+          <SimulatorPanel summary={summary} onCurrentNode={onSimNode} />
         )}
       </div>
     </div>

@@ -22,6 +22,7 @@ export default function App() {
   const [focusComponentId, setFocusComponentId] = useState(null);
   const [focusKb, setFocusKb] = useState(null);
   const [preview, setPreview] = useState(null);
+  const [simNode, setSimNode] = useState(null);
   const [railCollapsed, setRailCollapsed] = useState(() => {
     try { return localStorage.getItem('tb-rail-collapsed') === '1'; } catch { return false; }
   });
@@ -162,6 +163,7 @@ export default function App() {
                 <FlowCanvas summary={preview ? preview.summary : s.summary}
                   onSelectNode={selectNode} focusComponentId={focusComponentId}
                   highlight={preview ? preview.changeSet : null}
+                  simCurrentNode={simNode}
                   onSelectKb={(id) => { setDockTab('kb'); setFocusKb((f) => ({ id, nonce: (f?.nonce || 0) + 1 })); }} />
               </div>
             </>
@@ -180,7 +182,7 @@ export default function App() {
             onSelectComponent={setFocusComponentId} focusComponentId={focusComponentId}
             onEditNode={(uuid, fields) => s.editNodeText(uuid, fields)}
             intents={s.intents} focusKb={focusKb} onExportComponent={s.isComponent ? undefined : onExportComponent}
-            canSendImages={canSendImages} />
+            canSendImages={canSendImages} onSimNode={setSimNode} />
         )}
       </div>
       {pageOverlay}

@@ -75,7 +75,7 @@ function FlowNode({ data }) {
 
 const nodeTypes = { componentNode: ComponentNode, flow: FlowNode };
 
-export default function FlowCanvas({ summary, onSelectNode, focusComponentId, highlight, onSelectKb }) {
+export default function FlowCanvas({ summary, onSelectNode, focusComponentId, highlight, onSelectKb, simCurrentNode }) {
   const [expanded, setExpanded] = useState(() => new Set());
   const [rf, setRf] = useState(null);
   const [hoverId, setHoverId] = useState(null);
@@ -94,6 +94,18 @@ export default function FlowCanvas({ summary, onSelectNode, focusComponentId, hi
     setExpanded((prev) => new Set(prev).add(focusComponentId));
     if (rf) rf.fitView({ nodes: [{ id: focusComponentId }], duration: 300, padding: 0.3 });
   }, [focusComponentId, rf]);
+
+  // Simulator: expand the current node's owner and pan to it.
+  useEffect(() => {
+    if (!simCurrentNode) return;
+    let owner = null;
+    for (const c of summary?.components || []) {
+      if (c.nodes && c.nodes[simCurrentNode]) { owner = c.uuid; break; }
+    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- prop-driven sim focus; fitView after expand re-render
+    if (owner) setExpanded((prev) => new Set(prev).add(owner));
+    if (rf) rf.fitView({ nodes: [{ id: simCurrentNode }], duration: 300, padding: 0.4 });
+  }, [simCurrentNode, rf, summary]);
 
   const toggle = useCallback((id) => {
     setExpanded((prev) => {
@@ -136,9 +148,11 @@ export default function FlowCanvas({ summary, onSelectNode, focusComponentId, hi
         }
         if (n.data?.kbNode || n.data?.terminal) return n;
         const isMatch = searchMatchIds.has(n.id);
+        const isSim = simCurrentNode === n.id;
         const added = highlight?.added_nodes?.includes(n.id);
         const changed = highlight?.changed_nodes?.includes(n.id);
-        const ring = isMatch ? '0 0 0 2px var(--c-primary)'
+        const ring = isSim ? '0 0 0 3px var(--c-primary)'
+          : isMatch ? '0 0 0 2px var(--c-primary)'
           : added ? '0 0 0 2px var(--c-success)'
           : changed ? '0 0 0 2px var(--c-warning)' : undefined;
         return {
@@ -173,7 +187,7 @@ export default function FlowCanvas({ summary, onSelectNode, focusComponentId, hi
         style: { ...e.style, pointerEvents: 'none' } });
     }
     return { nodes: visible, edges: rerouted, compIds: (summary?.components || []).map((c) => c.uuid) };
-  }, [summary, expanded, toggle, highlight, searchMatchIds]);
+  }, [summary, expanded, toggle, highlight, searchMatchIds, simCurrentNode]);
 
   const showMap = () => setExpanded(new Set());
   const showDetail = () => setExpanded(new Set(compIds));
