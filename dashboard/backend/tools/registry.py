@@ -109,7 +109,11 @@ _SPECS = [
                                               "value": {"type": "string"},
                                               "value_var": {"type": "string"},
                                               "to": {"type": "string"}},
-                                          "required": ["name", "to"]}}}}},
+                                          "required": ["name", "to"]}},
+                                      "branch_intents": {
+                                          "type": "object",
+                                          "additionalProperties": {
+                                              "type": "array", "items": {"type": "string"}}}}}},
                                   "tags": {"type": "array", "items": {"type": "object",
                                       "properties": {"category": {"type": "string"},
                                                      "values": {"type": "array", "items": {"type": "string"}}},
