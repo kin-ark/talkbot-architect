@@ -112,7 +112,7 @@ export default function RightDock({ activeTab, onTabChange, summary, findings, s
             onSelectComponent={onSelectComponent} onExportComponent={onExportComponent} />
         )}
         {activeTab === 'simulate' && (
-          <SimulatorPanel summary={summary} onCurrentNode={onSimNode} />
+          <SimulatorPanel summary={summary} onCurrentNode={onSimNode} intents={intents} />
         )}
       </div>
     </div>

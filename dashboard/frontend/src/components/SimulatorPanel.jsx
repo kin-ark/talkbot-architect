@@ -1,7 +1,8 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Play, RotateCcw, X } from 'lucide-react';
 import { neededVars, defaultStartComponent } from '../sim/prep';
-import { start as simStart, choose as simChoose } from '../sim/engine';
+import { start as simStart, choose as simChoose, currentNode } from '../sim/engine';
+import { matchUtterance } from '../sim/matcher';
 
 const END_LABEL = {
   hangup: 'Call ended — hang up',
@@ -14,7 +15,7 @@ const END_LABEL = {
   ended: 'Call ended',
 };
 
-export default function SimulatorPanel({ summary, onCurrentNode }) {
+export default function SimulatorPanel({ summary, onCurrentNode, intents = [] }) {
   const components = summary?.components || [];
   const [startComp, setStartComp] = useState(() => defaultStartComponent(summary) || '');
   const vars = useMemo(() => neededVars(summary), [summary]);
@@ -26,6 +27,31 @@ export default function SimulatorPanel({ summary, onCurrentNode }) {
   const begin = () => push(simStart(summary, startComp, varInputs));
   const pick = (i) => push(simChoose(state, summary, i));
   const exitSim = () => { setState(null); onCurrentNode?.(null); };
+
+  const [utter, setUtter] = useState('');
+  const intentsById = useMemo(() => new Map((intents || []).map((i) => [String(i.id), i])), [intents]);
+
+  const submitUtterance = () => {
+    const text = utter.trim();
+    if (!text || state?.status !== 'awaiting_choice') return;
+    const node = currentNode(summary, state);
+    const m = node ? matchUtterance(text, node, intentsById) : null;
+    if (m) {
+      const label = state.choices[m.branchIndex]?.label ?? node.branches[m.branchIndex]?.label;
+      const withNote = { ...state, transcript: [...state.transcript, { role: 'system', text: `"${text}" → matched ${m.intentName} → ${label}` }] };
+      setUtter('');
+      push(simChoose(withNote, summary, m.branchIndex));
+      return;
+    }
+    const uncIdx = (node?.branches || []).findIndex((b) => b.label === 'Unclassified');
+    setUtter('');
+    if (uncIdx >= 0) {
+      const withNote = { ...state, transcript: [...state.transcript, { role: 'system', text: `"${text}" → no intent matched → Unclassified` }] };
+      push(simChoose(withNote, summary, uncIdx));
+    } else {
+      setState((st) => ({ ...st, transcript: [...st.transcript, { role: 'system', text: `"${text}" → no intent matched and no Unclassified branch — pick manually` }] }));
+    }
+  };
 
   // Clear the canvas ring when the panel unmounts (e.g. switching dock tabs).
   useEffect(() => () => { onCurrentNode?.(null); }, []);   // eslint-disable-line react-hooks/exhaustive-deps
@@ -125,17 +151,27 @@ export default function SimulatorPanel({ summary, onCurrentNode }) {
       </div>
 
       {state.status === 'awaiting_choice' && (
-        <div className="p-3 border-t border-border flex flex-wrap gap-2" data-testid="sim-choices">
-          {state.choices.map((c) => (
-            <button key={c.branchIndex} type="button" disabled={c.disabled} onClick={() => pick(c.branchIndex)}
-              title={c.reason || ''} data-testid="sim-choice"
-              className={`text-xs rounded-full border px-3 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
-                c.disabled ? 'border-border text-text-tertiary opacity-50 cursor-not-allowed'
-                : c.label === 'Unclassified' ? 'border-border text-text-tertiary hover:bg-surface-muted'
-                : 'border-primary text-primary hover:bg-primary/10'}`}>
-              {c.label}{c.disabled ? ' (dead end)' : ''}
-            </button>
-          ))}
+        <div className="p-3 border-t border-border space-y-2" data-testid="sim-choices">
+          <div className="flex gap-2">
+            <input value={utter} onChange={(e) => setUtter(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); submitUtterance(); } }}
+              placeholder="Type what the caller says…" data-testid="sim-utterance"
+              className="flex-1 min-w-0 border border-border rounded-md px-2 py-1 text-sm bg-surface text-text focus:outline-none focus:ring-2 focus:ring-primary" />
+            <button type="button" onClick={submitUtterance} data-testid="sim-utterance-send"
+              className="shrink-0 px-3 h-[32px] bg-primary text-primary-fg rounded-md hover:bg-primary-hover text-sm">Send</button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {state.choices.map((c) => (
+              <button key={c.branchIndex} type="button" disabled={c.disabled} onClick={() => pick(c.branchIndex)}
+                title={c.reason || ''} data-testid="sim-choice"
+                className={`text-xs rounded-full border px-3 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                  c.disabled ? 'border-border text-text-tertiary opacity-50 cursor-not-allowed'
+                  : c.label === 'Unclassified' ? 'border-border text-text-tertiary hover:bg-surface-muted'
+                  : 'border-primary text-primary hover:bg-primary/10'}`}>
+                {c.label}{c.disabled ? ' (dead end)' : ''}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
