@@ -20,6 +20,12 @@ export function entryNode(comp) {
   return comp?.entry_uuid || (comp?.root_uuids && comp.root_uuids[0]) || null;
 }
 
+// The active node object for a running state (resolves KB/nested components too).
+export function currentNode(summary, state) {
+  const { byUuid } = buildIndex(summary);
+  return byUuid.get(state?.componentUuid)?.nodes?.[state?.nodeUuid] || null;
+}
+
 export function hasTarget(b) {
   return Boolean(b && (b.target_uuid || b.target_component || b.target_kb || b.terminal));
 }
@@ -43,7 +49,12 @@ export function evalCondition(cond, varState) {
   const key = varKey(cond?.left_value);
   const has = Object.prototype.hasOwnProperty.call(vs, key);
   const left = has ? vs[key] : undefined;
-  const right = cond?.right_value;
+  let right = cond?.right_value;
+  const rvVar = cond?.value_var || cond?.right_value_var;
+  if (cond?.type === 'variable' || rvVar) {
+    const rname = varKey(rvVar || cond?.right_value);
+    right = Object.prototype.hasOwnProperty.call(vs, rname) ? vs[rname] : undefined;
+  }
   const op = normOp(cond?.operator);
   if (op === 'Null') return !has || left === '' || left == null;
   if (op === 'Not null') return has && left !== '' && left != null;
@@ -87,7 +98,8 @@ export function pickConditionalBranch(node, varState) {
 }
 
 export function applyAssign(node, varState) {
-  const next = { ...(varState || {}) };
+  const vs = varState || {};
+  const next = { ...vs };
   const notes = [];
   for (const va of node?.data?.value_assignment || []) {
     const name = va?.variable?.name;
@@ -95,9 +107,16 @@ export function applyAssign(node, varState) {
     if (va?.assign?.func_code === 'OPT_VALUE_ASSIGNMENT') {
       const params = va.assign.params || [];
       const p = params.find((x) => x.name === 'value_to_assign') || params[0];
-      const value = p?.value ?? '';
-      next[name] = value;
-      notes.push(`set ${name} = ${value}`);
+      if (p?.type === 'variable') {
+        const rname = String(p.value ?? '');
+        const value = Object.prototype.hasOwnProperty.call(vs, rname) ? vs[rname] : '';
+        next[name] = value;
+        notes.push(`set ${name} = ${value} (from ${rname})`);
+      } else {
+        const value = p?.value ?? '';
+        next[name] = value;
+        notes.push(`set ${name} = ${value}`);
+      }
     } else {
       next[name] = '(computed)';
       notes.push(`set ${name} = (computed)`);
@@ -145,7 +164,7 @@ export function choose(state, summary, branchIndex) {
   const node = byUuid.get(state.componentUuid)?.nodes?.[state.nodeUuid];
   const edge = node?.branches?.[branchIndex];
   if (!edge) return state;
-  let s = { ...state, status: 'running', choices: [], transcript: [...state.transcript, youRow(edge.label)] };
+  let s = { ...state, status: 'running', choices: [], steps: 0, transcript: [...state.transcript, youRow(edge.label)] };
   s = _followEdge(s, summary, edge);
   return _run(s, summary);
 }
@@ -216,9 +235,18 @@ function _run(state, summary) {
     const node = byUuid.get(s.componentUuid)?.nodes?.[s.nodeUuid];
     if (!node) return end(s, 'external', 'Leaves this export (missing node) — ends here.');
     switch (node.node_type) {
-      case 'talk':
-        return { ...s, status: 'awaiting_choice', choices: mapChoices(node),
-          transcript: [...s.transcript, botRow(node.label, node.text)] };
+      case 'talk': {
+        if ((node.branches || []).length === 0)
+          return end(s, 'dead_end', 'Talk node has no outgoing branch — ends here.');
+        let s2 = s;
+        const va = node.data?.value_assignment;
+        if (va && va.length) {
+          const { varState, notes } = applyAssign(node, s.varState);
+          s2 = { ...s, varState, transcript: [...s.transcript, ...notes.map(sysRow)] };
+        }
+        return { ...s2, status: 'awaiting_choice', choices: mapChoices(node),
+          transcript: [...s2.transcript, botRow(node.label, node.text)] };
+      }
       case 'talk_continue': {
         const s2 = { ...s, transcript: [...s.transcript, botRow(node.label, node.text)] };
         const ret = (node.branches || []).find((b) => b.target_component);

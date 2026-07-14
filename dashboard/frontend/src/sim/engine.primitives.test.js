@@ -108,3 +108,20 @@ describe('mapChoices', () => {
 });
 
 it('MAX_STEPS is a sane cap', () => { expect(MAX_STEPS).toBe(200); });
+
+describe('var-to-var operands', () => {
+  it('evalCondition resolves a variable-typed right operand from varState', () => {
+    const vs = { A: 'x', B: 'x', C: 'y' };
+    expect(evalCondition({ left_value: 'A', operator: '=', right_value: 'B', type: 'variable' }, vs)).toBe(true);
+    expect(evalCondition({ left_value: 'A', operator: '=', right_value: 'C', type: 'variable' }, vs)).toBe(false);
+    // literal still works
+    expect(evalCondition({ left_value: 'A', operator: '=', right_value: 'x', type: 'const' }, vs)).toBe(true);
+  });
+  it('applyAssign copies from a referenced variable when a param is variable-typed', () => {
+    const node = { data: { value_assignment: [
+      { variable: { name: 'DEST' }, assign: { func_code: 'OPT_VALUE_ASSIGNMENT', params: [{ name: 'value_to_assign', type: 'variable', value: 'SRC' }] } },
+    ] } };
+    const { varState } = applyAssign(node, { SRC: 'hello' });
+    expect(varState.DEST).toBe('hello');
+  });
+});

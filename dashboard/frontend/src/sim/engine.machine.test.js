@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { start, choose } from './engine';
+import { start, choose, currentNode } from './engine';
 
 // --- tiny summary builders ---
-const talk = (uuid, text, branches) => ({ uuid, label: uuid, node_type: 'talk', text, branches, data: {} });
-const exit = (uuid) => ({ uuid, label: uuid, node_type: 'exit', text: 'Goodbye', branches: [{ label: 'exit', kind: 'exit', terminal: 'hangup' }], data: {} });
+const talk = (uuid, text, branches, data = {}) => ({ uuid, label: uuid, node_type: 'talk', text, branches, data });
+const exit = (uuid) => ({ uuid, label: uuid, node_type: 'exit', text: 'Bye', branches: [{ label: 'exit', kind: 'exit', terminal: 'hangup' }], data: {} });
 const br = (label, target_uuid, extra = {}) => ({ label, kind: 'intent', target_uuid: target_uuid || null, target_component: null, target_kb: null, terminal: null, ...extra });
 const comp = (uuid, nodes, extra = {}) => ({
   uuid, name: uuid, sort_index: 0, entry_uuid: nodes[0].uuid, root_uuids: [nodes[0].uuid],
@@ -128,5 +128,43 @@ describe('graceful stops', () => {
     ])] };
     const s = start(summary, 'c1', {});
     expect(s.endReason).toBe('loop_guard');
+  });
+});
+
+describe('engine round-2 fixes', () => {
+  const talk2 = (uuid, text, branches, data = {}) => ({ uuid, label: uuid, node_type: 'talk', text, branches, data });
+  const exit2 = (uuid) => ({ uuid, label: uuid, node_type: 'exit', text: 'Bye', branches: [{ label: 'exit', kind: 'exit', terminal: 'hangup' }], data: {} });
+  const brB2 = (label, target_uuid) => ({ label, kind: 'intent', target_uuid: target_uuid || null, target_component: null, target_kb: null, terminal: null });
+  const comp2 = (uuid, nodes) => ({ uuid, name: uuid, sort_index: 0, entry_uuid: nodes[0].uuid, root_uuids: [nodes[0].uuid], parent_uuid: '0', nodes: Object.fromEntries(nodes.map((n) => [n.uuid, n])) });
+
+  it('zero-branch talk node → dead_end', () => {
+    const summary = { components: [comp2('c1', [talk2('t1', 'Hi', [])])] };
+    const s = start(summary, 'c1', {});
+    expect(s.status).toBe('ended');
+    expect(s.endReason).toBe('dead_end');
+  });
+
+  it('inline value_assignment on a talk node updates varState before the choice', () => {
+    const t1 = talk2('t1', 'Hi', [brB2('Positive', 'e1')], {
+      value_assignment: [{ variable: { name: 'GREETED' }, assign: { func_code: 'OPT_VALUE_ASSIGNMENT', params: [{ name: 'value_to_assign', type: 'const', value: 'yes' }] } }],
+    });
+    const summary = { components: [comp2('c1', [t1, exit2('e1')])] };
+    const s = start(summary, 'c1', {});
+    expect(s.varState.GREETED).toBe('yes');
+    expect(s.status).toBe('awaiting_choice');
+  });
+
+  it('loop guard is per-turn (resets on choose)', () => {
+    const summary = { components: [comp2('c1', [talk2('t1', 'Hi', [brB2('Positive', 'e1')]), exit2('e1')])] };
+    let s = start(summary, 'c1', {});
+    s = { ...s, steps: 199 };           // simulate a long prior turn
+    s = choose(s, summary, 0);          // must reset to 0, not trip at 200
+    expect(s.endReason).toBe('hangup'); // reached exit, not loop_guard
+  });
+
+  it('currentNode resolves the active node', () => {
+    const summary = { components: [comp2('c1', [talk2('t1', 'Hi', [brB2('Positive', 'e1')]), exit2('e1')])] };
+    const s = start(summary, 'c1', {});
+    expect(currentNode(summary, s)?.uuid).toBe('t1');
   });
 });
