@@ -72,7 +72,6 @@ def apply_canvases(
     speech_id = base.get("speechId", 0)
 
     # Resolve branch_intent_ids from template SpeechIntent
-    _system_branch_names = {"Positive", "Negative", "Reject", "Unclassified", "No answer"}
     speech_intents_raw = template.get("SpeechIntent", "[]")
     speech_intents = (
         json.loads(speech_intents_raw)
@@ -82,7 +81,7 @@ def apply_canvases(
     branch_intent_ids: dict[str, int] = {
         i["intentName"]: i["intentId"]
         for i in speech_intents
-        if i.get("intentName") in _system_branch_names
+        if i.get("intentName")
     }
 
     # Resolve kb_ids from template BizKnowledgeInfo (baseline entries)

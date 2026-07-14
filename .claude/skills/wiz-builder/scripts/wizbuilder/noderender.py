@@ -187,10 +187,15 @@ def _build_talk_node(
     ci = canvas_index
 
     # --- canvas.ports.items (one per checked branch) ---
+    branch_intents: dict = spec.config.get("branch_intents") or {}
     items = [
         {"name": b, "id": port_uuids[b], "attrs": _fo(-37.67, 70), "group": "out"}
         for b in _CHECKED
     ]
+    for label in branch_intents:
+        items.append(
+            {"name": label, "id": port_uuids[label], "attrs": _fo(-37.67, 70), "group": "out"}
+        )
 
     canvas = {
         "view": "react-shape-view",
@@ -228,6 +233,19 @@ def _build_talk_node(
             row["id"] = port_uuids[b_name]
         aci.append(row)
 
+    for label, intent_names in branch_intents.items():
+        aci.append({
+            "intents": [
+                {"intentId": str(branch_intent_ids[name])} for name in (intent_names or [])
+            ],
+            "name": label,
+            "match": False,
+            "checked": True,
+            "language": node_language,
+            "threshold": "",
+            "id": port_uuids[label],
+        })
+
     text = spec.prompt
     xml = (
         '<speak xmlns:wiz="http://www.wiz.ai/develop/xml/tts">'
@@ -254,7 +272,7 @@ def _build_talk_node(
         "selected": False,
         "openChasingDedayTim": False,
         "allow_jump_knowledges_switch": 0,
-        "client_intent": _CHECKED,
+        "client_intent": [*_CHECKED, *branch_intents],
         "intent_rollback_enable": False,
         "node_variables": [],
         "allow_jump_knowledges": list(kb_ids),
@@ -269,7 +287,10 @@ def _build_talk_node(
         "tts_language": node_language,
         "intent_tag_def": {
             n: {"tag_list": [], "intent_code": ""}
-            for n in ("No answer", "Reject", "Negative", "Positive", "Unclassified")
+            for n in (
+                "No answer", "Reject", "Negative", "Positive", "Unclassified",
+                *branch_intents
+            )
         },
         "open_talk_finish": False,
         "can_interrupt_percent": 0.8,
@@ -1378,7 +1399,13 @@ def _out_port_names(
 ) -> list[str]:
     """Distinct out-port names for a node, in canonical order, by type."""
     if spec.type == "talk":
-        return list(_CHECKED)
+        ports = list(_CHECKED)
+        # Add custom branch names from branch_intents config
+        branch_intents = (spec.config or {}).get("branch_intents") or {}
+        for branch_name in branch_intents:
+            if branch_name not in ports:
+                ports.append(branch_name)
+        return ports
     if spec.type == "assign":
         return ["Default"]
     if spec.type == "conditional":

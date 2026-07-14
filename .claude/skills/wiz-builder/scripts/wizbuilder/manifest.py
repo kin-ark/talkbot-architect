@@ -168,6 +168,7 @@ def _validate_cross_field_invariants(data: dict, path: Path) -> None:
     all_canvas_names: set[str] = set(canvas_names)
 
     declared_vars = {v["name"] for v in data.get("custom_variables", [])}
+    declared_intents = {i["name"] for i in data.get("custom_intents", [])}
 
     # Per-canvas invariants
     for canvas in data["canvases"]:
@@ -184,6 +185,11 @@ def _validate_cross_field_invariants(data: dict, path: Path) -> None:
                 raise ManifestError(f"{path}: duplicate node id {nid!r} in canvas {cname!r}")
             ids_in_canvas.add(nid)
             node_types[nid] = node.get("type", "talk")
+
+        node_branch_intents: dict[str, dict] = {
+            n["id"]: ((n.get("config") or {}).get("branch_intents") or {})
+            for n in node_list
+        }
 
         # Edge endpoint existence and branch validity
         seen_src_branch: set[tuple[str, str]] = set()
@@ -205,7 +211,8 @@ def _validate_cross_field_invariants(data: dict, path: Path) -> None:
             # cross-canvas pass; skip the system-branch check for them.
             if node_types.get(src) != "nested":
                 extra = {"Default"} if node_types.get(src) == "assign" else set()
-                allowed = _VALID_BRANCHES | extra
+                custom = set(node_branch_intents.get(src, {}))
+                allowed = _VALID_BRANCHES | extra | custom
                 if branch not in allowed:
                     raise ManifestError(
                         f"{path}: edge in canvas {cname!r} has invalid branch {branch!r}; "
@@ -224,6 +231,30 @@ def _validate_cross_field_invariants(data: dict, path: Path) -> None:
                 raise ManifestError(
                     f"{path}: canvas {cname!r}: node {src!r} has type {node_types[src]!r} "
                     f"which is terminal and must not have outgoing edges"
+                )
+
+        # Custom talk-branch validation: declared intents + mandatory Unclassified.
+        edges_by_src: dict[str, set[str]] = {}
+        for edge in edge_list:
+            edges_by_src.setdefault(edge["from"], set()).add(edge["branch"])
+        for node in node_list:
+            if node.get("type", "talk") != "talk":
+                continue
+            bi = (node.get("config") or {}).get("branch_intents") or {}
+            if not bi:
+                continue
+            nid = node["id"]
+            for label, intent_names in bi.items():
+                for iname in (intent_names or []):
+                    if iname not in declared_intents:
+                        raise ManifestError(
+                            f"{path}: canvas {cname!r}: talk node {nid!r} branch {label!r} "
+                            f"references intent {iname!r} which is not a declared custom_intent"
+                        )
+            if "Unclassified" not in edges_by_src.get(nid, set()):
+                raise ManifestError(
+                    f"{path}: canvas {cname!r}: talk node {nid!r} declares branch_intents "
+                    f"but has no connected Unclassified branch (mandatory fallback)"
                 )
 
         # Validate conditional branch target existence early (before the entry-node check)
