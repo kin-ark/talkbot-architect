@@ -140,14 +140,16 @@ def _rank(items_by_bot: list[list], key_fn, n_bots: int) -> list[dict]:
             repr_item.setdefault(k, x)
         for k in keyset:
             counts[k] += 1
-    out = []
+    ranked = []
     for k, c in counts.items():
         item = dict(repr_item[k])
         item["count"] = c
         item["pct"] = round(c / n_bots, 3) if n_bots else 0.0
-        out.append(item)
-    out.sort(key=lambda d: (-d["count"], str(d.get("name") or d.get("title") or d.get("role") or "")))
-    return out
+        ranked.append((k, item))
+    # Total order: the key_fn value `k` is unique per entry, so str(k) is a
+    # deterministic tie-break independent of dict/set iteration (PYTHONHASHSEED).
+    ranked.sort(key=lambda t: (-t[1]["count"], str(t[0])))
+    return [item for _, item in ranked]
 
 
 def aggregate(records: list[dict]) -> dict:

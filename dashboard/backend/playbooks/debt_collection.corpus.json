@@ -10,8 +10,8 @@
     },
     {
       "branches": [
-        "Male",
-        "Female"
+        "MAB",
+        "MGR"
       ],
       "count": 17,
       "kind": "conditional",
@@ -19,8 +19,8 @@
     },
     {
       "branches": [
-        "MAB",
-        "MGR"
+        "Male",
+        "Female"
       ],
       "count": 17,
       "kind": "conditional",
@@ -52,23 +52,6 @@
       ]
     },
     {
-      "branches": [
-        "Greeting",
-        "Inform Payment"
-      ],
-      "count": 13,
-      "kind": "conditional",
-      "pct": 0.394
-    },
-    {
-      "count": 13,
-      "kind": "assign",
-      "pct": 0.394,
-      "vars": [
-        "Salutation"
-      ]
-    },
-    {
       "count": 13,
       "kind": "assign",
       "pct": 0.394,
@@ -84,6 +67,23 @@
       "vars": [
         "Date Collected"
       ]
+    },
+    {
+      "count": 13,
+      "kind": "assign",
+      "pct": 0.394,
+      "vars": [
+        "Salutation"
+      ]
+    },
+    {
+      "branches": [
+        "Greeting",
+        "Inform Payment"
+      ],
+      "count": 13,
+      "kind": "conditional",
+      "pct": 0.394
     },
     {
       "count": 11,
@@ -106,7 +106,9 @@
       "kind": "assign",
       "pct": 0.273,
       "vars": [
-        "SALUTATION"
+        "Platform",
+        "ProductEnd",
+        "ProductAnda"
       ]
     },
     {
@@ -114,9 +116,7 @@
       "kind": "assign",
       "pct": 0.273,
       "vars": [
-        "Platform",
-        "ProductEnd",
-        "ProductAnda"
+        "SALUTATION"
       ]
     },
     {
@@ -130,16 +130,6 @@
     },
     {
       "branches": [
-        "Morning",
-        "Afternoon",
-        "Evening"
-      ],
-      "count": 8,
-      "kind": "conditional",
-      "pct": 0.242
-    },
-    {
-      "branches": [
         "AFI",
         "MAB",
         "MGR"
@@ -150,14 +140,22 @@
     },
     {
       "branches": [
-        "Male",
-        "Female",
-        "Female",
-        "Male"
+        "Morning",
+        "Afternoon",
+        "Evening"
       ],
-      "count": 7,
+      "count": 8,
       "kind": "conditional",
-      "pct": 0.212
+      "pct": 0.242
+    },
+    {
+      "count": 7,
+      "kind": "assign",
+      "pct": 0.212,
+      "vars": [
+        "Date Collected",
+        "Triggered"
+      ]
     },
     {
       "count": 7,
@@ -166,15 +164,6 @@
       "vars": [
         "Platform"
       ]
-    },
-    {
-      "branches": [
-        "GPLC",
-        "GPP"
-      ],
-      "count": 7,
-      "kind": "conditional",
-      "pct": 0.212
     },
     {
       "count": 7,
@@ -193,13 +182,24 @@
       "pct": 0.212
     },
     {
+      "branches": [
+        "GPLC",
+        "GPP"
+      ],
       "count": 7,
-      "kind": "assign",
-      "pct": 0.212,
-      "vars": [
-        "Date Collected",
-        "Triggered"
-      ]
+      "kind": "conditional",
+      "pct": 0.212
+    },
+    {
+      "branches": [
+        "Male",
+        "Female",
+        "Female",
+        "Male"
+      ],
+      "count": 7,
+      "kind": "conditional",
+      "pct": 0.212
     },
     {
       "branches": [
@@ -211,14 +211,6 @@
       "pct": 0.212
     },
     {
-      "branches": [
-        "Payment Method Exists"
-      ],
-      "count": 6,
-      "kind": "conditional",
-      "pct": 0.182
-    },
-    {
       "count": 6,
       "kind": "assign",
       "pct": 0.182,
@@ -228,52 +220,21 @@
       ]
     },
     {
-      "count": 5,
-      "kind": "assign",
-      "pct": 0.152,
-      "vars": [
-        "Payment Method",
-        "Time Collected",
-        "Date Interval",
-        "Date Interval",
-        "Time Collected"
-      ]
-    },
-    {
       "branches": [
-        "Data Collected"
+        "Payment Method Exists"
       ],
-      "count": 5,
+      "count": 6,
       "kind": "conditional",
-      "pct": 0.152
-    },
-    {
-      "branches": [
-        "Not Today",
-        "Today",
-        "Today",
-        "Not Today"
-      ],
-      "count": 5,
-      "kind": "conditional",
-      "pct": 0.152
+      "pct": 0.182
     },
     {
       "count": 5,
       "kind": "assign",
       "pct": 0.152,
       "vars": [
-        "Payment Method",
-        "Time Collected"
+        "Date Collected 2",
+        "Time Collected 2"
       ]
-    },
-    {
-      "branches": [
-        "Have Triggered"
-      ],
-      "count": 5,
-      "kind": "conditional",
-      "pct": 0.152
     },
     {
       "count": 5,
@@ -288,61 +249,13 @@
       ]
     },
     {
-      "branches": [
-        "Disaster/Unfortunate",
-        "Disaster/Unfortunate",
-        "Passed Away",
-        "Passed Away"
-      ],
       "count": 5,
-      "kind": "conditional",
-      "pct": 0.152
-    },
-    {
-      "branches": [
-        "Have triggered"
-      ],
-      "count": 5,
-      "kind": "conditional",
-      "pct": 0.152
-    },
-    {
-      "branches": [
-        "chasing"
-      ],
-      "count": 5,
-      "kind": "conditional",
-      "pct": 0.152
-    },
-    {
-      "branches": [
-        "Today",
-        "Today",
-        "Not Today"
-      ],
-      "count": 5,
-      "kind": "conditional",
-      "pct": 0.152
-    },
-    {
-      "branches": [
-        "Null",
-        "Not Null"
-      ],
-      "count": 5,
-      "kind": "conditional",
-      "pct": 0.152
-    },
-    {
-      "branches": [
-        "Time Not Collected",
-        "Time Not Collected",
-        "Today",
-        "Not Today"
-      ],
-      "count": 5,
-      "kind": "conditional",
-      "pct": 0.152
+      "kind": "assign",
+      "pct": 0.152,
+      "vars": [
+        "Date Collected",
+        "Time Collected"
+      ]
     },
     {
       "count": 5,
@@ -350,6 +263,20 @@
       "pct": 0.152,
       "vars": [
         "Date Collected",
+        "Time Collected",
+        "Date Collected",
+        "Time Collected"
+      ]
+    },
+    {
+      "count": 5,
+      "kind": "assign",
+      "pct": 0.152,
+      "vars": [
+        "Date Collected",
+        "Time Collected",
+        "Date Collected",
+        "Time Collected",
         "Time Collected"
       ]
     },
@@ -375,9 +302,7 @@
       "kind": "assign",
       "pct": 0.152,
       "vars": [
-        "Date Collected",
-        "Time Collected",
-        "Date Collected",
+        "Payment Method",
         "Time Collected"
       ]
     },
@@ -386,23 +311,49 @@
       "kind": "assign",
       "pct": 0.152,
       "vars": [
-        "Date Collected",
+        "Payment Method",
         "Time Collected",
-        "Date Collected",
-        "Time Collected",
+        "Date Interval",
+        "Date Interval",
         "Time Collected"
       ]
     },
     {
-      "branches": [
-        "Mention later",
-        "Time mentioned",
-        "Time mentioned",
-        "Time mentioned"
-      ],
       "count": 5,
-      "kind": "conditional",
-      "pct": 0.152
+      "kind": "assign",
+      "pct": 0.152,
+      "vars": [
+        "Payment date interval"
+      ]
+    },
+    {
+      "count": 5,
+      "kind": "assign",
+      "pct": 0.152,
+      "vars": [
+        "Payment date",
+        "Payment date",
+        "Payment date interval"
+      ]
+    },
+    {
+      "count": 5,
+      "kind": "assign",
+      "pct": 0.152,
+      "vars": [
+        "Payment method"
+      ]
+    },
+    {
+      "count": 5,
+      "kind": "assign",
+      "pct": 0.152,
+      "vars": [
+        "Time Collected",
+        "Payment Method",
+        "Payment Method",
+        "Time Collected"
+      ]
     },
     {
       "count": 5,
@@ -424,64 +375,8 @@
       "pct": 0.152
     },
     {
-      "count": 5,
-      "kind": "assign",
-      "pct": 0.152,
-      "vars": [
-        "Date Collected 2",
-        "Time Collected 2"
-      ]
-    },
-    {
-      "count": 5,
-      "kind": "assign",
-      "pct": 0.152,
-      "vars": [
-        "Time Collected",
-        "Payment Method",
-        "Payment Method",
-        "Time Collected"
-      ]
-    },
-    {
-      "count": 5,
-      "kind": "assign",
-      "pct": 0.152,
-      "vars": [
-        "Payment date",
-        "Payment date",
-        "Payment date interval"
-      ]
-    },
-    {
       "branches": [
-        "Method captured"
-      ],
-      "count": 5,
-      "kind": "conditional",
-      "pct": 0.152
-    },
-    {
-      "count": 5,
-      "kind": "assign",
-      "pct": 0.152,
-      "vars": [
-        "Payment date interval"
-      ]
-    },
-    {
-      "count": 5,
-      "kind": "assign",
-      "pct": 0.152,
-      "vars": [
-        "Payment method"
-      ]
-    },
-    {
-      "branches": [
-        "Pagi",
-        "Siang",
-        "Sore"
+        "Data Collected"
       ],
       "count": 5,
       "kind": "conditional",
@@ -497,11 +392,145 @@
     },
     {
       "branches": [
+        "Disaster/Unfortunate",
+        "Disaster/Unfortunate",
+        "Passed Away",
+        "Passed Away"
+      ],
+      "count": 5,
+      "kind": "conditional",
+      "pct": 0.152
+    },
+    {
+      "branches": [
+        "Have Triggered"
+      ],
+      "count": 5,
+      "kind": "conditional",
+      "pct": 0.152
+    },
+    {
+      "branches": [
+        "Have triggered"
+      ],
+      "count": 5,
+      "kind": "conditional",
+      "pct": 0.152
+    },
+    {
+      "branches": [
+        "Mention later",
+        "Time mentioned",
+        "Time mentioned",
+        "Time mentioned"
+      ],
+      "count": 5,
+      "kind": "conditional",
+      "pct": 0.152
+    },
+    {
+      "branches": [
+        "Method captured"
+      ],
+      "count": 5,
+      "kind": "conditional",
+      "pct": 0.152
+    },
+    {
+      "branches": [
         "No Date"
       ],
       "count": 5,
       "kind": "conditional",
       "pct": 0.152
+    },
+    {
+      "branches": [
+        "Not Today",
+        "Today",
+        "Today",
+        "Not Today"
+      ],
+      "count": 5,
+      "kind": "conditional",
+      "pct": 0.152
+    },
+    {
+      "branches": [
+        "Null",
+        "Not Null"
+      ],
+      "count": 5,
+      "kind": "conditional",
+      "pct": 0.152
+    },
+    {
+      "branches": [
+        "Pagi",
+        "Siang",
+        "Sore"
+      ],
+      "count": 5,
+      "kind": "conditional",
+      "pct": 0.152
+    },
+    {
+      "branches": [
+        "Time Not Collected",
+        "Time Not Collected",
+        "Today",
+        "Not Today"
+      ],
+      "count": 5,
+      "kind": "conditional",
+      "pct": 0.152
+    },
+    {
+      "branches": [
+        "Today",
+        "Today",
+        "Not Today"
+      ],
+      "count": 5,
+      "kind": "conditional",
+      "pct": 0.152
+    },
+    {
+      "branches": [
+        "chasing"
+      ],
+      "count": 5,
+      "kind": "conditional",
+      "pct": 0.152
+    },
+    {
+      "count": 4,
+      "kind": "assign",
+      "pct": 0.121,
+      "vars": [
+        "Date Collected",
+        "Time Collected",
+        "Time Collected"
+      ]
+    },
+    {
+      "count": 4,
+      "kind": "assign",
+      "pct": 0.121,
+      "vars": [
+        "DateValue",
+        "PAYMENT_DATE_INTERVAL",
+        "DateValue",
+        "PAYMENT_DATE_INTERVAL"
+      ]
+    },
+    {
+      "count": 4,
+      "kind": "assign",
+      "pct": 0.121,
+      "vars": [
+        "GreetingTrigger"
+      ]
     },
     {
       "count": 4,
@@ -517,8 +546,31 @@
       "pct": 0.121,
       "vars": [
         "Time Collected",
+        "Date Collected",
+        "Date Collected",
         "Time Collected"
       ]
+    },
+    {
+      "count": 4,
+      "kind": "assign",
+      "pct": 0.121,
+      "vars": [
+        "Time Collected",
+        "Time Collected"
+      ]
+    },
+    {
+      "branches": [
+        "1",
+        "1",
+        "1",
+        "1",
+        "1"
+      ],
+      "count": 4,
+      "kind": "conditional",
+      "pct": 0.121
     },
     {
       "branches": [
@@ -531,8 +583,9 @@
     },
     {
       "branches": [
-        "Today",
-        "Not Today"
+        "Before Due Date",
+        "Before Due Date",
+        "Before Due Date"
       ],
       "count": 4,
       "kind": "conditional",
@@ -548,12 +601,15 @@
       "pct": 0.121
     },
     {
+      "branches": [
+        "Family/Friend/Not PIC",
+        "Family/Friend/Not PIC",
+        "Family/Friend/Not PIC",
+        "Wrong Person"
+      ],
       "count": 4,
-      "kind": "assign",
-      "pct": 0.121,
-      "vars": [
-        "GreetingTrigger"
-      ]
+      "kind": "conditional",
+      "pct": 0.121
     },
     {
       "branches": [
@@ -575,10 +631,28 @@
     },
     {
       "branches": [
-        "mention later",
-        "time mentioned",
-        "time mentioned",
-        "time mentioned"
+        "Today",
+        "Default",
+        "Not today"
+      ],
+      "count": 4,
+      "kind": "conditional",
+      "pct": 0.121
+    },
+    {
+      "branches": [
+        "Today",
+        "Not Today"
+      ],
+      "count": 4,
+      "kind": "conditional",
+      "pct": 0.121
+    },
+    {
+      "branches": [
+        "Today",
+        "Today",
+        "Not today"
       ],
       "count": 4,
       "kind": "conditional",
@@ -595,71 +669,6 @@
       "pct": 0.121
     },
     {
-      "count": 4,
-      "kind": "assign",
-      "pct": 0.121,
-      "vars": [
-        "Date Collected",
-        "Time Collected",
-        "Time Collected"
-      ]
-    },
-    {
-      "count": 4,
-      "kind": "assign",
-      "pct": 0.121,
-      "vars": [
-        "Time Collected",
-        "Date Collected",
-        "Date Collected",
-        "Time Collected"
-      ]
-    },
-    {
-      "branches": [
-        "1",
-        "1",
-        "1",
-        "1",
-        "1"
-      ],
-      "count": 4,
-      "kind": "conditional",
-      "pct": 0.121
-    },
-    {
-      "count": 4,
-      "kind": "assign",
-      "pct": 0.121,
-      "vars": [
-        "DateValue",
-        "PAYMENT_DATE_INTERVAL",
-        "DateValue",
-        "PAYMENT_DATE_INTERVAL"
-      ]
-    },
-    {
-      "branches": [
-        "Before Due Date",
-        "Before Due Date",
-        "Before Due Date"
-      ],
-      "count": 4,
-      "kind": "conditional",
-      "pct": 0.121
-    },
-    {
-      "branches": [
-        "Family/Friend/Not PIC",
-        "Family/Friend/Not PIC",
-        "Family/Friend/Not PIC",
-        "Wrong Person"
-      ],
-      "count": 4,
-      "kind": "conditional",
-      "pct": 0.121
-    },
-    {
       "branches": [
         "Yes"
       ],
@@ -669,27 +678,54 @@
     },
     {
       "branches": [
-        "Today",
-        "Today",
-        "Not today"
+        "mention later",
+        "time mentioned",
+        "time mentioned",
+        "time mentioned"
       ],
       "count": 4,
       "kind": "conditional",
       "pct": 0.121
     },
     {
-      "branches": [
-        "Today",
-        "Default",
-        "Not today"
-      ],
-      "count": 4,
-      "kind": "conditional",
-      "pct": 0.121
+      "count": 3,
+      "kind": "assign",
+      "pct": 0.091,
+      "vars": [
+        "Random Value",
+        "Opening Judgement"
+      ]
+    },
+    {
+      "count": 3,
+      "kind": "assign",
+      "pct": 0.091,
+      "vars": [
+        "Time",
+        "Date Collected",
+        "Date Collected",
+        "Time Collected",
+        "Next Week Payment",
+        "Next Month Payment",
+        "Time"
+      ]
     },
     {
       "branches": [
-        "User Responded"
+        "1",
+        "2",
+        "3"
+      ],
+      "count": 3,
+      "kind": "conditional",
+      "pct": 0.091
+    },
+    {
+      "branches": [
+        "Morning",
+        "Noon",
+        "Afternoon",
+        "Evening"
       ],
       "count": 3,
       "kind": "conditional",
@@ -708,25 +744,6 @@
       "pct": 0.091
     },
     {
-      "count": 3,
-      "kind": "assign",
-      "pct": 0.091,
-      "vars": [
-        "Random Value",
-        "Opening Judgement"
-      ]
-    },
-    {
-      "branches": [
-        "1",
-        "2",
-        "3"
-      ],
-      "count": 3,
-      "kind": "conditional",
-      "pct": 0.091
-    },
-    {
       "branches": [
         "Positive Closing"
       ],
@@ -736,95 +753,27 @@
     },
     {
       "branches": [
-        "Morning",
-        "Noon",
-        "Afternoon",
-        "Evening"
+        "User Responded"
       ],
       "count": 3,
       "kind": "conditional",
       "pct": 0.091
     },
     {
-      "count": 3,
+      "count": 2,
       "kind": "assign",
-      "pct": 0.091,
+      "pct": 0.061,
       "vars": [
-        "Time",
+        "ACR_Hit"
+      ]
+    },
+    {
+      "count": 2,
+      "kind": "assign",
+      "pct": 0.061,
+      "vars": [
         "Date Collected",
-        "Date Collected",
-        "Time Collected",
-        "Next Week Payment",
-        "Next Month Payment",
-        "Time"
-      ]
-    },
-    {
-      "branches": [
-        "positive closing"
-      ],
-      "count": 2,
-      "kind": "conditional",
-      "pct": 0.061
-    },
-    {
-      "branches": [
-        "Default"
-      ],
-      "count": 2,
-      "kind": "conditional",
-      "pct": 0.061
-    },
-    {
-      "branches": [
-        "1",
-        "2"
-      ],
-      "count": 2,
-      "kind": "conditional",
-      "pct": 0.061
-    },
-    {
-      "branches": [
-        "Correct Person"
-      ],
-      "count": 2,
-      "kind": "conditional",
-      "pct": 0.061
-    },
-    {
-      "count": 2,
-      "kind": "assign",
-      "pct": 0.061,
-      "vars": [
-        "Greeting_Bahasa",
-        "Greeting_opening"
-      ]
-    },
-    {
-      "branches": [
-        "Already Paid",
-        "Already Paid"
-      ],
-      "count": 2,
-      "kind": "conditional",
-      "pct": 0.061
-    },
-    {
-      "count": 2,
-      "kind": "assign",
-      "pct": 0.061,
-      "vars": [
-        "Time Collected",
-        "Regex Payment Method"
-      ]
-    },
-    {
-      "count": 2,
-      "kind": "assign",
-      "pct": 0.061,
-      "vars": [
-        "Not Background Noise"
+        "PTP"
       ]
     },
     {
@@ -841,111 +790,6 @@
       ]
     },
     {
-      "branches": [
-        "Empty Value",
-        "Empty Value"
-      ],
-      "count": 2,
-      "kind": "conditional",
-      "pct": 0.061
-    },
-    {
-      "branches": [
-        "Today",
-        "Today empty time",
-        "Not Today",
-        "Next Week",
-        "Next Month",
-        "Default"
-      ],
-      "count": 2,
-      "kind": "conditional",
-      "pct": 0.061
-    },
-    {
-      "branches": [
-        "Collected",
-        "Default"
-      ],
-      "count": 2,
-      "kind": "conditional",
-      "pct": 0.061
-    },
-    {
-      "count": 2,
-      "kind": "assign",
-      "pct": 0.061,
-      "vars": [
-        "Date Collected",
-        "PTP"
-      ]
-    },
-    {
-      "branches": [
-        "Today",
-        "Today",
-        "Not Today",
-        "Next Week",
-        "Next Month",
-        "Default"
-      ],
-      "count": 2,
-      "kind": "conditional",
-      "pct": 0.061
-    },
-    {
-      "count": 2,
-      "kind": "assign",
-      "pct": 0.061,
-      "vars": [
-        "PTP"
-      ]
-    },
-    {
-      "count": 2,
-      "kind": "assign",
-      "pct": 0.061,
-      "vars": [
-        "Greetings"
-      ]
-    },
-    {
-      "branches": [
-        "Bapak",
-        "Ibu"
-      ],
-      "count": 2,
-      "kind": "conditional",
-      "pct": 0.061
-    },
-    {
-      "count": 2,
-      "kind": "assign",
-      "pct": 0.061,
-      "vars": [
-        "PTP",
-        "Date Collected"
-      ]
-    },
-    {
-      "branches": [
-        "2",
-        "3"
-      ],
-      "count": 2,
-      "kind": "conditional",
-      "pct": 0.061
-    },
-    {
-      "count": 2,
-      "kind": "assign",
-      "pct": 0.061,
-      "vars": [
-        "Greetings",
-        "Greeting_Closing"
-      ]
-    },
-    {
       "count": 2,
       "kind": "assign",
       "pct": 0.061,
@@ -953,69 +797,6 @@
         "Date Collected",
         "Time"
       ]
-    },
-    {
-      "count": 2,
-      "kind": "assign",
-      "pct": 0.061,
-      "vars": [
-        "random_first"
-      ]
-    },
-    {
-      "branches": [
-        "Clear"
-      ],
-      "count": 2,
-      "kind": "conditional",
-      "pct": 0.061
-    },
-    {
-      "branches": [
-        "Death/Unfortunate",
-        "Death/Unfortunate"
-      ],
-      "count": 2,
-      "kind": "conditional",
-      "pct": 0.061
-    },
-    {
-      "branches": [
-        "TRUE",
-        "FALSE"
-      ],
-      "count": 2,
-      "kind": "conditional",
-      "pct": 0.061
-    },
-    {
-      "count": 2,
-      "kind": "assign",
-      "pct": 0.061,
-      "vars": [
-        "Date Collected",
-        "Time",
-        "Date Collected",
-        "Time Collected",
-        "Time"
-      ]
-    },
-    {
-      "count": 2,
-      "kind": "assign",
-      "pct": 0.061,
-      "vars": [
-        "ACR_Hit"
-      ]
-    },
-    {
-      "branches": [
-        "Reason Exist",
-        "Default"
-      ],
-      "count": 2,
-      "kind": "conditional",
-      "pct": 0.061
     },
     {
       "count": 2,
@@ -1032,10 +813,167 @@
       ]
     },
     {
+      "count": 2,
+      "kind": "assign",
+      "pct": 0.061,
+      "vars": [
+        "Date Collected",
+        "Time",
+        "Date Collected",
+        "Time Collected",
+        "Time"
+      ]
+    },
+    {
+      "count": 2,
+      "kind": "assign",
+      "pct": 0.061,
+      "vars": [
+        "Greeting_Bahasa",
+        "Greeting_opening"
+      ]
+    },
+    {
+      "count": 2,
+      "kind": "assign",
+      "pct": 0.061,
+      "vars": [
+        "Greetings",
+        "Greeting_Closing"
+      ]
+    },
+    {
+      "count": 2,
+      "kind": "assign",
+      "pct": 0.061,
+      "vars": [
+        "Greetings"
+      ]
+    },
+    {
+      "count": 2,
+      "kind": "assign",
+      "pct": 0.061,
+      "vars": [
+        "Not Background Noise"
+      ]
+    },
+    {
+      "count": 2,
+      "kind": "assign",
+      "pct": 0.061,
+      "vars": [
+        "PTP",
+        "Date Collected"
+      ]
+    },
+    {
+      "count": 2,
+      "kind": "assign",
+      "pct": 0.061,
+      "vars": [
+        "PTP"
+      ]
+    },
+    {
+      "count": 2,
+      "kind": "assign",
+      "pct": 0.061,
+      "vars": [
+        "Time Collected",
+        "Regex Payment Method"
+      ]
+    },
+    {
+      "count": 2,
+      "kind": "assign",
+      "pct": 0.061,
+      "vars": [
+        "random_first"
+      ]
+    },
+    {
       "branches": [
-        "Unfortunate",
-        "Passed Away",
-        "Passed Away"
+        "1",
+        "2"
+      ],
+      "count": 2,
+      "kind": "conditional",
+      "pct": 0.061
+    },
+    {
+      "branches": [
+        "2",
+        "3"
+      ],
+      "count": 2,
+      "kind": "conditional",
+      "pct": 0.061
+    },
+    {
+      "branches": [
+        "Already Paid",
+        "Already Paid"
+      ],
+      "count": 2,
+      "kind": "conditional",
+      "pct": 0.061
+    },
+    {
+      "branches": [
+        "Bapak",
+        "Ibu"
+      ],
+      "count": 2,
+      "kind": "conditional",
+      "pct": 0.061
+    },
+    {
+      "branches": [
+        "Clear"
+      ],
+      "count": 2,
+      "kind": "conditional",
+      "pct": 0.061
+    },
+    {
+      "branches": [
+        "Collected",
+        "Default"
+      ],
+      "count": 2,
+      "kind": "conditional",
+      "pct": 0.061
+    },
+    {
+      "branches": [
+        "Correct Person"
+      ],
+      "count": 2,
+      "kind": "conditional",
+      "pct": 0.061
+    },
+    {
+      "branches": [
+        "Death/Unfortunate",
+        "Death/Unfortunate"
+      ],
+      "count": 2,
+      "kind": "conditional",
+      "pct": 0.061
+    },
+    {
+      "branches": [
+        "Default"
+      ],
+      "count": 2,
+      "kind": "conditional",
+      "pct": 0.061
+    },
+    {
+      "branches": [
+        "Empty Value",
+        "Empty Value"
       ],
       "count": 2,
       "kind": "conditional",
@@ -1057,24 +995,83 @@
     },
     {
       "branches": [
-        "mention later",
-        "mention exact time",
-        "mention exact time",
-        "mention exact time"
+        "Reason Exist",
+        "Default"
       ],
-      "count": 1,
+      "count": 2,
       "kind": "conditional",
-      "pct": 0.03
+      "pct": 0.061
     },
     {
       "branches": [
-        "Triggered > Collect payment method",
-        "Triggered > Collect payment method",
-        "Triggered"
+        "TRUE",
+        "FALSE"
       ],
-      "count": 1,
+      "count": 2,
       "kind": "conditional",
-      "pct": 0.03
+      "pct": 0.061
+    },
+    {
+      "branches": [
+        "Today",
+        "Today empty time",
+        "Not Today",
+        "Next Week",
+        "Next Month",
+        "Default"
+      ],
+      "count": 2,
+      "kind": "conditional",
+      "pct": 0.061
+    },
+    {
+      "branches": [
+        "Today",
+        "Today",
+        "Not Today",
+        "Next Week",
+        "Next Month",
+        "Default"
+      ],
+      "count": 2,
+      "kind": "conditional",
+      "pct": 0.061
+    },
+    {
+      "branches": [
+        "Unfortunate",
+        "Passed Away",
+        "Passed Away"
+      ],
+      "count": 2,
+      "kind": "conditional",
+      "pct": 0.061
+    },
+    {
+      "branches": [
+        "positive closing"
+      ],
+      "count": 2,
+      "kind": "conditional",
+      "pct": 0.061
+    },
+    {
+      "count": 1,
+      "kind": "assign",
+      "pct": 0.03,
+      "vars": [
+        "Call Time Value"
+      ]
+    },
+    {
+      "count": 1,
+      "kind": "assign",
+      "pct": 0.03,
+      "vars": [
+        "Date Collected 2",
+        "Time Collected 2",
+        "Days between"
+      ]
     },
     {
       "count": 1,
@@ -1090,83 +1087,20 @@
       ]
     },
     {
-      "branches": [
-        "apps issue",
-        "request bank VA"
-      ],
       "count": 1,
-      "kind": "conditional",
-      "pct": 0.03
-    },
-    {
-      "branches": [
-        "Triggered > Collect payment method",
-        "Triggered"
-      ],
-      "count": 1,
-      "kind": "conditional",
-      "pct": 0.03
-    },
-    {
-      "branches": [
-        "triggered 2nd con > collect payment method",
-        "triggered 2nd con > collect payment method",
-        "Triggered 2nd convincer"
-      ],
-      "count": 1,
-      "kind": "conditional",
-      "pct": 0.03
-    },
-    {
-      "branches": [
-        "No Money",
-        "Disaster/Unfortunate",
-        "Disaster/Unfortunate",
-        "Busy",
-        "Reason Exist",
-        "Default"
-      ],
-      "count": 1,
-      "kind": "conditional",
-      "pct": 0.03
+      "kind": "assign",
+      "pct": 0.03,
+      "vars": [
+        "Days_Past"
+      ]
     },
     {
       "count": 1,
       "kind": "assign",
       "pct": 0.03,
       "vars": [
-        "Need Help Issue"
+        "Greeting_Time"
       ]
-    },
-    {
-      "branches": [
-        "1",
-        "2",
-        "3",
-        "4",
-        "5"
-      ],
-      "count": 1,
-      "kind": "conditional",
-      "pct": 0.03
-    },
-    {
-      "branches": [
-        "Pay within 2 days",
-        "Pay in > 2 Days"
-      ],
-      "count": 1,
-      "kind": "conditional",
-      "pct": 0.03
-    },
-    {
-      "branches": [
-        "Script 1",
-        "Script 2"
-      ],
-      "count": 1,
-      "kind": "conditional",
-      "pct": 0.03
     },
     {
       "count": 1,
@@ -1181,67 +1115,146 @@
       "kind": "assign",
       "pct": 0.03,
       "vars": [
-        "Triggered_Stop Calling"
+        "KBB2_Triggered"
       ]
-    },
-    {
-      "branches": [
-        "Pay within 2 days",
-        "Pay > 2 days"
-      ],
-      "count": 1,
-      "kind": "conditional",
-      "pct": 0.03
     },
     {
       "count": 1,
       "kind": "assign",
       "pct": 0.03,
       "vars": [
-        "Triggered_VABank"
+        "Need Help Issue"
       ]
     },
     {
-      "branches": [
-        "Pay within 2 days",
-        "Pay In > 2 Days"
-      ],
       "count": 1,
-      "kind": "conditional",
-      "pct": 0.03
+      "kind": "assign",
+      "pct": 0.03,
+      "vars": [
+        "New Current Time"
+      ]
     },
     {
-      "branches": [
-        "IM3 Whatsapp",
-        "E-commerce/E-wallet/App",
-        "E-commerce/E-wallet/App",
-        "VA Bank",
-        "Gerai/Minimarket/Pos",
-        "Gerai/Minimarket/Pos",
-        "Gerai/Minimarket/Pos"
-      ],
       "count": 1,
-      "kind": "conditional",
-      "pct": 0.03
+      "kind": "assign",
+      "pct": 0.03,
+      "vars": [
+        "PAYMENT_METHOD_KB"
+      ]
     },
     {
-      "branches": [
-        "Same payment method"
-      ],
       "count": 1,
-      "kind": "conditional",
-      "pct": 0.03
+      "kind": "assign",
+      "pct": 0.03,
+      "vars": [
+        "Permission"
+      ]
     },
     {
-      "branches": [
-        "Suspended",
-        "Hardblock",
-        "Softblock",
-        "Active User"
-      ],
       "count": 1,
-      "kind": "conditional",
-      "pct": 0.03
+      "kind": "assign",
+      "pct": 0.03,
+      "vars": [
+        "Random_Greetings"
+      ]
+    },
+    {
+      "count": 1,
+      "kind": "assign",
+      "pct": 0.03,
+      "vars": [
+        "Regex Payment Method"
+      ]
+    },
+    {
+      "count": 1,
+      "kind": "assign",
+      "pct": 0.03,
+      "vars": [
+        "SALUTATION",
+        "SALUTATION_2"
+      ]
+    },
+    {
+      "count": 1,
+      "kind": "assign",
+      "pct": 0.03,
+      "vars": [
+        "Still Considering"
+      ]
+    },
+    {
+      "count": 1,
+      "kind": "assign",
+      "pct": 0.03,
+      "vars": [
+        "Temp_PAYMENT_METHOD_KB"
+      ]
+    },
+    {
+      "count": 1,
+      "kind": "assign",
+      "pct": 0.03,
+      "vars": [
+        "Time Collected",
+        "Date Collected",
+        "Next Week Payment",
+        "Next Month Payment",
+        "Time"
+      ]
+    },
+    {
+      "count": 1,
+      "kind": "assign",
+      "pct": 0.03,
+      "vars": [
+        "Time Collected",
+        "Time Collected",
+        "Date Interval",
+        "Date Interval"
+      ]
+    },
+    {
+      "count": 1,
+      "kind": "assign",
+      "pct": 0.03,
+      "vars": [
+        "Time",
+        "Date Collected",
+        "Date Collected",
+        "Time Collected",
+        "Time"
+      ]
+    },
+    {
+      "count": 1,
+      "kind": "assign",
+      "pct": 0.03,
+      "vars": [
+        "Time",
+        "Date Collected",
+        "Time Collected",
+        "Date Collected",
+        "Next Week Payment",
+        "Next Month Payment",
+        "Time"
+      ]
+    },
+    {
+      "count": 1,
+      "kind": "assign",
+      "pct": 0.03,
+      "vars": [
+        "Triggered KB Hotline"
+      ]
+    },
+    {
+      "count": 1,
+      "kind": "assign",
+      "pct": 0.03,
+      "vars": [
+        "Triggered_Deny Loan"
+      ]
     },
     {
       "count": 1,
@@ -1272,7 +1285,7 @@
       "kind": "assign",
       "pct": 0.03,
       "vars": [
-        "Triggered_Deny Loan"
+        "Triggered_Stop Calling"
       ]
     },
     {
@@ -1280,7 +1293,7 @@
       "kind": "assign",
       "pct": 0.03,
       "vars": [
-        "Temp_PAYMENT_METHOD_KB"
+        "Triggered_VABank"
       ]
     },
     {
@@ -1288,11 +1301,20 @@
       "kind": "assign",
       "pct": 0.03,
       "vars": [
-        "PAYMENT_METHOD_KB"
+        "Wrong Person"
+      ]
+    },
+    {
+      "count": 1,
+      "kind": "assign",
+      "pct": 0.03,
+      "vars": [
+        "hit_1st_follup"
       ]
     },
     {
       "branches": [
+        "Haven't Paid",
         "Haven't Paid",
         "Already Paid"
       ],
@@ -1302,7 +1324,6 @@
     },
     {
       "branches": [
-        "Haven't Paid",
         "Haven't Paid",
         "Already Paid"
       ],
@@ -1322,76 +1343,12 @@
       "pct": 0.03
     },
     {
-      "count": 1,
-      "kind": "assign",
-      "pct": 0.03,
-      "vars": [
-        "Time Collected",
-        "Time Collected",
-        "Date Interval",
-        "Date Interval"
-      ]
-    },
-    {
-      "count": 1,
-      "kind": "assign",
-      "pct": 0.03,
-      "vars": [
-        "Date Collected 2",
-        "Time Collected 2",
-        "Days between"
-      ]
-    },
-    {
-      "count": 1,
-      "kind": "assign",
-      "pct": 0.03,
-      "vars": [
-        "New Current Time"
-      ]
-    },
-    {
       "branches": [
-        "Go to inform payment"
-      ],
-      "count": 1,
-      "kind": "conditional",
-      "pct": 0.03
-    },
-    {
-      "count": 1,
-      "kind": "assign",
-      "pct": 0.03,
-      "vars": [
-        "Call Time Value"
-      ]
-    },
-    {
-      "branches": [
-        "Triggered 3rd convincer",
-        "Triggered 2nd convincer",
-        "Triggered convincer",
-        "Triggered collect reason"
-      ],
-      "count": 1,
-      "kind": "conditional",
-      "pct": 0.03
-    },
-    {
-      "branches": [
-        "Today",
-        "Default",
-        "Default"
-      ],
-      "count": 1,
-      "kind": "conditional",
-      "pct": 0.03
-    },
-    {
-      "branches": [
-        "GPLC",
-        "GPP",
-        "TKPL"
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
       ],
       "count": 1,
       "kind": "conditional",
@@ -1410,6 +1367,98 @@
     },
     {
       "branches": [
+        "AMEX",
+        "VISA",
+        "MASTERCARD"
+      ],
+      "count": 1,
+      "kind": "conditional",
+      "pct": 0.03
+    },
+    {
+      "branches": [
+        "Bapak",
+        "Ibu",
+        "Ibu",
+        "Bapak"
+      ],
+      "count": 1,
+      "kind": "conditional",
+      "pct": 0.03
+    },
+    {
+      "branches": [
+        "COMPANY - PT",
+        "COMPANY - PT"
+      ],
+      "count": 1,
+      "kind": "conditional",
+      "pct": 0.03
+    },
+    {
+      "branches": [
+        "Clear",
+        "Clear",
+        "Default"
+      ],
+      "count": 1,
+      "kind": "conditional",
+      "pct": 0.03
+    },
+    {
+      "branches": [
+        "Collect Reason",
+        "Default"
+      ],
+      "count": 1,
+      "kind": "conditional",
+      "pct": 0.03
+    },
+    {
+      "branches": [
+        "Collected"
+      ],
+      "count": 1,
+      "kind": "conditional",
+      "pct": 0.03
+    },
+    {
+      "branches": [
+        "Date mentioned",
+        "Date mentioned"
+      ],
+      "count": 1,
+      "kind": "conditional",
+      "pct": 0.03
+    },
+    {
+      "branches": [
+        "Date mentioned"
+      ],
+      "count": 1,
+      "kind": "conditional",
+      "pct": 0.03
+    },
+    {
+      "branches": [
+        "From pitching"
+      ],
+      "count": 1,
+      "kind": "conditional",
+      "pct": 0.03
+    },
+    {
+      "branches": [
+        "GPLC",
+        "GPP",
+        "TKPL"
+      ],
+      "count": 1,
+      "kind": "conditional",
+      "pct": 0.03
+    },
+    {
+      "branches": [
         "GPLC",
         "GPP",
         "TokoKapital"
@@ -1419,23 +1468,166 @@
       "pct": 0.03
     },
     {
+      "branches": [
+        "Go to inform payment"
+      ],
       "count": 1,
-      "kind": "assign",
-      "pct": 0.03,
-      "vars": [
-        "Time",
-        "Date Collected",
-        "Time Collected",
-        "Date Collected",
-        "Next Week Payment",
-        "Next Month Payment",
-        "Time"
-      ]
+      "kind": "conditional",
+      "pct": 0.03
+    },
+    {
+      "branches": [
+        "Have Triggered",
+        "Reason Collected"
+      ],
+      "count": 1,
+      "kind": "conditional",
+      "pct": 0.03
+    },
+    {
+      "branches": [
+        "Hit"
+      ],
+      "count": 1,
+      "kind": "conditional",
+      "pct": 0.03
+    },
+    {
+      "branches": [
+        "IM3 Whatsapp",
+        "E-commerce/E-wallet/App",
+        "E-commerce/E-wallet/App",
+        "VA Bank",
+        "Gerai/Minimarket/Pos",
+        "Gerai/Minimarket/Pos",
+        "Gerai/Minimarket/Pos"
+      ],
+      "count": 1,
+      "kind": "conditional",
+      "pct": 0.03
+    },
+    {
+      "branches": [
+        "MALE",
+        "FEMALE"
+      ],
+      "count": 1,
+      "kind": "conditional",
+      "pct": 0.03
+    },
+    {
+      "branches": [
+        "MULTI CONTRACT",
+        "MULTI CONTRACT",
+        "MULTI CONTRACT"
+      ],
+      "count": 1,
+      "kind": "conditional",
+      "pct": 0.03
     },
     {
       "branches": [
         "Method Collected",
         "Triggered"
+      ],
+      "count": 1,
+      "kind": "conditional",
+      "pct": 0.03
+    },
+    {
+      "branches": [
+        "No Money",
+        "Disaster/Unfortunate",
+        "Disaster/Unfortunate",
+        "Busy",
+        "Reason Exist",
+        "Default"
+      ],
+      "count": 1,
+      "kind": "conditional",
+      "pct": 0.03
+    },
+    {
+      "branches": [
+        "Pay within 2 days",
+        "Pay > 2 days"
+      ],
+      "count": 1,
+      "kind": "conditional",
+      "pct": 0.03
+    },
+    {
+      "branches": [
+        "Pay within 2 days",
+        "Pay In > 2 Days"
+      ],
+      "count": 1,
+      "kind": "conditional",
+      "pct": 0.03
+    },
+    {
+      "branches": [
+        "Pay within 2 days",
+        "Pay in > 2 Days"
+      ],
+      "count": 1,
+      "kind": "conditional",
+      "pct": 0.03
+    },
+    {
+      "branches": [
+        "Same payment method"
+      ],
+      "count": 1,
+      "kind": "conditional",
+      "pct": 0.03
+    },
+    {
+      "branches": [
+        "Script 1",
+        "Script 2"
+      ],
+      "count": 1,
+      "kind": "conditional",
+      "pct": 0.03
+    },
+    {
+      "branches": [
+        "Suspended",
+        "Hardblock",
+        "Softblock",
+        "Active User"
+      ],
+      "count": 1,
+      "kind": "conditional",
+      "pct": 0.03
+    },
+    {
+      "branches": [
+        "Time Collected",
+        "Passive PTP"
+      ],
+      "count": 1,
+      "kind": "conditional",
+      "pct": 0.03
+    },
+    {
+      "branches": [
+        "Today",
+        "Default",
+        "Default"
+      ],
+      "count": 1,
+      "kind": "conditional",
+      "pct": 0.03
+    },
+    {
+      "branches": [
+        "Today",
+        "Not Today",
+        "Not Today",
+        "Not Today",
+        "Not Today"
       ],
       "count": 1,
       "kind": "conditional",
@@ -1455,57 +1647,10 @@
       "pct": 0.03
     },
     {
-      "count": 1,
-      "kind": "assign",
-      "pct": 0.03,
-      "vars": [
-        "Regex Payment Method"
-      ]
-    },
-    {
-      "count": 1,
-      "kind": "assign",
-      "pct": 0.03,
-      "vars": [
-        "Time Collected",
-        "Date Collected",
-        "Next Week Payment",
-        "Next Month Payment",
-        "Time"
-      ]
-    },
-    {
-      "branches": [
-        "Have Triggered",
-        "Reason Collected"
-      ],
-      "count": 1,
-      "kind": "conditional",
-      "pct": 0.03
-    },
-    {
-      "branches": [
-        "Collected"
-      ],
-      "count": 1,
-      "kind": "conditional",
-      "pct": 0.03
-    },
-    {
-      "branches": [
-        "Time Collected",
-        "Passive PTP"
-      ],
-      "count": 1,
-      "kind": "conditional",
-      "pct": 0.03
-    },
-    {
       "branches": [
         "Today",
-        "Not Today",
-        "Not Today",
-        "Not Today",
+        "Today",
+        "Default",
         "Not Today"
       ],
       "count": 1,
@@ -1525,16 +1670,12 @@
     },
     {
       "branches": [
-        "Collect Reason",
+        "Today",
+        "Today",
+        "Not today",
+        "Next Week",
+        "Next Month",
         "Default"
-      ],
-      "count": 1,
-      "kind": "conditional",
-      "pct": 0.03
-    },
-    {
-      "branches": [
-        "Date mentioned"
       ],
       "count": 1,
       "kind": "conditional",
@@ -1556,8 +1697,10 @@
     },
     {
       "branches": [
-        "MALE",
-        "FEMALE"
+        "Triggered 3rd convincer",
+        "Triggered 2nd convincer",
+        "Triggered convincer",
+        "Triggered collect reason"
       ],
       "count": 1,
       "kind": "conditional",
@@ -1565,65 +1708,18 @@
     },
     {
       "branches": [
-        "Hit"
+        "Triggered > Collect payment method",
+        "Triggered > Collect payment method",
+        "Triggered"
       ],
       "count": 1,
       "kind": "conditional",
       "pct": 0.03
     },
     {
-      "count": 1,
-      "kind": "assign",
-      "pct": 0.03,
-      "vars": [
-        "Wrong Person"
-      ]
-    },
-    {
-      "count": 1,
-      "kind": "assign",
-      "pct": 0.03,
-      "vars": [
-        "Permission"
-      ]
-    },
-    {
-      "count": 1,
-      "kind": "assign",
-      "pct": 0.03,
-      "vars": [
-        "hit_1st_follup"
-      ]
-    },
-    {
-      "count": 1,
-      "kind": "assign",
-      "pct": 0.03,
-      "vars": [
-        "Random_Greetings"
-      ]
-    },
-    {
-      "count": 1,
-      "kind": "assign",
-      "pct": 0.03,
-      "vars": [
-        "KBB2_Triggered"
-      ]
-    },
-    {
-      "count": 1,
-      "kind": "assign",
-      "pct": 0.03,
-      "vars": [
-        "Still Considering"
-      ]
-    },
-    {
       "branches": [
-        "AMEX",
-        "VISA",
-        "MASTERCARD"
+        "Triggered > Collect payment method",
+        "Triggered"
       ],
       "count": 1,
       "kind": "conditional",
@@ -1642,21 +1738,9 @@
       "pct": 0.03
     },
     {
-      "count": 1,
-      "kind": "assign",
-      "pct": 0.03,
-      "vars": [
-        "Triggered KB Hotline"
-      ]
-    },
-    {
       "branches": [
-        "Today",
-        "Today",
-        "Not today",
-        "Next Week",
-        "Next Month",
-        "Default"
+        "apps issue",
+        "request bank VA"
       ],
       "count": 1,
       "kind": "conditional",
@@ -1664,8 +1748,10 @@
     },
     {
       "branches": [
-        "Date mentioned",
-        "Date mentioned"
+        "mention later",
+        "mention exact time",
+        "mention exact time",
+        "mention exact time"
       ],
       "count": 1,
       "kind": "conditional",
@@ -1673,95 +1759,9 @@
     },
     {
       "branches": [
-        "Today",
-        "Today",
-        "Default",
-        "Not Today"
-      ],
-      "count": 1,
-      "kind": "conditional",
-      "pct": 0.03
-    },
-    {
-      "count": 1,
-      "kind": "assign",
-      "pct": 0.03,
-      "vars": [
-        "Time",
-        "Date Collected",
-        "Date Collected",
-        "Time Collected",
-        "Time"
-      ]
-    },
-    {
-      "count": 1,
-      "kind": "assign",
-      "pct": 0.03,
-      "vars": [
-        "SALUTATION",
-        "SALUTATION_2"
-      ]
-    },
-    {
-      "branches": [
-        "Clear",
-        "Clear",
-        "Default"
-      ],
-      "count": 1,
-      "kind": "conditional",
-      "pct": 0.03
-    },
-    {
-      "count": 1,
-      "kind": "assign",
-      "pct": 0.03,
-      "vars": [
-        "Days_Past"
-      ]
-    },
-    {
-      "branches": [
-        "MULTI CONTRACT",
-        "MULTI CONTRACT",
-        "MULTI CONTRACT"
-      ],
-      "count": 1,
-      "kind": "conditional",
-      "pct": 0.03
-    },
-    {
-      "branches": [
-        "Bapak",
-        "Ibu",
-        "Ibu",
-        "Bapak"
-      ],
-      "count": 1,
-      "kind": "conditional",
-      "pct": 0.03
-    },
-    {
-      "branches": [
-        "From pitching"
-      ],
-      "count": 1,
-      "kind": "conditional",
-      "pct": 0.03
-    },
-    {
-      "count": 1,
-      "kind": "assign",
-      "pct": 0.03,
-      "vars": [
-        "Greeting_Time"
-      ]
-    },
-    {
-      "branches": [
-        "COMPANY - PT",
-        "COMPANY - PT"
+        "triggered 2nd con > collect payment method",
+        "triggered 2nd con > collect payment method",
+        "Triggered 2nd convincer"
       ],
       "count": 1,
       "kind": "conditional",
@@ -54685,6 +54685,12 @@
       "count": 4,
       "pct": 0.121,
       "role": "greeting",
+      "text": "Baik, untuk pembayarannya kira-kira akan dilakukan melalui apa ya? / Untuk pembayarannya lewat mana ya? / Pembayarannya mau melalui apa?"
+    },
+    {
+      "count": 4,
+      "pct": 0.121,
+      "role": "greeting",
       "text": "Halo apa anda bisa mendengar suara saya?"
     },
     {
@@ -54697,7 +54703,7 @@
       "count": 4,
       "pct": 0.121,
       "role": "greeting",
-      "text": "Baik, untuk pembayarannya kira-kira akan dilakukan melalui apa ya? / Untuk pembayarannya lewat mana ya? / Pembayarannya mau melalui apa?"
+      "text": "Hmm, mohon maaf, apa saya sedang berbicara dengan [{Name_PERSON_NAME}?] / [Apa benar ini dengan {Name_PERSON_NAME} ?]"
     },
     {
       "count": 4,
@@ -54708,20 +54714,8 @@
     {
       "count": 4,
       "pct": 0.121,
-      "role": "greeting",
-      "text": "Hmm, mohon maaf, apa saya sedang berbicara dengan [{Name_PERSON_NAME}?] / [Apa benar ini dengan {Name_PERSON_NAME} ?]"
-    },
-    {
-      "count": 4,
-      "pct": 0.121,
       "role": "inform",
-      "text": "Untuk metode pembayarannya tadi melalui apa ya?"
-    },
-    {
-      "count": 4,
-      "pct": 0.121,
-      "role": "inform",
-      "text": "Um, maaf bisa diinfokan untuk waktu pembayarannya?"
+      "text": "Halo, Saya Nia dari GoPayLater Cicil oleh Atome Financial Indonesia. [Apakah betul saya berbicara dengan {Salutation} {Name_PERSON_NAME}?] / [Ini dengan {Salutation} {Name_PERSON_NAME}, betul ya?] / [Apa betul dengan {Salutation} {Name_PERSON_NAME}  yang berbicara?]"
     },
     {
       "count": 4,
@@ -54739,7 +54733,7 @@
       "count": 4,
       "pct": 0.121,
       "role": "inform",
-      "text": "Halo, Saya Nia dari GoPayLater Cicil oleh Atome Financial Indonesia. [Apakah betul saya berbicara dengan {Salutation} {Name_PERSON_NAME}?] / [Ini dengan {Salutation} {Name_PERSON_NAME}, betul ya?] / [Apa betul dengan {Salutation} {Name_PERSON_NAME}  yang berbicara?]"
+      "text": "Hmm, mohon maaf, apa saya sedang berbicara dengan [{Salutation} {Name_PERSON_NAME}?] / Apa benar ini dengan [{Salutation} {Name_PERSON_NAME}?]"
     },
     {
       "count": 4,
@@ -54751,7 +54745,13 @@
       "count": 4,
       "pct": 0.121,
       "role": "inform",
-      "text": "Hmm, mohon maaf, apa saya sedang berbicara dengan [{Salutation} {Name_PERSON_NAME}?] / Apa benar ini dengan [{Salutation} {Name_PERSON_NAME}?]"
+      "text": "Um, maaf bisa diinfokan untuk waktu pembayarannya?"
+    },
+    {
+      "count": 4,
+      "pct": 0.121,
+      "role": "inform",
+      "text": "Untuk metode pembayarannya tadi melalui apa ya?"
     },
     {
       "count": 3,
@@ -54763,49 +54763,13 @@
       "count": 3,
       "pct": 0.091,
       "role": "inform",
-      "text": "Oh baik, kalau begitu bisa di bantu konfirmasi tagihannya tadi sudah dibayarkan kapan dan melalui metode pembayaran apa? / Um, mohon kerjasamanya untuk mengkonfirmasi tagihannya sudah di bayarkan kapan dan melalui metode pembayaran apa?"
-    },
-    {
-      "count": 3,
-      "pct": 0.091,
-      "role": "inform",
-      "text": "Um, mohon kerjasamanya untuk mengkonfirmasi tagihannya sudah di bayarkan kapan dan melalui metode pembayaran apa?"
-    },
-    {
-      "count": 3,
-      "pct": 0.091,
-      "role": "inform",
-      "text": "Oh begitu, namun pada sistem kami tagihannya tercatat atas nama [{SALUTATION} {CUSTOMER_PERSON_NAME}.] apa benar anda tidak memiliki pinjaman di Kredivo?  / Apa benar anda tidak memiliki pinjaman di Kredivo?"
-    },
-    {
-      "count": 3,
-      "pct": 0.091,
-      "role": "inform",
       "text": "Baik, saya hanya ingin mengkonfirmasi, bahwa pembayaran anda sebesar {X_Nominal_AMOUNT} di {Product} telah jatuh tempo hari ini. Apa bisa dibayarkan sekarang? / Pembayaran anda belum kami terima, Bisa ya dibayar sekarang? / Untuk tagihannya, apa bisa dibayarkan sekarang?"
     },
     {
       "count": 3,
       "pct": 0.091,
       "role": "inform",
-      "text": "Halo, Saya Nia dari GoPayLater Cicil oleh Multifinance Anak Bangsa. [Apakah betul saya berbicara dengan {Salutation} {Name_PERSON_NAME}?] / [Ini dengan {Salutation} {Name_PERSON_NAME}, betul ya?] / [Apa betul dengan {Salutation} {Name_PERSON_NAME}  yang berbicara?]"
-    },
-    {
-      "count": 3,
-      "pct": 0.091,
-      "role": "inform",
-      "text": "Halo, Saya Hera dari GoPayPinjam oleh Mapan Global Reksa, Apa benar saya sekarang berbicara dengan [{Salutation} {Name_PERSON_NAME}?,] / [Ini dengan {Salutation} {Name_PERSON_NAME}, betul ya?] / [Apa betul dengan {Salutation} {Name_PERSON_NAME} yang berbicara?]"
-    },
-    {
-      "count": 3,
-      "pct": 0.091,
-      "role": "inform",
-      "text": "Hmm tapi tagihan Anda sudah terlambat, kalau tidak segera dilunasi hari ini, denda akan semakin besar, selain itu anda akan terus dihubungi oleh tim kami. Kami sarankan, Anda bisa mencoba untuk menggunakan dana tabungan, atau meminta bantuan teman dan saudaranya untuk membayar. Jadi, apa bisa diusahakan dulu untuk melunasi tagihannya hari ini? / Daripada kena denda yang lebih besar dan catatan kredit anda jadi kurang baik, sebaiknya diusahakan untuk melunasi tagihannya hari ini, bisa ya? / Kalau tagihannnya dibayarkan hari ini, bisa ya?"
-    },
-    {
-      "count": 3,
-      "pct": 0.091,
-      "role": "inform",
-      "text": "Um, jadi saya menelepon untuk memberitahukan bahwa {ProductAnda}, sudah lewat dari jatuh tempo sebesar [{X_Nominal_AMOUNT}.] Tingkat kredit Anda akan turun dan akan dikenakan biaya keterlambatan tambahan jika tagihannya tidak dibayar, Apa bisa dibayarkan sekarang? / Tingkat kreditnya akan turun jika tagihan belum dibayar, Apa bisa dibayarkan sekarang? / Untuk tagihannya, apa bisa dibayarkan sekarang?"
+      "text": "Halo, Saya Hera dari GoPayLater Cicil oleh Atome Financial Indonesia, Apa benar saya sekarang berbicara dengan [{Salutation} {Name_PERSON_NAME}?,] / [Ini dengan {Salutation} {Name_PERSON_NAME}, betul ya?] / [Apa betul dengan {Salutation} {Name_PERSON_NAME} yang berbicara?]"
     },
     {
       "count": 3,
@@ -54817,13 +54781,7 @@
       "count": 3,
       "pct": 0.091,
       "role": "inform",
-      "text": "Hmm kalau begitu, kira-kira anda akan melakukan pembayaran tanggal berapa ya? / Kira-kira akan dibayarkan tanggal berapa ya? / Tagihannya akan dibayarkan kapan ya?"
-    },
-    {
-      "count": 3,
-      "pct": 0.091,
-      "role": "inform",
-      "text": "Oh, saya mengerti keadaan anda, tapi apabila tidak dilunasi hari ini maka catatan kredit anda akan menurun dan {ProductAnda} akan dibekukan sementara. Dan kedepannya akan sulit untuk mengajukan kembali pinjamannya. Bisa kan ya dilunasi hari ini? / Supaya dapat mempertahankan catatan kredit yang baik, apa bisa tagihannya dibayar hari ini? / Apakah tagihannya bisa dibayarkan hari ini?"
+      "text": "Halo, Saya Hera dari GoPayPinjam oleh Mapan Global Reksa, Apa benar saya sekarang berbicara dengan [{Salutation} {Name_PERSON_NAME}?,] / [Ini dengan {Salutation} {Name_PERSON_NAME}, betul ya?] / [Apa betul dengan {Salutation} {Name_PERSON_NAME} yang berbicara?]"
     },
     {
       "count": 3,
@@ -54835,7 +54793,55 @@
       "count": 3,
       "pct": 0.091,
       "role": "inform",
-      "text": "Halo, Saya Hera dari GoPayLater Cicil oleh Atome Financial Indonesia, Apa benar saya sekarang berbicara dengan [{Salutation} {Name_PERSON_NAME}?,] / [Ini dengan {Salutation} {Name_PERSON_NAME}, betul ya?] / [Apa betul dengan {Salutation} {Name_PERSON_NAME} yang berbicara?]"
+      "text": "Halo, Saya Nia dari GoPayLater Cicil oleh Multifinance Anak Bangsa. [Apakah betul saya berbicara dengan {Salutation} {Name_PERSON_NAME}?] / [Ini dengan {Salutation} {Name_PERSON_NAME}, betul ya?] / [Apa betul dengan {Salutation} {Name_PERSON_NAME}  yang berbicara?]"
+    },
+    {
+      "count": 3,
+      "pct": 0.091,
+      "role": "inform",
+      "text": "Hmm kalau begitu, kira-kira anda akan melakukan pembayaran tanggal berapa ya? / Kira-kira akan dibayarkan tanggal berapa ya? / Tagihannya akan dibayarkan kapan ya?"
+    },
+    {
+      "count": 3,
+      "pct": 0.091,
+      "role": "inform",
+      "text": "Hmm tapi tagihan Anda sudah terlambat, kalau tidak segera dilunasi hari ini, denda akan semakin besar, selain itu anda akan terus dihubungi oleh tim kami. Kami sarankan, Anda bisa mencoba untuk menggunakan dana tabungan, atau meminta bantuan teman dan saudaranya untuk membayar. Jadi, apa bisa diusahakan dulu untuk melunasi tagihannya hari ini? / Daripada kena denda yang lebih besar dan catatan kredit anda jadi kurang baik, sebaiknya diusahakan untuk melunasi tagihannya hari ini, bisa ya? / Kalau tagihannnya dibayarkan hari ini, bisa ya?"
+    },
+    {
+      "count": 3,
+      "pct": 0.091,
+      "role": "inform",
+      "text": "Oh baik, kalau begitu bisa di bantu konfirmasi tagihannya tadi sudah dibayarkan kapan dan melalui metode pembayaran apa? / Um, mohon kerjasamanya untuk mengkonfirmasi tagihannya sudah di bayarkan kapan dan melalui metode pembayaran apa?"
+    },
+    {
+      "count": 3,
+      "pct": 0.091,
+      "role": "inform",
+      "text": "Oh begitu, namun pada sistem kami tagihannya tercatat atas nama [{SALUTATION} {CUSTOMER_PERSON_NAME}.] apa benar anda tidak memiliki pinjaman di Kredivo?  / Apa benar anda tidak memiliki pinjaman di Kredivo?"
+    },
+    {
+      "count": 3,
+      "pct": 0.091,
+      "role": "inform",
+      "text": "Oh, saya mengerti keadaan anda, tapi apabila tidak dilunasi hari ini maka catatan kredit anda akan menurun dan {ProductAnda} akan dibekukan sementara. Dan kedepannya akan sulit untuk mengajukan kembali pinjamannya. Bisa kan ya dilunasi hari ini? / Supaya dapat mempertahankan catatan kredit yang baik, apa bisa tagihannya dibayar hari ini? / Apakah tagihannya bisa dibayarkan hari ini?"
+    },
+    {
+      "count": 3,
+      "pct": 0.091,
+      "role": "inform",
+      "text": "Um, jadi saya menelepon untuk memberitahukan bahwa {ProductAnda}, sudah lewat dari jatuh tempo sebesar [{X_Nominal_AMOUNT}.] Tingkat kredit Anda akan turun dan akan dikenakan biaya keterlambatan tambahan jika tagihannya tidak dibayar, Apa bisa dibayarkan sekarang? / Tingkat kreditnya akan turun jika tagihan belum dibayar, Apa bisa dibayarkan sekarang? / Untuk tagihannya, apa bisa dibayarkan sekarang?"
+    },
+    {
+      "count": 3,
+      "pct": 0.091,
+      "role": "inform",
+      "text": "Um, mohon kerjasamanya untuk mengkonfirmasi tagihannya sudah di bayarkan kapan dan melalui metode pembayaran apa?"
+    },
+    {
+      "count": 2,
+      "pct": 0.061,
+      "role": "greeting",
+      "text": "Baik, saya hanya ingin mengkonfirmasi, bahwa pembayaran Paylater anda di Tiktok sebesar [{X_Nominal_AMOUNT}] telah jatuh tempo hari ini. Apa bisa dibayarkan sekarang? / Pembayaran anda belum kami terima, Bisa ya dibayar sekarang? / Untuk tagihannya, apa bisa dibayarkan sekarang?"
     },
     {
       "count": 2,
@@ -54847,37 +54853,7 @@
       "count": 2,
       "pct": 0.061,
       "role": "greeting",
-      "text": "Sangat disayangkan sekali jika tidak dilakukan pembayarannya hari ini. [Layanan akan di nonaktifkan permanen pada {NONACTIVE_DATE}.] Apa bisa tagihannya dibayarkan segera? / Agar layanannya internet dapat terus dinikmati, apa bisa melakukan pembayarannya segera? / Kalau pembayarannya dilakukan segera, bisa ya?"
-    },
-    {
-      "count": 2,
-      "pct": 0.061,
-      "role": "greeting",
-      "text": "Sangat disayangkan sekali jika tidak dilakukan pembayarannya hari ini. Layanan akan di nonaktifkan sementara pada [{NONACTIVE_DATE}.] Apa bisa tagihannya dibayarkan segera? / Agar layanannya internet dapat terus dinikmati, apa bisa melakukan pembayarannya segera? / Kalau pembayarannya dilakukan segera, bisa ya?"
-    },
-    {
-      "count": 2,
-      "pct": 0.061,
-      "role": "greeting",
-      "text": "{Greeting_opening}. Kami dari Orico Balimor Finance. Betul kami terhubung dengan [{SALUTATION} {CUSTOMER_PERSON_NAME} ?] / Apakah benar pemilik nomor ini adalah [{SALUTATION} {CUSTOMER_PERSON_NAME} ?] / Jadi, apa saya berbicara dengan [{SALUTATION} {CUSTOMER_PERSON_NAME} ?]"
-    },
-    {
-      "count": 2,
-      "pct": 0.061,
-      "role": "greeting",
       "text": "Mohon konfirmasi apakah ada alasan khusus yang menyebabkan belum bisa melakukan pembayaran? / Boleh saya tahu alasannya kenapa, belum bisa membayar? / Jadi apakah ada alasan mengapa belum bisa dibayar tagihannya?"
-    },
-    {
-      "count": 2,
-      "pct": 0.061,
-      "role": "greeting",
-      "text": "[Untuk cara pembayarannya, sebaiknya anda login ke aplikasi, kemudian membayar tagihannya melalui virtual account atau kode pembayaran yang tersedia.] [Anda juga bisa melihat metode pembayarannya di aplikasi.] Apa sudah jelas? / [Untuk membayar, bisa melalui virtual account, atau anda juga bisa melihat metode pembayarannya di aplikasi.] Apa sudah jelas?"
-    },
-    {
-      "count": 2,
-      "pct": 0.061,
-      "role": "greeting",
-      "text": "[Halo, Saya Helen dari {Product}. Saya ingin berbicara dengan {Name_PERSON_NAME}, apa bisa?] / [Ini dengan {Name_PERSON_NAME}, betul ya?] / [Apa betul dengan {Name_PERSON_NAME} yang berbicara?]"
     },
     {
       "count": 2,
@@ -54889,43 +54865,31 @@
       "count": 2,
       "pct": 0.061,
       "role": "greeting",
-      "text": "Baik, saya hanya ingin mengkonfirmasi, bahwa pembayaran Paylater anda di Tiktok sebesar [{X_Nominal_AMOUNT}] telah jatuh tempo hari ini. Apa bisa dibayarkan sekarang? / Pembayaran anda belum kami terima, Bisa ya dibayar sekarang? / Untuk tagihannya, apa bisa dibayarkan sekarang?"
+      "text": "Sangat disayangkan sekali jika tidak dilakukan pembayarannya hari ini. Layanan akan di nonaktifkan sementara pada [{NONACTIVE_DATE}.] Apa bisa tagihannya dibayarkan segera? / Agar layanannya internet dapat terus dinikmati, apa bisa melakukan pembayarannya segera? / Kalau pembayarannya dilakukan segera, bisa ya?"
     },
     {
       "count": 2,
       "pct": 0.061,
-      "role": "inform",
-      "text": "Um, lalu pembayarannya nanti akan melalui apa ya? / Pembayarannya akan dilakukan melalui apa ya?"
+      "role": "greeting",
+      "text": "Sangat disayangkan sekali jika tidak dilakukan pembayarannya hari ini. [Layanan akan di nonaktifkan permanen pada {NONACTIVE_DATE}.] Apa bisa tagihannya dibayarkan segera? / Agar layanannya internet dapat terus dinikmati, apa bisa melakukan pembayarannya segera? / Kalau pembayarannya dilakukan segera, bisa ya?"
     },
     {
       "count": 2,
       "pct": 0.061,
-      "role": "inform",
-      "text": "Boleh diinfokan dengan jelas, pembayarannya nanti melalui bank transfer, alfamart, atau indomart? / Bisa diinfokan pembayarannya akan melalui apa?"
+      "role": "greeting",
+      "text": "[Halo, Saya Helen dari {Product}. Saya ingin berbicara dengan {Name_PERSON_NAME}, apa bisa?] / [Ini dengan {Name_PERSON_NAME}, betul ya?] / [Apa betul dengan {Name_PERSON_NAME} yang berbicara?]"
     },
     {
       "count": 2,
       "pct": 0.061,
-      "role": "inform",
-      "text": "Oh, boleh tahu kenapa ya tagihannya belum dilunasi sampai saat ini? / Um, ada kendala apa ya yang menghambat pembayarannya? / Kalau boleh tahu, ada kendala apa ya?"
+      "role": "greeting",
+      "text": "[Untuk cara pembayarannya, sebaiknya anda login ke aplikasi, kemudian membayar tagihannya melalui virtual account atau kode pembayaran yang tersedia.] [Anda juga bisa melihat metode pembayarannya di aplikasi.] Apa sudah jelas? / [Untuk membayar, bisa melalui virtual account, atau anda juga bisa melihat metode pembayarannya di aplikasi.] Apa sudah jelas?"
     },
     {
       "count": 2,
       "pct": 0.061,
-      "role": "inform",
-      "text": "{OP_C1} / {OP_C2}"
-    },
-    {
-      "count": 2,
-      "pct": 0.061,
-      "role": "inform",
-      "text": "Halo, Saya Hera dari {Product}, Apa benar saya sekarang berbicara dengan [{Salutation} {Name_PERSON_NAME}?] / [Ini dengan {Salutation} {Name_PERSON_NAME}, betul ya?] / [Apa betul dengan {Salutation} {Name_PERSON_NAME} yang berbicara?]"
-    },
-    {
-      "count": 2,
-      "pct": 0.061,
-      "role": "inform",
-      "text": "Halo, Saya Hera dari GoPayLater Cicil oleh Atome Financial Indonesia, Apa benar saya sekarang berbicara dengan [{Salutation} {Name_PERSON_NAME}?] / [Ini dengan {Salutation} {Name_PERSON_NAME}, betul ya?] / [Apa betul dengan {Salutation} {Name_PERSON_NAME} yang berbicara?]"
+      "role": "greeting",
+      "text": "{Greeting_opening}. Kami dari Orico Balimor Finance. Betul kami terhubung dengan [{SALUTATION} {CUSTOMER_PERSON_NAME} ?] / Apakah benar pemilik nomor ini adalah [{SALUTATION} {CUSTOMER_PERSON_NAME} ?] / Jadi, apa saya berbicara dengan [{SALUTATION} {CUSTOMER_PERSON_NAME} ?]"
     },
     {
       "count": 2,
@@ -54937,25 +54901,7 @@
       "count": 2,
       "pct": 0.061,
       "role": "inform",
-      "text": "Tapi tagihan Anda sudah terlambat. Jika tidak segera dilunasi hari ini, denda akan terus bertambah dan Anda akan kami terus hubungi. Kami sarankan mencoba menggunakan tabungan atau bantuan keluarga/teman. Bisa diusahakan untuk dibayar hari ini? / Daripada kena denda yang lebih besar dan catatan kredit anda jadi kurang baik, sebaiknya diusahakan untuk melunasi tagihannya hari ini, bisa ya? / Kalau tagihannnya dibayarkan hari ini, bisa ya?"
-    },
-    {
-      "count": 2,
-      "pct": 0.061,
-      "role": "inform",
-      "text": "Halo, Saya Hera dari GoPayPinjam oleh Mapan Global Reksa, Apa benar saya sekarang berbicara dengan [{Salutation} {Name_PERSON_NAME}?] / [Ini dengan {Salutation} {Name_PERSON_NAME}, betul ya?] / [Apa betul dengan {Salutation} {Name_PERSON_NAME} yang berbicara?]"
-    },
-    {
-      "count": 2,
-      "pct": 0.061,
-      "role": "inform",
-      "text": "Baik, saya ingin menginformasikan bahwa tagihan Anda sebesar {X_Nominal_AMOUNT} dari GoPayLater masih belum dibayarkan. Jika tidak segera dilunasi, hal ini dapat menurunkan tingkat kredit Anda serta menambah biaya keterlambatan. Apakah bisa dibayarkan sekarang? / Tingkat kreditnya akan turun jika tagihan belum dibayar, Apa bisa dibayarkan sekarang? / Untuk tagihannya, apa bisa dibayarkan sekarang?"
-    },
-    {
-      "count": 2,
-      "pct": 0.061,
-      "role": "inform",
-      "text": "Hmm kalau begitu, kira-kira anda akan melakukan pembayaran tanggal berapa ya? / Kira-kira  akan dibayarkan tanggal berapa ya? / Tagihannya akan dibayarkan kapan ya?\n"
+      "text": "Baik, kira kira jam berapa akan melakukan pembayaran? / Pinjamannya akan dibayarkan jam berapa ya? / Jadi, jam berapa akan dilakukan pembayarannya?"
     },
     {
       "count": 2,
@@ -54967,67 +54913,7 @@
       "count": 2,
       "pct": 0.061,
       "role": "inform",
-      "text": "[Halo, Saya Helen dari Gopay Pinjam. Saya ingin berbicara dengan Bapak {Name_PERSON_NAME}, apa bisa?] / [Ini dengan Bapak {Name_PERSON_NAME}, betul ya?] / [Apa betul dengan Bapak {Name_PERSON_NAME} yang berbicara?]"
-    },
-    {
-      "count": 2,
-      "pct": 0.061,
-      "role": "inform",
-      "text": "[Halo, Saya Helen dari Gopay Pinjam. Saya ingin berbicara dengan {Name_PERSON_NAME}, apa bisa?] / [Ini dengan {Name_PERSON_NAME}, betul ya?] / [Apa betul dengan {Name_PERSON_NAME} yang berbicara?]"
-    },
-    {
-      "count": 2,
-      "pct": 0.061,
-      "role": "inform",
-      "text": "Um.. jadi, saya menelepon, hanya untuk mengingatkan mengenai tagihan Paylater Anda di Tiktok, yang akan jatuh tempo pada [{Due_date} , sebesar {X_Nominal_AMOUNT}.] Kami harap Anda dapat membayarkan tagihan Anda tepat waktu. Apakah ada rencana pembayaran dalam waktu dekat? / [Tagihannya apa akan dilakukan pembayaran dalam waktu dekat?] / [Untuk tagihannya, apakah berkenan dibayarkan dalam waktu dekat?]"
-    },
-    {
-      "count": 2,
-      "pct": 0.061,
-      "role": "inform",
-      "text": "[Halo, Saya Helen dari Gopay Pinjam. Saya ingin berbicara dengan Ibu {Name_PERSON_NAME}, apa bisa?] / [Ini dengan Ibu {Name_PERSON_NAME}, betul ya?] / [Apa betul dengan Ibu {Name_PERSON_NAME} yang berbicara?]"
-    },
-    {
-      "count": 2,
-      "pct": 0.061,
-      "role": "inform",
-      "text": "Halo, Saya Nia dari PayLater di TikTok dari GopayLater MAB. [Apakah betul saya berbicara dengan {Salutation} {Name_PERSON_NAME},] / [Ini dengan {Salutation} {Name_PERSON_NAME}, betul ya?] / [Apa betul dengan {Salutation} {Name_PERSON_NAME} yang berbicara,]"
-    },
-    {
-      "count": 2,
-      "pct": 0.061,
-      "role": "inform",
-      "text": "Oh, saya mengerti keadaan anda, tapi apabila tidak dilunasi hari ini maka catatan kredit anda akan menurun dan Paylater anda di Tiktok akan dibekukan sementara. Dan kedepannya akan sulit untuk mengajukan kembali pinjamannya. Bisa kan ya dilunasi hari ini? / Supaya dapat mempertahankan catatan kredit yang baik, apa bisa tagihannya dibayar hari ini? / Apakah tagihannya bisa dibayarkan hari ini?"
-    },
-    {
-      "count": 2,
-      "pct": 0.061,
-      "role": "inform",
-      "text": "Hmm tapi tagihan Anda sudah terlambat, kalau tidak segera dilunasi hari ini, denda akan semakin besar, selain itu anda akan terus dihubungi oleh tim kami. Kami sarankan, Anda bisa mencoba untuk menggunakan dana tabungan, atau meminta bantuan teman dan saudaranya untuk membayar. Jadi, apa bisa diusahakan dulu untuk melunasi tagihannya hari ini? / Untuk menghindari denda yang semakin membesar, dan terus dihubungi tim kami, bisa ya tagihannya dibayarkan hari ini? / Agar tidak dikenakan denda yang lebih besar lagi, apa tagihannya bisa dibayarkan hari ini?"
-    },
-    {
-      "count": 2,
-      "pct": 0.061,
-      "role": "inform",
-      "text": "Hmm kalau begitu, kira-kira anda akan melakukan pembayaran tanggal berapa ya? / Kira-kira akan dibayarkan tanggal berapa ya? / Tagihannya akan dibayarkan kapan ya?\n"
-    },
-    {
-      "count": 2,
-      "pct": 0.061,
-      "role": "inform",
-      "text": "Halo, Saya (BOT NAME) dari PayLater di TikTok dari GopayLater MAB. Apa benar saya sekarang berbicara dengan [{Salutation} {Name_PERSON_NAME},] / [Ini dengan {Salutation} {Name_PERSON_NAME}, betul ya,] / [Apa betul dengan {Salutation} {Name_PERSON_NAME} yang berbicara,?]"
-    },
-    {
-      "count": 2,
-      "pct": 0.061,
-      "role": "inform",
-      "text": "Oh baik, kalau begitu bisa di bantu konfirmasi tagihannya tadi sudah dibayarkan kapan dan melalui metode pembayaran apa? / Hm, mohon kerjasamanya untuk mengkonfirmasi tagihannya sudah di bayarkan kapan dan melalui metode pembayaran apa?"
-    },
-    {
-      "count": 2,
-      "pct": 0.061,
-      "role": "inform",
-      "text": "Ini dengan [{SALUTATION} {CUSTOMER_PERSON_NAME},] betul ya? / Bisa saya terhubung dengan [{SALUTATION} {CUSTOMER_PERSON_NAME}?]"
+      "text": "Baik, saya ingin menginformasikan bahwa tagihan Anda sebesar {X_Nominal_AMOUNT} dari GoPayLater masih belum dibayarkan. Jika tidak segera dilunasi, hal ini dapat menurunkan tingkat kredit Anda serta menambah biaya keterlambatan. Apakah bisa dibayarkan sekarang? / Tingkat kreditnya akan turun jika tagihan belum dibayar, Apa bisa dibayarkan sekarang? / Untuk tagihannya, apa bisa dibayarkan sekarang?"
     },
     {
       "count": 2,
@@ -55039,13 +54925,37 @@
       "count": 2,
       "pct": 0.061,
       "role": "inform",
-      "text": "Baik, kira kira jam berapa akan melakukan pembayaran? / Pinjamannya akan dibayarkan jam berapa ya? / Jadi, jam berapa akan dilakukan pembayarannya?"
+      "text": "Boleh diinfokan dengan jelas, pembayarannya nanti melalui bank transfer, alfamart, atau indomart? / Bisa diinfokan pembayarannya akan melalui apa?"
     },
     {
       "count": 2,
       "pct": 0.061,
       "role": "inform",
-      "text": "Hm, mohon untuk diusahakan agar menyelesaikan pembayarannya segera hari ini. Jadi, pembayarannya akan dilakukan jam berapa ya? / Pembayarannya akan dilakukan jam berapa ya?"
+      "text": "Halo, Saya (BOT NAME) dari PayLater di TikTok dari GopayLater MAB. Apa benar saya sekarang berbicara dengan [{Salutation} {Name_PERSON_NAME},] / [Ini dengan {Salutation} {Name_PERSON_NAME}, betul ya,] / [Apa betul dengan {Salutation} {Name_PERSON_NAME} yang berbicara,?]"
+    },
+    {
+      "count": 2,
+      "pct": 0.061,
+      "role": "inform",
+      "text": "Halo, Saya Hera dari GoPayLater Cicil oleh Atome Financial Indonesia, Apa benar saya sekarang berbicara dengan [{Salutation} {Name_PERSON_NAME}?] / [Ini dengan {Salutation} {Name_PERSON_NAME}, betul ya?] / [Apa betul dengan {Salutation} {Name_PERSON_NAME} yang berbicara?]"
+    },
+    {
+      "count": 2,
+      "pct": 0.061,
+      "role": "inform",
+      "text": "Halo, Saya Hera dari GoPayPinjam oleh Mapan Global Reksa, Apa benar saya sekarang berbicara dengan [{Salutation} {Name_PERSON_NAME}?] / [Ini dengan {Salutation} {Name_PERSON_NAME}, betul ya?] / [Apa betul dengan {Salutation} {Name_PERSON_NAME} yang berbicara?]"
+    },
+    {
+      "count": 2,
+      "pct": 0.061,
+      "role": "inform",
+      "text": "Halo, Saya Hera dari {Product}, Apa benar saya sekarang berbicara dengan [{Salutation} {Name_PERSON_NAME}?] / [Ini dengan {Salutation} {Name_PERSON_NAME}, betul ya?] / [Apa betul dengan {Salutation} {Name_PERSON_NAME} yang berbicara?]"
+    },
+    {
+      "count": 2,
+      "pct": 0.061,
+      "role": "inform",
+      "text": "Halo, Saya Nia dari PayLater di TikTok dari GopayLater MAB. [Apakah betul saya berbicara dengan {Salutation} {Name_PERSON_NAME},] / [Ini dengan {Salutation} {Name_PERSON_NAME}, betul ya?] / [Apa betul dengan {Salutation} {Name_PERSON_NAME} yang berbicara,]"
     },
     {
       "count": 2,
@@ -55057,19 +54967,103 @@
       "count": 2,
       "pct": 0.061,
       "role": "inform",
+      "text": "Hm, mohon untuk diusahakan agar menyelesaikan pembayarannya segera hari ini. Jadi, pembayarannya akan dilakukan jam berapa ya? / Pembayarannya akan dilakukan jam berapa ya?"
+    },
+    {
+      "count": 2,
+      "pct": 0.061,
+      "role": "inform",
+      "text": "Hmm kalau begitu, kira-kira anda akan melakukan pembayaran tanggal berapa ya? / Kira-kira  akan dibayarkan tanggal berapa ya? / Tagihannya akan dibayarkan kapan ya?\n"
+    },
+    {
+      "count": 2,
+      "pct": 0.061,
+      "role": "inform",
+      "text": "Hmm kalau begitu, kira-kira anda akan melakukan pembayaran tanggal berapa ya? / Kira-kira akan dibayarkan tanggal berapa ya? / Tagihannya akan dibayarkan kapan ya?\n"
+    },
+    {
+      "count": 2,
+      "pct": 0.061,
+      "role": "inform",
+      "text": "Hmm tapi tagihan Anda sudah terlambat, kalau tidak segera dilunasi hari ini, denda akan semakin besar, selain itu anda akan terus dihubungi oleh tim kami. Kami sarankan, Anda bisa mencoba untuk menggunakan dana tabungan, atau meminta bantuan teman dan saudaranya untuk membayar. Jadi, apa bisa diusahakan dulu untuk melunasi tagihannya hari ini? / Untuk menghindari denda yang semakin membesar, dan terus dihubungi tim kami, bisa ya tagihannya dibayarkan hari ini? / Agar tidak dikenakan denda yang lebih besar lagi, apa tagihannya bisa dibayarkan hari ini?"
+    },
+    {
+      "count": 2,
+      "pct": 0.061,
+      "role": "inform",
+      "text": "Ini dengan [{SALUTATION} {CUSTOMER_PERSON_NAME},] betul ya? / Bisa saya terhubung dengan [{SALUTATION} {CUSTOMER_PERSON_NAME}?]"
+    },
+    {
+      "count": 2,
+      "pct": 0.061,
+      "role": "inform",
+      "text": "Oh baik, kalau begitu bisa di bantu konfirmasi tagihannya tadi sudah dibayarkan kapan dan melalui metode pembayaran apa? / Hm, mohon kerjasamanya untuk mengkonfirmasi tagihannya sudah di bayarkan kapan dan melalui metode pembayaran apa?"
+    },
+    {
+      "count": 2,
+      "pct": 0.061,
+      "role": "inform",
+      "text": "Oh, boleh tahu kenapa ya tagihannya belum dilunasi sampai saat ini? / Um, ada kendala apa ya yang menghambat pembayarannya? / Kalau boleh tahu, ada kendala apa ya?"
+    },
+    {
+      "count": 2,
+      "pct": 0.061,
+      "role": "inform",
+      "text": "Oh, saya mengerti keadaan anda, tapi apabila tidak dilunasi hari ini maka catatan kredit anda akan menurun dan Paylater anda di Tiktok akan dibekukan sementara. Dan kedepannya akan sulit untuk mengajukan kembali pinjamannya. Bisa kan ya dilunasi hari ini? / Supaya dapat mempertahankan catatan kredit yang baik, apa bisa tagihannya dibayar hari ini? / Apakah tagihannya bisa dibayarkan hari ini?"
+    },
+    {
+      "count": 2,
+      "pct": 0.061,
+      "role": "inform",
+      "text": "Tapi tagihan Anda sudah terlambat. Jika tidak segera dilunasi hari ini, denda akan terus bertambah dan Anda akan kami terus hubungi. Kami sarankan mencoba menggunakan tabungan atau bantuan keluarga/teman. Bisa diusahakan untuk dibayar hari ini? / Daripada kena denda yang lebih besar dan catatan kredit anda jadi kurang baik, sebaiknya diusahakan untuk melunasi tagihannya hari ini, bisa ya? / Kalau tagihannnya dibayarkan hari ini, bisa ya?"
+    },
+    {
+      "count": 2,
+      "pct": 0.061,
+      "role": "inform",
       "text": "Um, lalu pembayarannya nanti akan dilakukan melalui Autodebit Panin, Transfer Virtual Account, atau Minimarket? / Bisa diinfokan nanti akan melakukan pembayaran via apa? / Pembayarannya akan dilakukan melalui apa ya?"
     },
     {
-      "count": 1,
-      "pct": 0.03,
-      "role": "convincer",
-      "text": "Maaf saya konfirmasi kembali, Apa betul saya berbicara dengan [{SALUTATION} {CUSTOMER_PERSON_NAME}?] / Apa betul ini [{SALUTATION} {CUSTOMER_PERSON_NAME}?]"
+      "count": 2,
+      "pct": 0.061,
+      "role": "inform",
+      "text": "Um, lalu pembayarannya nanti akan melalui apa ya? / Pembayarannya akan dilakukan melalui apa ya?"
+    },
+    {
+      "count": 2,
+      "pct": 0.061,
+      "role": "inform",
+      "text": "Um.. jadi, saya menelepon, hanya untuk mengingatkan mengenai tagihan Paylater Anda di Tiktok, yang akan jatuh tempo pada [{Due_date} , sebesar {X_Nominal_AMOUNT}.] Kami harap Anda dapat membayarkan tagihan Anda tepat waktu. Apakah ada rencana pembayaran dalam waktu dekat? / [Tagihannya apa akan dilakukan pembayaran dalam waktu dekat?] / [Untuk tagihannya, apakah berkenan dibayarkan dalam waktu dekat?]"
+    },
+    {
+      "count": 2,
+      "pct": 0.061,
+      "role": "inform",
+      "text": "[Halo, Saya Helen dari Gopay Pinjam. Saya ingin berbicara dengan Bapak {Name_PERSON_NAME}, apa bisa?] / [Ini dengan Bapak {Name_PERSON_NAME}, betul ya?] / [Apa betul dengan Bapak {Name_PERSON_NAME} yang berbicara?]"
+    },
+    {
+      "count": 2,
+      "pct": 0.061,
+      "role": "inform",
+      "text": "[Halo, Saya Helen dari Gopay Pinjam. Saya ingin berbicara dengan Ibu {Name_PERSON_NAME}, apa bisa?] / [Ini dengan Ibu {Name_PERSON_NAME}, betul ya?] / [Apa betul dengan Ibu {Name_PERSON_NAME} yang berbicara?]"
+    },
+    {
+      "count": 2,
+      "pct": 0.061,
+      "role": "inform",
+      "text": "[Halo, Saya Helen dari Gopay Pinjam. Saya ingin berbicara dengan {Name_PERSON_NAME}, apa bisa?] / [Ini dengan {Name_PERSON_NAME}, betul ya?] / [Apa betul dengan {Name_PERSON_NAME} yang berbicara?]"
+    },
+    {
+      "count": 2,
+      "pct": 0.061,
+      "role": "inform",
+      "text": "{OP_C1} / {OP_C2}"
     },
     {
       "count": 1,
       "pct": 0.03,
       "role": "convincer",
-      "text": "{Greeting_Bahasa}, saya Naya dari Bank BNI. Anda merupakan nasabah terpilih untuk menikmati fasilitas produk dari Bank BNI. Saya mohon izin. Apakah berkenan untuk menerima informasi melalui sarana komunikasi pribadi Anda saat ini? / Anda terpilih untuk menikmati fasilitas dari Bank BNI. Apakah Anda ada waktu dan berkenan untuk kami informasikan? / Apakah Anda ada waktu dan berkenan untuk kami informasikan?"
+      "text": "Bila mengalami kendala seperti ini, segera hubungi layanan pelanggan kami supaya bisa dibantu lebih lanjut ya. Namun apakah bisa sampaikan pesan kami? / Iya ada baiknya langsung hubungi layanan pelanggan kami agar kendalanya bisa ditangani dengan tepat ya. Di sini saya hanya ingin titip pesan saja, apakah bisa disampaikan?"
     },
     {
       "count": 1,
@@ -55081,7 +55075,7 @@
       "count": 1,
       "pct": 0.03,
       "role": "convincer",
-      "text": "Nomor ini tercantum di sistem kami sebagai salah satu kerabat atau keluarga [dari {SALUTATION} {CUSTOMER_PERSON_NAME}]. Apa bisa dipastikan anda tidak kenal sama sekali?"
+      "text": "Halo, {Greeting_Time} saya Adistie dari PT Clipan Finance. Apakah benar saat ini saya terhubung [dengan {CONTACT_PERSON_NAME}?] yaitu keluarga atau kerabat [dari {SALUTATION} {CUSTOMER_PERSON_NAME}?] / Apakah benar saat ini saya terhubung [dengan {CONTACT_PERSON_NAME}?] keluarga atau kerabat [dari {SALUTATION} {CUSTOMER_PERSON_NAME}?]  / [Ini dengan {CONTACT_PERSON_NAME}?] [yang kenal dengan {SALUTATION} {CUSTOMER_PERSON_NAME},] [betul ya?]"
     },
     {
       "count": 1,
@@ -55093,7 +55087,7 @@
       "count": 1,
       "pct": 0.03,
       "role": "convincer",
-      "text": "Halo, {Greeting_Time} saya Adistie dari PT Clipan Finance. Apakah benar saat ini saya terhubung [dengan {CONTACT_PERSON_NAME}?] yaitu keluarga atau kerabat [dari {SALUTATION} {CUSTOMER_PERSON_NAME}?] / Apakah benar saat ini saya terhubung [dengan {CONTACT_PERSON_NAME}?] keluarga atau kerabat [dari {SALUTATION} {CUSTOMER_PERSON_NAME}?]  / [Ini dengan {CONTACT_PERSON_NAME}?] [yang kenal dengan {SALUTATION} {CUSTOMER_PERSON_NAME},] [betul ya?]"
+      "text": "Maaf saya konfirmasi kembali, Apa betul saya berbicara dengan [{SALUTATION} {CUSTOMER_PERSON_NAME}?] / Apa betul ini [{SALUTATION} {CUSTOMER_PERSON_NAME}?]"
     },
     {
       "count": 1,
@@ -55105,67 +55099,13 @@
       "count": 1,
       "pct": 0.03,
       "role": "convincer",
-      "text": "Bila mengalami kendala seperti ini, segera hubungi layanan pelanggan kami supaya bisa dibantu lebih lanjut ya. Namun apakah bisa sampaikan pesan kami? / Iya ada baiknya langsung hubungi layanan pelanggan kami agar kendalanya bisa ditangani dengan tepat ya. Di sini saya hanya ingin titip pesan saja, apakah bisa disampaikan?"
+      "text": "Nomor ini tercantum di sistem kami sebagai salah satu kerabat atau keluarga [dari {SALUTATION} {CUSTOMER_PERSON_NAME}]. Apa bisa dipastikan anda tidak kenal sama sekali?"
     },
     {
       "count": 1,
       "pct": 0.03,
-      "role": "greeting",
-      "text": "Hmm, mohon maaf, [Apa betul dengan {SALUTATION} {CUSTOMER_PERSON_NAME}? yang berbicara?] / [Ini dengan {SALUTATION} {CUSTOMER_PERSON_NAME},?][betul ya?]"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "greeting",
-      "text": "Hmm, mohon maaf, apa ini saya sedang berbicara dengan {Customer_PERSON_NAME}? / Apa benar ini dengan {Customer_PERSON_NAME}?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "greeting",
-      "text": "Baik, silahkan konfirmasi, untuk pembayarannya akan dilakukan melalui apa ya? / Untuk pembayarannya, nanti akan dilakukan melalui cara apa? / Untuk pembayarannya, nanti akan dilakukan melalui cara apa? / Untuk pembayarannya, nanti akan dilakukan melalui cara apa?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "greeting",
-      "text": "Halo kak, perkenalkan saya asisten pribadi Kamu dari Indosat HiFi. Saat ini Kamu memiliki tagihan sebesar [{TOTAL_AMOUNT},] yang akan jatuh tempo pada [{DUE_DATE}.] Segera lakukan pembayaran agar tetap dapat menikmati layanan Indosat HiFi. Apa bisa tagihannya dibayarkan hari ini?  / Kamu memiliki tagihan sebesar [{TOTAL_AMOUNT},] jatuh tempo pada [{DUE_DATE}.] Segera lakukan pembayaran agar tetap dapat menikmati layanan Indosat HiFi. Apa bisa tagihannya dibayarkan hari ini? / Agar layanan tidak dinonaktifkan, bisa ya dibayarkan hari ini?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "greeting",
-      "text": "Halo kak, perkenalkan saya asisten pribadi Kamu dari Indosat HiFi. Saat ini Kamu memiliki tagihan sebesar [{TOTAL_AMOUNT},] yang akan jatuh tempo pada [{DUE_DATE}.] Segera lakukan pembayaran agar tetap dapat menikmati layanan Indosat HiFi. Apa bisa tagihannya dibayarkan hari ini? / Kamu memiliki tagihan sebesar [{TOTAL_AMOUNT},] jatuh tempo pada [{DUE_DATE}.] Segera lakukan pembayaran agar tetap dapat menikmati layanan Indosat HiFi. Apa bisa tagihannya dibayarkan hari ini? / Agar layanan tidak dinonaktifkan, bisa ya dibayarkan hari ini?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "greeting",
-      "text": "Hmm, mohon maaf, [Apa betul dengan {SALUTATION} {CUSTOMER_PERSON_NAME}? yang berbicara,?] / [Ini dengan {SALUTATION} {CUSTOMER_PERSON_NAME}? betul ya?]"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "greeting",
-      "text": "Oh, saya mengerti keadaan anda, namun jika anda tidak melunasi hari ini, anda akan dikenakan denda dan catatan kredit anda akan menjadi kurang baik. Apa bisa tagihannya dibayarkan maksimal hari ini? / Supaya tidak dikenai denda, bisa kan membayar tagihannya hari ini? / Agar tidak dikenakan denda, apa tagihannya bisa dibayarkan hari ini?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "greeting",
-      "text": "Nah untuk pembayaran, Anda dapat melakukan transfer ke virtual account yang terdapat pada akun Gobiz anda, atau melalui Alfamart, langkah pembayarannya juga dapat diakses melalui pusat bantuan di aplikasi Gobiz Anda. Apa sudah jelas? / Untuk membayar, bisa melalui transfer bank ke nomor virtual account, atau anda juga bisa melihat metode pembayarannya di aplikasi. Apa sudah jelas?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "greeting",
-      "text": "Nah untuk pembayaran, Anda dapat melakukan transfer ke virtual account yang terdapat pada akun Gobiz anda, atau melalui Alfamart, langkah pembayarannya juga dapat diakses melalui pusat bantuan di aplikasi Gobiz Anda. Apa sudah jelas?\" / Untuk membayar, bisa melalui virtual account, atau anda juga bisa melihat metode pembayarannya di aplikasi. Apa sudah jelas?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "greeting",
-      "text": "Nah untuk pembayaran, Anda dapat melakukan transfer ke virtual account yang terdapat pada akun Gobiz anda, atau melalui Alfamart, langkah pembayarannya juga dapat diakses melalui pusat bantuan di aplikasi Gobiz Anda. Apa sudah jelas? / [Untuk membayar, bisa melalui virtual account, atau anda juga bisa melihat metode pembayarannya di aplikasi.] Apa sudah jelas?"
+      "role": "convincer",
+      "text": "{Greeting_Bahasa}, saya Naya dari Bank BNI. Anda merupakan nasabah terpilih untuk menikmati fasilitas produk dari Bank BNI. Saya mohon izin. Apakah berkenan untuk menerima informasi melalui sarana komunikasi pribadi Anda saat ini? / Anda terpilih untuk menikmati fasilitas dari Bank BNI. Apakah Anda ada waktu dan berkenan untuk kami informasikan? / Apakah Anda ada waktu dan berkenan untuk kami informasikan?"
     },
     {
       "count": 1,
@@ -55189,31 +55129,7 @@
       "count": 1,
       "pct": 0.03,
       "role": "greeting",
-      "text": "Kami ingin mengingatkan terkait angsuran kendaraan Anda yang sudah lewat jatuh tempo dari tanggal [{DUE_DATE}.] Apakah tagihannya bisa dibayar hari ini? / Jadi apa bisa tagihannya dibayarkan hari ini? / Bisa ya dibayarkan hari ini untuk tagihannya?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "greeting",
-      "text": "Kami ingin mengingatkan terkait angsuran kendaraan Anda yang sebentar lagi jatuh tempo [dalam {Number_Date} hari.] Sekedar memastikan, apa bisa dibayarkan sebelum jatuh tempo atau maksimal di jatuh tempo? / Untuk angsurannya yang akan jatuh tempo, apa bisa dibayarkan? / Jadi, untuk pembayaran tagihannya, bisa ya dibayar saat jatuh tempo?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "greeting",
-      "text": "Baik. Jadi kami ingin menginfokan kalau saat ini tagihan pinjaman blu-extra-cash [sebesar {BALANCE_AMOUNT}, belum dibayar,] dan telah jatuh tempo [pada {DUE_DATE}.] Apakah bisa dilunasi hari ini? / Jadi, pembayarannya apa bisa di hari ini? / {inform payment}"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "greeting",
-      "text": "Mohon maaf saya hanya butuh waktu 1-2 menit saja. Apakah berkenan untuk kami informasikan? / Hanya sebentar saja. Apa anda bersedia?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "greeting",
-      "text": "Oh baik, tapi sayang sekali kalau dilewatkan karena Kartu Kredit BNI sedang memiliki banyak promo menarik. Tim kami akan memberikan informasinya terlebih dahulu saja, boleh ya? / Tapi Kartu Kredit BNI sedang memiliki banyak promo menarik. Kami akan berikan informasinya terlebih dahulu saja, apa boleh? / Kami akan berikan informasi dan promonya terlebih dahulu. Boleh ya Tim kami menghubungi kembali?"
+      "text": "Baik, kami infokan kalau saat ini tagihan pinjaman bluextracash sebesar [{BALANCE_AMOUNT} belum dibayar]  dan telah jatuh tempo pada {DUE_DATE}. Bisa dilunasi hari ini? / Jadi untuk tagihannya apakah bisa dilunasi hari ini? / Tagihannya bisa ya dilunasi hari ini?"
     },
     {
       "count": 1,
@@ -55225,43 +55141,19 @@
       "count": 1,
       "pct": 0.03,
       "role": "greeting",
-      "text": "Baik, kami infokan kalau saat ini tagihan pinjaman bluextracash sebesar [{BALANCE_AMOUNT} belum dibayar]  dan telah jatuh tempo pada {DUE_DATE}. Bisa dilunasi hari ini? / Jadi untuk tagihannya apakah bisa dilunasi hari ini? / Tagihannya bisa ya dilunasi hari ini?"
+      "text": "Baik, sebelumnya maaf mengganggu ya, jadi saya hanya ingin titip pesan [untuk {SALUTATION} {CUSTOMER_PERSON_NAME}] supaya dapat membayar tagihannya di PT Clipan Finance. Apa bisa dibantu sampaikan? / [Kewajiban pembayaran {SALUTATION} {CUSTOMER_PERSON_NAME} sudah lewat dari tanggal jatuh tempo.] Tolong bantu sampaikan bahwa kami telah menghubungi dan menunggu untuk membayar tagihannya, bisa ya? / Boleh ya tolong disampaikan?"
     },
     {
       "count": 1,
       "pct": 0.03,
       "role": "greeting",
-      "text": "Um, jadi saya menelepon untuk memberitahukan bahwa Paylater anda di Tiktok sudah lewat dari jatuh tempo sebesar [{X_Nominal_AMOUNT}.] Tingkat kredit Anda akan turun dan akan dikenakan biaya keterlambatan tambahan jika tagihannya tidak dibayar, Apa bisa dibayarkan sekarang?  / Tingkat kreditnya akan turun jika tagihan belum dibayar, Apa bisa dibayarkan sekarang? / Untuk tagihannya, apa bisa dibayarkan sekarang?"
+      "text": "Baik, silahkan konfirmasi, untuk pembayarannya akan dilakukan melalui apa ya? / Untuk pembayarannya, nanti akan dilakukan melalui cara apa? / Untuk pembayarannya, nanti akan dilakukan melalui cara apa? / Untuk pembayarannya, nanti akan dilakukan melalui cara apa?"
     },
     {
       "count": 1,
       "pct": 0.03,
       "role": "greeting",
-      "text": "Kami memiliki beberapa metode pembayaran yang memudahkan anda untuk melakukan pembayaran, bisa melalui Autodebit Panin, Transfer Virtual Account, dan Minimarket, jadi mohon luangkan waktu anda dan selesaikan tagihan hari ini. Bisa ya dibayarkan hari ini? / Jadi tagihannya di bayarkan hari ini, bisa ya?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "greeting",
-      "text": "Oh begitu, tapi tagihan Anda sudah terlambat dari jatuh tempo. Supaya dendanya tidak semakin bertambah dan makin mempersulit keuangan Anda. Mohon usahakan melakukan pembayaran hari ini sebelum jam 8 malam, bisa ya? / Supaya denda anda tidak semakin banyak, apa bisa tagihannya dibayar hari ini? / Jadi tagihannya di bayarkan hari ini, bisa ya?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "greeting",
-      "text": "Oh begitu, Tapi Tagihan anda sudah jatuh tempo. Supaya tidak dikenakan denda, apa Tagihannya bisa dibayarkan hari ini juga? / Karena sudah lewat jatuh tempo, mohon kerjasama baiknya untuk menyelesaikan pembayaran di hari ini, bisa ya? / Agar dendanya tidak semakin membesar dan mempersulit keuangan anda, tagihannya bisa ya dibayarkan segera hari ini?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "greeting",
-      "text": "Hm saya sarankan, berdiskusi atau meminta bantuan dengan keluarga untuk tagihan yang sudah jatuh tempo dan maksimalkan kembali pembayarannya di hari ini. Jadi apa bisa segera membayar tagihannya hari ini? / Saya mengerti, tapi jika tidak segera dibayarkan, dendanya akan semakin besar. pembayaran ini juga kewajiban anda. jadi bisa ya diusahakan dulu mencari dananya supaya tagihannya bisa dibayarkan hari ini? / Baik, tapi kalau tidak dibayarkan sesegera mungkin denda nya akan semakin besar, bisa ya diusahakan mencari dana terlebih dahulu untuk membayar tagihannya hari ini?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "greeting",
-      "text": "Hm iya saya mengerti keadaannya. saya turut prihatin atas kejadian yang dialami. Saya hanya ingin mengingatkan, khawatirnya biaya keterlambatan akan memberatkan di kemudian hari, apa bisa tagihannya dibayarkan hari ini? / Saya mengerti kondisinya, tapi agar biaya dendanya tidak semakin besar, apa bisa diusahakan dulu untuk membayarkan tagihannya yang sudah lewat dari jatuh tempo hari ini? / Saya mengerti situasinya, tapi saya sarankan agar tetap diusahakan untuk membayarkan tagihannya hari ini agar dendanya tidak semakin tinggi. Jadi apa kira kira bisa diusahakan untuk membayar hari ini?"
+      "text": "Baik. Jadi kami ingin menginfokan kalau saat ini tagihan pinjaman blu-extra-cash [sebesar {BALANCE_AMOUNT}, belum dibayar,] dan telah jatuh tempo [pada {DUE_DATE}.] Apakah bisa dilunasi hari ini? / Jadi, pembayarannya apa bisa di hari ini? / {inform payment}"
     },
     {
       "count": 1,
@@ -55273,25 +55165,19 @@
       "count": 1,
       "pct": 0.03,
       "role": "greeting",
-      "text": "Iya saya paham, namun bila ditunda lagi hanya akan menambah biaya keterlambatan yang harus dibayar. Maksimalkan kembali di hari ini bisa kan? / Anda kan sudah janji bayar dengan kami, jadi kalau masih ditunda yang ada resiko keterlambatan juga semakin besar. Maksimalkan kembali pembayarannya hari ini ya? / Jadi tagihannya di bayarkan hari ini, bisa ya?"
+      "text": "Halo kak, perkenalkan saya asisten pribadi Kamu dari Indosat HiFi. Saat ini Kamu memiliki tagihan sebesar [{TOTAL_AMOUNT},] yang akan jatuh tempo pada [{DUE_DATE}.] Segera lakukan pembayaran agar tetap dapat menikmati layanan Indosat HiFi. Apa bisa tagihannya dibayarkan hari ini?  / Kamu memiliki tagihan sebesar [{TOTAL_AMOUNT},] jatuh tempo pada [{DUE_DATE}.] Segera lakukan pembayaran agar tetap dapat menikmati layanan Indosat HiFi. Apa bisa tagihannya dibayarkan hari ini? / Agar layanan tidak dinonaktifkan, bisa ya dibayarkan hari ini?"
     },
     {
       "count": 1,
       "pct": 0.03,
       "role": "greeting",
-      "text": "Saya paham kalau dananya masih belum cukup, atau ada keperluan yang membuat dananya dipakai dulu, tapi tagihan ini tanggung jawab juga loh, tolong dibayar secepatnya. Bisa ya bayarkan dalam 3 jam ke depan? / Saya mengerti, tapi jika tidak segera dibayarkan, dendanya akan semakin besar. pembayaran ini juga kewajiban anda. jadi bisa ya diusahakan dulu mencari dananya supaya tagihannya bisa dibayarkan hari ini? / Baik, tapi kalau tidak dibayarkan sesegera mungkin denda nya akan semakin besar, bisa ya diusahakan mencari dana terlebih dahulu untuk membayar tagihannya hari ini?"
+      "text": "Halo kak, perkenalkan saya asisten pribadi Kamu dari Indosat HiFi. Saat ini Kamu memiliki tagihan sebesar [{TOTAL_AMOUNT},] yang akan jatuh tempo pada [{DUE_DATE}.] Segera lakukan pembayaran agar tetap dapat menikmati layanan Indosat HiFi. Apa bisa tagihannya dibayarkan hari ini? / Kamu memiliki tagihan sebesar [{TOTAL_AMOUNT},] jatuh tempo pada [{DUE_DATE}.] Segera lakukan pembayaran agar tetap dapat menikmati layanan Indosat HiFi. Apa bisa tagihannya dibayarkan hari ini? / Agar layanan tidak dinonaktifkan, bisa ya dibayarkan hari ini?"
     },
     {
       "count": 1,
       "pct": 0.03,
       "role": "greeting",
-      "text": "Oh baik, saya turut prihatin dengan keadaannya, semoga bisa cepat membaik ya, namun mengingat kewajibannya sudah lewat jatuh tempo dengan biaya keterlambatan yang tetap berjalan, apakah bisa dimaksimalkan dulu? / Saya mengerti kondisinya, tapi agar biaya dendanya tidak semakin besar, apa bisa diusahakan dulu untuk membayarkan tagihannya yang sudah lewat dari jatuh tempo hari ini? / Saya mengerti situasinya, tapi saya sarankan agar tetap diusahakan untuk membayarkan tagihannya hari ini agar dendanya tidak semakin tinggi. Jadi apa kira kira bisa diusahakan untuk membayar hari ini?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "greeting",
-      "text": "Maaf, belum ada waktu bagaimana maksudnya? Ini tagihannya sudah telat, kami juga sering menghubungi perihal tagihan ini, jadi tolong luangkan waktu beberapa menit untuk pembayaran hari ini. / Begini, \"belum ada waktu\" bukan alasan yang bisa kami terima karena sudah berkali-kali ditelfon dan diingatkan untuk membayar tagihan, jadi mohon bayarkan secepatnya ya?"
+      "text": "Hm iya saya mengerti keadaannya. saya turut prihatin atas kejadian yang dialami. Saya hanya ingin mengingatkan, khawatirnya biaya keterlambatan akan memberatkan di kemudian hari, apa bisa tagihannya dibayarkan hari ini? / Saya mengerti kondisinya, tapi agar biaya dendanya tidak semakin besar, apa bisa diusahakan dulu untuk membayarkan tagihannya yang sudah lewat dari jatuh tempo hari ini? / Saya mengerti situasinya, tapi saya sarankan agar tetap diusahakan untuk membayarkan tagihannya hari ini agar dendanya tidak semakin tinggi. Jadi apa kira kira bisa diusahakan untuk membayar hari ini?"
     },
     {
       "count": 1,
@@ -55303,13 +55189,121 @@
       "count": 1,
       "pct": 0.03,
       "role": "greeting",
-      "text": "Tolong bantu sampaikan bahwa kami telah menghubungi dan menunggu untuk membayar tagihannya, bisa ya?"
+      "text": "Hm saya sarankan, berdiskusi atau meminta bantuan dengan keluarga untuk tagihan yang sudah jatuh tempo dan maksimalkan kembali pembayarannya di hari ini. Jadi apa bisa segera membayar tagihannya hari ini? / Saya mengerti, tapi jika tidak segera dibayarkan, dendanya akan semakin besar. pembayaran ini juga kewajiban anda. jadi bisa ya diusahakan dulu mencari dananya supaya tagihannya bisa dibayarkan hari ini? / Baik, tapi kalau tidak dibayarkan sesegera mungkin denda nya akan semakin besar, bisa ya diusahakan mencari dana terlebih dahulu untuk membayar tagihannya hari ini?"
     },
     {
       "count": 1,
       "pct": 0.03,
       "role": "greeting",
-      "text": "Baik, sebelumnya maaf mengganggu ya, jadi saya hanya ingin titip pesan [untuk {SALUTATION} {CUSTOMER_PERSON_NAME}] supaya dapat membayar tagihannya di PT Clipan Finance. Apa bisa dibantu sampaikan? / [Kewajiban pembayaran {SALUTATION} {CUSTOMER_PERSON_NAME} sudah lewat dari tanggal jatuh tempo.] Tolong bantu sampaikan bahwa kami telah menghubungi dan menunggu untuk membayar tagihannya, bisa ya? / Boleh ya tolong disampaikan?"
+      "text": "Hmm, mohon maaf, [Apa betul dengan {SALUTATION} {CUSTOMER_PERSON_NAME}? yang berbicara,?] / [Ini dengan {SALUTATION} {CUSTOMER_PERSON_NAME}? betul ya?]"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "greeting",
+      "text": "Hmm, mohon maaf, [Apa betul dengan {SALUTATION} {CUSTOMER_PERSON_NAME}? yang berbicara?] / [Ini dengan {SALUTATION} {CUSTOMER_PERSON_NAME},?][betul ya?]"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "greeting",
+      "text": "Hmm, mohon maaf, apa ini saya sedang berbicara dengan {Customer_PERSON_NAME}? / Apa benar ini dengan {Customer_PERSON_NAME}?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "greeting",
+      "text": "Iya saya paham, namun bila ditunda lagi hanya akan menambah biaya keterlambatan yang harus dibayar. Maksimalkan kembali di hari ini bisa kan? / Anda kan sudah janji bayar dengan kami, jadi kalau masih ditunda yang ada resiko keterlambatan juga semakin besar. Maksimalkan kembali pembayarannya hari ini ya? / Jadi tagihannya di bayarkan hari ini, bisa ya?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "greeting",
+      "text": "Kami ingin mengingatkan terkait angsuran kendaraan Anda yang sebentar lagi jatuh tempo [dalam {Number_Date} hari.] Sekedar memastikan, apa bisa dibayarkan sebelum jatuh tempo atau maksimal di jatuh tempo? / Untuk angsurannya yang akan jatuh tempo, apa bisa dibayarkan? / Jadi, untuk pembayaran tagihannya, bisa ya dibayar saat jatuh tempo?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "greeting",
+      "text": "Kami ingin mengingatkan terkait angsuran kendaraan Anda yang sudah lewat jatuh tempo dari tanggal [{DUE_DATE}.] Apakah tagihannya bisa dibayar hari ini? / Jadi apa bisa tagihannya dibayarkan hari ini? / Bisa ya dibayarkan hari ini untuk tagihannya?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "greeting",
+      "text": "Kami memiliki beberapa metode pembayaran yang memudahkan anda untuk melakukan pembayaran, bisa melalui Autodebit Panin, Transfer Virtual Account, dan Minimarket, jadi mohon luangkan waktu anda dan selesaikan tagihan hari ini. Bisa ya dibayarkan hari ini? / Jadi tagihannya di bayarkan hari ini, bisa ya?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "greeting",
+      "text": "Maaf, belum ada waktu bagaimana maksudnya? Ini tagihannya sudah telat, kami juga sering menghubungi perihal tagihan ini, jadi tolong luangkan waktu beberapa menit untuk pembayaran hari ini. / Begini, \"belum ada waktu\" bukan alasan yang bisa kami terima karena sudah berkali-kali ditelfon dan diingatkan untuk membayar tagihan, jadi mohon bayarkan secepatnya ya?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "greeting",
+      "text": "Mohon maaf saya hanya butuh waktu 1-2 menit saja. Apakah berkenan untuk kami informasikan? / Hanya sebentar saja. Apa anda bersedia?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "greeting",
+      "text": "Nah untuk pembayaran, Anda dapat melakukan transfer ke virtual account yang terdapat pada akun Gobiz anda, atau melalui Alfamart, langkah pembayarannya juga dapat diakses melalui pusat bantuan di aplikasi Gobiz Anda. Apa sudah jelas? / Untuk membayar, bisa melalui transfer bank ke nomor virtual account, atau anda juga bisa melihat metode pembayarannya di aplikasi. Apa sudah jelas?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "greeting",
+      "text": "Nah untuk pembayaran, Anda dapat melakukan transfer ke virtual account yang terdapat pada akun Gobiz anda, atau melalui Alfamart, langkah pembayarannya juga dapat diakses melalui pusat bantuan di aplikasi Gobiz Anda. Apa sudah jelas? / [Untuk membayar, bisa melalui virtual account, atau anda juga bisa melihat metode pembayarannya di aplikasi.] Apa sudah jelas?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "greeting",
+      "text": "Nah untuk pembayaran, Anda dapat melakukan transfer ke virtual account yang terdapat pada akun Gobiz anda, atau melalui Alfamart, langkah pembayarannya juga dapat diakses melalui pusat bantuan di aplikasi Gobiz Anda. Apa sudah jelas?\" / Untuk membayar, bisa melalui virtual account, atau anda juga bisa melihat metode pembayarannya di aplikasi. Apa sudah jelas?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "greeting",
+      "text": "Oh baik, saya turut prihatin dengan keadaannya, semoga bisa cepat membaik ya, namun mengingat kewajibannya sudah lewat jatuh tempo dengan biaya keterlambatan yang tetap berjalan, apakah bisa dimaksimalkan dulu? / Saya mengerti kondisinya, tapi agar biaya dendanya tidak semakin besar, apa bisa diusahakan dulu untuk membayarkan tagihannya yang sudah lewat dari jatuh tempo hari ini? / Saya mengerti situasinya, tapi saya sarankan agar tetap diusahakan untuk membayarkan tagihannya hari ini agar dendanya tidak semakin tinggi. Jadi apa kira kira bisa diusahakan untuk membayar hari ini?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "greeting",
+      "text": "Oh baik, tapi sayang sekali kalau dilewatkan karena Kartu Kredit BNI sedang memiliki banyak promo menarik. Tim kami akan memberikan informasinya terlebih dahulu saja, boleh ya? / Tapi Kartu Kredit BNI sedang memiliki banyak promo menarik. Kami akan berikan informasinya terlebih dahulu saja, apa boleh? / Kami akan berikan informasi dan promonya terlebih dahulu. Boleh ya Tim kami menghubungi kembali?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "greeting",
+      "text": "Oh begitu, Tapi Tagihan anda sudah jatuh tempo. Supaya tidak dikenakan denda, apa Tagihannya bisa dibayarkan hari ini juga? / Karena sudah lewat jatuh tempo, mohon kerjasama baiknya untuk menyelesaikan pembayaran di hari ini, bisa ya? / Agar dendanya tidak semakin membesar dan mempersulit keuangan anda, tagihannya bisa ya dibayarkan segera hari ini?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "greeting",
+      "text": "Oh begitu, tapi tagihan Anda sudah terlambat dari jatuh tempo. Supaya dendanya tidak semakin bertambah dan makin mempersulit keuangan Anda. Mohon usahakan melakukan pembayaran hari ini sebelum jam 8 malam, bisa ya? / Supaya denda anda tidak semakin banyak, apa bisa tagihannya dibayar hari ini? / Jadi tagihannya di bayarkan hari ini, bisa ya?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "greeting",
+      "text": "Oh, saya mengerti keadaan anda, namun jika anda tidak melunasi hari ini, anda akan dikenakan denda dan catatan kredit anda akan menjadi kurang baik. Apa bisa tagihannya dibayarkan maksimal hari ini? / Supaya tidak dikenai denda, bisa kan membayar tagihannya hari ini? / Agar tidak dikenakan denda, apa tagihannya bisa dibayarkan hari ini?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "greeting",
+      "text": "Saya paham kalau dananya masih belum cukup, atau ada keperluan yang membuat dananya dipakai dulu, tapi tagihan ini tanggung jawab juga loh, tolong dibayar secepatnya. Bisa ya bayarkan dalam 3 jam ke depan? / Saya mengerti, tapi jika tidak segera dibayarkan, dendanya akan semakin besar. pembayaran ini juga kewajiban anda. jadi bisa ya diusahakan dulu mencari dananya supaya tagihannya bisa dibayarkan hari ini? / Baik, tapi kalau tidak dibayarkan sesegera mungkin denda nya akan semakin besar, bisa ya diusahakan mencari dana terlebih dahulu untuk membayar tagihannya hari ini?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "greeting",
+      "text": "Tolong bantu sampaikan bahwa kami telah menghubungi dan menunggu untuk membayar tagihannya, bisa ya?"
     },
     {
       "count": 1,
@@ -55320,242 +55314,14 @@
     {
       "count": 1,
       "pct": 0.03,
-      "role": "inform",
-      "text": "Bisa di infokan nanti pembayarannya akan melalui apa? / Pembayarannya akan dilakukan melalui apa ya?"
+      "role": "greeting",
+      "text": "Um, jadi saya menelepon untuk memberitahukan bahwa Paylater anda di Tiktok sudah lewat dari jatuh tempo sebesar [{X_Nominal_AMOUNT}.] Tingkat kredit Anda akan turun dan akan dikenakan biaya keterlambatan tambahan jika tagihannya tidak dibayar, Apa bisa dibayarkan sekarang?  / Tingkat kreditnya akan turun jika tagihan belum dibayar, Apa bisa dibayarkan sekarang? / Untuk tagihannya, apa bisa dibayarkan sekarang?"
     },
     {
       "count": 1,
       "pct": 0.03,
       "role": "inform",
-      "text": "Oh iya, tapi tagihannya sudah jatuh tempo. Supaya catatan kredit Anda tetap terjaga dan tidak dikenai denda, bisa diusahakan dulu untuk membayar hari ini? / {3CChasing1} / {3CChasing2}"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Baik, mohon untuk diusahakan sebelum jam 8 malam ya. Kira kira jam berapa akan melakukan pembayaran? / Kami sarankan untuk pembayarannya sebelum jam 8 malam. Jadi, jam berapa akan dilakukan pembayarannya? / Jam berapa akan dilakukan pembayaran?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Bisa dijelaskan kenapa belum bisa dibayarkan hari ini?  / Um, ada kendala apa ya yang menghambat pembayarannya? / Kalau boleh tahu, ada kendala apa ya?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Halo {Greeting_Bahasa}. Saya (BOT NAME) dari Kredivo. [Apa betul ini dengan {SALUTATION} {CUSTOMER_PERSON_NAME} ?]"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Uhm jika begitu, kami sarankan bisa juga melakukan pembayaran melalui m-banking supaya terhindar dari denda keterlambatan. Kredivo juga menerima pembayaran lewat e-commerce seperti Tokopedia atau Bukalapak. Apa bisa melakukan pembayarannya hari ini? / Supaya terhindar dari denda dan catatan kredit anda jadi kurang baik, sebaiknya diusahakan untuk melunasi tagihannya hari ini ya? / Kalau tagihannya dibayarkan hari ini, bisa ya?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Iya, saya mengerti keadaan Anda, tapi tetap diusahakan pelunasannya hari ini ya, agar kedepannya Anda bisa mendapat limit kredit yang lebih tinggi. {QL1} / Supaya terhindar dari denda dan catatan kredit anda jadi kurang baik, sebaiknya diusahakan untuk melunasi tagihannya hari ini ya? / Kalau tagihannya dibayarkan hari ini, bisa ya?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Kami mengerti, tapi mohon tetap dimaksimalkan pelunasannya di hari ini, mungkin bisa melalui m-banking atau e-commerce seperti Tokopedia atau Bukalapak supaya tidak dihubungi kembali. Jadi apa bisa untuk pembayaran di hari ini? / Supaya terhindar dari denda dan catatan kredit anda jadi kurang baik, sebaiknya diusahakan untuk melunasi tagihannya hari ini ya? / Kalau tagihannya dibayarkan hari ini, bisa ya?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Hm, mohon untuk diusahakan agar menyelesaikan pembayaran sebelum jam 8 malam. Nah, pembayarannya akan dilakukan jam berapa ya? / Pembayarannya akan dilakukan jam berapa ya?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "{OP_C0} Saya ingin menginfokan ada tagihan Anda sebesar [{BALANCE_AMOUNT}?] yang sudah jatuh tempo. Apa bisa dibayarkan hari ini?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "{1stChasing} / {2ndChasing}"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "{OP_C0} Saya mau mengingatkan bahwa pembayaran Anda sejumlah [{BALANCE_AMOUNT}?] sudah jatuh tempo. Apa kira-kira bisa dibayarkan hari ini juga?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Hm saran saya anda bisa coba untuk mencari dana talangan terlebih dahulu agar tagihannya dapat dilunasi dan terhindar dari denda keterlambatan. {QL1} / Supaya terhindar dari denda dan catatan kredit anda jadi kurang baik, sebaiknya diusahakan untuk melunasi tagihannya hari ini ya? / Kalau tagihannya dibayarkan hari ini, bisa ya?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Oh begitu, Tapi tagihan anda sudah jatuh tempo hari ini. Supaya tidak dikenakan denda, apa tagihannya bisa dibayarkan hari ini juga? / {3CChasing1} / {3CChasing2}"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Um iya, namun kalau tidak segera dibayar, Anda beresiko terkena biaya denda dan akan berpengaruh ke catatan kredit Anda nanti. {QL3} / Supaya terhindar dari denda dan catatan kredit anda jadi kurang baik, sebaiknya diusahakan untuk melunasi tagihannya hari ini ya? / Kalau tagihannya dibayarkan hari ini, bisa ya?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Oh, uhm tapi pembayarannya sudah jatuh tempo hari ini. Jika pembayarannya terlambat, nanti beresiko terkena biaya tambahan. Apa bisa dicoba dulu untuk membayar segera hari ini? / {3CChasing1} / {3CChasing2}"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Saya mengerti, tapi kalau tidak segera dibayarkan, anda bisa dikenakan denda keterlambatan, jadi apa bisa diusahakan untuk mencari dana terlebih dahulu agar dapat membayar tagihannya hari ini? / Supaya terhindar dari denda dan catatan kredit anda jadi kurang baik, sebaiknya diusahakan untuk melunasi tagihannya hari ini ya? / Kalau tagihannya dibayarkan hari ini, bisa ya?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "{OP_C0} Um, Anda ada tagihan yang sudah jatuh tempo hari ini sebesar [{BALANCE_AMOUNT}.] Bisa dibayarkan secepatnya hari ini?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Oh iya, kami sarankan untuk melakukan pembayaran melalui m-banking atau e-commerce seperti Tokopedia dan Bukalapak agar tidak terganggu dengan penelponan kembali. Bisa ya untuk melakukan pembayarannya hari ini? / Supaya terhindar dari denda dan catatan kredit anda jadi kurang baik, sebaiknya diusahakan untuk melunasi tagihannya hari ini ya? / Kalau tagihannya dibayarkan hari ini, bisa ya?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Baik, namun jika tidak dibayarkan hari ini anda bisa dikenakan denda keterlambatan, bisa ya diusahakan mencari dana terlebih dahulu untuk membayar tagihannya hari ini? / Supaya terhindar dari denda dan catatan kredit anda jadi kurang baik, sebaiknya diusahakan untuk melunasi tagihannya hari ini ya? / Kalau tagihannya dibayarkan hari ini, bisa ya?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "{OP_C0} Jadi begini, pembayaran Anda [sebesar {BALANCE_AMOUNT}?] sudah jatuh tempo. Apa kira-kira bisa dibayarkan hari ini?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Baik, bisa diinfokan untuk waktu pembayarannya?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Baik, untuk metode pembayarannya tadi melalui apa ya?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Saya mengerti, tapi kalau tidak dibayar hari ini, nanti catatan kredit Anda akan jadi kurang baik dan ke depannya akan menyulitkan pengajuan kredit lain. {QL2} / Supaya terhindar dari denda dan catatan kredit anda jadi kurang baik, sebaiknya diusahakan untuk melunasi tagihannya hari ini ya? / Kalau tagihannya dibayarkan hari ini, bisa ya?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "{OP_C0} Tagihan Anda sebesar [{BALANCE_AMOUNT}?] sudah jatuh tempo. Bisa dibayarkan sesegera mungkin hari ini?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "[Apa betul dengan {SALUTATION} {CUSTOMER_PERSON_NAME} yang berbicara?] / [Ini dengan {SALUTATION} {CUSTOMER_PERSON_NAME} , betul ya?]"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "{Greeting_Bahasa} saya Indira dari IM3. [Saat ini ada tagihan sebesar {Unpaid_AMOUNT},!] yang belum dibayarkan dan harus segera dilunasi. Apa bisa tagihan Pascabayar untuk nomor dengan 4 digit terakhir [{Digits_NUMBER_PHONE},!], dilunasi hari ini? / Untuk tagihannya, [sebesar {Unpaid_AMOUNT},?], bisa ya kami terima pembayarannya hari ini? / Mmm, jadi, bisa kan tagihannya dibayarkan hari ini?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Baik, saya mengerti.Tapi apabila pembayaran tidak segera dilakukan, nomor ini akan terblokir secara otomatis sehingga SMS dan panggilan tidak bisa masuk.Bagaimana, bisa ya melakukan pembayaran tagihannya segera? / Apa bisa pembayaran tagihannya dilakukan, agar benefit dan service dari IM3 Platinum tetap bisa dinikmati? / Apa bisa tagihannya dibayarkan dalam dua hari ke depan?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Baik, saya mengerti. Tapi apabila pembayaran tidak segera dilakukan, nomor ini tidak dapat melakukan panggilan keluar dan mengirim SMS. Bagaimana, bisa ya melakukan pembayaran tagihannya segera? / Apa bisa pembayaran tagihannya dilakukan, agar layanan dari IM3 Platinum tetap bisa dinikmati? / Apa bisa tagihannya dibayarkan dalam dua hari ke depan?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Mohon dipahami, apabila tagihan tidak dibayarkan dalam dua hari ke depan, nomor ini akan diblokir sepenuhnya. Untuk mengaktifkannya kembali, Anda harus datang ke gerai IM3 atau menghubungi Customer Service kami.Jadi bisa ya, tagihannya dibayarkan? / Apa bisa tagihannya segera dibayarkan untuk menghindari pemblokiran total? / Apa bisa tagihannya dibayarkan dalam dua hari ke depan?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Sekali lagi, nomor ini sudah diblokir.Lakukan pembayaran dulu agar nomor bisa otomatis aktif dan ingin digunakan kembali.Bisa ya, tagihannya dibayar dalam 2 hari ke depan? / Silahkan dibayarkan dalam dua hari ke depan agar nomor ini bisa tetap digunakan, bisa ya? / Jadi bisa ya tagihannya dibayarkan dalam dua hari ke depan?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Hmm, jika nomor ini masih ingin digunakan, tagihan harus segera dibayarkan agar bisa dilakukan pembukaan blokir ataupun perpindahan paket. Jadi kalau dibayarkan dalam dua hari ke depan, bisa ya? / Silahkan dibayarkan dalam dua hari ke depan agar nomor ini bisa tetap digunakan, bisa ya? / Jadi bisa ya tagihannya dibayarkan dalam dua hari ke depan?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Baik, untuk tetap dapat menikmati pelayanan terbaik dari IM3, apa bisa tagihannya dibayarkan segera? / Agar nomor ini bisa tetap aktif digunakan, apa bisa tagihannya dibayarkan segera? / Jadi bisa ya, tagihannya dibayarkan segera?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Sekali lagi, mohon dipahami bahwa tagihan harus dibayar dalam dua hari ke depan atau kalau tidak penagihan akan kami tagihkan menggunakan pihak ketiga. Bagaimana, bisa ya? / Tolong bayar tagihannya dalam 2 hari ke depan untuk menghindari pemblokiran permanen, apakah bisa? / Apa bisa tagihannya dibayarkan dalam dua hari ke depan?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "{Greeting_Bahasa} saya Indira dari IM3.Saat ini ada tagihan sebesar [{Unpaid_AMOUNT},!] yang belum dibayarkan dan sudah jatuh tempo. Apa bisa tagihan Pascabayar untuk nomor dengan 4 digit terakhir [{Digits_NUMBER_PHONE},!], dibayarkan segera? / Untuk tagihannya, sebesar [{Unpaid_AMOUNT},!], bisa ya kami terima pembayarannya segera? / Mmm, jadi, bisa kan tagihannya dibayarkan segera?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "{Greeting_Bahasa} saya Indira dari IM3Sampai dengan hari ini [tagihan Anda sebesar {Unpaid_AMOUNT},!] sudah jatuh tempo lebih dari 30 hari. Nomor akan kami nonaktifkan jika tidak dilunasi. Kami tunggu sampai hari ini yah untuk pelunasan tagihan Pascabayar untuk nomor dengan 4 digit terakhir [{Digits_NUMBER_PHONE},!] dilunasi hari ini? / Untuk tagihannya, [sebesar {Unpaid_AMOUNT},?], bisa ya kami terima pembayarannya hari ini? / Mmm, jadi, bisa kan tagihannya dibayarkan hari ini?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Baik, namun sekarang nomor ini hanya bisa menerima SMS dan panggilan masuk saja.Untuk dapat menikmati kembali full service dari IM3, apa bisa tagihannya dibayarkan dalam dua hari ke depan? / Silahkan dibayarkan dalam dua hari ke depan agar nomor ini bisa tetap digunakan, bisa ya? / Jadi bisa ya tagihannya dibayarkan dalam dua hari ke depan?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "{Greeting_Bahasa} saya Indira dari IM3. [Saat ini tagihan sebesar {Unpaid_AMOUNT},!] yang belum dibayarkan dan nomor ini sudah terblokir. Untuk membukanya, apa bisa tagihan Pascabayar untuk nomor dengan 4 digit terakhir [{Digits_NUMBER_PHONE},!], dilunasi hari ini? / Untuk tagihannya, [sebesar {Unpaid_AMOUNT},?], bisa ya kami terima pembayarannya hari ini? / Mmm, jadi, bisa kan tagihannya dibayarkan hari ini?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Tapi kalau tidak segera dibayarkan, akan jadi tidak baik untuk catatan kredit Anda, dan kedepannya Anda akan lebih sulit untuk mengajukan kenaikan limit. Apa bisa diusahakan dulu, untuk meminta tolong teman atau saudara dan membayar pinjamannya hari ini? / {CONV3_C1} / {CONV3_C2}"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "{OP_C0} ingin mengingatkan bahwa Anda memiliki tagihan sebesar [{BALANCE_AMOUNT}?] yang belum dibayar dan sudah lewat [{NO_OF_DPD} hari] dari jatuh tempo. Apa bisa dibayarkan hari ini?"
+      "text": "Ada kendala apa sehingga janji bayarnya belum dilakukan? / Um, ada kendala apa ya yang menghambat pembayarannya? / Kalau boleh tahu, ada kendala apa ya?"
     },
     {
       "count": 1,
@@ -55567,343 +55333,19 @@
       "count": 1,
       "pct": 0.03,
       "role": "inform",
-      "text": "Maaf jika mengganggu waktu anda, saya sarankan agar terhindar dari penelponan oleh tim kami dan denda yang semakin besar, sebaiknya anda membayar tagihannya yang sudah lewat dari jatuh tempo melalui m-banking atau e-commerce. Bisa ya, coba untuk dibayarkan hari ini? / {CONV_C1} / {CONV_C2}"
+      "text": "Apakah anda ada waktu dan berkenan untuk menerima telepon ini? / Jadi Anda bersedia ya?"
     },
     {
       "count": 1,
       "pct": 0.03,
       "role": "inform",
-      "text": "Oh begitu, tapi tagihan Anda sudah terlambat dari jatuh tempo. Supaya dendanya tidak semakin bertambah dan makin mempersulit keuangan Anda, apa tagihannya bisa dibayarkan hari ini? / {CONV2_C1} / {CONV2_C2}"
+      "text": "Baik, [boleh diinformasikan pembayarannya kapan?] / [Boleh diinfokan, pembayarannya dilakukan kapan ya?] / [Jadi, kapan dilakukan pembayarannya?]"
     },
     {
       "count": 1,
       "pct": 0.03,
       "role": "inform",
-      "text": "Baik, mohon untuk diusahakan sebelum jam 8 malam ya. Kira kira jam berapa akan melakukan pembayaran? / Kami sarankan untuk pembayarannya sebelum jam 8 malam. Jadi, jam berapa akan dilakukan pembayarannya ? / Jam berapa akan dilakukan pembayaran?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Hm iya saya mengerti keadaannya. Tapi untuk menghindari denda yang semakin besar, apa bisa diprioritaskan untuk melunasi tagihannya yang sudah tertunggak di Kredivo hari ini? / {CONV_C1} / {CONV_C2}"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Hm saya sarankan, bisa coba cari dana talangan terlebih dahulu ya agar tagihannya bisa segera dilunasi dan dendanya tidak semakin besar. Jadi apa bisa segera membayar tagihannya hari ini? / {CONV_C1} / {CONV_C2}"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Um, saya mengerti situasinya, tapi saya sarankan agar tetap diusahakan untuk melunasi tagihannya hari ini agar dendanya tidak semakin tinggi. Jadi apa kira kira bisa diusahakan untuk membayar hari ini? / {CONV_C1} / {CONV_C2}"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "{OP_C0} Saya menelpon karena Anda memiliki tagihan yang belum dibayar sebesar [{BALANCE_AMOUNT}?] yang sudah lewat [{NO_OF_DPD} hari] dari jatuh tempo. Bisa dibayarkan secepatnya hari ini?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Hmm, mohon maaf, [Apa betul dengan {SALUTATION} {CUSTOMER_PERSON_NAME}? yang berbicara?.] / [Ini dengan {SALUTATION} {CUSTOMER_PERSON_NAME},?][betul ya?]"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Saya mengerti kondisinya, tapi agar biaya dendanya tidak semakin besar, apa bisa diusahakan dulu untuk melunasi tagihannya yang sudah lewat dari jatuh tempo hari ini? / {CONV_C1} / {CONV_C2}"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "[Apa betul dengan {SALUTATION} {CUSTOMER_PERSON_NAME}? yang berbicara?.] / [Ini dengan {SALUTATION} {CUSTOMER_PERSON_NAME},?][betul ya?]"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Saya mengerti, tapi jika tidak segera dibayarkan, dendanya akan semakin besar, jadi bisa ya diusahakan dulu mencari dananya supaya tagihannya bisa dilunasi hari ini? / {CONV_C1} / {CONV_C2}"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "{OP_C0} Jadi saya menelepon untuk memberitahu, ada tagihan Anda sebesar [{BALANCE_AMOUNT}?] yang belum dibayar dan sudah terlambat [{NO_OF_DPD} hari.] Apa kira-kira bisa dibayarkan hari ini?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Um iya, tapi tagihannya sudah lewat dari jatuh tempo dan jika tidak segera dilunasi, dendanya akan semakin besar. Saya sarankan untuk membayar tagihannya melalui m-banking atau e-commerce agar lebih mudah. Jadi apa kira kira bisa diusahakan untuk membayar hari ini? / {CONV_C1} / {CONV_C2}"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Hm, mohon untuk diusahakan agar menyelesaikan pembayaran sebelum jam 8 malam. Jadi, pembayarannya akan dilakukan jam berapa ya? / Pembayarannya akan dilakukan jam berapa ya?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Uhm, tapi ini tagihannya sudah lewat dari jatuh tempo loh. Semakin pembayarannya ditunda, dendanya juga akan terus bertambah. Supaya tidak mempersulit keadaan Anda, apa bisa tagihannya dibayarkan hari ini? / {CONV2_C1} / {CONV2_C2}"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Halo {Greeting_Bahasa}. Saya (BOT NAME) dari Kredivo, [apa betul ini dengan {SALUTATION} {CUSTOMER_PERSON_NAME} ?]"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Oh begitu, tapi sekali lagi saya ingatkan bahwa tagihan ini sudah lewat dari jatuh tempo. Semakin hari, denda Anda akan semakin bertambah, dan hal ini akan mempersulit keadaan Anda kedepannya. Jadi, apa bisa tagihannya dibayarkan hari ini? / {CONV2_C1} / {CONV2_C2}"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Hm maaf atas ketidaknyamanannya, tapi tagihannya di Kredivo sudah lewat dari jatuh tempo, agar dendanya tidak semakin bertambah bisa coba dibayarkan melalui m-banking atau e-commerce seperti Tokopedia atau Bukalapak terlebih dahulu. Apa bisa membayar tagihannya hari ini? / {CONV_C1} / {CONV_C2}"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Pembayaran yang terlambat seperti ini akan berpengaruh buruk terhadap catatan kredit Anda, sehingga kedepannya akan sulit untuk mendapatkan kenaikan limit. Apa bisa diusahakan dulu, mungkin bisa dengan bantuan teman atau saudara, untuk membayarkan pinjamannya hari ini? / {CONV3_C1} / {CONV3_C2}"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Baik, tapi kalau tidak dibayarkan sesegera mungkin denda nya akan semakin besar, bisa ya diusahakan mencari dana terlebih dahulu untuk membayar tagihannya hari ini? / {CONV_C1} / {CONV_C2}"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Oh begitu, tapi sekali lagi saya ingatkan bahwa tagihan ini sudah lewat {NO_OF_DPD} hari dari jatuh tempo. Denda anda akan terus bertambah dan akun anda pun akan terblokir. Apa bisa tagihannya dibayarkan segera hari ini? / {CONV2_C1} / {CONV2_C2}"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Hm, jika terus menunda seperti ini maka akan berpengaruh buruk terhadap catatan kredit Anda dan kedepannya akan sulit untuk mendapatkan kenaikan limit. Apa bisa diusahakan dulu dengan bantuan teman atau saudara, untuk membayar tagihannya hari ini? / {CONV3_C1} / {CONV3_C2}"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Baik, tolong diselesaikan sebelum jam 8 malam ya. Kira kira jam berapa pembayarannya akan dilakukan? / Sebaiknya di bayarkan sebelum jam 8 malam. Jadi jam berapa akan melakukan pembayarannya? / Jam berapa akan dilakukan pembayaran?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Halo {Greeting_Bahasa}. Saya (BOT NAME) dari Kredivo, [apa betul ini dengan {SALUTATION} {CUSTOMER_PERSON_NAME}?]"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Hm maaf atas ketidaknyamanannya, tapi kami sudah menghubungi anda dan tagihannya belum juga dibayaran sampai saat ini, agar terhindar dari denda yang semakin tinggi. Apa bisa segera dibayarkan hari ini? / {CONV_C1} / {CONV_C2}"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Iya saya paham, tapi jika di tunda terus dendanya akan semakin besar, saya sarankan coba untuk mencari dana talangan dulu agar tagihannya dapat segera dilunasi hari ini, bisa ya? / {CONV_C1} / {CONV_C2}"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Hm, saran saya usahakan untuk mencari dana talangan terlebih dahulu agar tagihannya dapat segera dilunasi sehingga dendanya tidak semakin besar dan mempersulit keuangan anda. Jadi apa tagihannya bisa segera dibayarkan hari ini? / {CONV_C1} / {CONV_C2}"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Oh, tapi tagihannya sudah lewat {NO_OF_DPD} hari dari jatuh tempo. Semakin pembayarannya ditunda, dendanya akan terus bertambah dan akun anda juga tidak dapat digunakan. Supaya tidak semakin mempersulit keadaan Anda, apa bisa tagihannya dibayarkan hari ini? / {CONV2_C1} / {CONV2_C2}"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Uh iya saya mengerti sikonnya, namun agar tidak semakin mempersulit keadaannya dengan biaya denda yang semakin besar, sebaiknya diusahakan untuk melunasi tagihannya yang sudah lewat dari jatuh tempo hari ini, bisa ya? / {CONV_C1} / {CONV_C2}"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Hal ini akan memperburuk catatan kredit Anda jika tidak segera dibayarkan, dan kedepannya juga akan lebih sulit untuk mengajukan kenaikan limit. Apa bisa diusahakan dulu, untuk meminta tolong teman atau saudara dan membayar tagihannya hari ini? / {CONV3_C1} / {CONV3_C2}"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Um, namun jika terus ditunda dendanya akan semakin besar. Jadi saran saya usahakan untuk mencari dana talangan dulu agar tagihannya bisa segera dilunasi hari ini, bisa ya? / {CONV_C1} / {CONV_C2}"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Hm, tapi tagihannya sudah lewat {NO_OF_DPD} hari dari jatuh tempo, jika tidak segera dilunasi dendanya akan terus bertambah dan akun anda pun tidak bisa digunakan. Bisa ya diusahakan untuk melunasi tagihannya hari ini? / {CONV2_C1} / {CONV2_C2}"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "{OP_C0} ,Pembayaran Anda untuk tagihan [sebesar {BALANCE_AMOUNT},] belum juga masuk dan sudah lewat [{NO_OF_DPD} hari] dari jatuh tempo. Apa bisa jika pembayarannya dilakukan hari ini?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Iya saya memahami keadaannya, tapi agar tidak merugikan anda sendiri dengan biaya denda yang semakin besar, apa bisa diusahakan untuk melunasi tagihannya yang sudah lewat dari jatuh tempo di Kredivo hari ini juga? / {CONV_C1} / {CONV_C2}"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Saya mengerti, tapi saya harap agar tagihannya dapat segera dilunasi hari ini, jika terus ditunda maka denda nya pun akan semakin tinggi nantinya dan mempersulit keuangan anda. Bisa ya, coba untuk dibayarkan hari ini? / {CONV_C1} / {CONV_C2}"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "[Apa betul dengan {SALUTATION} {CUSTOMER_PERSON_NAME}? yang berbicara?.] / [Ini dengan {SALUTATION} {CUSTOMER_PERSON_NAME}? betul ya?]"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Hm, tolong pastikan pembayarannya selesai sebelum jam 8 malam. Jadi, jam berapa tepatnya akan dibayarkan tagihannya? / Pembayarannya akan dilakukan jam berapa ya?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Um iya, namun jika tidak segera dilunasi, dendanya akan semakin besar dan kami akan terus menghubungi anda. Jadi apa tagihannya bisa segera dibayarkan hari ini? / {CONV_C1} / {CONV_C2}"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "{OP_C0} , Jadi, saya lihat tagihan Anda [sebesar {BALANCE_AMOUNT},] belum juga dibayarkan dan sudah terlambat selama [{NO_OF_DPD} hari.] Apa kira-kira bisa dibayarkan hari ini?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Jika tidak segera dibayar, catatan kredit Anda kedepannya akan jadi buruk, dan sulit untuk mendapatkan kenaikan limit. Boleh coba diusahakan dulu dengan bantuan teman atau saudara, untuk membayar tagihannya hari ini? / {CONV3_C1} / {CONV3_C2}"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "{OP_C0} , Saya menelpon karena sampai saat ini kami belum juga menerima pembayaran untuk tagihannya [sebesar {BALANCE_AMOUNT}, yang sudah lewat,. {NO_OF_DPD} hari] dari jatuh tempo. Bisa dibayarkan secepatnya hari ini?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Um, ya saya paham, namun tagihannya sudah lewat dari jatuh tempo dan akan terus dikenakan denda setiap harinya. Agar dendanya tidak semakin tinggi apa bisa diusahakan untuk segera membayar tagihannya dulu hari ini? / {CONV_C1} / {CONV_C2}"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Baik, saya ingin mengkonfirmasi bahwa pembayaran GoPayLater anda sebesar {X_Nominal_AMOUNT} telah jatuh tempo hari ini. Apa bisa dibayarkan sekarang? / Pembayaran anda belum kami terima, Bisa ya dibayar sekarang? / Untuk tagihannya, apa bisa dibayarkan sekarang?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Halo, perkenalkan Saya Nia. Apakah betul saya berbicara dengan [{Salutation} {Name_PERSON_NAME}] / [Ini dengan {Salutation} {Name_PERSON_NAME}, betul ya?] / [Apa betul dengan {Salutation} {Name_PERSON_NAME} yang berbicara?]"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Halo, perkenalkan saya Hera. Apakah betul saya berbicara dengan [{Salutation} {Name_PERSON_NAME}?] / [Ini dengan {Salutation} {Name_PERSON_NAME}, betul ya?] / [Apa betul dengan {Salutation} {Name_PERSON_NAME} yang berbicara?]"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Halo, perkenalkan saya Hera. Apakah betul saya berbicara dengan  [{Salutation} {Name_PERSON_NAME}?] / [Ini dengan {Salutation} {Name_PERSON_NAME}, betul ya?] / [Apa betul dengan {Salutation} {Name_PERSON_NAME} yang berbicara?]"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "[Halo, Saya Helen dari Gopay Pinjam Modal. Saya ingin berbicara dengan Bapak {Name_PERSON_NAME}, apa bisa?] / [Ini dengan Bapak {Name_PERSON_NAME}, betul ya?] / [Apa betul dengan Bapak {Name_PERSON_NAME} yang berbicara?]"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "[Halo, Saya Helen dari Gopay Pinjam Modal. Saya ingin berbicara dengan {Name_PERSON_NAME}, apa bisa?] / [Ini dengan {Name_PERSON_NAME}, betul ya?] / [Apa betul dengan {Name_PERSON_NAME} yang berbicara?]"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "[Baik?! pembayaran akan dilakukan melalui metode apa? Transfer, alfamart atau ATM?]"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Um.. jadi, saya menelepon, hanya untuk mengingatkan mengenai tagihan anda di Gopay Pinjam Modal, yang akan jatuh tempo pada [{Due_date} , sebesar {X_Nominal_AMOUNT}.] Kami harap Anda dapat membayarkan tagihan Anda tepat waktu. Apakah ada rencana pembayaran dalam waktu dekat? / [Tagihannya apa akan dilakukan pembayaran dalam waktu dekat?] / [Untuk tagihannya, apakah berkenan dibayarkan dalam waktu dekat?]"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "[Halo, Saya Helen dari Gopay Pinjam Modal. Saya ingin berbicara dengan Ibu {Name_PERSON_NAME}, apa bisa?] / [Ini dengan Ibu {Name_PERSON_NAME}, betul ya?] / [Apa betul dengan Ibu {Name_PERSON_NAME} yang berbicara?]"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Um.. jadi, saya menelepon, hanya untuk mengingatkan mengenai tagihan anda di Toko Kapital, yang akan jatuh tempo pada [{Due_date} , sebesar {X_Nominal_AMOUNT}.] Kami harap Anda dapat membayarkan tagihan Anda tepat waktu. Apakah ada rencana pembayaran dalam waktu dekat? / [Tagihannya apa akan dilakukan pembayaran dalam waktu dekat?] / [Untuk tagihannya, apakah berkenan dibayarkan dalam waktu dekat?]"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "[Halo, Saya Helen dari TokoKapital. Saya ingin berbicara dengan Ibu {Name_PERSON_NAME}, apa bisa?] / [Ini dengan Ibu {Name_PERSON_NAME}, betul ya?] / [Apa betul dengan Ibu {Name_PERSON_NAME} yang berbicara?]"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "[Halo, Saya Helen dari TokoKapital. Saya ingin berbicara dengan Bapak {Name_PERSON_NAME}, apa bisa?] / [Ini dengan Bapak {Name_PERSON_NAME}, betul ya?] / [Apa betul dengan Bapak {Name_PERSON_NAME} yang berbicara?]"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "[Halo, Saya Helen dari TokoKapital. Saya ingin berbicara dengan {Name_PERSON_NAME}, apa bisa?] / [Ini dengan {Name_PERSON_NAME}, betul ya?] / [Apa betul dengan {Name_PERSON_NAME} yang berbicara?]"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Hmm, mohon maaf, apa Anda kenal dengan [{SALUTATION} {CUSTOMER_PERSON_NAME}?] / [Apa anda kenal dengan {SALUTATION} {CUSTOMER_PERSON_NAME}?]"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Baik, kira-kira di jam berapa akan dilakukan pembayarannya? / Untuk pembayarannya akan dilakukan di jam berapa ya? / Mohon konfirmasinya di jam berapa akan melakukan pembayaran?"
+      "text": "Baik, bisa diinfokan untuk waktu pembayarannya?"
     },
     {
       "count": 1,
@@ -55915,13 +55357,313 @@
       "count": 1,
       "pct": 0.03,
       "role": "inform",
-      "text": "Oh begitu, Tapi pembayaran angsuran anda sudah terlambat dari jatuh tempo. Supaya dendanya tidak semakin membesar, kemudian makin mempersulit keuangan anda, apa angsurannya bisa dibayarkan hari ini? / Kami sarankan agar terhindar dari denda, apa bisa angsurannya dibayar hari ini? / bisa ya angsurannya dibayarkan hari ini?"
+      "text": "Baik, kira-kira di jam berapa akan dilakukan pembayarannya? / Untuk pembayarannya akan dilakukan di jam berapa ya? / Mohon konfirmasinya di jam berapa akan melakukan pembayaran?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Baik, mohon maaf apa kenal dengan [{SALUTATION} {CUSTOMER_PERSON_NAME}?] / [Apakah kenal dengan {SALUTATION} {CUSTOMER_PERSON_NAME}?]"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Baik, mohon maaf, [apakah kenal dengan {SALUTATION} {CUSTOMER_PERSON_NAME}?] / [Apakah kenal dengan {SALUTATION} {CUSTOMER_PERSON_NAME}?]"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Baik, mohon untuk diusahakan sebelum jam 8 malam ya. Kira kira jam berapa akan melakukan pembayaran? / Kami sarankan untuk pembayarannya sebelum jam 8 malam. Jadi, jam berapa akan dilakukan pembayarannya ? / Jam berapa akan dilakukan pembayaran?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Baik, mohon untuk diusahakan sebelum jam 8 malam ya. Kira kira jam berapa akan melakukan pembayaran? / Kami sarankan untuk pembayarannya sebelum jam 8 malam. Jadi, jam berapa akan dilakukan pembayarannya? / Jam berapa akan dilakukan pembayaran?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Baik, namun jika tidak dibayarkan hari ini anda bisa dikenakan denda keterlambatan, bisa ya diusahakan mencari dana terlebih dahulu untuk membayar tagihannya hari ini? / Supaya terhindar dari denda dan catatan kredit anda jadi kurang baik, sebaiknya diusahakan untuk melunasi tagihannya hari ini ya? / Kalau tagihannya dibayarkan hari ini, bisa ya?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Baik, namun sekarang nomor ini hanya bisa menerima SMS dan panggilan masuk saja.Untuk dapat menikmati kembali full service dari IM3, apa bisa tagihannya dibayarkan dalam dua hari ke depan? / Silahkan dibayarkan dalam dua hari ke depan agar nomor ini bisa tetap digunakan, bisa ya? / Jadi bisa ya tagihannya dibayarkan dalam dua hari ke depan?"
     },
     {
       "count": 1,
       "pct": 0.03,
       "role": "inform",
       "text": "Baik, rencananya akan dibayarkan melalui apa? / Untuk pembayarannya nanti melalui apa ya? / Jadi, untuk pembayarannya akan melalui apa ya?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Baik, saya ingin mengkonfirmasi bahwa pembayaran GoPayLater anda sebesar {X_Nominal_AMOUNT} telah jatuh tempo hari ini. Apa bisa dibayarkan sekarang? / Pembayaran anda belum kami terima, Bisa ya dibayar sekarang? / Untuk tagihannya, apa bisa dibayarkan sekarang?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Baik, saya mengerti. Tapi apabila pembayaran tidak segera dilakukan, nomor ini tidak dapat melakukan panggilan keluar dan mengirim SMS. Bagaimana, bisa ya melakukan pembayaran tagihannya segera? / Apa bisa pembayaran tagihannya dilakukan, agar layanan dari IM3 Platinum tetap bisa dinikmati? / Apa bisa tagihannya dibayarkan dalam dua hari ke depan?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Baik, saya mengerti.Tapi apabila pembayaran tidak segera dilakukan, nomor ini akan terblokir secara otomatis sehingga SMS dan panggilan tidak bisa masuk.Bagaimana, bisa ya melakukan pembayaran tagihannya segera? / Apa bisa pembayaran tagihannya dilakukan, agar benefit dan service dari IM3 Platinum tetap bisa dinikmati? / Apa bisa tagihannya dibayarkan dalam dua hari ke depan?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Baik, tapi kalau tidak dibayarkan sesegera mungkin denda nya akan semakin besar, bisa ya diusahakan mencari dana terlebih dahulu untuk membayar tagihannya hari ini? / {CONV_C1} / {CONV_C2}"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Baik, tolong diselesaikan sebelum jam 8 malam ya. Kira kira jam berapa pembayarannya akan dilakukan? / Sebaiknya di bayarkan sebelum jam 8 malam. Jadi jam berapa akan melakukan pembayarannya? / Jam berapa akan dilakukan pembayaran?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Baik, untuk metode pembayarannya tadi melalui apa ya?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Baik, untuk tetap dapat menikmati pelayanan terbaik dari IM3, apa bisa tagihannya dibayarkan segera? / Agar nomor ini bisa tetap aktif digunakan, apa bisa tagihannya dibayarkan segera? / Jadi bisa ya, tagihannya dibayarkan segera?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Bisa di infokan nanti pembayarannya akan melalui apa? / Pembayarannya akan dilakukan melalui apa ya?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Bisa dijelaskan kenapa belum bisa dibayarkan hari ini?  / Um, ada kendala apa ya yang menghambat pembayarannya? / Kalau boleh tahu, ada kendala apa ya?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Hal ini akan memperburuk catatan kredit Anda jika tidak segera dibayarkan, dan kedepannya juga akan lebih sulit untuk mengajukan kenaikan limit. Apa bisa diusahakan dulu, untuk meminta tolong teman atau saudara dan membayar tagihannya hari ini? / {CONV3_C1} / {CONV3_C2}"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Halo {Greeting_Bahasa}, Saya Adistie dari PT Clipan Finance. Apa betul ini dengan [{SALUTATION} {CUSTOMER_PERSON_NAME}?]"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Halo {Greeting_Bahasa}, Saya Adistie dari PT Clipan Finance. Apa bisa saya berbicara dengan [{SALUTATION} {CUSTOMER_PERSON_NAME}?]"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Halo {Greeting_Bahasa}. Saya (BOT NAME) dari Kredivo, [apa betul ini dengan {SALUTATION} {CUSTOMER_PERSON_NAME} ?]"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Halo {Greeting_Bahasa}. Saya (BOT NAME) dari Kredivo, [apa betul ini dengan {SALUTATION} {CUSTOMER_PERSON_NAME}?]"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Halo {Greeting_Bahasa}. Saya (BOT NAME) dari Kredivo. [Apa betul ini dengan {SALUTATION} {CUSTOMER_PERSON_NAME} ?]"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Halo, perkenalkan Saya Nia. Apakah betul saya berbicara dengan [{Salutation} {Name_PERSON_NAME}] / [Ini dengan {Salutation} {Name_PERSON_NAME}, betul ya?] / [Apa betul dengan {Salutation} {Name_PERSON_NAME} yang berbicara?]"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Halo, perkenalkan saya Hera. Apakah betul saya berbicara dengan  [{Salutation} {Name_PERSON_NAME}?] / [Ini dengan {Salutation} {Name_PERSON_NAME}, betul ya?] / [Apa betul dengan {Salutation} {Name_PERSON_NAME} yang berbicara?]"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Halo, perkenalkan saya Hera. Apakah betul saya berbicara dengan [{Salutation} {Name_PERSON_NAME}?] / [Ini dengan {Salutation} {Name_PERSON_NAME}, betul ya?] / [Apa betul dengan {Salutation} {Name_PERSON_NAME} yang berbicara?]"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Hanya sebentar saja. Boleh ya dilanjutkan? / Mohon maaf saya hanya butuh waktu 1-2 menit saja. Boleh saya lanjutkan ya?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Hm iya saya mengerti keadaannya. Tapi untuk menghindari denda yang semakin besar, apa bisa diprioritaskan untuk melunasi tagihannya yang sudah tertunggak di Kredivo hari ini? / {CONV_C1} / {CONV_C2}"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Hm maaf atas ketidaknyamanannya, tapi kami sudah menghubungi anda dan tagihannya belum juga dibayaran sampai saat ini, agar terhindar dari denda yang semakin tinggi. Apa bisa segera dibayarkan hari ini? / {CONV_C1} / {CONV_C2}"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Hm maaf atas ketidaknyamanannya, tapi tagihan anda sudah lewat dari jatuh tempo, agar dendanya tidak semakin bertambah, apa bisa membayar tagihannya hari ini? / Maaf jika mengganggu waktu anda, saya sarankan agar terhindar dari penagihaan oleh tim kami dan denda yang semakin besar, sebaiknya anda membayar tagihannya yang sudah lewat dari jatuh tempo . Bisa ya, coba untuk dibayarkan hari ini? / Tapi tagihannya sudah lewat dari jatuh tempo dan jika tidak segera dibayarkan, dendanya akan semakin besar. Saya sarankan untuk membayar tagihannya melalui Transfer Virtual Account, dan Minimarket agar lebih mudah. Jadi apa kira kira bisa diusahakan untuk membayar hari ini?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Hm maaf atas ketidaknyamanannya, tapi tagihannya di Kredivo sudah lewat dari jatuh tempo, agar dendanya tidak semakin bertambah bisa coba dibayarkan melalui m-banking atau e-commerce seperti Tokopedia atau Bukalapak terlebih dahulu. Apa bisa membayar tagihannya hari ini? / {CONV_C1} / {CONV_C2}"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Hm saran saya anda bisa coba untuk mencari dana talangan terlebih dahulu agar tagihannya dapat dilunasi dan terhindar dari denda keterlambatan. {QL1} / Supaya terhindar dari denda dan catatan kredit anda jadi kurang baik, sebaiknya diusahakan untuk melunasi tagihannya hari ini ya? / Kalau tagihannya dibayarkan hari ini, bisa ya?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Hm saya sarankan, bisa coba cari dana talangan terlebih dahulu ya agar tagihannya bisa segera dilunasi dan dendanya tidak semakin besar. Jadi apa bisa segera membayar tagihannya hari ini? / {CONV_C1} / {CONV_C2}"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Hm, jika terus menunda seperti ini maka akan berpengaruh buruk terhadap catatan kredit Anda dan kedepannya akan sulit untuk mendapatkan kenaikan limit. Apa bisa diusahakan dulu dengan bantuan teman atau saudara, untuk membayar tagihannya hari ini? / {CONV3_C1} / {CONV3_C2}"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Hm, kami mengerti. Tapi jika pembayarannya tidak dilakukan secepatnya, maka akan berpengaruh buruk ke catatan kredit Bapak kedepannya dan tidak dapat mengajukan pinjaman lainnya. Kami sarankan pembayaran dilakukan sesegera mungkin. Kira-kira kapan ya, akan dilakukan pembayarannya Pak? / Boleh kami tahu kira-kira kapan Bapak berencana melakukan pembayaran ya?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Hm, kami mengerti. Tapi jika pembayarannya tidak dilakukan secepatnya, maka akan berpengaruh buruk ke catatan kredit Ibu kedepannya dan tidak dapat mengajukan pinjaman lainnya. Kami sarankan pembayaran dilakukan sesegera mungkin. Kira-kira kapan ya, akan dilakukan pembayarannya Bu? / Boleh kami tahu kira-kira kapan Ibu berencana melakukan pembayaran ya?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Hm, kami mengerti. Tapi jika pembayarannya tidak dilakukan secepatnya, maka akan berpengaruh buruk ke catatan kredit kedepannya dan tidak dapat mengajukan pinjaman lainnya. Jadi kami sarankan pembayaran bisa dilakukan sesegera mungkin. [Kira-kira kapan ya, akan dilakukan pembayarannya {SALUTATION_2}] / [Boleh kami tahu kira-kira kapan {SALUTATION} berencana melakukan pembayaran?]"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Hm, mohon untuk diusahakan agar menyelesaikan pembayaran sebelum jam 8 malam. Jadi, pembayarannya akan dilakukan jam berapa ya? / Pembayarannya akan dilakukan jam berapa ya?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Hm, mohon untuk diusahakan agar menyelesaikan pembayaran sebelum jam 8 malam. Nah, pembayarannya akan dilakukan jam berapa ya? / Pembayarannya akan dilakukan jam berapa ya?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Hm, saran saya usahakan untuk mencari dana talangan terlebih dahulu agar tagihannya dapat segera dilunasi sehingga dendanya tidak semakin besar dan mempersulit keuangan anda. Jadi apa tagihannya bisa segera dibayarkan hari ini? / {CONV_C1} / {CONV_C2}"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Hm, tapi tagihannya sudah lewat {NO_OF_DPD} hari dari jatuh tempo, jika tidak segera dilunasi dendanya akan terus bertambah dan akun anda pun tidak bisa digunakan. Bisa ya diusahakan untuk melunasi tagihannya hari ini? / {CONV2_C1} / {CONV2_C2}"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Hm, tolong pastikan pembayarannya selesai sebelum jam 8 malam. Jadi, jam berapa tepatnya akan dibayarkan tagihannya? / Pembayarannya akan dilakukan jam berapa ya?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Hmm, jika nomor ini masih ingin digunakan, tagihan harus segera dibayarkan agar bisa dilakukan pembukaan blokir ataupun perpindahan paket. Jadi kalau dibayarkan dalam dua hari ke depan, bisa ya? / Silahkan dibayarkan dalam dua hari ke depan agar nomor ini bisa tetap digunakan, bisa ya? / Jadi bisa ya tagihannya dibayarkan dalam dua hari ke depan?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Hmm, mohon maaf, [Apa betul dengan {SALUTATION} {CUSTOMER_PERSON_NAME}? yang berbicara?.] / [Ini dengan {SALUTATION} {CUSTOMER_PERSON_NAME},?][betul ya?]"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Hmm, mohon maaf, apa Anda kenal dengan [{SALUTATION} {CUSTOMER_PERSON_NAME}?] / [Apa anda kenal dengan {SALUTATION} {CUSTOMER_PERSON_NAME}?]"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Hmm, mohon maaf, apa Anda kenal dengan [{SALUTATION} {CUSTOMER_PERSON_NAME}?] / [Apa anda kenal dengan, {SALUTATION} {CUSTOMER_PERSON_NAME}?]"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Iya saya memahami keadaannya, tapi agar tidak merugikan anda sendiri dengan biaya denda yang semakin besar, apa bisa diusahakan untuk melunasi tagihannya yang sudah lewat dari jatuh tempo di Kredivo hari ini juga? / {CONV_C1} / {CONV_C2}"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Iya saya paham, tapi jika di tunda terus dendanya akan semakin besar, saya sarankan coba untuk mencari dana talangan dulu agar tagihannya dapat segera dilunasi hari ini, bisa ya? / {CONV_C1} / {CONV_C2}"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Iya, saya mengerti keadaan Anda, tapi tetap diusahakan pelunasannya hari ini ya, agar kedepannya Anda bisa mendapat limit kredit yang lebih tinggi. {QL1} / Supaya terhindar dari denda dan catatan kredit anda jadi kurang baik, sebaiknya diusahakan untuk melunasi tagihannya hari ini ya? / Kalau tagihannya dibayarkan hari ini, bisa ya?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Jadi saya menelepon untuk mengingatkan [Anda memiliki {NO_OF_CONTRACT} kontrak,] yang sudah jatuh tempo dan harus dibayarkan dengan total [{TOTAL_AMOUNT}.] Bisa segera dilunasi tagihannya hari ini? / Hm saya ingin mengingatkan kewajiban pembayaran anda yang sudah melewati jatuh tempo. Apa untuk pembayarannya bisa anda pastikan hari ini? / Apa bisa kewajiban pembayaran dibayarkan hari ini?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Jadi saya menelepon untuk mengingatkan kewajiban pembayaran anda sebesar [{BALANCE_AMOUNT}] yang sudah jatuh tempo [{NO_OF_DPD} hari.] Apa untuk pembayarannya bisa anda pastikan untuk membayar hari ini? / Hm saya ingin mengingatkan kewajiban pembayaran anda yang sudah melewati jatuh tempo. Apa untuk pembayarannya bisa anda pastikan hari ini? / Apa bisa kewajiban pembayaran dibayarkan hari ini?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Jika tidak segera dibayar, catatan kredit Anda kedepannya akan jadi buruk, dan sulit untuk mendapatkan kenaikan limit. Boleh coba diusahakan dulu dengan bantuan teman atau saudara, untuk membayar tagihannya hari ini? / {CONV3_C1} / {CONV3_C2}"
     },
     {
       "count": 1,
@@ -55939,169 +55681,13 @@
       "count": 1,
       "pct": 0.03,
       "role": "inform",
-      "text": "Hmm, mohon maaf, apa Anda kenal dengan [{SALUTATION} {CUSTOMER_PERSON_NAME}?] / [Apa anda kenal dengan, {SALUTATION} {CUSTOMER_PERSON_NAME}?]"
+      "text": "Kami mengerti, tapi mohon tetap dimaksimalkan pelunasannya di hari ini, mungkin bisa melalui m-banking atau e-commerce seperti Tokopedia atau Bukalapak supaya tidak dihubungi kembali. Jadi apa bisa untuk pembayaran di hari ini? / Supaya terhindar dari denda dan catatan kredit anda jadi kurang baik, sebaiknya diusahakan untuk melunasi tagihannya hari ini ya? / Kalau tagihannya dibayarkan hari ini, bisa ya?"
     },
     {
       "count": 1,
       "pct": 0.03,
       "role": "inform",
-      "text": "Baik, [boleh diinformasikan pembayarannya kapan?] / [Boleh diinfokan, pembayarannya dilakukan kapan ya?] / [Jadi, kapan dilakukan pembayarannya?]"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Oh, tapi tagihannya sudah lewat dari jatuh tempo. Semakin pembayarannya ditunda, dendanya juga akan semakin besar. Untuk menghindari hal ini, kami sarankan pembayaran dilakukan secepatnya. Apakah bisa hari ini Pak? / Jadi, supaya dendanya tidak terus bertambah, apa bisa untuk tagihannya dibayarkan hari ini? / {Convincer}"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Oh, tapi tagihannya sudah lewat dari jatuh tempo. Semakin pembayarannya ditunda, dendanya juga akan semakin besar. Untuk menghindari hal ini, kami sarankan pembayaran dilakukan secepatnya. Apakah bisa hari ini Bu? / Jadi, supaya dendanya tidak terus bertambah, apa bisa untuk tagihannya dibayarkan hari ini? / {Convincer}"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Oh begitu, tapi tagihannya sudah jatuh tempo. Supaya denda tidak semakin besar, apakah bisa dibayarkan hari ini Pak? / Supaya dendanya tidak semakin banyak, apa bisa pinjamannya dibayar hari ini? / {Convincer}"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "{Greetings} Saya Lina dari blu BCA Digital. Apakah saya berbicara dengan {SALUTATION} [{CUSTOMER_PERSON_NAME}?] / Jadi, apa saya sedang terhubung dengan {SALUTATION} [{CUSTOMER_PERSON_NAME}?] / Apa saya berbicara dengan {SALUTATION} [{CUSTOMER_PERSON_NAME}?]"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Baik, mohon maaf, [apakah kenal dengan {SALUTATION} {CUSTOMER_PERSON_NAME}?] / [Apakah kenal dengan {SALUTATION} {CUSTOMER_PERSON_NAME}?]"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Oh begitu, tapi sekali lagi diingatkan bahwa tagihan ini sudah lewat dari jatuh tempo. Semakin hari, denda akan semakin bertambah. Apakah bisa pinjamannya dibayarkan hari ini Pak? / Agar dendanya tidak semakin bertambah, apa bisa pembayarannya dilakukan hari ini? / {Convincer}"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Hm, kami mengerti. Tapi jika pembayarannya tidak dilakukan secepatnya, maka akan berpengaruh buruk ke catatan kredit Ibu kedepannya dan tidak dapat mengajukan pinjaman lainnya. Kami sarankan pembayaran dilakukan sesegera mungkin. Kira-kira kapan ya, akan dilakukan pembayarannya Bu? / Boleh kami tahu kira-kira kapan Ibu berencana melakukan pembayaran ya?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Oh begitu, tapi sekali lagi diingatkan bahwa tagihan ini sudah lewat dari jatuh tempo. Semakin hari, denda akan semakin bertambah. Apakah bisa pinjamannya dibayarkan hari ini Bu? / Agar dendanya tidak semakin bertambah, apa bisa pembayarannya dilakukan hari ini? / {Convincer}"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Oh begitu, tapi tagihannya sudah jatuh tempo. Supaya denda tidak semakin besar, apakah bisa dibayarkan hari ini Bu? / Supaya dendanya tidak semakin banyak, apa bisa pinjamannya dibayar hari ini? / {Convincer}"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Hm, kami mengerti. Tapi jika pembayarannya tidak dilakukan secepatnya, maka akan berpengaruh buruk ke catatan kredit Bapak kedepannya dan tidak dapat mengajukan pinjaman lainnya. Kami sarankan pembayaran dilakukan sesegera mungkin. Kira-kira kapan ya, akan dilakukan pembayarannya Pak? / Boleh kami tahu kira-kira kapan Bapak berencana melakukan pembayaran ya?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Apakah anda ada waktu dan berkenan untuk menerima telepon ini? / Jadi Anda bersedia ya?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Oh begitu, mohon maaf apa boleh tahu alasannya kenapa belum tertarik? / Hm, apa ada alasan tertentu sehingga belum tertarik? / Boleh tahu alasannya belum berminat?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Hanya sebentar saja. Boleh ya dilanjutkan? / Mohon maaf saya hanya butuh waktu 1-2 menit saja. Boleh saya lanjutkan ya?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Baik, mohon maaf apa kenal dengan [{SALUTATION} {CUSTOMER_PERSON_NAME}?] / [Apakah kenal dengan {SALUTATION} {CUSTOMER_PERSON_NAME}?]"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Oh, tapi tagihannya sudah lewat dari jatuh tempo. Semakin pembayarannya ditunda, dendanya juga akan semakin besar. Untuk menghindari hal tersebut, kami sarankan pembayaran dilakukan secepatnya. [Apa bisa dibayarkan hari ini {SALUTATION_2}] / {Convincer_1}  / {Convincer_2} "
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "{Greetings} Saya Alfa dari blu by BCA Digital. [Apakah benar ini dengan {SALUTATION} {CUSTOMER_PERSON_NAME}?] / Apakah saya berbicara dengan [{SALUTATION} {CUSTOMER_PERSON_NAME}?] / Benar ini dengan [{SALUTATION} {CUSTOMER_PERSON_NAME}?]"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Hm, kami mengerti. Tapi jika pembayarannya tidak dilakukan secepatnya, maka akan berpengaruh buruk ke catatan kredit kedepannya dan tidak dapat mengajukan pinjaman lainnya. Jadi kami sarankan pembayaran bisa dilakukan sesegera mungkin. [Kira-kira kapan ya, akan dilakukan pembayarannya {SALUTATION_2}] / [Boleh kami tahu kira-kira kapan {SALUTATION} berencana melakukan pembayaran?]"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Oh begitu, tapi tagihannya sudah jatuh tempo. Supaya denda tidak semakin besar, [Apa bisa dibayarkan hari ini {SALUTATION_2}] / {Convincer_1}  / {Convincer_2} "
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Oh begitu, tapi sekali lagi diingatkan bahwa tagihan ini sudah lewat dari jatuh tempo. Semakin hari, denda akan semakin bertambah. [Jadi, apa bisa pinjamannya dibayarkan hari ini {SALUTATION_2}] / {Convincer_1}  / {Convincer_2} "
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Oh, boleh tahu kenapa kewajiban belum dibayarkan sampai saat ini?  / Um, ada kendala apa ya yang menghambat pembayarannya? / Kalau boleh tahu, ada kendala apa ya?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Hm maaf atas ketidaknyamanannya, tapi tagihan anda sudah lewat dari jatuh tempo, agar dendanya tidak semakin bertambah, apa bisa membayar tagihannya hari ini? / Maaf jika mengganggu waktu anda, saya sarankan agar terhindar dari penagihaan oleh tim kami dan denda yang semakin besar, sebaiknya anda membayar tagihannya yang sudah lewat dari jatuh tempo . Bisa ya, coba untuk dibayarkan hari ini? / Tapi tagihannya sudah lewat dari jatuh tempo dan jika tidak segera dibayarkan, dendanya akan semakin besar. Saya sarankan untuk membayar tagihannya melalui Transfer Virtual Account, dan Minimarket agar lebih mudah. Jadi apa kira kira bisa diusahakan untuk membayar hari ini?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Jadi saya menelepon untuk mengingatkan kewajiban pembayaran anda sebesar [{BALANCE_AMOUNT}] yang sudah jatuh tempo [{NO_OF_DPD} hari.] Apa untuk pembayarannya bisa anda pastikan untuk membayar hari ini? / Hm saya ingin mengingatkan kewajiban pembayaran anda yang sudah melewati jatuh tempo. Apa untuk pembayarannya bisa anda pastikan hari ini? / Apa bisa kewajiban pembayaran dibayarkan hari ini?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Oh begitu, namun pada sistem kami tagihannya tercatat atas nama [{SALUTATION} {CUSTOMER_PERSON_NAME},] apa benar anda tidak memiliki pinjaman di PT Clipan Finance?  / Apa benar anda tidak memiliki Tagihan di PT Clipan Finance?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Halo {Greeting_Bahasa}, Saya Adistie dari PT Clipan Finance. Apa betul ini dengan [{SALUTATION} {CUSTOMER_PERSON_NAME}?]"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Jadi saya menelepon untuk mengingatkan [Anda memiliki {NO_OF_CONTRACT} kontrak,] yang sudah jatuh tempo dan harus dibayarkan dengan total [{TOTAL_AMOUNT}.] Bisa segera dilunasi tagihannya hari ini? / Hm saya ingin mengingatkan kewajiban pembayaran anda yang sudah melewati jatuh tempo. Apa untuk pembayarannya bisa anda pastikan hari ini? / Apa bisa kewajiban pembayaran dibayarkan hari ini?"
-    },
-    {
-      "count": 1,
-      "pct": 0.03,
-      "role": "inform",
-      "text": "Saya ingin konfirmasi kembali terkait tagihan yang sudah melewati jatuh tempo. Sebelumnya Anda sudah ada janji pembayaran dengan kami tapi saya cek hingga saat ini masih belum dibayarkan, mohon realisasikan pembayarannya di hari ini bisa ya? / Janji bayar anda sebelumnya sudah masuk ke catatan sistem, tapi sampai saat ini masih belum kami terima. Mohon pastikan pembayarannya bisa ya dilakukan hari ini? / Apa bisa kewajiban pembayaran dibayarkan hari ini?"
+      "text": "Maaf jika mengganggu waktu anda, saya sarankan agar terhindar dari penelponan oleh tim kami dan denda yang semakin besar, sebaiknya anda membayar tagihannya yang sudah lewat dari jatuh tempo melalui m-banking atau e-commerce. Bisa ya, coba untuk dibayarkan hari ini? / {CONV_C1} / {CONV_C2}"
     },
     {
       "count": 1,
@@ -56113,13 +55699,427 @@
       "count": 1,
       "pct": 0.03,
       "role": "inform",
-      "text": "Halo {Greeting_Bahasa}, Saya Adistie dari PT Clipan Finance. Apa bisa saya berbicara dengan [{SALUTATION} {CUSTOMER_PERSON_NAME}?]"
+      "text": "Mohon dipahami, apabila tagihan tidak dibayarkan dalam dua hari ke depan, nomor ini akan diblokir sepenuhnya. Untuk mengaktifkannya kembali, Anda harus datang ke gerai IM3 atau menghubungi Customer Service kami.Jadi bisa ya, tagihannya dibayarkan? / Apa bisa tagihannya segera dibayarkan untuk menghindari pemblokiran total? / Apa bisa tagihannya dibayarkan dalam dua hari ke depan?"
     },
     {
       "count": 1,
       "pct": 0.03,
       "role": "inform",
-      "text": "Ada kendala apa sehingga janji bayarnya belum dilakukan? / Um, ada kendala apa ya yang menghambat pembayarannya? / Kalau boleh tahu, ada kendala apa ya?"
+      "text": "Oh begitu, Tapi pembayaran angsuran anda sudah terlambat dari jatuh tempo. Supaya dendanya tidak semakin membesar, kemudian makin mempersulit keuangan anda, apa angsurannya bisa dibayarkan hari ini? / Kami sarankan agar terhindar dari denda, apa bisa angsurannya dibayar hari ini? / bisa ya angsurannya dibayarkan hari ini?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Oh begitu, Tapi tagihan anda sudah jatuh tempo hari ini. Supaya tidak dikenakan denda, apa tagihannya bisa dibayarkan hari ini juga? / {3CChasing1} / {3CChasing2}"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Oh begitu, mohon maaf apa boleh tahu alasannya kenapa belum tertarik? / Hm, apa ada alasan tertentu sehingga belum tertarik? / Boleh tahu alasannya belum berminat?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Oh begitu, namun pada sistem kami tagihannya tercatat atas nama [{SALUTATION} {CUSTOMER_PERSON_NAME},] apa benar anda tidak memiliki pinjaman di PT Clipan Finance?  / Apa benar anda tidak memiliki Tagihan di PT Clipan Finance?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Oh begitu, tapi sekali lagi diingatkan bahwa tagihan ini sudah lewat dari jatuh tempo. Semakin hari, denda akan semakin bertambah. Apakah bisa pinjamannya dibayarkan hari ini Bu? / Agar dendanya tidak semakin bertambah, apa bisa pembayarannya dilakukan hari ini? / {Convincer}"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Oh begitu, tapi sekali lagi diingatkan bahwa tagihan ini sudah lewat dari jatuh tempo. Semakin hari, denda akan semakin bertambah. Apakah bisa pinjamannya dibayarkan hari ini Pak? / Agar dendanya tidak semakin bertambah, apa bisa pembayarannya dilakukan hari ini? / {Convincer}"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Oh begitu, tapi sekali lagi diingatkan bahwa tagihan ini sudah lewat dari jatuh tempo. Semakin hari, denda akan semakin bertambah. [Jadi, apa bisa pinjamannya dibayarkan hari ini {SALUTATION_2}] / {Convincer_1}  / {Convincer_2} "
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Oh begitu, tapi sekali lagi saya ingatkan bahwa tagihan ini sudah lewat dari jatuh tempo. Semakin hari, denda Anda akan semakin bertambah, dan hal ini akan mempersulit keadaan Anda kedepannya. Jadi, apa bisa tagihannya dibayarkan hari ini? / {CONV2_C1} / {CONV2_C2}"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Oh begitu, tapi sekali lagi saya ingatkan bahwa tagihan ini sudah lewat {NO_OF_DPD} hari dari jatuh tempo. Denda anda akan terus bertambah dan akun anda pun akan terblokir. Apa bisa tagihannya dibayarkan segera hari ini? / {CONV2_C1} / {CONV2_C2}"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Oh begitu, tapi tagihan Anda sudah terlambat dari jatuh tempo. Supaya dendanya tidak semakin bertambah dan makin mempersulit keuangan Anda, apa tagihannya bisa dibayarkan hari ini? / {CONV2_C1} / {CONV2_C2}"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Oh begitu, tapi tagihannya sudah jatuh tempo. Supaya denda tidak semakin besar, [Apa bisa dibayarkan hari ini {SALUTATION_2}] / {Convincer_1}  / {Convincer_2} "
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Oh begitu, tapi tagihannya sudah jatuh tempo. Supaya denda tidak semakin besar, apakah bisa dibayarkan hari ini Bu? / Supaya dendanya tidak semakin banyak, apa bisa pinjamannya dibayar hari ini? / {Convincer}"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Oh begitu, tapi tagihannya sudah jatuh tempo. Supaya denda tidak semakin besar, apakah bisa dibayarkan hari ini Pak? / Supaya dendanya tidak semakin banyak, apa bisa pinjamannya dibayar hari ini? / {Convincer}"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Oh iya, kami sarankan untuk melakukan pembayaran melalui m-banking atau e-commerce seperti Tokopedia dan Bukalapak agar tidak terganggu dengan penelponan kembali. Bisa ya untuk melakukan pembayarannya hari ini? / Supaya terhindar dari denda dan catatan kredit anda jadi kurang baik, sebaiknya diusahakan untuk melunasi tagihannya hari ini ya? / Kalau tagihannya dibayarkan hari ini, bisa ya?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Oh iya, tapi tagihannya sudah jatuh tempo. Supaya catatan kredit Anda tetap terjaga dan tidak dikenai denda, bisa diusahakan dulu untuk membayar hari ini? / {3CChasing1} / {3CChasing2}"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Oh, boleh tahu kenapa kewajiban belum dibayarkan sampai saat ini?  / Um, ada kendala apa ya yang menghambat pembayarannya? / Kalau boleh tahu, ada kendala apa ya?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Oh, tapi tagihannya sudah lewat dari jatuh tempo. Semakin pembayarannya ditunda, dendanya juga akan semakin besar. Untuk menghindari hal ini, kami sarankan pembayaran dilakukan secepatnya. Apakah bisa hari ini Bu? / Jadi, supaya dendanya tidak terus bertambah, apa bisa untuk tagihannya dibayarkan hari ini? / {Convincer}"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Oh, tapi tagihannya sudah lewat dari jatuh tempo. Semakin pembayarannya ditunda, dendanya juga akan semakin besar. Untuk menghindari hal ini, kami sarankan pembayaran dilakukan secepatnya. Apakah bisa hari ini Pak? / Jadi, supaya dendanya tidak terus bertambah, apa bisa untuk tagihannya dibayarkan hari ini? / {Convincer}"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Oh, tapi tagihannya sudah lewat dari jatuh tempo. Semakin pembayarannya ditunda, dendanya juga akan semakin besar. Untuk menghindari hal tersebut, kami sarankan pembayaran dilakukan secepatnya. [Apa bisa dibayarkan hari ini {SALUTATION_2}] / {Convincer_1}  / {Convincer_2} "
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Oh, tapi tagihannya sudah lewat {NO_OF_DPD} hari dari jatuh tempo. Semakin pembayarannya ditunda, dendanya akan terus bertambah dan akun anda juga tidak dapat digunakan. Supaya tidak semakin mempersulit keadaan Anda, apa bisa tagihannya dibayarkan hari ini? / {CONV2_C1} / {CONV2_C2}"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Oh, uhm tapi pembayarannya sudah jatuh tempo hari ini. Jika pembayarannya terlambat, nanti beresiko terkena biaya tambahan. Apa bisa dicoba dulu untuk membayar segera hari ini? / {3CChasing1} / {3CChasing2}"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Pembayaran yang terlambat seperti ini akan berpengaruh buruk terhadap catatan kredit Anda, sehingga kedepannya akan sulit untuk mendapatkan kenaikan limit. Apa bisa diusahakan dulu, mungkin bisa dengan bantuan teman atau saudara, untuk membayarkan pinjamannya hari ini? / {CONV3_C1} / {CONV3_C2}"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Saya ingin konfirmasi kembali terkait tagihan yang sudah melewati jatuh tempo. Sebelumnya Anda sudah ada janji pembayaran dengan kami tapi saya cek hingga saat ini masih belum dibayarkan, mohon realisasikan pembayarannya di hari ini bisa ya? / Janji bayar anda sebelumnya sudah masuk ke catatan sistem, tapi sampai saat ini masih belum kami terima. Mohon pastikan pembayarannya bisa ya dilakukan hari ini? / Apa bisa kewajiban pembayaran dibayarkan hari ini?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Saya mengerti kondisinya, tapi agar biaya dendanya tidak semakin besar, apa bisa diusahakan dulu untuk melunasi tagihannya yang sudah lewat dari jatuh tempo hari ini? / {CONV_C1} / {CONV_C2}"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Saya mengerti, tapi jika tidak segera dibayarkan, dendanya akan semakin besar, jadi bisa ya diusahakan dulu mencari dananya supaya tagihannya bisa dilunasi hari ini? / {CONV_C1} / {CONV_C2}"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Saya mengerti, tapi kalau tidak dibayar hari ini, nanti catatan kredit Anda akan jadi kurang baik dan ke depannya akan menyulitkan pengajuan kredit lain. {QL2} / Supaya terhindar dari denda dan catatan kredit anda jadi kurang baik, sebaiknya diusahakan untuk melunasi tagihannya hari ini ya? / Kalau tagihannya dibayarkan hari ini, bisa ya?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Saya mengerti, tapi kalau tidak segera dibayarkan, anda bisa dikenakan denda keterlambatan, jadi apa bisa diusahakan untuk mencari dana terlebih dahulu agar dapat membayar tagihannya hari ini? / Supaya terhindar dari denda dan catatan kredit anda jadi kurang baik, sebaiknya diusahakan untuk melunasi tagihannya hari ini ya? / Kalau tagihannya dibayarkan hari ini, bisa ya?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Saya mengerti, tapi saya harap agar tagihannya dapat segera dilunasi hari ini, jika terus ditunda maka denda nya pun akan semakin tinggi nantinya dan mempersulit keuangan anda. Bisa ya, coba untuk dibayarkan hari ini? / {CONV_C1} / {CONV_C2}"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Sekali lagi, mohon dipahami bahwa tagihan harus dibayar dalam dua hari ke depan atau kalau tidak penagihan akan kami tagihkan menggunakan pihak ketiga. Bagaimana, bisa ya? / Tolong bayar tagihannya dalam 2 hari ke depan untuk menghindari pemblokiran permanen, apakah bisa? / Apa bisa tagihannya dibayarkan dalam dua hari ke depan?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Sekali lagi, nomor ini sudah diblokir.Lakukan pembayaran dulu agar nomor bisa otomatis aktif dan ingin digunakan kembali.Bisa ya, tagihannya dibayar dalam 2 hari ke depan? / Silahkan dibayarkan dalam dua hari ke depan agar nomor ini bisa tetap digunakan, bisa ya? / Jadi bisa ya tagihannya dibayarkan dalam dua hari ke depan?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Tapi kalau tidak segera dibayarkan, akan jadi tidak baik untuk catatan kredit Anda, dan kedepannya Anda akan lebih sulit untuk mengajukan kenaikan limit. Apa bisa diusahakan dulu, untuk meminta tolong teman atau saudara dan membayar pinjamannya hari ini? / {CONV3_C1} / {CONV3_C2}"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Uh iya saya mengerti sikonnya, namun agar tidak semakin mempersulit keadaannya dengan biaya denda yang semakin besar, sebaiknya diusahakan untuk melunasi tagihannya yang sudah lewat dari jatuh tempo hari ini, bisa ya? / {CONV_C1} / {CONV_C2}"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Uhm jika begitu, kami sarankan bisa juga melakukan pembayaran melalui m-banking supaya terhindar dari denda keterlambatan. Kredivo juga menerima pembayaran lewat e-commerce seperti Tokopedia atau Bukalapak. Apa bisa melakukan pembayarannya hari ini? / Supaya terhindar dari denda dan catatan kredit anda jadi kurang baik, sebaiknya diusahakan untuk melunasi tagihannya hari ini ya? / Kalau tagihannya dibayarkan hari ini, bisa ya?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Uhm, tapi ini tagihannya sudah lewat dari jatuh tempo loh. Semakin pembayarannya ditunda, dendanya juga akan terus bertambah. Supaya tidak mempersulit keadaan Anda, apa bisa tagihannya dibayarkan hari ini? / {CONV2_C1} / {CONV2_C2}"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Um iya, namun jika tidak segera dilunasi, dendanya akan semakin besar dan kami akan terus menghubungi anda. Jadi apa tagihannya bisa segera dibayarkan hari ini? / {CONV_C1} / {CONV_C2}"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Um iya, namun kalau tidak segera dibayar, Anda beresiko terkena biaya denda dan akan berpengaruh ke catatan kredit Anda nanti. {QL3} / Supaya terhindar dari denda dan catatan kredit anda jadi kurang baik, sebaiknya diusahakan untuk melunasi tagihannya hari ini ya? / Kalau tagihannya dibayarkan hari ini, bisa ya?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Um iya, tapi tagihannya sudah lewat dari jatuh tempo dan jika tidak segera dilunasi, dendanya akan semakin besar. Saya sarankan untuk membayar tagihannya melalui m-banking atau e-commerce agar lebih mudah. Jadi apa kira kira bisa diusahakan untuk membayar hari ini? / {CONV_C1} / {CONV_C2}"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Um, namun jika terus ditunda dendanya akan semakin besar. Jadi saran saya usahakan untuk mencari dana talangan dulu agar tagihannya bisa segera dilunasi hari ini, bisa ya? / {CONV_C1} / {CONV_C2}"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Um, saya mengerti situasinya, tapi saya sarankan agar tetap diusahakan untuk melunasi tagihannya hari ini agar dendanya tidak semakin tinggi. Jadi apa kira kira bisa diusahakan untuk membayar hari ini? / {CONV_C1} / {CONV_C2}"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Um, ya saya paham, namun tagihannya sudah lewat dari jatuh tempo dan akan terus dikenakan denda setiap harinya. Agar dendanya tidak semakin tinggi apa bisa diusahakan untuk segera membayar tagihannya dulu hari ini? / {CONV_C1} / {CONV_C2}"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Um.. jadi, saya menelepon, hanya untuk mengingatkan mengenai tagihan anda di Gopay Pinjam Modal, yang akan jatuh tempo pada [{Due_date} , sebesar {X_Nominal_AMOUNT}.] Kami harap Anda dapat membayarkan tagihan Anda tepat waktu. Apakah ada rencana pembayaran dalam waktu dekat? / [Tagihannya apa akan dilakukan pembayaran dalam waktu dekat?] / [Untuk tagihannya, apakah berkenan dibayarkan dalam waktu dekat?]"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "Um.. jadi, saya menelepon, hanya untuk mengingatkan mengenai tagihan anda di Toko Kapital, yang akan jatuh tempo pada [{Due_date} , sebesar {X_Nominal_AMOUNT}.] Kami harap Anda dapat membayarkan tagihan Anda tepat waktu. Apakah ada rencana pembayaran dalam waktu dekat? / [Tagihannya apa akan dilakukan pembayaran dalam waktu dekat?] / [Untuk tagihannya, apakah berkenan dibayarkan dalam waktu dekat?]"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "[Apa betul dengan {SALUTATION} {CUSTOMER_PERSON_NAME} yang berbicara?] / [Ini dengan {SALUTATION} {CUSTOMER_PERSON_NAME} , betul ya?]"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "[Apa betul dengan {SALUTATION} {CUSTOMER_PERSON_NAME}? yang berbicara?.] / [Ini dengan {SALUTATION} {CUSTOMER_PERSON_NAME},?][betul ya?]"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "[Apa betul dengan {SALUTATION} {CUSTOMER_PERSON_NAME}? yang berbicara?.] / [Ini dengan {SALUTATION} {CUSTOMER_PERSON_NAME}? betul ya?]"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "[Baik?! pembayaran akan dilakukan melalui metode apa? Transfer, alfamart atau ATM?]"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "[Halo, Saya Helen dari Gopay Pinjam Modal. Saya ingin berbicara dengan Bapak {Name_PERSON_NAME}, apa bisa?] / [Ini dengan Bapak {Name_PERSON_NAME}, betul ya?] / [Apa betul dengan Bapak {Name_PERSON_NAME} yang berbicara?]"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "[Halo, Saya Helen dari Gopay Pinjam Modal. Saya ingin berbicara dengan Ibu {Name_PERSON_NAME}, apa bisa?] / [Ini dengan Ibu {Name_PERSON_NAME}, betul ya?] / [Apa betul dengan Ibu {Name_PERSON_NAME} yang berbicara?]"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "[Halo, Saya Helen dari Gopay Pinjam Modal. Saya ingin berbicara dengan {Name_PERSON_NAME}, apa bisa?] / [Ini dengan {Name_PERSON_NAME}, betul ya?] / [Apa betul dengan {Name_PERSON_NAME} yang berbicara?]"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "[Halo, Saya Helen dari TokoKapital. Saya ingin berbicara dengan Bapak {Name_PERSON_NAME}, apa bisa?] / [Ini dengan Bapak {Name_PERSON_NAME}, betul ya?] / [Apa betul dengan Bapak {Name_PERSON_NAME} yang berbicara?]"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "[Halo, Saya Helen dari TokoKapital. Saya ingin berbicara dengan Ibu {Name_PERSON_NAME}, apa bisa?] / [Ini dengan Ibu {Name_PERSON_NAME}, betul ya?] / [Apa betul dengan Ibu {Name_PERSON_NAME} yang berbicara?]"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "[Halo, Saya Helen dari TokoKapital. Saya ingin berbicara dengan {Name_PERSON_NAME}, apa bisa?] / [Ini dengan {Name_PERSON_NAME}, betul ya?] / [Apa betul dengan {Name_PERSON_NAME} yang berbicara?]"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "{1stChasing} / {2ndChasing}"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "{Greeting_Bahasa} saya Indira dari IM3. [Saat ini ada tagihan sebesar {Unpaid_AMOUNT},!] yang belum dibayarkan dan harus segera dilunasi. Apa bisa tagihan Pascabayar untuk nomor dengan 4 digit terakhir [{Digits_NUMBER_PHONE},!], dilunasi hari ini? / Untuk tagihannya, [sebesar {Unpaid_AMOUNT},?], bisa ya kami terima pembayarannya hari ini? / Mmm, jadi, bisa kan tagihannya dibayarkan hari ini?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "{Greeting_Bahasa} saya Indira dari IM3. [Saat ini tagihan sebesar {Unpaid_AMOUNT},!] yang belum dibayarkan dan nomor ini sudah terblokir. Untuk membukanya, apa bisa tagihan Pascabayar untuk nomor dengan 4 digit terakhir [{Digits_NUMBER_PHONE},!], dilunasi hari ini? / Untuk tagihannya, [sebesar {Unpaid_AMOUNT},?], bisa ya kami terima pembayarannya hari ini? / Mmm, jadi, bisa kan tagihannya dibayarkan hari ini?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "{Greeting_Bahasa} saya Indira dari IM3.Saat ini ada tagihan sebesar [{Unpaid_AMOUNT},!] yang belum dibayarkan dan sudah jatuh tempo. Apa bisa tagihan Pascabayar untuk nomor dengan 4 digit terakhir [{Digits_NUMBER_PHONE},!], dibayarkan segera? / Untuk tagihannya, sebesar [{Unpaid_AMOUNT},!], bisa ya kami terima pembayarannya segera? / Mmm, jadi, bisa kan tagihannya dibayarkan segera?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "{Greeting_Bahasa} saya Indira dari IM3Sampai dengan hari ini [tagihan Anda sebesar {Unpaid_AMOUNT},!] sudah jatuh tempo lebih dari 30 hari. Nomor akan kami nonaktifkan jika tidak dilunasi. Kami tunggu sampai hari ini yah untuk pelunasan tagihan Pascabayar untuk nomor dengan 4 digit terakhir [{Digits_NUMBER_PHONE},!] dilunasi hari ini? / Untuk tagihannya, [sebesar {Unpaid_AMOUNT},?], bisa ya kami terima pembayarannya hari ini? / Mmm, jadi, bisa kan tagihannya dibayarkan hari ini?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "{Greetings} Saya Alfa dari blu by BCA Digital. [Apakah benar ini dengan {SALUTATION} {CUSTOMER_PERSON_NAME}?] / Apakah saya berbicara dengan [{SALUTATION} {CUSTOMER_PERSON_NAME}?] / Benar ini dengan [{SALUTATION} {CUSTOMER_PERSON_NAME}?]"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "{Greetings} Saya Lina dari blu BCA Digital. Apakah saya berbicara dengan {SALUTATION} [{CUSTOMER_PERSON_NAME}?] / Jadi, apa saya sedang terhubung dengan {SALUTATION} [{CUSTOMER_PERSON_NAME}?] / Apa saya berbicara dengan {SALUTATION} [{CUSTOMER_PERSON_NAME}?]"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "{OP_C0} , Jadi, saya lihat tagihan Anda [sebesar {BALANCE_AMOUNT},] belum juga dibayarkan dan sudah terlambat selama [{NO_OF_DPD} hari.] Apa kira-kira bisa dibayarkan hari ini?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "{OP_C0} , Saya menelpon karena sampai saat ini kami belum juga menerima pembayaran untuk tagihannya [sebesar {BALANCE_AMOUNT}, yang sudah lewat,. {NO_OF_DPD} hari] dari jatuh tempo. Bisa dibayarkan secepatnya hari ini?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "{OP_C0} ,Pembayaran Anda untuk tagihan [sebesar {BALANCE_AMOUNT},] belum juga masuk dan sudah lewat [{NO_OF_DPD} hari] dari jatuh tempo. Apa bisa jika pembayarannya dilakukan hari ini?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "{OP_C0} Jadi begini, pembayaran Anda [sebesar {BALANCE_AMOUNT}?] sudah jatuh tempo. Apa kira-kira bisa dibayarkan hari ini?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "{OP_C0} Jadi saya menelepon untuk memberitahu, ada tagihan Anda sebesar [{BALANCE_AMOUNT}?] yang belum dibayar dan sudah terlambat [{NO_OF_DPD} hari.] Apa kira-kira bisa dibayarkan hari ini?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "{OP_C0} Saya ingin menginfokan ada tagihan Anda sebesar [{BALANCE_AMOUNT}?] yang sudah jatuh tempo. Apa bisa dibayarkan hari ini?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "{OP_C0} Saya mau mengingatkan bahwa pembayaran Anda sejumlah [{BALANCE_AMOUNT}?] sudah jatuh tempo. Apa kira-kira bisa dibayarkan hari ini juga?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "{OP_C0} Saya menelpon karena Anda memiliki tagihan yang belum dibayar sebesar [{BALANCE_AMOUNT}?] yang sudah lewat [{NO_OF_DPD} hari] dari jatuh tempo. Bisa dibayarkan secepatnya hari ini?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "{OP_C0} Tagihan Anda sebesar [{BALANCE_AMOUNT}?] sudah jatuh tempo. Bisa dibayarkan sesegera mungkin hari ini?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "{OP_C0} Um, Anda ada tagihan yang sudah jatuh tempo hari ini sebesar [{BALANCE_AMOUNT}.] Bisa dibayarkan secepatnya hari ini?"
+    },
+    {
+      "count": 1,
+      "pct": 0.03,
+      "role": "inform",
+      "text": "{OP_C0} ingin mengingatkan bahwa Anda memiliki tagihan sebesar [{BALANCE_AMOUNT}?] yang belum dibayar dan sudah lewat [{NO_OF_DPD} hari] dari jatuh tempo. Apa bisa dibayarkan hari ini?"
     }
   ],
   "stage_deltas": [
@@ -56335,6 +56335,14 @@
       ]
     },
     {
+      "category": "Date Collected",
+      "count": 4,
+      "pct": 0.121,
+      "values": [
+        ""
+      ]
+    },
+    {
       "category": "Drop Off",
       "count": 4,
       "pct": 0.121,
@@ -56344,47 +56352,6 @@
         "Collect Payment Method",
         "Closing",
         "Schedulling Replacement"
-      ]
-    },
-    {
-      "category": "Date Collected",
-      "count": 4,
-      "pct": 0.121,
-      "values": [
-        ""
-      ]
-    },
-    {
-      "category": "KREDIVO: Loan Status",
-      "count": 3,
-      "pct": 0.091,
-      "values": [
-        "Deny Loan",
-        "Loan is Mine"
-      ]
-    },
-    {
-      "category": "Payment Date",
-      "count": 3,
-      "pct": 0.091,
-      "values": [
-        ""
-      ]
-    },
-    {
-      "category": "Hang-Up",
-      "count": 3,
-      "pct": 0.091,
-      "values": [
-        "Greeting",
-        "Inform Payment",
-        "Collect Reason",
-        "Repayment Time",
-        "Closing",
-        "Payment Method",
-        "Convincer 1",
-        "Convincer 2",
-        "KB Closing"
       ]
     },
     {
@@ -56405,6 +56372,39 @@
       ]
     },
     {
+      "category": "Hang-Up",
+      "count": 3,
+      "pct": 0.091,
+      "values": [
+        "Greeting",
+        "Inform Payment",
+        "Collect Reason",
+        "Repayment Time",
+        "Closing",
+        "Payment Method",
+        "Convincer 1",
+        "Convincer 2",
+        "KB Closing"
+      ]
+    },
+    {
+      "category": "KREDIVO: Loan Status",
+      "count": 3,
+      "pct": 0.091,
+      "values": [
+        "Deny Loan",
+        "Loan is Mine"
+      ]
+    },
+    {
+      "category": "Payment Date",
+      "count": 3,
+      "pct": 0.091,
+      "values": [
+        ""
+      ]
+    },
+    {
       "category": "Mention Payment",
       "count": 2,
       "pct": 0.061,
@@ -56414,20 +56414,20 @@
       ]
     },
     {
-      "category": "PTP",
-      "count": 2,
-      "pct": 0.061,
-      "values": [
-        ""
-      ]
-    },
-    {
       "category": "Other Inquiries",
       "count": 2,
       "pct": 0.061,
       "values": [
         "Out of Scope",
         "Accelerated Repayment"
+      ]
+    },
+    {
+      "category": "PTP",
+      "count": 2,
+      "pct": 0.061,
+      "values": [
+        ""
       ]
     },
     {
@@ -56441,33 +56441,61 @@
       ]
     },
     {
-      "category": "Payment mentioned",
+      "category": "BNI - Call Status",
       "count": 1,
       "pct": 0.03,
       "values": [
-        ""
+        "Busy",
+        "Will Call CS",
+        "Follow Up",
+        "Already Called",
+        "Call Back"
       ]
     },
     {
-      "category": "KB",
+      "category": "BNI - Reason",
       "count": 1,
       "pct": 0.03,
       "values": [
-        "Waive",
-        "Are You A Bot",
-        "Stop Calling",
-        "Busy",
-        "Voicemail",
-        "Unfortunate Situation",
-        "Different Amount",
-        "Installment Request",
-        "Wrong Number",
-        "Failed to Pay",
-        "Already Called",
-        "Family/Friend",
-        "Already Use Extension Feature",
-        "Deny Loan",
-        "Are you bot"
+        "Still Considering",
+        "Not Needed",
+        "Already Use Another",
+        "Other Reason",
+        "Not Use BNI"
+      ]
+    },
+    {
+      "category": "Customer Category",
+      "count": 1,
+      "pct": 0.03,
+      "values": [
+        "SU",
+        "HB",
+        "SB",
+        "OK"
+      ]
+    },
+    {
+      "category": "Deliver Status",
+      "count": 1,
+      "pct": 0.03,
+      "values": [
+        "Will deliver",
+        "Wont deliver",
+        "Unclassified"
+      ]
+    },
+    {
+      "category": "Hang Up Status",
+      "count": 1,
+      "pct": 0.03,
+      "values": [
+        "Greeting",
+        "Pitch",
+        "Convincer",
+        "Closing",
+        "Ask Reason",
+        "Ask Permission"
       ]
     },
     {
@@ -56493,31 +56521,33 @@
       ]
     },
     {
-      "category": "Customer Category",
+      "category": "KB",
       "count": 1,
       "pct": 0.03,
       "values": [
-        "SU",
-        "HB",
-        "SB",
-        "OK"
+        "Waive",
+        "Are You A Bot",
+        "Stop Calling",
+        "Busy",
+        "Voicemail",
+        "Unfortunate Situation",
+        "Different Amount",
+        "Installment Request",
+        "Wrong Number",
+        "Failed to Pay",
+        "Already Called",
+        "Family/Friend",
+        "Already Use Extension Feature",
+        "Deny Loan",
+        "Are you bot"
       ]
     },
     {
-      "category": "Time Collected",
+      "category": "Payment mentioned",
       "count": 1,
       "pct": 0.03,
       "values": [
         ""
-      ]
-    },
-    {
-      "category": "User",
-      "count": 1,
-      "pct": 0.03,
-      "values": [
-        "Correct Person",
-        "Wrong Person"
       ]
     },
     {
@@ -56527,19 +56557,6 @@
       "values": [
         "Agree",
         "Disagree"
-      ]
-    },
-    {
-      "category": "Hang Up Status",
-      "count": 1,
-      "pct": 0.03,
-      "values": [
-        "Greeting",
-        "Pitch",
-        "Convincer",
-        "Closing",
-        "Ask Reason",
-        "Ask Permission"
       ]
     },
     {
@@ -56557,30 +56574,6 @@
       ]
     },
     {
-      "category": "BNI - Reason",
-      "count": 1,
-      "pct": 0.03,
-      "values": [
-        "Still Considering",
-        "Not Needed",
-        "Already Use Another",
-        "Other Reason",
-        "Not Use BNI"
-      ]
-    },
-    {
-      "category": "BNI - Call Status",
-      "count": 1,
-      "pct": 0.03,
-      "values": [
-        "Busy",
-        "Will Call CS",
-        "Follow Up",
-        "Already Called",
-        "Call Back"
-      ]
-    },
-    {
       "category": "Test",
       "count": 1,
       "pct": 0.03,
@@ -56592,13 +56585,20 @@
       ]
     },
     {
-      "category": "Deliver Status",
+      "category": "Time Collected",
       "count": 1,
       "pct": 0.03,
       "values": [
-        "Will deliver",
-        "Wont deliver",
-        "Unclassified"
+        ""
+      ]
+    },
+    {
+      "category": "User",
+      "count": 1,
+      "pct": 0.03,
+      "values": [
+        "Correct Person",
+        "Wrong Person"
       ]
     }
   ]

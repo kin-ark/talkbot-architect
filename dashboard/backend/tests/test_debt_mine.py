@@ -41,6 +41,23 @@ def test_mine_and_aggregate_shape():
         assert isinstance(it["count"], int) and 0.0 <= it["pct"] <= 1.0
 
 
+def test_aggregate_is_deterministic():
+    # Synthetic bots with tie-groups (equal counts, distinct keys) exercise the
+    # sort tie-break; reversing input order must not change the output.
+    def bot(names):
+        return {"stage": "dpd0",
+                "intents": [{"name": n, "keywords": [], "user_responses": [], "is_user": True}
+                            for n in names],
+                "kbs": [{"title": n, "intent_names": [], "answers": [], "multi_round": False,
+                         "is_user": True} for n in names],
+                "scripts": [{"role": "inform", "text": t} for t in names],
+                "engines": [{"kind": "conditional", "branches": [n]} for n in names],
+                "tags": [], "categories": [1]}
+    a = debt_mine.aggregate([bot(["z", "y", "x"]), bot(["m", "n"])])
+    b = debt_mine.aggregate([bot(["m", "n"]), bot(["z", "y", "x"])])  # reversed
+    assert json.dumps(a, sort_keys=True) == json.dumps(b, sort_keys=True)
+
+
 def test_committed_corpus_shape_and_no_pii():
     p = Path(__file__).resolve().parents[1] / "playbooks" / "debt_collection.corpus.json"
     if not p.exists():
@@ -51,7 +68,10 @@ def test_committed_corpus_shape_and_no_pii():
                 "flow_engines", "stage_deltas", "objection_map", "tag_patterns"):
         assert key in corpus
     assert corpus["meta"]["bots_parsed"] >= 25   # most of the 33 parsed
-    # PII gate: no long digit-run survives in any script/answer text
+    # PII gate: no raw amount/number/date/email survives (mirrors the full scrub contract)
     import re
     blob = json.dumps(corpus, ensure_ascii=False)
     assert not re.search(r"\d{6,}", blob), "un-scrubbed long number leaked into corpus json"
+    assert not re.search(r"Rp\.?\s?\d", blob, re.IGNORECASE), "un-scrubbed Rp amount leaked"
+    assert not re.search(r"[\w.+-]+@[\w-]+\.[\w.-]+", blob), "email leaked"
+    assert not re.search(r"\b\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b", blob), "date leaked"
