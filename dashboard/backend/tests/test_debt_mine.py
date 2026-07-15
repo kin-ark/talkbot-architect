@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 from analysis import debt_mine
@@ -38,3 +39,19 @@ def test_mine_and_aggregate_shape():
     # counts present + numeric
     for it in corpus["intents"]:
         assert isinstance(it["count"], int) and 0.0 <= it["pct"] <= 1.0
+
+
+def test_committed_corpus_shape_and_no_pii():
+    p = Path(__file__).resolve().parents[1] / "playbooks" / "debt_collection.corpus.json"
+    if not p.exists():
+        import pytest
+        pytest.skip("corpus json not generated in this environment")
+    corpus = json.loads(p.read_text(encoding="utf-8"))
+    for key in ("meta", "intents", "kbs", "script_archetypes",
+                "flow_engines", "stage_deltas", "objection_map", "tag_patterns"):
+        assert key in corpus
+    assert corpus["meta"]["bots_parsed"] >= 25   # most of the 33 parsed
+    # PII gate: no long digit-run survives in any script/answer text
+    import re
+    blob = json.dumps(corpus, ensure_ascii=False)
+    assert not re.search(r"\d{6,}", blob), "un-scrubbed long number leaked into corpus json"
