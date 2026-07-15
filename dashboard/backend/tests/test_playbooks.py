@@ -21,3 +21,16 @@ def test_get_playbook_rejects_traversal():
     assert playbooks.get_playbook("../main") is None
     assert playbooks.get_playbook("../../etc/passwd") is None
     assert playbooks.get_playbook("sub/dir") is None
+
+
+def test_debt_playbook_covers_all_stages():
+    text = playbooks.get_playbook("debt_collection")
+    for stage in ("Predue", "DPD0", "DPD1-5", "DPD6-30", "Overdue 90", "PTP"):
+        assert stage in text, f"playbook missing stage {stage}"
+    # quantified: references corpus prevalence
+    assert "of 3" in text or "%" in text or "★" in text
+
+
+def test_debt_playbook_references_corpus_json():
+    text = playbooks.get_playbook("debt_collection")
+    assert "debt_collection.corpus.json" in text
