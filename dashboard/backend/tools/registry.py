@@ -38,6 +38,28 @@ _SPECS = [
              {"type": "object",
               "properties": {"vertical": {"type": "string"}},
               "required": ["vertical"]}),
+    ToolSpec("list_samples",
+             "List available starter-bot sample manifests (id, title, description). "
+             "Descriptions name the debt-collection STAGE (Predue/DPD0/DPD1-5/DPD6-30/"
+             "Overdue90/PTP). Use this to pick the closest sample to seed a new bot.",
+             {"type": "object", "properties": {}}),
+    ToolSpec("get_sample",
+             "Return a sample's FULL manifest YAML. ADAPT it (brand, customer amounts/dates, "
+             "stage tone) and pass it to `build` — prefer this over composing scaffold_bot "
+             "from scratch whenever a sample matches the requested vertical/stage.",
+             {"type": "object", "properties": {"sample_id": {"type": "string"}},
+              "required": ["sample_id"]}),
+    ToolSpec("get_debt_corpus",
+             "Query the debt-collection corpus (real-frequency, prevalence-ranked). Returns up "
+             "to top_n (<=30) ranked items for a section, to enrich/verify a scaffold.",
+             {"type": "object",
+              "properties": {
+                  "section": {"type": "string",
+                              "enum": ["intents", "kbs", "script_archetypes", "flow_engines",
+                                       "stage_deltas", "objection_map", "tag_patterns"]},
+                  "stage": {"type": "string"},
+                  "top_n": {"type": "integer"}},
+              "required": ["section"]}),
     ToolSpec("scaffold_bot",
              "Create a brand-new dialogue from typed parameters (NOT raw YAML). "
              "Proposes a full new doc (dry-run). Use after the user confirms an outline. "
@@ -439,6 +461,21 @@ def dispatch(name: str, args: dict, data: dict) -> dict:
         return {"result": agents.get_schema(), "proposal": None}
     if name == "get_playbook":
         return {"result": agents.get_playbook(args["vertical"]), "proposal": None}
+    if name == "list_samples":
+        import samples
+        return {"result": samples.list_samples(), "proposal": None}
+    if name == "get_sample":
+        import samples
+        sid = args["sample_id"]
+        man = samples.load_manifest(sid)
+        if man is None:
+            return {"result": {"error": f"unknown sample id: {sid}",
+                               "available": [s["id"] for s in samples.list_samples()]},
+                    "proposal": None}
+        return {"result": {"id": sid, "manifest_yaml": man}, "proposal": None}
+    if name == "get_debt_corpus":
+        return {"result": agents.get_debt_corpus(
+            args["section"], args.get("stage"), args.get("top_n", 15)), "proposal": None}
     if name == "add_component":
         import yaml
         op = {"op": "add-component", "name": args["name"]}
