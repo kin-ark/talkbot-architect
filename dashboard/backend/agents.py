@@ -13,18 +13,18 @@ import hashlib
 import json
 import tempfile
 from pathlib import Path
-from pathlib import Path as _Path
 
 from paths import add_skill_paths, skills_dir
 
 add_skill_paths()
 
-_DEBT_CORPUS_PATH = _Path(__file__).resolve().parent / "playbooks" / "debt_collection.corpus.json"
+_DEBT_CORPUS_PATH = Path(__file__).resolve().parent / "playbooks" / "debt_collection.corpus.json"
 _DEBT_CORPUS_SECTIONS = (
     "intents", "kbs", "script_archetypes", "flow_engines",
     "stage_deltas", "objection_map", "tag_patterns",
 )
 _DEBT_CORPUS_CAP = 30
+_debt_corpus_cache: dict = {}   # {(path, mtime): parsed} — invalidated when the file changes
 
 from wizcheck.parser import parse_dict          # noqa: E402
 from wizcheck.checks import run_all_checks      # noqa: E402
@@ -300,6 +300,30 @@ def get_playbook(vertical: str) -> dict:
     }
 
 
+def _load_debt_corpus() -> dict | None:
+    """Load + cache the committed corpus JSON, invalidating on file mtime change.
+
+    Reads the module global _DEBT_CORPUS_PATH at call time (so tests may monkeypatch it).
+    Missing or corrupt file → None.
+    """
+    p = _DEBT_CORPUS_PATH
+    if not p.exists():
+        return None
+    try:
+        key = (str(p), p.stat().st_mtime)
+    except OSError:
+        return None
+    cached = _debt_corpus_cache.get(key)
+    if cached is None:
+        try:
+            cached = json.loads(p.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return None
+        _debt_corpus_cache.clear()   # bound the cache to a single (path, mtime)
+        _debt_corpus_cache[key] = cached
+    return cached
+
+
 def get_debt_corpus(section: str, stage: str | None = None, top_n: int = 15) -> dict:
     """Return a bounded, ranked slice of the committed debt corpus.
 
@@ -308,11 +332,8 @@ def get_debt_corpus(section: str, stage: str | None = None, top_n: int = 15) -> 
     """
     if section not in _DEBT_CORPUS_SECTIONS:
         return {"error": f"unknown section {section!r}", "sections": list(_DEBT_CORPUS_SECTIONS)}
-    if not _DEBT_CORPUS_PATH.exists():
-        return {"found": False}
-    try:
-        corpus = json.loads(_DEBT_CORPUS_PATH.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
+    corpus = _load_debt_corpus()
+    if corpus is None:
         return {"found": False}
     try:
         n = int(top_n)
