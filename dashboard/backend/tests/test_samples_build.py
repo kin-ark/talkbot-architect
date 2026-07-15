@@ -43,8 +43,8 @@ def test_debt_preset_is_mature():
     assert len(comps) >= 6, f"expected >=6 components, got {len(comps)}"
 
     kb_titles = {kb.get("kdTitle") for kb in _raw_list(data.get("BizKnowledgeInfo"))}
-    expected_kbs = {"KBB3 Forgot to Pay", "KBB8 Penalty Non-Payment",
-                    "KBB9 Special Circumstances", "How to Pay"}
+    expected_kbs = {"KBB10 How to Pay", "KBB4 Give Me More Time",
+                    "KBB11 Already Paid", "KBB7 Waive Discount"}
     assert expected_kbs <= kb_titles, f"missing business KBs: {expected_kbs - kb_titles}"
 
     node_type_ints = set()
@@ -70,3 +70,21 @@ def test_registry_files_exist_and_no_orphans():
     on_disk = {p.name for p in sdir.glob("debt_*.yaml")}
     orphans = on_disk - referenced
     assert not orphans, f"orphan sample files not in registry: {orphans}"
+
+
+def test_stage_samples_meet_corpus_bar():
+    """Every per-stage debt sample must be corpus-mature (naming-agnostic structural bar)."""
+    import yaml
+
+    stage_ids = ["debt_predue_d1", "debt_dpd0", "debt_dpd1_5",
+                 "debt_dpd6_30", "debt_overdue_90", "debt_ptp_reminder"]
+    for sid in stage_ids:
+        man = yaml.safe_load(samples.load_manifest(sid))
+        intents = man.get("custom_intents") or []
+        kbs = man.get("knowledge_bases") or []
+        mr = [k for k in kbs if k.get("multi_round")]
+        tags = man.get("tags") or []
+        assert len(intents) >= 12, f"{sid}: only {len(intents)} custom_intents (< corpus bar 12)"
+        assert len(kbs) >= 10, f"{sid}: only {len(kbs)} KBs (< corpus bar 10)"
+        assert mr, f"{sid}: no multi_round KB"
+        assert tags, f"{sid}: no disposition tags"
