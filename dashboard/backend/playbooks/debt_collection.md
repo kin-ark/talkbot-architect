@@ -4,6 +4,12 @@ Mined from 33 real deployed WIZ.AI debt-collection bots (Indonesian). All script
 **verbatim from the corpus** with real PII/amounts/dates replaced by `{placeholders}`. This document is
 domain knowledge for an AI bot-builder that emits wiz-builder manifests.
 
+> **Machine-readable companion:** `debt_collection.corpus.json` (same directory) is the structured,
+> prevalence-ranked source this prose is derived from — every intent, KB, script archetype, flow engine,
+> stage delta, objection→handler map, and disposition-tag pattern with a `count`/`pct` across the 33 bots.
+> Re-mined + re-validated 2026-07 via `analysis/debt_mine.py`; counts below match that JSON. Prefer the
+> JSON for programmatic ranking; use this prose for authoring guidance.
+
 Corpus families: GoPayLater / GoPayLaterCicil, GoPayPinjam / GoPayPinjam Modal, TokoKapital,
 Tiktok Paylater, Kredivo, Indosat/IOH HiFi (telco), PT Clipan Finance, Orico Balimor Finance (auto),
 BCA Digital "blu"/bluExtracash, BNI credit card (acquisition). Two shapes:
@@ -163,10 +169,12 @@ Keywords/user_responses are **verbatim IDN**. Note WIZ intent convention: user i
 - **Forget to pay** (17) — kw `lupa | kelupaan`; ur: "aduh saya kelupaan", "oh iya saya lupa mbak maaf".
 - **Natural Disaster** (9) — kw `banjir | gempa | kebakaran | longsor | bencana`; ur: "abis banjir rusak semua", "ada gempa bumi jadi saya kehilangan rumah".
 
-**Recur in ≈every bot (build these first):** Already paid, Bank Account/VA, Extended fee, In Prison,
-Hospitalized, Already contacted, Stop calling me, Will call CS/Hotline, Who are you looking for?, Not Sure,
-Waive, Failed to pay, Can I pay in installments, Different Amount, Can you give me some more time,
-Interest too high, Will report to police.
+**Recur in ≈every bot (build these first, prevalence-ranked from `debt_collection.corpus.json`):**
+Already paid (32/33), Bank Account/VA (32), Extended fee (32), In Prison (32), Hospitalized (32),
+Already contacted (32), Stop calling me (32), Will call CS/Hotline (32), Who are you looking for? (32),
+Not Sure (32), Repeat Amount (32), Waive (31), Failed to pay (31), Can I pay in installments (31),
+Different Amount (31), Can you give me some more time (31), Interest too high (31),
+Will report to police (31).
 
 **Telco (Indosat/IOH) & acquisition (BNI) add domain intents:** Move from Post-paid to Pre-paid, Change
 Package, How to Activate Number, Never/No Longer Use Indosat HiFi, Package Info, Credit Limit, Requirements
