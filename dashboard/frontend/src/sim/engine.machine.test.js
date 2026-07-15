@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { start, choose, currentNode } from './engine';
+import { start, choose, currentNode, renderText } from './engine';
 
 // --- tiny summary builders ---
 const talk = (uuid, text, branches, data = {}) => ({ uuid, label: uuid, node_type: 'talk', text, branches, data });
@@ -166,5 +166,26 @@ describe('engine round-2 fixes', () => {
     const summary = { components: [comp2('c1', [talk2('t1', 'Hi', [brB2('Positive', 'e1')]), exit2('e1')])] };
     const s = start(summary, 'c1', {});
     expect(currentNode(summary, s)?.uuid).toBe('t1');
+  });
+});
+
+describe('renderText', () => {
+  it('substitutes set vars, leaves unset verbatim, strips brackets', () => {
+    expect(renderText('Hi {NAME}, owe [{AMT}]', { NAME: 'Budi', AMT: '5jt' })).toBe('Hi Budi, owe 5jt');
+    expect(renderText('Due {DUE}', {})).toBe('Due {DUE}');
+    expect(renderText('', {})).toBe('');
+    expect(renderText(null, {})).toBe('');
+  });
+});
+
+describe('talk text substitution', () => {
+  it('renders {VAR} in the transcript bot line from the seeded varState', () => {
+    const talk = (u, t, b) => ({ uuid: u, label: u, node_type: 'talk', text: t, branches: b, data: {} });
+    const summary = { components: [{
+      uuid: 'c1', name: 'c1', sort_index: 0, entry_uuid: 't1', root_uuids: ['t1'], parent_uuid: '0',
+      nodes: { t1: talk('t1', 'Hello {NAME}', [{ label: 'Positive', kind: 'intent', target_uuid: null, target_component: null, target_kb: null, terminal: null }]) },
+    }] };
+    const s = start(summary, 'c1', { NAME: 'Budi' });
+    expect(s.transcript.at(-1)).toMatchObject({ role: 'bot', text: 'Hello Budi' });
   });
 });

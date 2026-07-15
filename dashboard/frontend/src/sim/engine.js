@@ -132,6 +132,16 @@ export function mapChoices(node) {
   }));
 }
 
+// Substitute {VAR} placeholders in bot text from the variable state; strip WIZ
+// optional-segment brackets ([ ]). Unset vars are left verbatim so empties show.
+export function renderText(text, varState) {
+  const vs = varState || {};
+  return String(text ?? '')
+    .replace(/[[\]]/g, '')
+    .replace(/\{([^{}]+)\}/g, (m, name) =>
+      (Object.prototype.hasOwnProperty.call(vs, name) ? String(vs[name]) : m));
+}
+
 // ---------------------------------------------------------------------------
 // Part 2: the state machine (Task 3)
 // ---------------------------------------------------------------------------
@@ -190,7 +200,7 @@ function _enterKb(state, summary, kbId) {
   const kb = kbById.get(kbId);
   if (!kb) return end(state, 'external', 'KB not in this export (library) — ends here.');
   const answer = (kb.answers || [])[0];
-  const t = [...state.transcript, botRow(`KB: ${kb.title}`, answer ? answer.text : '(no answer)')];
+  const t = [...state.transcript, botRow(`KB: ${kb.title}`, answer ? renderText(answer.text, state.varState) : '(no answer)')];
   const mr = kb.multi_round?.components;
   if (mr && mr.length) {
     const c = mr[0];
@@ -245,10 +255,10 @@ function _run(state, summary) {
           s2 = { ...s, varState, transcript: [...s.transcript, ...notes.map(sysRow)] };
         }
         return { ...s2, status: 'awaiting_choice', choices: mapChoices(node),
-          transcript: [...s2.transcript, botRow(node.label, node.text)] };
+          transcript: [...s2.transcript, botRow(node.label, renderText(node.text, s2.varState))] };
       }
       case 'talk_continue': {
-        const s2 = { ...s, transcript: [...s.transcript, botRow(node.label, node.text)] };
+        const s2 = { ...s, transcript: [...s.transcript, botRow(node.label, renderText(node.text, s.varState))] };
         const ret = (node.branches || []).find((b) => b.target_component);
         if (ret) { s = _followEdge(s2, summary, ret); break; }
         return end(s2, 'talk_continue', 'Waiting for the caller (talk-continue) — ends here.');
@@ -283,9 +293,9 @@ function _run(state, summary) {
         s = _enterKb(s, summary, edge.target_kb); break;
       }
       case 'exit':
-        return end({ ...s, transcript: [...s.transcript, botRow(node.label, node.text)] }, 'hangup');
+        return end({ ...s, transcript: [...s.transcript, botRow(node.label, renderText(node.text, s.varState))] }, 'hangup');
       case 'transfer':
-        return end({ ...s, transcript: [...s.transcript, botRow(node.label, node.text)] }, 'transfer');
+        return end({ ...s, transcript: [...s.transcript, botRow(node.label, renderText(node.text, s.varState))] }, 'transfer');
       default:
         return end(s, 'external', `Unsupported node type (${node.node_type}) — ends here.`);
     }
