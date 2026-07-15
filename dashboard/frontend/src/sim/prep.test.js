@@ -85,4 +85,12 @@ describe('promptableVars', () => {
     expect(promptableVars(null)).toEqual([]);
     expect(promptableVars({ components: [] })).toEqual([]);
   });
+
+  it('surfaces a variable referenced only in a KB answer', () => {
+    const summary = {
+      components: [{ uuid: 'c1', nodes: {} }],
+      knowledge_bases: [{ knowledge_id: 1, title: 'Bal', answers: [{ text: 'Your balance is {BALANCE}', after: 'wait' }] }],
+    };
+    expect(promptableVars(summary)).toContain('BALANCE');
+  });
 });

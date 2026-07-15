@@ -58,6 +58,14 @@ export function promptableVars(summary) {
       for (const v of n.referenced_vars || []) referenced.add(v);
     }
   }
+  for (const kb of summary?.knowledge_bases || []) {
+    for (const ans of kb.answers || []) {
+      const txt = String(ans?.text ?? '');
+      let m;
+      _VAR_ID_RE.lastIndex = 0;
+      while ((m = _VAR_ID_RE.exec(txt)) !== null) referenced.add(m[1]);
+    }
+  }
   return [...new Set([...referenced, ...computed])].filter((v) => !literal.has(v)).sort();
 }
 
