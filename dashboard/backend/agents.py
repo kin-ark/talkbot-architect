@@ -13,10 +13,18 @@ import hashlib
 import json
 import tempfile
 from pathlib import Path
+from pathlib import Path as _Path
 
 from paths import add_skill_paths, skills_dir
 
 add_skill_paths()
+
+_DEBT_CORPUS_PATH = _Path(__file__).resolve().parent / "playbooks" / "debt_collection.corpus.json"
+_DEBT_CORPUS_SECTIONS = (
+    "intents", "kbs", "script_archetypes", "flow_engines",
+    "stage_deltas", "objection_map", "tag_patterns",
+)
+_DEBT_CORPUS_CAP = 30
 
 from wizcheck.parser import parse_dict          # noqa: E402
 from wizcheck.checks import run_all_checks      # noqa: E402
@@ -290,6 +298,31 @@ def get_playbook(vertical: str) -> dict:
         "general": general,             # always present — the maturity baseline
         "available": [p["id"] for p in playbooks.list_playbooks()],
     }
+
+
+def get_debt_corpus(section: str, stage: str | None = None, top_n: int = 15) -> dict:
+    """Return a bounded, ranked slice of the committed debt corpus.
+
+    section ∈ _DEBT_CORPUS_SECTIONS. top_n is clamped to 1.._DEBT_CORPUS_CAP so the
+    2.3MB JSON can never flood the LLM context. Missing/corrupt file → {"found": False}.
+    """
+    if section not in _DEBT_CORPUS_SECTIONS:
+        return {"error": f"unknown section {section!r}", "sections": list(_DEBT_CORPUS_SECTIONS)}
+    if not _DEBT_CORPUS_PATH.exists():
+        return {"found": False}
+    try:
+        corpus = json.loads(_DEBT_CORPUS_PATH.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {"found": False}
+    try:
+        n = int(top_n)
+    except (TypeError, ValueError):
+        n = 15
+    n = max(1, min(n, _DEBT_CORPUS_CAP))
+    items = corpus.get(section) or []
+    if stage and section == "stage_deltas":
+        items = [d for d in items if d.get("stage") == stage]
+    return {"found": True, "section": section, "stage": stage, "items": items[:n]}
 
 
 def propose_mods(data: dict, mods_yaml: str) -> dict:
