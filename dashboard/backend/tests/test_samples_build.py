@@ -57,3 +57,16 @@ def test_debt_preset_is_mature():
             node_type_ints.add((node.get("data") or {}).get("type"))
     assert 7 in node_type_ints, "expected a conditional (type 7) node"
     assert 10 in node_type_ints, "expected an assign (type 10) node"
+
+
+def test_registry_files_exist_and_no_orphans():
+    from pathlib import Path
+
+    sdir = Path(samples.__file__).parent
+    referenced = {e["manifest_file"] for e in samples.SAMPLES}
+    for f in referenced:
+        assert (sdir / f).exists(), f"registry references missing file {f}"
+    # every debt_*.yaml on disk must be referenced by the registry (no orphans)
+    on_disk = {p.name for p in sdir.glob("debt_*.yaml")}
+    orphans = on_disk - referenced
+    assert not orphans, f"orphan sample files not in registry: {orphans}"
