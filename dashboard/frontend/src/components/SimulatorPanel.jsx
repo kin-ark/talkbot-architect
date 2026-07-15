@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Play, RotateCcw, X } from 'lucide-react';
-import { neededVars, defaultStartComponent } from '../sim/prep';
+import { promptableVars, defaultStartComponent } from '../sim/prep';
 import { start as simStart, choose as simChoose, currentNode } from '../sim/engine';
 import { matchUtterance } from '../sim/matcher';
 
@@ -18,7 +18,7 @@ const END_LABEL = {
 export default function SimulatorPanel({ summary, onCurrentNode, intents = [] }) {
   const components = summary?.components || [];
   const [startComp, setStartComp] = useState(() => defaultStartComponent(summary) || '');
-  const vars = useMemo(() => neededVars(summary), [summary]);
+  const vars = useMemo(() => promptableVars(summary), [summary]);
   const [varInputs, setVarInputs] = useState({});
   const [state, setState] = useState(null);
   const [showVars, setShowVars] = useState(false);

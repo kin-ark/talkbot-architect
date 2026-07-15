@@ -61,3 +61,28 @@ describe('defaultStartComponent', () => {
     expect(defaultStartComponent({ components: [] })).toBeNull();
   });
 });
+
+import { promptableVars } from './prep';
+
+describe('promptableVars', () => {
+  const talk = (uuid, refs) => ({ uuid, node_type: 'talk', referenced_vars: refs, data: {} });
+  const cond = (uuid, lv) => ({ uuid, node_type: 'conditional', data: { branch: [{ name: 'X', branch_judgement_condition: [{ left_value: lv }] }] } });
+  const assign = (uuid, name, fc) => ({ uuid, node_type: 'variable_assignment', data: { value_assignment: [{ variable: { name }, assign: { func_code: fc, params: [] } }] } });
+  const comp = (nodes) => ({ uuid: 'c1', nodes: Object.fromEntries(nodes.map((n) => [n.uuid, n])) });
+
+  it('includes referenced_vars + computed assigns + conditional refs, excludes literal assigns, sorted+deduped', () => {
+    const summary = { components: [comp([
+      talk('t1', ['TOTAL_AMOUNT', 'DUE_DATE']),
+      cond('k1', 'Payment date interval'),
+      assign('a1', 'Payment date interval', 'DATE_DAYS_BETWEEN_TWO_DAYS'), // computed → keep
+      assign('a2', 'Greeting_Bahasa', 'OPT_VALUE_ASSIGNMENT'),            // literal → drop
+      talk('t2', ['Greeting_Bahasa']),                                   // referenced but literal-assigned → drop
+    ])] };
+    expect(promptableVars(summary)).toEqual(['DUE_DATE', 'Payment date interval', 'TOTAL_AMOUNT']);
+  });
+
+  it('empty / missing summary → []', () => {
+    expect(promptableVars(null)).toEqual([]);
+    expect(promptableVars({ components: [] })).toEqual([]);
+  });
+});

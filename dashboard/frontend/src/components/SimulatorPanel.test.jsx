@@ -77,3 +77,14 @@ describe('SimulatorPanel Mode B', () => {
     expect(screen.getByText(/no intent matched/)).toBeInTheDocument();
   });
 });
+
+describe('SimulatorPanel variable surfacing', () => {
+  it('setup form prompts for a talk-text-referenced variable', () => {
+    const summary = { components: [{
+      uuid: 'c1', name: 'Main', sort_index: 0, entry_uuid: 't1', root_uuids: ['t1'], parent_uuid: '0',
+      nodes: { t1: { uuid: 't1', label: 't1', node_type: 'talk', text: 'Hi {CUSTOMER_NAME}', referenced_vars: ['CUSTOMER_NAME'], branches: [], data: {} } },
+    }] };
+    render(<SimulatorPanel summary={summary} />);
+    expect(screen.getByText('CUSTOMER_NAME')).toBeInTheDocument();
+  });
+});

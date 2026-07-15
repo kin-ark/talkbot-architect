@@ -28,6 +28,39 @@ export function neededVars(summary) {
   return [...referenced].filter((v) => !assigned.has(v)).sort();
 }
 
+// Every variable the flow READS but the simulator cannot produce (so the setup
+// form can prompt for it): conditional refs + talk-text {VAR} (referenced_vars)
+// + computed-function assigns, minus literal (OPT_VALUE_ASSIGNMENT) assigns.
+export function promptableVars(summary) {
+  const referenced = new Set();
+  const computed = new Set();
+  const literal = new Set();
+  for (const c of summary?.components || []) {
+    for (const n of Object.values(c.nodes || {})) {
+      if (n.node_type === 'conditional') {
+        for (const def of n.data?.branch || []) {
+          for (const cond of def.branch_judgement_condition || []) {
+            const lv = String(cond.left_value ?? '');
+            let m; let matched = false;
+            _VAR_ID_RE.lastIndex = 0;
+            while ((m = _VAR_ID_RE.exec(lv)) !== null) { referenced.add(m[1]); matched = true; }
+            if (!matched && lv) referenced.add(lv);
+          }
+        }
+      } else if (n.node_type === 'variable_assignment') {
+        for (const va of n.data?.value_assignment || []) {
+          const name = va?.variable?.name;
+          if (!name) continue;
+          if (va?.assign?.func_code === 'OPT_VALUE_ASSIGNMENT') literal.add(name);
+          else computed.add(name);
+        }
+      }
+      for (const v of n.referenced_vars || []) referenced.add(v);
+    }
+  }
+  return [...new Set([...referenced, ...computed])].filter((v) => !literal.has(v)).sort();
+}
+
 // The SpeechIntent ids that fire a talk node's named branch.
 export function intentsForBranch(node, branchLabel) {
   const aci = node?.data?.all_client_intent || [];
