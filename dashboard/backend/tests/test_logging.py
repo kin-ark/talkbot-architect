@@ -39,6 +39,69 @@ def test_jsonformatter_never_raises_on_bad_extra():
     assert isinstance(out, str) and len(out) > 0
 
 
+def _pretty_record(msg="", level=logging.INFO, **extra):
+    rec = logging.LogRecord("tba", level, __file__, 1, msg, (), None)
+    for k, v in extra.items():
+        setattr(rec, k, v)
+    return rec
+
+
+def test_prettyformatter_plain_has_no_ansi_and_shows_extras():
+    line = logging_setup.PrettyFormatter(color=False).format(
+        _pretty_record(ev="req", method="GET", path="/chat", status=200, ms=42, cid="abc"))
+    assert "\033[" not in line
+    assert "req" in line
+    assert "method=GET" in line and "path=/chat" in line and "status=200" in line and "ms=42" in line
+
+
+def test_prettyformatter_color_adds_ansi_and_reset():
+    line = logging_setup.PrettyFormatter(color=True).format(_pretty_record(ev="llm", ok=True))
+    assert "\033[" in line and "\033[0m" in line
+
+
+def test_prettyformatter_shows_message_and_level():
+    line = logging_setup.PrettyFormatter(color=False).format(
+        _pretty_record(msg="hello world", level=logging.WARNING))
+    assert "hello world" in line and "WARNING" in line
+
+
+def test_prettyformatter_appends_traceback():
+    import sys
+    try:
+        raise ValueError("boom")
+    except ValueError:
+        rec = _pretty_record(msg="failed", level=logging.ERROR)
+        rec.exc_info = sys.exc_info()
+    line = logging_setup.PrettyFormatter(color=False).format(rec)
+    assert "Traceback" in line and "ValueError: boom" in line
+
+
+def test_prettyformatter_never_raises_on_bad_record():
+    rec = logging.LogRecord("tba", logging.INFO, __file__, 1, "%d", ("not-an-int",), None)
+    out = logging_setup.PrettyFormatter(color=False).format(rec)
+    assert isinstance(out, str)
+
+
+def test_console_handler_uses_pretty_on_tty(monkeypatch):
+    monkeypatch.delenv("LOG_PRETTY", raising=False)
+    monkeypatch.setattr(logging_setup.sys.stdout, "isatty", lambda: True, raising=False)
+    logging_setup._configured = False
+    logging_setup.configure_logging()
+    streams = [h for h in logging_setup.log.handlers if isinstance(h, logging.StreamHandler)
+               and not hasattr(h, "baseFilename")]
+    assert any(isinstance(h.formatter, logging_setup.PrettyFormatter) for h in streams)
+
+
+def test_console_handler_stays_json_when_piped(monkeypatch):
+    monkeypatch.delenv("LOG_PRETTY", raising=False)
+    monkeypatch.setattr(logging_setup.sys.stdout, "isatty", lambda: False, raising=False)
+    logging_setup._configured = False
+    logging_setup.configure_logging()
+    streams = [h for h in logging_setup.log.handlers if isinstance(h, logging.StreamHandler)
+               and not hasattr(h, "baseFilename")]
+    assert streams and all(isinstance(h.formatter, logging_setup.JsonFormatter) for h in streams)
+
+
 def test_configure_logging_idempotent():
     logging_setup._configured = False
     logging_setup.configure_logging()

@@ -44,6 +44,56 @@ class JsonFormatter(logging.Formatter):
                 return record.getMessage()
 
 
+_LEVEL_COLOR = {
+    "DEBUG": "\033[38;5;244m", "INFO": "\033[36m", "WARNING": "\033[33m",
+    "ERROR": "\033[31m", "CRITICAL": "\033[97;41m",
+}
+_DIM = "\033[2m"
+_BOLD = "\033[1m"
+_RESET = "\033[0m"
+
+
+class PrettyFormatter(logging.Formatter):
+    """Human-readable one-line console format: `HH:MM:SS LVL  ev msg  k=v …`.
+
+    Colors (level tint, dim timestamp/keys) only when `color=True`; layout is
+    identical without color, so it stays readable when piped to a file.
+    """
+
+    def __init__(self, color: bool = True) -> None:
+        super().__init__()
+        self.color = color
+
+    def _c(self, s: str, code: str) -> str:
+        return f"{code}{s}{_RESET}" if self.color else s
+
+    def format(self, record: logging.LogRecord) -> str:
+        try:
+            ts = time.strftime("%H:%M:%S", time.localtime(record.created))
+            lvl = record.levelname
+            head = f"{self._c(ts, _DIM)} {self._c(f'{lvl:<5}', _LEVEL_COLOR.get(lvl, ''))}"
+            ev = getattr(record, "ev", None)
+            evtag = self._c(str(ev), _BOLD) if ev else ""
+            msg = record.getMessage()
+            parts = []
+            for k in _EXTRA_KEYS:
+                if k == "ev" or not hasattr(record, k):
+                    continue
+                parts.append(f"{self._c(k + '=', _DIM)}{getattr(record, k)}")
+            body = " ".join(x for x in (evtag, msg) if x)
+            line = f"{head}  {body}" if body else head
+            if parts:
+                line += "  " + " ".join(parts)
+            if record.exc_info:
+                line += "\n" + self.formatException(record.exc_info)
+            return line
+        except Exception:
+            try:
+                return record.getMessage()
+            except Exception:
+                return ""
+
+
 def _backend_dir() -> str:
     return os.path.dirname(os.path.abspath(__file__))
 
@@ -58,8 +108,19 @@ def configure_logging() -> None:
 
     fmt = JsonFormatter()
 
+    # Console: pretty by default when attached to a terminal (dev); JSON when
+    # piped/redirected or in Docker. LOG_PRETTY=1/0 forces it on/off.
+    is_tty = bool(getattr(sys.stdout, "isatty", lambda: False)())
+    env_pretty = os.environ.get("LOG_PRETTY")
+    if env_pretty == "1":
+        use_pretty = True
+    elif env_pretty == "0":
+        use_pretty = False
+    else:
+        use_pretty = is_tty
+
     stream = logging.StreamHandler(sys.stdout)
-    stream.setFormatter(fmt)
+    stream.setFormatter(PrettyFormatter(color=is_tty) if use_pretty else fmt)
     log.addHandler(stream)
 
     log_dir = os.environ.get("LOG_DIR") or os.path.join(_backend_dir(), "logs")
