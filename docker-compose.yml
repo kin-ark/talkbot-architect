@@ -34,19 +34,12 @@ services:
       - AUTOHEAL_CONTAINER_LABEL=autoheal
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-  # Public HTTPS access without a domain/port-forward: Tailscale Funnel proxies
-  # https://<TS_HOSTNAME>.<tailnet>.ts.net -> dashboard:8000. Userspace mode, so
-  # no NET_ADMIN / /dev/net/tun needed. Requires (one-time, in the Tailscale admin
-  # console): MagicDNS on, HTTPS certificates enabled, and the `funnel` nodeAttr
-  # for autogroup:member. Set TS_AUTHKEY in .env.deploy (reusable, non-ephemeral).
-  # The tunnel stays down until TS_AUTHKEY is present; the dashboard still serves
-  # on :8000 for LAN regardless. For tailnet-private (not public), drop the
-  # AllowFunnel block from tailscale-serve.json.
+  # Tailscale Funnel sidecar. Requires TS_AUTHKEY in .env.deploy.
   tailscale:
     image: tailscale/tailscale:latest
-    hostname: talkbot-architect          # -> https://talkbot-architect.<tailnet>.ts.net
+    hostname: talkbot-architect
     env_file:
-      - .env.deploy                      # supplies TS_AUTHKEY
+      - .env.deploy
     environment:
       - TS_HOSTNAME=talkbot-architect
       - TS_STATE_DIR=/var/lib/tailscale
@@ -55,6 +48,15 @@ services:
     volumes:
       - ts-state:/var/lib/tailscale
       - ./tailscale-serve.json:/config/serve.json:ro
+    depends_on:
+      - dashboard
+    restart: unless-stopped
+  # Cloudflare Tunnel sidecar. Requires TUNNEL_TOKEN in .env.deploy.
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate run
+    env_file:
+      - .env.deploy                          # supplies TUNNEL_TOKEN
     depends_on:
       - dashboard
     restart: unless-stopped
