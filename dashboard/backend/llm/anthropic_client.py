@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import time
 from collections.abc import Iterator
 
@@ -7,6 +8,11 @@ from llm import retry
 from llm.base import LLMClient, LLMResponse, Message, StreamChunk, ToolCall, ToolSpec
 
 _CALL_TIMEOUT = 120.0
+# Output-token budget for the model's own content (excludes thinking budget).
+# A full-bot `build` manifest is large; the old 4096 cap truncated the tool
+# input mid-JSON -> the SDK yielded an empty arg -> "missing manifest_yaml".
+# Env-overridable for the rare exhaustive bot. Opus 4.8 accepts up to 64000.
+_MAX_OUTPUT_TOKENS = int(os.getenv("LLM_MAX_OUTPUT_TOKENS", "32000"))
 
 
 class EmptyStreamError(RuntimeError):
@@ -45,7 +51,7 @@ class AnthropicClient(LLMClient):
         return False
 
     def _max_tokens(self) -> int:
-        return (self._thinking_budget + 4096) if self._thinking_budget else 4096
+        return (self._thinking_budget + _MAX_OUTPUT_TOKENS) if self._thinking_budget else _MAX_OUTPUT_TOKENS
 
     def _thinking_arg(self) -> dict | None:
         if self._thinking_budget:

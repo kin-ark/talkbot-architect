@@ -13,11 +13,12 @@ def _client(budget):
 
 
 def test_max_tokens_and_thinking_arg():
+    from llm.anthropic_client import _MAX_OUTPUT_TOKENS
     on = _client(2048)
-    assert on._max_tokens() == 2048 + 4096
+    assert on._max_tokens() == 2048 + _MAX_OUTPUT_TOKENS
     assert on._thinking_arg() == {"type": "enabled", "budget_tokens": 2048}
     off = _client(None)
-    assert off._max_tokens() == 4096 and off._thinking_arg() is None
+    assert off._max_tokens() == _MAX_OUTPUT_TOKENS and off._thinking_arg() is None
 
 
 def test_to_anthropic_replays_thinking_before_tool_use():

@@ -122,3 +122,15 @@ def test_anthropic_empty_stream_retries_then_succeeds():
     assert status and status[0]["kind"] == "retrying"
     assert finals and finals[0].text == "hi there"
     assert calls["n"] == 2
+
+
+def test_max_tokens_large_enough_for_full_manifest():
+    """The output cap must be well above a full-bot manifest (old 4096 truncated
+    the build tool input mid-JSON -> empty manifest_yaml)."""
+    from llm.anthropic_client import _MAX_OUTPUT_TOKENS
+    assert _MAX_OUTPUT_TOKENS >= 16000
+    c = AnthropicClient.__new__(AnthropicClient)
+    c._thinking_budget = 2048
+    assert c._max_tokens() == 2048 + _MAX_OUTPUT_TOKENS
+    c._thinking_budget = None
+    assert c._max_tokens() == _MAX_OUTPUT_TOKENS
