@@ -138,6 +138,8 @@ def run_turn_stream(client, session, user_message: str) -> Iterator[dict]:
         session.images = []
 
     try:
+        yield {"type": "phase", "phase": "planning"}
+        tools_phase_announced = False
         for _ in range(_MAX_TOOL_ITERS):
             if session.cancel_requested:
                 _rollback()
@@ -188,7 +190,7 @@ def run_turn_stream(client, session, user_message: str) -> Iterator[dict]:
                             "force features. Then finish."
                         )
                         messages.append(Message(role="user", content=nudge_msg))
-                        yield {"type": "autofix", "count": 0, "round": 0}
+                        yield {"type": "phase", "phase": "finalizing"}
                         continue
                 errs = [f for f in (proposal or {}).get("findings", []) if f.get("severity") == "error"]
                 maturity_blockers = (proposal or {}).get("maturity", {}).get("residual_blockers", [])
@@ -211,7 +213,9 @@ def run_turn_stream(client, session, user_message: str) -> Iterator[dict]:
                         messages_to_add.append(msg)
                     note = "\n\n".join(messages_to_add)
                     messages.append(Message(role="user", content=note))   # messages-only, NOT session.transcript
-                    yield {"type": "autofix", "count": len(errs) + len(unique_blockers), "round": fix_rounds}
+                    yield {"type": "phase", "phase": "fixing",
+                           "round": fix_rounds, "errors": len(errs),
+                           "blockers": len(unique_blockers)}
                     continue
                 session.cancel_requested = False
                 session.usage["input_tokens"] += turn_usage["input_tokens"]
@@ -222,6 +226,9 @@ def run_turn_stream(client, session, user_message: str) -> Iterator[dict]:
                 yield {"type": "done", "canceled": False, "text": text_acc, "stop_reason": "complete"}
                 return
 
+            if not tools_phase_announced:
+                tools_phase_announced = True
+                yield {"type": "phase", "phase": "tools"}
             seen_call_ids: set[str] = set()
             for call in resp.tool_calls:
                 if call.id in seen_call_ids:

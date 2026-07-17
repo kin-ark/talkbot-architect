@@ -47,9 +47,9 @@ def test_backstop_forces_a_fix_then_finishes(monkeypatch):
         LLMResponse(text="all set", tool_calls=[]),   # round 4: finish (clean)
     ])
     evs = _events(client, _sess())
-    autofix = [e for e in evs if e["type"] == "autofix"]
+    fixing = [e for e in evs if e["type"] == "phase" and e["phase"] == "fixing"]
     done = [e for e in evs if e["type"] == "done"]
-    assert len(autofix) == 1 and autofix[0]["count"] == 1
+    assert len(fixing) == 1 and fixing[0]["errors"] == 1 and fixing[0]["round"] == 1
     assert len(done) == 1 and done[0]["canceled"] is False
 
 
@@ -63,12 +63,12 @@ def test_backstop_caps_and_finishes_dirty(monkeypatch):
         *[LLMResponse(text="finish", tool_calls=[]) for _ in range(6)],
     ])
     evs = _events(client, _sess())
-    assert len([e for e in evs if e["type"] == "autofix"]) <= _MAX_FIX_BACKSTOPS
+    assert len([e for e in evs if e["type"] == "phase" and e["phase"] == "fixing"]) <= _MAX_FIX_BACKSTOPS
     assert any(e["type"] == "done" for e in evs)
 
 
-def test_no_proposal_turn_finishes_without_autofix():
+def test_no_proposal_turn_finishes_without_fixing():
     client = FakeLLMClient(script=[LLMResponse(text="hello", tool_calls=[])])
     evs = _events(client, _sess())
-    assert not [e for e in evs if e["type"] == "autofix"]
+    assert not [e for e in evs if e["type"] == "phase" and e["phase"] == "fixing"]
     assert [e for e in evs if e["type"] == "done"]
