@@ -99,3 +99,19 @@ def test_done_stop_reason_limit_on_tool_cap(monkeypatch):
         events = _events_from_sse(client.post("/chat/stream", json={"message": "check"}).text)
     done = [e for e in events if e["type"] == "done"]
     assert done and done[-1]["stop_reason"] == "limit"
+
+
+def test_tool_events_carry_call_id_and_ts():
+    _use_fake([
+        LLMResponse(text=None, tool_calls=[ToolCall(id="tX", name="validate", arguments={})]),
+        LLMResponse(text="done", tool_calls=[]),
+    ])
+    with TestClient(main.app) as client:
+        client.get("/health")
+        tbid = client.cookies["tbid"]
+        main.REGISTRY.store(tbid).active().load({"BizSpeechComponent": "[]"})
+        events = _events_from_sse(client.post("/chat/stream", json={"message": "check"}).text)
+    starts = [e for e in events if e["type"] == "tool_start"]
+    results = [e for e in events if e["type"] == "tool_result"]
+    assert starts and starts[0]["call_id"] == "tX" and isinstance(starts[0]["ts"], (int, float))
+    assert results and results[0]["call_id"] == "tX" and isinstance(results[0]["ts"], (int, float))

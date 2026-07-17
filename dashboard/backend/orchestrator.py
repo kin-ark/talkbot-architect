@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import time
 from collections.abc import Iterator
 
 from llm.base import LLMClient, LLMResponse, Message
@@ -252,7 +253,8 @@ def run_turn_stream(client, session, user_message: str) -> Iterator[dict]:
                 if call.id in seen_call_ids:
                     continue
                 seen_call_ids.add(call.id)
-                yield {"type": "tool_start", "name": call.name, "args": call.arguments}
+                yield {"type": "tool_start", "name": call.name, "args": call.arguments,
+                       "call_id": call.id, "ts": time.monotonic()}
                 call_args = dict(call.arguments)
                 if call.name in _ATTACH_TOOLS:
                     call_args["path"] = session.attachment["path"] if session.attachment else None
@@ -267,7 +269,8 @@ def run_turn_stream(client, session, user_message: str) -> Iterator[dict]:
                 elif out.get("proposal") is not None:
                     last_tool_error = None
                 yield {"type": "tool_result", "name": call.name, "result": out["result"],
-                       "summary": _summarize_tool_result(call.name, out["result"])}
+                       "summary": _summarize_tool_result(call.name, out["result"]),
+                       "call_id": call.id, "ts": time.monotonic()}
                 if out["proposal"] is not None:
                     proposal = out["proposal"]
                     session.pending = proposal
