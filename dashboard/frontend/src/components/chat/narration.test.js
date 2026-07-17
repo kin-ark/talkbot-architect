@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { narrate, NARRATION } from './narration';
+import { narrate, NARRATION, narratePhase } from './narration';
 
 describe('narrate', () => {
   it('maps known tool names to present-continuous phrases', () => {
@@ -13,5 +13,15 @@ describe('narrate', () => {
   it('handles null/undefined safely', () => {
     expect(narrate(null)).toBe('');
     expect(narrate(undefined)).toBe('');
+  });
+});
+
+describe('narratePhase', () => {
+  it('labels fixing with the problem count', () => {
+    expect(narratePhase('fixing', { errors: 2, round: 1 })).toMatch(/Fixing 2 problems/);
+  });
+  it('labels finalizing and planning', () => {
+    expect(narratePhase('finalizing', {})).toMatch(/coverage/i);
+    expect(narratePhase('planning', {})).toMatch(/Planning/i);
   });
 });

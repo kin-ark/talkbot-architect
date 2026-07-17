@@ -42,4 +42,9 @@ describe('ActivityRow', () => {
     fireEvent.click(screen.getByTestId('activity-row'));
     expect(screen.getByTestId('activity-detail').textContent).toMatch(/nope/);
   });
+
+  it('shows per-step elapsed when ts/endTs are present', () => {
+    render(<ActivityRow entry={{ _kind: 'tool', name: 'build', status: 'done', ts: 10, endTs: 13.4 }} />);
+    expect(screen.getByText(/3\.4s/)).toBeInTheDocument();
+  });
 });

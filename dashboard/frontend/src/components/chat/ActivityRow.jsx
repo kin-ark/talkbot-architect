@@ -22,6 +22,8 @@ export default function ActivityRow({ entry }) {
   const { name, arguments: args, status, summary, result } = entry || {};
   const running = status === 'running';
   const isErr = !running && errorish(result);
+  const elapsed = (typeof entry?.ts === 'number' && typeof entry?.endTs === 'number')
+    ? entry.endTs - entry.ts : null;
 
   const Glyph = running ? Loader2 : isErr ? AlertCircle : Check;
   const glyphClass = running ? 'text-text-secondary animate-spin' : isErr ? 'text-error' : 'text-success';
@@ -35,6 +37,7 @@ export default function ActivityRow({ entry }) {
         <Glyph size={13} className={`shrink-0 ${glyphClass}`} />
         <span className="text-text">{narrate(name)}</span>
         {!running && summary && <span className="text-text-tertiary truncate">— {summary}</span>}
+        {elapsed != null && <span className="text-text-tertiary font-mono ml-1">{elapsed.toFixed(1)}s</span>}
       </button>
       {open && (
         <div data-testid="activity-detail" className="ml-5 mt-0.5 space-y-1">

@@ -25,3 +25,19 @@ export const NARRATION = {
 };
 
 export const narrate = (name) => NARRATION[name] || String(name || '').replace(/_/g, ' ');
+
+export const PHASE_LABEL = {
+  planning: 'Planning',
+  tools: 'Working',
+  fixing: 'Fixing problems',
+  finalizing: 'Reviewing coverage',
+};
+
+export const narratePhase = (phase, entry = {}) => {
+  if (phase === 'fixing') {
+    const n = entry.errors ?? 0;
+    const round = entry.round ? ` (round ${entry.round})` : '';
+    return `Fixing ${n} problem${n === 1 ? '' : 's'}${round}`;
+  }
+  return PHASE_LABEL[phase] || String(phase || '').replace(/_/g, ' ');
+};
