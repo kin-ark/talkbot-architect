@@ -5,6 +5,7 @@ import ChatInput from './chat/ChatInput';
 import MessageBubble from './chat/MessageBubble';
 import { makeMdComponents } from './chat/markdown';
 import { useChatScroll } from './chat/useChatScroll';
+import { CANNED } from './chat/recovery';
 
 function mentionEntries(summary) {
   const out = [];
@@ -83,6 +84,13 @@ export default function ChatPane({ transcript, proposal, sending, onSend, onRetr
 
   const mdComponents = useMemo(() => makeMdComponents(onSelectNode), [onSelectNode]);
   const lastIdx = transcript.length - 1;
+  const lastUserText = [...transcript].reverse().find((m) => m.role === 'user')?.text || '';
+  const recoveryHandlers = {
+    onContinue: () => onSend('continue'),
+    onFix: () => onSend(CANNED.fix),
+    onEdit: () => setInput(lastUserText),
+    onDiscard: onReject,
+  };
 
   return (
     <div className="flex flex-col h-full" data-testid="chat-pane">
@@ -92,7 +100,9 @@ export default function ChatPane({ transcript, proposal, sending, onSend, onRetr
             <MessageBubble key={i} role={m.role} text={m.text} toolTrace={m.tool_trace}
               reasoning={m.reasoning}
               isLast={i === lastIdx} sending={sending} mdComponents={mdComponents}
-              onRetry={onRetry} onSend={onSend} images={m.images} file={m.file} status={m.status} />
+              onRetry={onRetry} onSend={onSend} images={m.images} file={m.file} status={m.status}
+              kind={m.kind} recovery={m.recovery} stopReason={m.stop_reason}
+              {...recoveryHandlers} />
           ))}
           {!sending && transcript.length > 0 && transcript[lastIdx].role === 'agent' && (
             <div className="text-left">

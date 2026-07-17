@@ -4,8 +4,9 @@ import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import { Copy, Check, Brain, ChevronRight, Paperclip } from 'lucide-react';
 import IconButton from '../ui/IconButton';
-import ToolTrace from './ToolTrace';
+import ActivityTimeline from './ActivityTimeline';
 import ErrorBubble from './ErrorBubble';
+import RecoveryBar from './RecoveryBar';
 import { narrate } from './narration';
 
 const LABEL = { user: 'You', error: 'Error', agent: 'Assistant' };
@@ -48,7 +49,7 @@ function WaitingHeader({ toolTrace, hasText, status }) {
   );
 }
 
-export default function MessageBubble({ role, text, toolTrace, reasoning, isLast, sending, mdComponents, onRetry, onSend, images, file, status }) {
+export default function MessageBubble({ role, text, toolTrace, reasoning, isLast, sending, mdComponents, onRetry, onSend, images, file, status, kind, recovery, stopReason, onContinue, onFix, onEdit, onDiscard }) {
   const [copied, setCopied] = useState(false);
   const [open, setOpen] = useState(false);
   const userToggled = useRef(false);
@@ -71,7 +72,8 @@ export default function MessageBubble({ role, text, toolTrace, reasoning, isLast
 
   const showWaiting = !plain && isLast && sending && !text;
 
-  if (role === 'error') return <ErrorBubble text={text} onRetry={onRetry} />;
+  if (role === 'error') return <ErrorBubble text={text} kind={kind} recovery={recovery}
+    onRetry={onRetry} onContinue={onContinue} onFix={onFix} onEdit={onEdit} onDiscard={onDiscard} />;
 
   return (
     <div className={`group ${role === 'user' ? 'text-right' : 'text-left'}`}>
@@ -92,7 +94,7 @@ export default function MessageBubble({ role, text, toolTrace, reasoning, isLast
           )}
         </div>
       )}
-      {toolTrace?.length > 0 && <ToolTrace trace={toolTrace} />}
+      {toolTrace?.length > 0 && <ActivityTimeline trace={toolTrace} />}
       <div className={`relative inline-block max-w-[80%] p-3 rounded-2xl text-sm ${bubbleClass(role)} ${plain ? 'whitespace-pre-wrap' : PROSE}`}>
         {plain
           ? text
@@ -130,11 +132,8 @@ export default function MessageBubble({ role, text, toolTrace, reasoning, isLast
             className="text-xs text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded">Retry</button>
         </div>
       )}
-      {role === 'agent' && typeof text === 'string' && text.includes('tool-iteration limit') && (
-        <div className="mt-1">
-          <button type="button" onClick={() => onSend('continue')}
-            className="text-xs text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded">Continue</button>
-        </div>
+      {role === 'agent' && stopReason === 'limit' && (
+        <RecoveryBar tokens={['continue']} onContinue={onContinue || (() => onSend('continue'))} />
       )}
     </div>
   );

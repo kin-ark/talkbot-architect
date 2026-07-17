@@ -36,9 +36,9 @@ describe('MessageBubble', () => {
     expect(onRetry).toHaveBeenCalled();
   });
 
-  it('tool-iteration-limit agent text offers Continue', () => {
+  it('limit stop_reason offers Continue', () => {
     const onSend = vi.fn();
-    render(<MessageBubble {...base} role="agent" text="hit the tool-iteration limit" onSend={onSend} />);
+    render(<MessageBubble {...base} role="agent" text="partial" stopReason="limit" onSend={onSend} />);
     fireEvent.click(screen.getByText('Continue'));
     expect(onSend).toHaveBeenCalledWith('continue');
   });

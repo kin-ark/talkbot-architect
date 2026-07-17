@@ -1,12 +1,15 @@
 import { useState } from 'react';
-import { AlertTriangle, ChevronRight, RotateCcw } from 'lucide-react';
+import { AlertTriangle, ChevronRight } from 'lucide-react';
 import { classifyError } from './errorInfo';
+import RecoveryBar from './RecoveryBar';
+import { tokensFor } from './recovery';
 
-export default function ErrorBubble({ text, onRetry }) {
+export default function ErrorBubble({ text, kind, recovery, onRetry, onContinue, onFix, onEdit, onDiscard }) {
   const [open, setOpen] = useState(false);
   const { title, hint, detail } = classifyError(text);
   // Only offer raw detail when it adds something beyond the friendly title/hint.
   const showDetail = detail && detail.toLowerCase() !== title.toLowerCase();
+  const tokens = tokensFor({ kind, recovery });
 
   return (
     <div className="text-left" data-testid="error-bubble">
@@ -34,14 +37,8 @@ export default function ErrorBubble({ text, onRetry }) {
           </div>
         </div>
       </div>
-      {onRetry && (
-        <div className="mt-1">
-          <button type="button" onClick={onRetry}
-            className="inline-flex items-center gap-1 text-xs text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded">
-            <RotateCcw size={12} /> Retry
-          </button>
-        </div>
-      )}
+      <RecoveryBar tokens={tokens} onRetry={onRetry} onContinue={onContinue}
+        onFix={onFix} onEdit={onEdit} onDiscard={onDiscard} />
     </div>
   );
 }
