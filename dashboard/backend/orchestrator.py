@@ -141,7 +141,7 @@ def run_turn_stream(client, session, user_message: str) -> Iterator[dict]:
         for _ in range(_MAX_TOOL_ITERS):
             if session.cancel_requested:
                 _rollback()
-                yield {"type": "done", "canceled": True, "text": ""}
+                yield {"type": "done", "canceled": True, "text": "", "stop_reason": "canceled"}
                 return
 
             resp = None
@@ -149,7 +149,7 @@ def run_turn_stream(client, session, user_message: str) -> Iterator[dict]:
             for chunk in client.stream_chat(messages, registry.tool_specs()):
                 if session.cancel_requested:
                     _rollback()
-                    yield {"type": "done", "canceled": True, "text": ""}
+                    yield {"type": "done", "canceled": True, "text": "", "stop_reason": "canceled"}
                     return
                 if chunk.status:
                     yield {"type": "status", **chunk.status}
@@ -219,7 +219,7 @@ def run_turn_stream(client, session, user_message: str) -> Iterator[dict]:
                 session.usage["turns"] += 1
                 session.usage["model"] = getattr(client, "model", session.usage.get("model"))
                 yield {"type": "usage", **session.usage}
-                yield {"type": "done", "canceled": False, "text": text_acc}
+                yield {"type": "done", "canceled": False, "text": text_acc, "stop_reason": "complete"}
                 return
 
             seen_call_ids: set[str] = set()
@@ -253,7 +253,9 @@ def run_turn_stream(client, session, user_message: str) -> Iterator[dict]:
         session.usage["turns"] += 1
         session.usage["model"] = getattr(client, "model", session.usage.get("model"))
         yield {"type": "usage", **session.usage}
-        yield {"type": "done", "canceled": False, "text": text_acc or "(stopped after tool-iteration limit)"}
+        yield {"type": "done", "canceled": False,
+               "text": text_acc or "(stopped after tool-iteration limit)",
+               "stop_reason": "limit"}
     finally:
         _clear_attachment()
 

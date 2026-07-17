@@ -76,3 +76,26 @@ def test_chat_stream_emits_tool_and_proposal():
         events = _events_from_sse(client.post("/chat/stream", json={"message": "check"}).text)
     types = [e["type"] for e in events]
     assert "tool_start" in types and "tool_result" in types
+
+
+def test_done_carries_stop_reason_complete():
+    _use_fake([LLMResponse(text="all good", tool_calls=[])])
+    with TestClient(main.app) as client:
+        client.get("/health")
+        tbid = client.cookies["tbid"]
+        main.REGISTRY.store(tbid).active().load({"BizSpeechComponent": "[]"})
+        events = _events_from_sse(client.post("/chat/stream", json={"message": "hi"}).text)
+    done = [e for e in events if e["type"] == "done"]
+    assert done and done[-1]["stop_reason"] == "complete"
+
+
+def test_done_stop_reason_limit_on_tool_cap(monkeypatch):
+    monkeypatch.setattr("orchestrator._MAX_TOOL_ITERS", 1)
+    _use_fake([LLMResponse(text=None, tool_calls=[ToolCall(id="t1", name="validate", arguments={})])])
+    with TestClient(main.app) as client:
+        client.get("/health")
+        tbid = client.cookies["tbid"]
+        main.REGISTRY.store(tbid).active().load({"BizSpeechComponent": "[]"})
+        events = _events_from_sse(client.post("/chat/stream", json={"message": "check"}).text)
+    done = [e for e in events if e["type"] == "done"]
+    assert done and done[-1]["stop_reason"] == "limit"
