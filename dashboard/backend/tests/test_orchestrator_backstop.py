@@ -72,3 +72,43 @@ def test_no_proposal_turn_finishes_without_fixing():
     evs = _events(client, _sess())
     assert not [e for e in evs if e["type"] == "phase" and e["phase"] == "fixing"]
     assert [e for e in evs if e["type"] == "done"]
+
+
+class _RaisingClient:
+    model = "fake"
+    def stream_chat(self, messages, tools):
+        raise RuntimeError("connection error: provider unreachable")
+        yield  # pragma: no cover  (make it a generator)
+
+
+def test_transient_error_on_llm_exception():
+    evs = _events(_RaisingClient(), _sess())
+    errs = [e for e in evs if e["type"] == "error"]
+    assert errs and errs[0]["kind"] == "transient" and errs[0]["recovery"] == ["retry"]
+    assert any(e["type"] == "done" for e in evs)
+
+
+def test_proposal_blocked_error_after_backstops_exhausted(monkeypatch):
+    monkeypatch.setattr(orchestrator.registry, "dispatch",
+                        lambda name, args, data: {"result": {"ok": True}, "proposal": _proposal(_ERR)})
+    tc = ToolCall(id="c", name="apply_mods", arguments={})
+    client = FakeLLMClient(script=[
+        LLMResponse(text=None, tool_calls=[tc]),
+        *[LLMResponse(text="finish", tool_calls=[]) for _ in range(6)],
+    ])
+    evs = _events(client, _sess())
+    blocked = [e for e in evs if e["type"] == "error" and e["kind"] == "proposal_blocked"]
+    assert blocked and blocked[0]["recovery"] == ["fix", "discard"]
+
+
+def test_tool_arg_error_when_finish_with_tool_error_and_no_proposal(monkeypatch):
+    monkeypatch.setattr(orchestrator.registry, "dispatch",
+                        lambda name, args, data: {"result": {"error": "bad arg: target not found"}, "proposal": None})
+    tc = ToolCall(id="c", name="add_node", arguments={})
+    client = FakeLLMClient(script=[
+        LLMResponse(text=None, tool_calls=[tc]),
+        LLMResponse(text="I could not do that.", tool_calls=[]),
+    ])
+    evs = _events(client, _sess())
+    ta = [e for e in evs if e["type"] == "error" and e["kind"] == "tool_arg"]
+    assert ta and ta[0]["recovery"] == ["edit", "retry"]

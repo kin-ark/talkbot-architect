@@ -126,6 +126,7 @@ def run_turn_stream(client, session, user_message: str) -> Iterator[dict]:
     turn_usage: dict = {"input_tokens": 0, "output_tokens": 0}
     fix_rounds = 0
     coverage_nudged = False
+    last_tool_error: str | None = None
 
     def _rollback():
         del session.transcript[mark:]
@@ -148,25 +149,33 @@ def run_turn_stream(client, session, user_message: str) -> Iterator[dict]:
 
             resp = None
             turn_text = ""
-            for chunk in client.stream_chat(messages, registry.tool_specs()):
-                if session.cancel_requested:
-                    _rollback()
-                    yield {"type": "done", "canceled": True, "text": "", "stop_reason": "canceled"}
-                    return
-                if chunk.status:
-                    yield {"type": "status", **chunk.status}
-                if chunk.thinking_delta:
-                    yield {"type": "thinking", "delta": chunk.thinking_delta}
-                if chunk.text_delta:
-                    turn_text += chunk.text_delta
-                    yield {"type": "token", "delta": chunk.text_delta}
-                if chunk.response is not None:
-                    resp = chunk.response
-                if chunk.usage:
-                    turn_usage["input_tokens"] += chunk.usage.get("input_tokens", 0)
-                    turn_usage["output_tokens"] += chunk.usage.get("output_tokens", 0)
-            if resp is None:                       # defensive: empty stream
-                resp = LLMResponse(text=turn_text or None, tool_calls=[])
+            try:
+                chunk_iter = client.stream_chat(messages, registry.tool_specs())
+                for chunk in chunk_iter:
+                    if session.cancel_requested:
+                        _rollback()
+                        yield {"type": "done", "canceled": True, "text": "", "stop_reason": "canceled"}
+                        return
+                    if chunk.status:
+                        yield {"type": "status", **chunk.status}
+                    if chunk.thinking_delta:
+                        yield {"type": "thinking", "delta": chunk.thinking_delta}
+                    if chunk.text_delta:
+                        turn_text += chunk.text_delta
+                        yield {"type": "token", "delta": chunk.text_delta}
+                    if chunk.response is not None:
+                        resp = chunk.response
+                    if chunk.usage:
+                        turn_usage["input_tokens"] += chunk.usage.get("input_tokens", 0)
+                        turn_usage["output_tokens"] += chunk.usage.get("output_tokens", 0)
+                if resp is None:                       # defensive: empty stream
+                    resp = LLMResponse(text=turn_text or None, tool_calls=[])
+            except Exception as e:  # LLM stream failure (retries already exhausted)
+                _rollback()
+                yield {"type": "error", "kind": "transient",
+                       "recovery": ["retry"], "message": str(e)}
+                yield {"type": "done", "canceled": False, "text": "", "stop_reason": "complete"}
+                return
 
             assistant = Message(role="assistant", content=resp.text, tool_calls=resp.tool_calls,
                                 thinking_blocks=getattr(resp, "thinking_blocks", []))
@@ -217,6 +226,15 @@ def run_turn_stream(client, session, user_message: str) -> Iterator[dict]:
                            "round": fix_rounds, "errors": len(errs),
                            "blockers": len(unique_blockers)}
                     continue
+                if errs:
+                    yield {"type": "error", "kind": "proposal_blocked",
+                           "recovery": ["fix", "discard"],
+                           "message": (f"The proposal still has {len(errs)} error"
+                                       f"{'s' if len(errs) != 1 else ''} and cannot be applied as-is.")}
+                elif proposal is None and last_tool_error:
+                    yield {"type": "error", "kind": "tool_arg",
+                           "recovery": ["edit", "retry"],
+                           "message": last_tool_error}
                 session.cancel_requested = False
                 session.usage["input_tokens"] += turn_usage["input_tokens"]
                 session.usage["output_tokens"] += turn_usage["output_tokens"]
@@ -243,6 +261,11 @@ def run_turn_stream(client, session, user_message: str) -> Iterator[dict]:
                 except Exception as e:  # noqa: BLE001 - a tool crash must not kill the turn
                     out = {"result": {"ok": False, "error": f"{type(e).__name__}: {e}"},
                            "proposal": None}
+                res = out["result"]
+                if isinstance(res, dict) and res.get("error"):
+                    last_tool_error = str(res["error"])
+                elif out.get("proposal") is not None:
+                    last_tool_error = None
                 yield {"type": "tool_result", "name": call.name, "result": out["result"],
                        "summary": _summarize_tool_result(call.name, out["result"])}
                 if out["proposal"] is not None:
