@@ -409,6 +409,18 @@ def tool_specs() -> list[ToolSpec]:
 
 
 def dispatch(name: str, args: dict, data: dict) -> dict:
+    # A truncated/empty tool call from the model can arrive missing its required
+    # args. Guard here so a missing key returns a clean error the model can act
+    # on, instead of a raw KeyError that kills the whole turn.
+    spec = next((s for s in _SPECS if s.name == name), None)
+    if spec is not None:
+        missing = [k for k in (spec.parameters or {}).get("required", [])
+                   if k not in args or args[k] is None]
+        if missing:
+            return {"result": {"ok": False,
+                               "error": f"missing required argument(s): {', '.join(missing)}. "
+                                        "Re-issue the tool call with all required fields."},
+                    "proposal": None}
     if name == "validate":
         return {"result": agents.validate(data), "proposal": None}
     if name == "summarize":

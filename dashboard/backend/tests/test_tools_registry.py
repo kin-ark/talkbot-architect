@@ -129,3 +129,21 @@ def test_dispatch_apply_mods_unknown_op():
     assert out["proposal"] is None
     assert out["result"]["ok"] is False
     assert "known_ops" in out["result"]
+
+
+# ---------------------------------------------------------------------------
+# required-arg guard (truncated tool calls must not crash the turn)
+# ---------------------------------------------------------------------------
+
+def test_dispatch_missing_required_arg_returns_error_not_crash():
+    # 'build' requires manifest_yaml; a truncated tool call omits it.
+    out = registry.dispatch("build", {}, {})
+    assert out["proposal"] is None
+    assert out["result"]["ok"] is False
+    assert "manifest_yaml" in out["result"]["error"]
+
+
+def test_dispatch_none_required_arg_treated_as_missing():
+    out = registry.dispatch("read_node", {"uuid": None}, {})
+    assert out["result"]["ok"] is False
+    assert "uuid" in out["result"]["error"]

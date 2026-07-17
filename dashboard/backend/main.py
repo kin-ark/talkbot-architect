@@ -7,6 +7,8 @@ load_dotenv()
 
 import json  # noqa: E402
 import time  # noqa: E402
+import queue  # noqa: E402
+import threading  # noqa: E402
 import os  # noqa: E402
 import tempfile  # noqa: E402
 import io  # noqa: E402
@@ -48,6 +50,13 @@ except Exception as e:  # pragma: no cover
     log.error("", extra={"ev": "backup_error", "err": f"scheduler start: {e}"}, exc_info=e)
 
 _THINKING_BUDGET = 2048
+# SSE keepalive interval. A turn can be silent for a long stretch (slow gateway
+# first token, or a long-running tool like build->checker). Reverse proxies in
+# front of the dashboard (e.g. Cloudflare Tunnel) drop a connection that sends
+# no bytes within ~100s -> the client sees "stream failed: 524". We emit an SSE
+# comment every HEARTBEAT_S so the connection never goes idle. Comments (": ...")
+# are ignored by the frontend parser, which only acts on "data: " lines.
+_HEARTBEAT_S = 15
 _ATTACH_MAX_BYTES = 5 * 1024 * 1024
 _STARTED = time.time()
 
@@ -730,20 +739,47 @@ def chat_stream(req: ChatRequest, s: Session = Depends(current_session),
 
     def _gen():
         t0 = time.perf_counter()
-        ok = True
-        with s._lock:
+        state = {"ok": True}
+        q: queue.Queue = queue.Queue()
+
+        # The turn runs in a worker thread so the SSE loop can emit heartbeats
+        # while the turn is blocked on a slow LLM call or a long tool. The worker
+        # holds s._lock for the whole turn (single-turn-at-a-time preserved).
+        def _worker():
+            with s._lock:
+                try:
+                    for ev in run_turn_stream(client, s, req.message):
+                        q.put(("ev", ev))
+                except Exception as e:
+                    state["ok"] = False
+                    log.error("", extra={"ev": "exc", "path": "/chat/stream",
+                                         "err": f"{type(e).__name__}: {e}"}, exc_info=e)
+                    q.put(("err", str(e)))
+                finally:
+                    s._autosave()
+                    q.put(("end", None))
+
+        worker = threading.Thread(target=_worker, daemon=True)
+        worker.start()
+        # Immediate byte: commits the 200 + response headers now so the proxy
+        # never hits its time-to-first-byte cap, however long the turn takes.
+        yield ": open\n\n"
+        while True:
             try:
-                for ev in run_turn_stream(client, s, req.message):
-                    yield f"data: {json.dumps(ev, ensure_ascii=False, default=str)}\n\n"
-            except Exception as e:
-                ok = False
-                log.error("", extra={"ev": "exc", "path": "/chat/stream", "err": f"{type(e).__name__}: {e}"}, exc_info=e)
-                yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
+                kind, payload = q.get(timeout=_HEARTBEAT_S)
+            except queue.Empty:
+                yield ": ping\n\n"      # keepalive during a silent stretch
+                continue
+            if kind == "ev":
+                yield f"data: {json.dumps(payload, ensure_ascii=False, default=str)}\n\n"
+            elif kind == "err":
+                yield f"data: {json.dumps({'type': 'error', 'message': payload})}\n\n"
                 yield f"data: {json.dumps({'type': 'done', 'canceled': False, 'text': ''})}\n\n"
-            finally:
-                s._autosave()
-                log.info("", extra={"ev": "llm", "provider": provider, "model": model, "ok": ok,
-                                    "ms": round((time.perf_counter() - t0) * 1000)})
+            else:  # "end"
+                break
+        worker.join(timeout=1)
+        log.info("", extra={"ev": "llm", "provider": provider, "model": model, "ok": state["ok"],
+                            "ms": round((time.perf_counter() - t0) * 1000)})
 
     return StreamingResponse(_gen(), media_type="text/event-stream")
 

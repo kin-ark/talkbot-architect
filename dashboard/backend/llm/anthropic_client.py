@@ -9,6 +9,12 @@ from llm.base import LLMClient, LLMResponse, Message, StreamChunk, ToolCall, Too
 _CALL_TIMEOUT = 120.0
 
 
+class EmptyStreamError(RuntimeError):
+    """The endpoint opened a stream but never delivered a complete message
+    (get_final_message asserts). Seen intermittently with relay/proxy endpoints.
+    Treated as retryable so a transient empty stream doesn't kill the turn."""
+
+
 class AnthropicClient(LLMClient):
     def __init__(self, api_key: str, model: str, base_url: str | None = None,
                  thinking_budget: int | None = None, attempts: int = 3, sleep=time.sleep):
@@ -28,6 +34,8 @@ class AnthropicClient(LLMClient):
     @staticmethod
     def _is_retryable(exc: Exception) -> bool:
         import anthropic
+        if isinstance(exc, EmptyStreamError):
+            return True
         if isinstance(exc, anthropic.RateLimitError):
             return True
         if isinstance(exc, anthropic.APIConnectionError):
@@ -103,9 +111,9 @@ class AnthropicClient(LLMClient):
                     try:
                         final = stream.get_final_message()
                     except AssertionError as e:
-                        raise RuntimeError(
-                            "model returned no response (the endpoint may not "
-                            f"support model {self._model!r}): {e}") from e
+                        raise EmptyStreamError(
+                            "empty/truncated response from endpoint for model "
+                            f"{self._model!r} (no complete message): {e}") from e
                 text, calls, tblocks = None, [], []
                 for block in final.content:
                     if block.type == "text":

@@ -79,3 +79,46 @@ def test_anthropic_stream_yields_retry_status_then_succeeds(monkeypatch):
     assert status[0]["attempt"] == 1 and status[0]["attempts"] == 3
     assert len(slept) == 1                      # slept once before the retry
     assert any(ch.response for ch in chunks)    # eventually succeeded
+
+
+class _EmptyStreamCtx:
+    """Opens a stream that yields no deltas and asserts on get_final_message
+    (the SDK's signal that no complete message arrived) -> EmptyStreamError."""
+    def __enter__(self):
+        class S:
+            text_stream = iter([])
+            def __iter__(self_inner): return iter([])
+            def get_final_message(self_inner): raise AssertionError("no snapshot")
+        return S()
+    def __exit__(self, *a): return False
+
+
+def test_empty_stream_error_is_retryable():
+    from llm.anthropic_client import EmptyStreamError
+    assert AnthropicClient._is_retryable(EmptyStreamError("x")) is True
+
+
+def test_anthropic_empty_stream_retries_then_succeeds():
+    c = AnthropicClient.__new__(AnthropicClient)
+    c._model = "x"
+    c._attempts = 3
+    slept = []
+    c._sleep = lambda s: slept.append(s)
+    calls = {"n": 0}
+
+    class _Msgs:
+        def stream(self, **kw):
+            calls["n"] += 1
+            if calls["n"] == 1:
+                return _EmptyStreamCtx()   # empty -> EmptyStreamError, pre-emit -> retry
+            return _FakeStreamCtx()        # 2nd attempt streams "hi there"
+    class _Client:
+        messages = _Msgs()
+    c._client = _Client()
+
+    chunks = list(c.stream_chat([], []))
+    status = [ch.status for ch in chunks if ch.status]
+    finals = [ch.response for ch in chunks if ch.response]
+    assert status and status[0]["kind"] == "retrying"
+    assert finals and finals[0].text == "hi there"
+    assert calls["n"] == 2

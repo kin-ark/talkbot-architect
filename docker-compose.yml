@@ -34,23 +34,6 @@ services:
       - AUTOHEAL_CONTAINER_LABEL=autoheal
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-  # Tailscale Funnel sidecar. Requires TS_AUTHKEY in .env.deploy.
-  tailscale:
-    image: tailscale/tailscale:latest
-    hostname: talkbot-architect
-    env_file:
-      - .env.deploy
-    environment:
-      - TS_HOSTNAME=talkbot-architect
-      - TS_STATE_DIR=/var/lib/tailscale
-      - TS_USERSPACE=true
-      - TS_SERVE_CONFIG=/config/serve.json
-    volumes:
-      - ts-state:/var/lib/tailscale
-      - ./tailscale-serve.json:/config/serve.json:ro
-    depends_on:
-      - dashboard
-    restart: unless-stopped
   # Cloudflare Tunnel sidecar. Requires TUNNEL_TOKEN in .env.deploy.
   cloudflared:
     image: cloudflare/cloudflared:latest
@@ -64,4 +47,3 @@ volumes:
   sessions:
   logs:
   backups:
-  ts-state:

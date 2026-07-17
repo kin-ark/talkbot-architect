@@ -231,7 +231,11 @@ def run_turn_stream(client, session, user_message: str) -> Iterator[dict]:
                 call_args = dict(call.arguments)
                 if call.name in _ATTACH_TOOLS:
                     call_args["path"] = session.attachment["path"] if session.attachment else None
-                out = registry.dispatch(call.name, call_args, session.current())
+                try:
+                    out = registry.dispatch(call.name, call_args, session.current())
+                except Exception as e:  # noqa: BLE001 - a tool crash must not kill the turn
+                    out = {"result": {"ok": False, "error": f"{type(e).__name__}: {e}"},
+                           "proposal": None}
                 yield {"type": "tool_result", "name": call.name, "result": out["result"],
                        "summary": _summarize_tool_result(call.name, out["result"])}
                 if out["proposal"] is not None:
