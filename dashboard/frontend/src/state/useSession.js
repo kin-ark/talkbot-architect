@@ -197,12 +197,13 @@ export function useSession() {
               if (e.type === 'status') patch((m) => ({ ...m, status: e }));
               else if (e.type === 'thinking') patch((m) => ({ ...m, status: null, reasoning: (m.reasoning || '') + e.delta }));
               else if (e.type === 'token') patch((m) => ({ ...m, status: null, text: m.text + e.delta }));
-              else if (e.type === 'tool_start') patch((m) => ({ ...m, tool_trace: [...m.tool_trace, { name: e.name, arguments: e.args, status: 'running' }] }));
-              else if (e.type === 'tool_result') patch((m) => ({ ...m, tool_trace: m.tool_trace.map((tt, i) => (i === m.tool_trace.length - 1 ? { ...tt, status: 'done', summary: e.summary, result: e.result } : tt)) }));
+              else if (e.type === 'phase') patch((m) => ({ ...m, tool_trace: [...m.tool_trace, { _kind: 'phase', phase: e.phase, round: e.round, errors: e.errors, blockers: e.blockers, ts: e.ts }] }));
+              else if (e.type === 'tool_start') patch((m) => ({ ...m, tool_trace: [...m.tool_trace, { _kind: 'tool', call_id: e.call_id, name: e.name, arguments: e.args, ts: e.ts, status: 'running' }] }));
+              else if (e.type === 'tool_result') patch((m) => ({ ...m, tool_trace: m.tool_trace.map((tt) => (tt._kind === 'tool' && tt.call_id === e.call_id ? { ...tt, status: 'done', summary: e.summary, result: e.result, endTs: e.ts } : tt)) }));
               else if (e.type === 'usage') setUsage({ input_tokens: e.input_tokens, output_tokens: e.output_tokens, turns: e.turns, model: e.model });
               else if (e.type === 'proposal') setProposal(e.proposal);
-              else if (e.type === 'error') setTranscript((t) => [...t, { role: 'error', text: e.message }]);
-              else if (e.type === 'done' && e.text) patch((m) => ({ ...m, text: e.text }));
+              else if (e.type === 'error') setTranscript((t) => [...t, { role: 'error', text: e.message, kind: e.kind, recovery: e.recovery }]);
+              else if (e.type === 'done') { if (e.text) patch((m) => ({ ...m, text: e.text })); if (e.stop_reason) patch((m) => ({ ...m, stop_reason: e.stop_reason })); }
             },
           });
         } catch (e) {

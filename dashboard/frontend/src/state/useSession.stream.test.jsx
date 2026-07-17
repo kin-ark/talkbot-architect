@@ -85,4 +85,62 @@ describe('useSession streaming', () => {
       expect(entry.status).toBe('done');
     });
   });
+
+  it('appends a phase marker into the tool trace', async () => {
+    scriptStream([
+      { type: 'phase', phase: 'fixing', round: 1, errors: 2, blockers: 0, ts: 1 },
+      { type: 'done', canceled: false, text: 'ok', stop_reason: 'complete' },
+    ]);
+    const { result } = renderHook(() => useSession());
+    await act(async () => { await result.current.send('go'); });
+    await waitFor(() => {
+      const agent = result.current.transcript.filter((m) => m.role === 'agent').at(-1);
+      const phase = agent.tool_trace.find((t) => t._kind === 'phase');
+      expect(phase).toMatchObject({ phase: 'fixing', round: 1, errors: 2 });
+    });
+  });
+
+  it('matches tool_result to tool_start by call_id', async () => {
+    scriptStream([
+      { type: 'tool_start', name: 'validate', args: {}, call_id: 'a', ts: 1 },
+      { type: 'tool_start', name: 'summarize', args: {}, call_id: 'b', ts: 2 },
+      { type: 'tool_result', name: 'validate', result: { ok: 1 }, summary: 'done', call_id: 'a', ts: 3 },
+      { type: 'done', canceled: false, text: 'x', stop_reason: 'complete' },
+    ]);
+    const { result } = renderHook(() => useSession());
+    await act(async () => { await result.current.send('go'); });
+    await waitFor(() => {
+      const agent = result.current.transcript.filter((m) => m.role === 'agent').at(-1);
+      const a = agent.tool_trace.find((t) => t.call_id === 'a');
+      const b = agent.tool_trace.find((t) => t.call_id === 'b');
+      expect(a.status).toBe('done'); expect(a.endTs).toBe(3);
+      expect(b.status).toBe('running'); // still running, not overwritten
+    });
+  });
+
+  it('stores kind + recovery on an error entry and stop_reason on the agent entry', async () => {
+    scriptStream([
+      { type: 'error', kind: 'proposal_blocked', recovery: ['fix', 'discard'], message: 'blocked' },
+      { type: 'done', canceled: false, text: '', stop_reason: 'complete' },
+    ]);
+    const { result } = renderHook(() => useSession());
+    await act(async () => { await result.current.send('go'); });
+    await waitFor(() => {
+      const err = result.current.transcript.filter((m) => m.role === 'error').at(-1);
+      expect(err).toMatchObject({ kind: 'proposal_blocked', recovery: ['fix', 'discard'] });
+    });
+  });
+
+  it('stores stop_reason=limit on the agent entry', async () => {
+    scriptStream([
+      { type: 'token', delta: 'partial' },
+      { type: 'done', canceled: false, text: 'partial', stop_reason: 'limit' },
+    ]);
+    const { result } = renderHook(() => useSession());
+    await act(async () => { await result.current.send('go'); });
+    await waitFor(() => {
+      const agent = result.current.transcript.filter((m) => m.role === 'agent').at(-1);
+      expect(agent.stop_reason).toBe('limit');
+    });
+  });
 });
