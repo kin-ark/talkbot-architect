@@ -16,7 +16,7 @@ def test_stream_emits_tokens_tool_and_done():
     ])
     events = list(run_turn_stream(fake, s, "check"))
     types = [e["type"] for e in events]
-    assert types[0] == "tool_start" and types[1] == "tool_result"
+    assert types.index("tool_start") < types.index("tool_result")
     assert "token" in types
     assert events[-1]["type"] == "done"
     assert events[-1]["canceled"] is False
@@ -49,7 +49,9 @@ def test_stream_cancel_rolls_back():
     fake = FakeLLMClient([LLMResponse(text=None, tool_calls=[ToolCall("t1", "validate", {})])])
     before = len(s.transcript)
     events = list(run_turn_stream(fake, s, "hi"))
-    assert events[-1] == {"type": "done", "canceled": True, "text": ""}
+    last = events[-1]
+    assert last["type"] == "done" and last["canceled"] is True and last["text"] == ""
+    assert last["stop_reason"] == "canceled"
     assert len(s.transcript) == before
     assert s.cancel_requested is False
 

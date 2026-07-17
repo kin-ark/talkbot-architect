@@ -315,6 +315,11 @@ def run_turn(client: LLMClient, session: Session, user_message: str) -> dict:
             proposal = ev["proposal"]
         elif t == "usage":
             usage = {k: ev[k] for k in ("input_tokens", "output_tokens", "turns", "model")}
+        elif t == "error" and ev.get("kind") == "transient":
+            # Pre-Task-3 behavior: an unhandled LLM/provider failure propagates
+            # so callers (e.g. /chat) can surface it as a 502. Other error kinds
+            # (proposal_blocked, tool_arg) are non-exceptional turn outcomes.
+            raise RuntimeError(ev["message"])
         elif t == "done":
             text = ev["text"]
             canceled = ev["canceled"]
