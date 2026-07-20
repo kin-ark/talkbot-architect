@@ -1,7 +1,8 @@
 import UploadZone from './UploadZone';
 import SampleGallery from './SampleGallery';
+import { toast } from '../toast/toastStore';
 
-export default function EmptyState({ keySet, loading, onUpload, onStartBlank, onLoadSample, onOpenSettings }) {
+export default function EmptyState({ keySet, loading, uploadProgress, onUpload, onStartBlank, onLoadSample, onOpenSettings }) {
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-5xl mx-auto px-6 py-10">
@@ -18,7 +19,8 @@ export default function EmptyState({ keySet, loading, onUpload, onStartBlank, on
             </div>
           )}
           <div className="mt-6">
-            <UploadZone onUpload={onUpload} />
+            <UploadZone onUpload={onUpload} progress={uploadProgress}
+              onReject={(m) => toast.error(m)} />
           </div>
           <button onClick={onStartBlank}
             className="mt-4 w-full border border-border rounded-xl py-2 text-sm text-text-secondary hover:bg-surface-muted">

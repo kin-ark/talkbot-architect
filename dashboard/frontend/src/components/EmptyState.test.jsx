@@ -4,7 +4,7 @@ vi.mock('../api');
 import * as api from '../api';
 import EmptyState from './EmptyState';
 
-const base = { keySet: true, loading: false, onUpload: () => {}, onStartBlank: () => {}, onLoadSample: () => {}, onOpenSettings: () => {} };
+const base = { keySet: true, loading: false, uploadProgress: null, onUpload: () => {}, onStartBlank: () => {}, onLoadSample: () => {}, onOpenSettings: () => {} };
 
 beforeEach(() => { vi.clearAllMocks(); localStorage.clear(); api.listSamples.mockResolvedValue([]); });
 
@@ -36,5 +36,10 @@ describe('EmptyState', () => {
     render(<EmptyState {...base} onStartBlank={onStartBlank} />);
     fireEvent.click(screen.getByText(/Start from scratch/i));
     expect(onStartBlank).toHaveBeenCalled();
+  });
+
+  it('forwards uploadProgress to the upload zone (shows the bar)', () => {
+    render(<EmptyState {...base} uploadProgress={{ phase: 'processing' }} />);
+    expect(screen.getByText(/Processing/)).toBeInTheDocument();
   });
 });

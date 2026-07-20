@@ -170,7 +170,7 @@ export default function App() {
           ) : s.loading ? (
             <FlowSkeleton />
           ) : (
-            <EmptyState keySet={keySet} loading={s.loading}
+            <EmptyState keySet={keySet} loading={s.loading} uploadProgress={s.uploadProgress}
               onUpload={s.upload} onStartBlank={s.startBlank} onLoadSample={s.loadSample}
               onOpenSettings={() => setLeftPage('settings')} />
           )}
