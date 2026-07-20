@@ -10,6 +10,7 @@ export function useSession() {
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(null);
   const [sending, setSending] = useState(false);
   const [sessions, setSessions] = useState([]);
   const [activeSessionId, setActiveSessionId] = useState(null);
@@ -90,15 +91,21 @@ export function useSession() {
   const upload = useCallback(async (file) => {
     touched.current = true;
     setLoading(true);
+    setUploadProgress({ phase: 'transferring', pct: 0 });
     try {
-      const r = await api.uploadSession(file);
+      const r = await api.uploadSession(file, (pct) => {
+        setUploadProgress(pct === 100 || pct == null
+          ? { phase: 'processing' }
+          : { phase: 'transferring', pct });
+      });
       setSummary(r.summary); setFindings(r.findings);
       setIsComponent(Boolean(r.is_component));
       setComponentWarnings(r.component_warnings || []);
       setTranscript([{ role: 'agent', text: `Loaded. ${r.findings.filter(f => f.severity === 'error').length} errors, ${r.findings.filter(f => f.severity === 'warning').length} warnings. What do you want to do?` }]);
       await refreshSessions();
       await refreshIntents();
-    } catch (e) { toast.error(errText(e)); } finally { setLoading(false); }
+    } catch (e) { toast.error(errText(e)); }
+    finally { setLoading(false); setUploadProgress(null); }
   }, [refreshSessions, refreshIntents]);
 
   const startBlank = useCallback(async () => {
@@ -326,7 +333,7 @@ export function useSession() {
     setIsComponent(false); setComponentWarnings([]);
   }, []);
 
-  return { summary, findings, transcript, proposal, canUndo, canRedo, loading, sending,
+  return { summary, findings, transcript, proposal, canUndo, canRedo, loading, uploadProgress, sending,
            sessions, activeSessionId, usage, botName, intents, isComponent, componentWarnings,
            upload, startBlank, loadSample, send, retry, apply, reject, undo, redo, cancel, reset, startNew,
            refreshSessions, refreshIntents, newSession, switchSession, renameSession, deleteSession, renameBot, editNodeText };

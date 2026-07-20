@@ -66,4 +66,24 @@ describe('useSession', () => {
     expect(result.current.isComponent).toBe(false);
     expect(result.current.componentWarnings).toEqual([]);
   });
+
+  it('upload drives uploadProgress transferring -> processing -> null', async () => {
+    let cb;
+    api.uploadSession.mockImplementation((_f, onProgress) => { cb = onProgress; return Promise.resolve({ summary: { components: [] }, findings: [] }); });
+    const { result } = renderHook(() => useSession());
+    await act(async () => {
+      const p = result.current.upload(new File(['{}'], 's.json'));
+      cb(40);   // transferring
+      cb(100);  // -> processing
+      await p;
+    });
+    expect(result.current.uploadProgress).toBeNull(); // cleared in finally
+  });
+
+  it('upload clears uploadProgress on error', async () => {
+    api.uploadSession.mockRejectedValue(new Error('boom'));
+    const { result } = renderHook(() => useSession());
+    await act(async () => { await result.current.upload(new File(['{}'], 's.json')); });
+    expect(result.current.uploadProgress).toBeNull();
+  });
 });
