@@ -1,6 +1,8 @@
 # tools/registry.py
 from __future__ import annotations
 
+import yaml
+
 import agents
 from llm.base import ToolSpec
 
@@ -417,6 +419,304 @@ def tool_specs() -> list[ToolSpec]:
     return list(_SPECS)
 
 
+# --- tool handlers: name -> fn(args, data) -> {"result", "proposal"} ---------
+# Registered in _HANDLERS below; dispatch() validates required args then routes.
+
+def _mods(data, op):
+    """Common path: dry-run a single modifier op as a proposal."""
+    return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
+
+
+def _h_validate(a, d):
+    return {"result": agents.validate(d), "proposal": None}
+
+
+def _h_summarize(a, d):
+    return {"result": agents.summarize(d), "proposal": None}
+
+
+def _h_read_node(a, d):
+    return {"result": agents.read_node(d, a["uuid"]), "proposal": None}
+
+
+def _h_list_intents(a, d):
+    return {"result": agents.list_intents(d), "proposal": None}
+
+
+def _h_list_variables(a, d):
+    return {"result": agents.list_variables(d), "proposal": None}
+
+
+def _h_get_facts(a, d):
+    return {"result": agents.get_facts(a["query"]), "proposal": None}
+
+
+def _h_get_schema(a, d):
+    return {"result": agents.get_schema(), "proposal": None}
+
+
+def _h_get_playbook(a, d):
+    return {"result": agents.get_playbook(a["vertical"]), "proposal": None}
+
+
+def _h_get_debt_corpus(a, d):
+    return {"result": agents.get_debt_corpus(a["section"], a.get("stage"), a.get("top_n", 15)),
+            "proposal": None}
+
+
+def _h_apply_mods(a, d):
+    return _as_proposal(agents.propose_mods(d, a["mods_yaml"]))
+
+
+def _h_set_path(a, d):
+    return _mods(d, {"op": "set-path", "path": a["path"], "value": a["value"]})
+
+
+def _h_delete_path(a, d):
+    return _mods(d, {"op": "delete-path", "path": a["path"]})
+
+
+def _h_list_samples(a, d):
+    import samples
+    return {"result": samples.list_samples(), "proposal": None}
+
+
+def _h_get_sample(a, d):
+    import samples
+    sid = a["sample_id"]
+    man = samples.load_manifest(sid)
+    if man is None:
+        return {"result": {"error": f"unknown sample id: {sid}",
+                           "available": [s["id"] for s in samples.list_samples()]},
+                "proposal": None}
+    return {"result": {"id": sid, "manifest_yaml": man}, "proposal": None}
+
+
+def _h_build(a, d):
+    built = agents.propose_build(a["manifest_yaml"])
+    if not built["ok"]:
+        return {"result": {"ok": False, "error": built["error"]}, "proposal": None}
+    import speechname as _sn
+    try:
+        _mani = yaml.safe_load(a["manifest_yaml"])
+        _nm = _mani.get("name") if isinstance(_mani, dict) else None
+    except Exception:
+        _nm = None
+    if _nm:
+        built["proposed_data"] = _sn.set_speech_name(built["proposed_data"], _nm)
+    # Enrich via the propose_scaffold path: compute summary/change_set from the built doc.
+    after_summary = agents.summarize(built["proposed_data"])
+    import proposal_meta as _pm
+    empty_summary = {"components": [], "knowledge_bases": []}
+    cs = _pm.change_set(empty_summary, after_summary)
+    p = {"ok": True, "proposed_data": built["proposed_data"],
+         "diff": "(new dialogue scaffolded)", "checker_delta": None,
+         "proposed_summary": after_summary, "change_set": cs,
+         "change_summary": _pm.change_summary(cs, None)}
+    return _as_proposal(p, mature=True)
+
+
+def _h_scaffold_bot(a, d):
+    p = agents.propose_scaffold(a)
+    if p.get("ok") and a.get("name"):
+        import speechname as _sn
+        p["proposed_data"] = _sn.set_speech_name(p["proposed_data"], a["name"])
+    return _as_proposal(p, mature=True)
+
+
+def _h_add_component(a, d):
+    op = {"op": "add-component", "name": a["name"]}
+    if a.get("nodes"):
+        op["nodes"] = a["nodes"]
+    if a.get("edges"):
+        op["edges"] = a["edges"]
+    return _mods(d, op)
+
+
+def _h_add_node(a, d):
+    node = {"id": a["id"], "prompt": a["prompt"]}
+    if a.get("type"):
+        node["type"] = a["type"]
+    if a.get("config"):
+        node["config"] = a["config"]
+    op = {"op": "append-node", "component": a["component"], "node": node}
+    if a.get("edges"):
+        op["edges"] = a["edges"]
+    return _mods(d, op)
+
+
+def _h_add_intent(a, d):
+    op = {"op": "add-intent", "name": a["name"], "language": a["language"]}
+    if a.get("keywords"):
+        op["keywords"] = a["keywords"]
+    if a.get("user_responses"):
+        op["user_responses"] = a["user_responses"]
+    return _mods(d, op)
+
+
+def _h_add_variable(a, d):
+    return _mods(d, {"op": "add-variable", "name": a["name"]})
+
+
+def _h_set_hotwords(a, d):
+    op = {"op": "set-hotwords", "hot_words": a["hot_words"]}
+    if a.get("node") is not None:
+        op["node"] = a["node"]
+    return _mods(d, op)
+
+
+def _h_set_node_tags(a, d):
+    return _mods(d, {"op": "set-node-tags", "node": a["node"], "tags": a["tags"]})
+
+
+def _h_set_intent_training(a, d):
+    op = {"op": "set-intent-training", "name": a["name"]}
+    if a.get("keywords"):
+        op["keywords"] = a["keywords"]
+    if a.get("user_responses"):
+        op["user_responses"] = a["user_responses"]
+    return _mods(d, op)
+
+
+def _import_xlsx(a, d, op_name, label):
+    path = a.get("path")
+    if not path:
+        return {"result": {"ok": False, "error": f"no {label} Excel attached this turn"},
+                "proposal": None}
+    return _mods(d, {"op": op_name, "path": path})
+
+
+def _h_import_intents_xlsx(a, d):
+    return _import_xlsx(a, d, "import-intents-xlsx", "intent")
+
+
+def _h_import_kb_xlsx(a, d):
+    return _import_xlsx(a, d, "import-kb-xlsx", "KB")
+
+
+def _h_add_kb(a, d):
+    op = {"op": "add-kb", "name": a["name"], "intents": a["intents"],
+          "answers": a.get("answers", [])}
+    if a.get("multi_round"):
+        op["multi_round"] = a["multi_round"]
+    return _mods(d, op)
+
+
+def _h_rename_kb(a, d):
+    return _mods(d, {"op": "rename-kb", "name": a["name"], "new_name": a["new_name"]})
+
+
+def _h_set_kb_intents(a, d):
+    return _mods(d, {"op": "set-kb-intents", "name": a["name"], "intents": a["intents"]})
+
+
+def _h_add_kb_answer(a, d):
+    op = {"op": "add-kb-answer", "name": a["name"], "text": a["text"]}
+    if a.get("after") is not None:
+        op["after"] = a["after"]
+    return _mods(d, op)
+
+
+def _h_edit_kb_answer(a, d):
+    op = {"op": "edit-kb-answer", "name": a["name"], "new_text": a["new_text"]}
+    if a.get("old_text") is not None:
+        op["old_text"] = a["old_text"]
+    if a.get("index") is not None:
+        op["index"] = a["index"]
+    if a.get("after") is not None:
+        op["after"] = a["after"]
+    return _mods(d, op)
+
+
+def _h_remove_kb_answer(a, d):
+    op = {"op": "remove-kb-answer", "name": a["name"]}
+    if a.get("text") is not None:
+        op["text"] = a["text"]
+    if a.get("index") is not None:
+        op["index"] = a["index"]
+    return _mods(d, op)
+
+
+def _h_set_kb_multiround(a, d):
+    return _mods(d, {"op": "set-kb-multiround", "name": a["name"],
+                     "target_component": a.get("target_component")})
+
+
+def _h_delete_kb(a, d):
+    return _mods(d, {"op": "delete-kb", "name": a["name"]})
+
+
+def _h_connect_components(a, d):
+    node = {"id": a["id"], "prompt": a.get("prompt", "(goto)"),
+            "type": "goto", "config": {"target": a["target"]}}
+    op = {"op": "append-node", "component": a["component"], "node": node,
+          "edges": [{"from": a["from"], "branch": a["branch"], "to": a["id"]}]}
+    return _mods(d, op)
+
+
+def _h_rewire_edge(a, d):
+    op = {"op": "rewire-edge", "component": a["component"], "from": a["from"], "branch": a["branch"]}
+    if a.get("to"):
+        op["to"] = a["to"]
+    if a.get("to_component"):
+        op["to_component"] = a["to_component"]
+    return _mods(d, op)
+
+
+def _h_delete_edge(a, d):
+    return _mods(d, {"op": "delete-edge", "component": a["component"],
+                     "from": a["from"], "branch": a["branch"]})
+
+
+def _h_delete_node(a, d):
+    return _mods(d, {"op": "delete-node", "component": a["component"], "node": a["node"]})
+
+
+def _h_move_node(a, d):
+    op = {"op": "move-node", "node": a["node"], "to_component": a["to_component"]}
+    if a.get("from_component") is not None:
+        op["from_component"] = a["from_component"]
+    return _mods(d, op)
+
+
+def _h_rename_node(a, d):
+    op = {"op": "rename-node", "component": a["component"], "node": a["node"]}
+    if a.get("label"):
+        op["label"] = a["label"]
+    if a.get("prompt"):
+        op["prompt"] = a["prompt"]
+    return _mods(d, op)
+
+
+def _h_complete_component(a, d):
+    op = {"op": "complete-component", "component": a["component"]}
+    if a.get("exit_target"):
+        op["exit_target"] = a["exit_target"]
+    return _mods(d, op)
+
+
+_HANDLERS = {
+    "validate": _h_validate, "summarize": _h_summarize, "read_node": _h_read_node,
+    "list_intents": _h_list_intents, "list_variables": _h_list_variables,
+    "get_facts": _h_get_facts, "get_schema": _h_get_schema, "get_playbook": _h_get_playbook,
+    "get_debt_corpus": _h_get_debt_corpus, "apply_mods": _h_apply_mods,
+    "set_path": _h_set_path, "delete_path": _h_delete_path,
+    "list_samples": _h_list_samples, "get_sample": _h_get_sample,
+    "build": _h_build, "scaffold_bot": _h_scaffold_bot,
+    "add_component": _h_add_component, "add_node": _h_add_node, "add_intent": _h_add_intent,
+    "add_variable": _h_add_variable, "set_hotwords": _h_set_hotwords,
+    "set_node_tags": _h_set_node_tags, "set_intent_training": _h_set_intent_training,
+    "import_intents_xlsx": _h_import_intents_xlsx, "import_kb_xlsx": _h_import_kb_xlsx,
+    "add_kb": _h_add_kb, "rename_kb": _h_rename_kb, "set_kb_intents": _h_set_kb_intents,
+    "add_kb_answer": _h_add_kb_answer, "edit_kb_answer": _h_edit_kb_answer,
+    "remove_kb_answer": _h_remove_kb_answer, "set_kb_multiround": _h_set_kb_multiround,
+    "delete_kb": _h_delete_kb, "connect_components": _h_connect_components,
+    "rewire_edge": _h_rewire_edge, "delete_edge": _h_delete_edge, "delete_node": _h_delete_node,
+    "move_node": _h_move_node, "rename_node": _h_rename_node,
+    "complete_component": _h_complete_component,
+}
+
+
 def dispatch(name: str, args: dict, data: dict) -> dict:
     # A truncated/empty tool call from the model can arrive missing its required
     # args. Guard here so a missing key returns a clean error the model can act
@@ -430,229 +730,10 @@ def dispatch(name: str, args: dict, data: dict) -> dict:
                                "error": f"missing required argument(s): {', '.join(missing)}. "
                                         "Re-issue the tool call with all required fields."},
                     "proposal": None}
-    if name == "validate":
-        return {"result": agents.validate(data), "proposal": None}
-    if name == "summarize":
-        return {"result": agents.summarize(data), "proposal": None}
-    if name == "read_node":
-        return {"result": agents.read_node(data, args["uuid"]), "proposal": None}
-    if name == "list_intents":
-        return {"result": agents.list_intents(data), "proposal": None}
-    if name == "list_variables":
-        return {"result": agents.list_variables(data), "proposal": None}
-    if name == "get_facts":
-        return {"result": agents.get_facts(args["query"]), "proposal": None}
-    if name == "apply_mods":
-        p = agents.propose_mods(data, args["mods_yaml"])
-        return _as_proposal(p)
-    if name == "set_path":
-        import yaml
-        mods = yaml.safe_dump([{"op": "set-path", "path": args["path"], "value": args["value"]}])
-        return _as_proposal(agents.propose_mods(data, mods))
-    if name == "delete_path":
-        import yaml
-        mods = yaml.safe_dump([{"op": "delete-path", "path": args["path"]}])
-        return _as_proposal(agents.propose_mods(data, mods))
-    if name == "build":
-        built = agents.propose_build(args["manifest_yaml"])
-        if not built["ok"]:
-            return {"result": {"ok": False, "error": built["error"]}, "proposal": None}
-        import yaml as _yaml
-        import speechname as _sn
-        try:
-            _mani = _yaml.safe_load(args["manifest_yaml"])
-            _nm = _mani.get("name") if isinstance(_mani, dict) else None
-        except Exception:
-            _nm = None
-        if _nm:
-            built["proposed_data"] = _sn.set_speech_name(built["proposed_data"], _nm)
-        # Enrich via propose_scaffold path: compute summary/change_set from the built doc
-        after_summary = agents.summarize(built["proposed_data"])
-        import proposal_meta as _pm
-        empty_summary = {"components": [], "knowledge_bases": []}
-        cs = _pm.change_set(empty_summary, after_summary)
-        p = {"ok": True, "proposed_data": built["proposed_data"],
-             "diff": "(new dialogue scaffolded)", "checker_delta": None,
-             "proposed_summary": after_summary, "change_set": cs,
-             "change_summary": _pm.change_summary(cs, None)}
-        return _as_proposal(p, mature=True)
-    if name == "scaffold_bot":
-        p = agents.propose_scaffold(args)
-        if p.get("ok") and args.get("name"):
-            import speechname as _sn
-            p["proposed_data"] = _sn.set_speech_name(p["proposed_data"], args["name"])
-        return _as_proposal(p, mature=True)
-    if name == "get_schema":
-        return {"result": agents.get_schema(), "proposal": None}
-    if name == "get_playbook":
-        return {"result": agents.get_playbook(args["vertical"]), "proposal": None}
-    if name == "list_samples":
-        import samples
-        return {"result": samples.list_samples(), "proposal": None}
-    if name == "get_sample":
-        import samples
-        sid = args["sample_id"]
-        man = samples.load_manifest(sid)
-        if man is None:
-            return {"result": {"error": f"unknown sample id: {sid}",
-                               "available": [s["id"] for s in samples.list_samples()]},
-                    "proposal": None}
-        return {"result": {"id": sid, "manifest_yaml": man}, "proposal": None}
-    if name == "get_debt_corpus":
-        return {"result": agents.get_debt_corpus(
-            args["section"], args.get("stage"), args.get("top_n", 15)), "proposal": None}
-    if name == "add_component":
-        import yaml
-        op = {"op": "add-component", "name": args["name"]}
-        if args.get("nodes"):
-            op["nodes"] = args["nodes"]
-        if args.get("edges"):
-            op["edges"] = args["edges"]
-        return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
-    if name == "add_node":
-        import yaml
-        node = {"id": args["id"], "prompt": args["prompt"]}
-        if args.get("type"):
-            node["type"] = args["type"]
-        if args.get("config"):
-            node["config"] = args["config"]
-        op = {"op": "append-node", "component": args["component"], "node": node}
-        if args.get("edges"):
-            op["edges"] = args["edges"]
-        return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
-    if name == "add_intent":
-        import yaml
-        op = {"op": "add-intent", "name": args["name"], "language": args["language"]}
-        if args.get("keywords"):
-            op["keywords"] = args["keywords"]
-        if args.get("user_responses"):
-            op["user_responses"] = args["user_responses"]
-        return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
-    if name == "add_variable":
-        import yaml
-        return _as_proposal(agents.propose_mods(data, yaml.safe_dump(
-            [{"op": "add-variable", "name": args["name"]}])))
-    if name == "set_hotwords":
-        import yaml
-        op = {"op": "set-hotwords", "hot_words": args["hot_words"]}
-        if args.get("node") is not None:
-            op["node"] = args["node"]
-        return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
-    if name == "set_node_tags":
-        import yaml
-        op = {"op": "set-node-tags", "node": args["node"], "tags": args["tags"]}
-        return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
-    if name == "set_intent_training":
-        import yaml
-        op = {"op": "set-intent-training", "name": args["name"]}
-        if args.get("keywords"):
-            op["keywords"] = args["keywords"]
-        if args.get("user_responses"):
-            op["user_responses"] = args["user_responses"]
-        return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
-    if name in ("import_intents_xlsx", "import_kb_xlsx"):
-        path = args.get("path")
-        if not path:
-            return {"result": {"ok": False,
-                    "error": f"no {'intent' if 'intents' in name else 'KB'} Excel attached this turn"},
-                    "proposal": None}
-        import yaml
-        op = "import-intents-xlsx" if name == "import_intents_xlsx" else "import-kb-xlsx"
-        return _as_proposal(agents.propose_mods(data, yaml.safe_dump([{"op": op, "path": path}])))
-    if name == "add_kb":
-        import yaml
-        op = {"op": "add-kb", "name": args["name"], "intents": args["intents"],
-              "answers": args.get("answers", [])}
-        if args.get("multi_round"):
-            op["multi_round"] = args["multi_round"]
-        return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
-    if name == "rename_kb":
-        import yaml
-        op = {"op": "rename-kb", "name": args["name"], "new_name": args["new_name"]}
-        return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
-    if name == "set_kb_intents":
-        import yaml
-        op = {"op": "set-kb-intents", "name": args["name"], "intents": args["intents"]}
-        return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
-    if name == "add_kb_answer":
-        import yaml
-        op = {"op": "add-kb-answer", "name": args["name"], "text": args["text"]}
-        if args.get("after") is not None:
-            op["after"] = args["after"]
-        return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
-    if name == "edit_kb_answer":
-        import yaml
-        op = {"op": "edit-kb-answer", "name": args["name"], "new_text": args["new_text"]}
-        if args.get("old_text") is not None:
-            op["old_text"] = args["old_text"]
-        if args.get("index") is not None:
-            op["index"] = args["index"]
-        if args.get("after") is not None:
-            op["after"] = args["after"]
-        return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
-    if name == "remove_kb_answer":
-        import yaml
-        op = {"op": "remove-kb-answer", "name": args["name"]}
-        if args.get("text") is not None:
-            op["text"] = args["text"]
-        if args.get("index") is not None:
-            op["index"] = args["index"]
-        return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
-    if name == "set_kb_multiround":
-        import yaml
-        op = {"op": "set-kb-multiround", "name": args["name"],
-              "target_component": args.get("target_component")}
-        return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
-    if name == "delete_kb":
-        import yaml
-        op = {"op": "delete-kb", "name": args["name"]}
-        return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
-    if name == "connect_components":
-        import yaml
-        node = {"id": args["id"], "prompt": args.get("prompt", "(goto)"),
-                "type": "goto", "config": {"target": args["target"]}}
-        op = {"op": "append-node", "component": args["component"], "node": node,
-              "edges": [{"from": args["from"], "branch": args["branch"], "to": args["id"]}]}
-        return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
-    if name == "rewire_edge":
-        import yaml
-        op = {"op": "rewire-edge", "component": args["component"],
-              "from": args["from"], "branch": args["branch"]}
-        if args.get("to"):
-            op["to"] = args["to"]
-        if args.get("to_component"):
-            op["to_component"] = args["to_component"]
-        return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
-    if name == "delete_edge":
-        import yaml
-        op = {"op": "delete-edge", "component": args["component"],
-              "from": args["from"], "branch": args["branch"]}
-        return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
-    if name == "delete_node":
-        import yaml
-        op = {"op": "delete-node", "component": args["component"], "node": args["node"]}
-        return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
-    if name == "move_node":
-        import yaml
-        op = {"op": "move-node", "node": args["node"], "to_component": args["to_component"]}
-        if args.get("from_component") is not None:
-            op["from_component"] = args["from_component"]
-        return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
-    if name == "rename_node":
-        import yaml
-        op = {"op": "rename-node", "component": args["component"], "node": args["node"]}
-        if args.get("label"):
-            op["label"] = args["label"]
-        if args.get("prompt"):
-            op["prompt"] = args["prompt"]
-        return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
-    if name == "complete_component":
-        import yaml
-        op = {"op": "complete-component", "component": args["component"]}
-        if args.get("exit_target"):
-            op["exit_target"] = args["exit_target"]
-        return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
-    return {"result": {"error": f"unknown tool {name!r}"}, "proposal": None}
+    handler = _HANDLERS.get(name)
+    if handler is None:
+        return {"result": {"error": f"unknown tool {name!r}"}, "proposal": None}
+    return handler(args, data)
 
 
 def _as_proposal(p: dict, *, mature: bool = False) -> dict:
