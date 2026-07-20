@@ -12,7 +12,7 @@ import threading  # noqa: E402
 import os  # noqa: E402
 import ipaddress  # noqa: E402
 import hmac  # noqa: E402
-from contextlib import contextmanager  # noqa: E402
+from contextlib import contextmanager, asynccontextmanager  # noqa: E402
 from urllib.parse import urlparse  # noqa: E402
 import tempfile  # noqa: E402
 import io  # noqa: E402
@@ -66,6 +66,9 @@ _ATTACH_MAX_BYTES = 5 * 1024 * 1024
 # process. Env-overridable.
 _MAX_UPLOAD_BYTES = int(os.getenv("MAX_UPLOAD_BYTES", str(25 * 1024 * 1024)))
 _MAX_MESSAGE_CHARS = int(os.getenv("MAX_MESSAGE_CHARS", "100000"))
+# Sync endpoints (incl. long chat turns) run in AnyIO's threadpool (default 40).
+# Raise the ceiling so a few long-held turns don't starve other sync routes.
+_THREADPOOL_TOKENS = int(os.getenv("THREADPOOL_TOKENS", "80"))
 _STARTED = time.time()
 
 _IMAGE_MAGIC = {
@@ -79,7 +82,19 @@ _IMAGE_EXTS = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
                ".gif": "image/gif", ".webp": "image/webp"}
 _MAX_IMAGES = 4
 
-app = FastAPI(title="Talkbot Architect API")
+@asynccontextmanager
+async def _lifespan(_app):
+    # Raise the threadpool capacity within the running loop so concurrent sync
+    # requests (and long chat turns) have headroom.
+    try:
+        import anyio
+        anyio.to_thread.current_default_thread_limiter().total_tokens = _THREADPOOL_TOKENS
+    except Exception as e:  # pragma: no cover - best-effort tuning
+        log.error("", extra={"ev": "threadpool_tune_error", "err": str(e)})
+    yield
+
+
+app = FastAPI(title="Talkbot Architect API", lifespan=_lifespan)
 # With allow_credentials=True a wildcard origin is invalid, so we list origins.
 # Prod sets CORS_ORIGINS explicitly (or serves the SPA same-origin → CORS unused).
 # When unset, default to the Vite dev server so local dev (5173 → 8000) works

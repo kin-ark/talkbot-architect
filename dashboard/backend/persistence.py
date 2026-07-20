@@ -68,22 +68,45 @@ def save_session(session) -> None:
     os.replace(tmp, path)
 
 
+# Per-file metadata cache for list_sessions, keyed by path. Each session file
+# (with its full undo stack) was parsed on every list; cache the derived meta
+# and only re-parse a file whose mtime/size changed.
+_list_meta_cache: dict = {}   # {path_str: (mtime, size, meta)}
+
+
 def list_sessions(owner: str | None = None) -> list[dict]:
     if not SESSIONS_DIR.exists():
         return []
     out = []
+    seen: set[str] = set()
     for p in SESSIONS_DIR.glob("*.json"):
         try:
-            st = json.loads(p.read_text(encoding="utf-8"))
-        except (json.JSONDecodeError, OSError):
+            fstat = p.stat()
+        except OSError:
             continue
-        if owner is not None and st.get("owner", "_legacy") != owner:
+        key = str(p)
+        seen.add(key)
+        cached = _list_meta_cache.get(key)
+        if cached and cached[0] == fstat.st_mtime and cached[1] == fstat.st_size:
+            meta = cached[2]
+        else:
+            try:
+                st = json.loads(p.read_text(encoding="utf-8"))
+            except (json.JSONDecodeError, OSError):
+                continue
+            stack = st.get("stack") or []
+            meta = {"id": st.get("id"), "name": st.get("name", "Session"),
+                    "updated": st.get("updated", 0), "has_summary": bool(stack),
+                    "owner": st.get("owner", "_legacy"),
+                    "usage": st.get("usage") or {"input_tokens": 0, "output_tokens": 0,
+                                                 "turns": 0, "model": None}}
+            _list_meta_cache[key] = (fstat.st_mtime, fstat.st_size, meta)
+        if owner is not None and meta.get("owner", "_legacy") != owner:
             continue
-        stack = st.get("stack") or []
-        out.append({"id": st.get("id"), "name": st.get("name", "Session"),
-                    "updated": st.get("updated", 0),
-                    "has_summary": bool(stack),
-                    "usage": st.get("usage") or {"input_tokens": 0, "output_tokens": 0, "turns": 0, "model": None}})
+        out.append({k: v for k, v in meta.items() if k != "owner"})
+    # Drop cache entries for deleted files so it doesn't grow unbounded.
+    for stale in [k for k in _list_meta_cache if k not in seen]:
+        _list_meta_cache.pop(stale, None)
     out.sort(key=lambda e: e["updated"], reverse=True)
     return out
 

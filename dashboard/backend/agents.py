@@ -25,6 +25,8 @@ _DEBT_CORPUS_SECTIONS = (
 )
 _DEBT_CORPUS_CAP = 30
 _debt_corpus_cache: dict = {}   # {(path, mtime): parsed} — invalidated when the file changes
+_facts_cache: dict = {}         # {mtime-signature: [facts]} — the LLM calls get_facts a lot
+_schema_cache: dict = {}        # {mtime-signature: schema dict}
 
 from wizcheck.parser import parse_dict          # noqa: E402
 from wizcheck.checks import run_all_checks      # noqa: E402
@@ -230,59 +232,74 @@ def list_intents(data: dict) -> list[dict]:
     return out
 
 
-def get_facts(query: str) -> list[dict]:
-    """Keyword search over wiz-facts YAML files.
+def _mtime_sig(paths) -> tuple | None:
+    """A cache key from (path, mtime) for each file; None if any stat fails."""
+    try:
+        return tuple((str(p), p.stat().st_mtime) for p in paths)
+    except OSError:
+        return None
 
-    Searches ``skills_dir() / "wiz-facts" / "facts" / "*.yaml"``.
-    A fact matches if *query* (lowercased) appears anywhere in its
-    ``id``, ``note``, or ``quote`` fields.
-    """
+
+def _all_facts() -> list[dict]:
+    """Parse every wiz-facts YAML once and cache the flattened fact list,
+    invalidating on any file's mtime change (the LLM calls get_facts often)."""
     facts_dir = skills_dir() / "wiz-facts" / "facts"
-    q = query.lower()
-    matches: list[dict] = []
-
-    for yaml_path in sorted(facts_dir.glob("*.yaml")):
-        try:
-            doc = yaml.safe_load(yaml_path.read_text("utf-8"))
-        except Exception:
-            continue
-        if not isinstance(doc, dict):
-            continue
-        for fact in doc.get("facts", []):
-            if not isinstance(fact, dict):
+    paths = sorted(facts_dir.glob("*.yaml"))
+    sig = _mtime_sig(paths)
+    cached = _facts_cache.get(sig) if sig is not None else None
+    if cached is None:
+        out: list[dict] = []
+        for yaml_path in paths:
+            try:
+                doc = yaml.safe_load(yaml_path.read_text("utf-8"))
+            except Exception:
                 continue
-            haystack = (
-                f"{fact.get('id', '')} "
-                f"{fact.get('note', '')} "
-                f"{fact.get('quote', '')}"
-            ).lower()
-            if q in haystack:
-                matches.append(fact)
+            if isinstance(doc, dict):
+                out.extend(f for f in doc.get("facts", []) if isinstance(f, dict))
+        cached = out
+        if sig is not None:
+            _facts_cache.clear()
+            _facts_cache[sig] = cached
+    return cached
 
-    return matches
+
+def get_facts(query: str) -> list[dict]:
+    """Keyword search over wiz-facts YAML files. A fact matches if *query*
+    (lowercased) appears anywhere in its ``id``, ``note``, or ``quote``."""
+    q = query.lower()
+    return [
+        fact for fact in _all_facts()
+        if q in f"{fact.get('id', '')} {fact.get('note', '')} {fact.get('quote', '')}".lower()
+    ]
 
 
 def get_schema() -> dict:
     """Return the builder manifest schema, known node labels, and modifier op
     names so the LLM can author valid scaffold_bot params and ops."""
     schema_dir = skills_dir() / "wiz-builder" / "schema"
-    manifest_schema: dict = {}
-    node_labels: list[str] = []
-    try:
-        manifest_schema = yaml.safe_load(
-            (schema_dir / "manifest.schema.yaml").read_text("utf-8")) or {}
-    except Exception:
-        manifest_schema = {}
-    try:
-        doc = yaml.safe_load((schema_dir / "known_node_labels.yaml").read_text("utf-8")) or {}
-        node_labels = list(doc.get("labels", []))
-    except Exception:
-        node_labels = []
-    return {
-        "manifest_schema": manifest_schema,
-        "node_labels": node_labels,
-        "modifier_ops": sorted(OP_REGISTRY),
-    }
+    mp = schema_dir / "manifest.schema.yaml"
+    lp = schema_dir / "known_node_labels.yaml"
+    sig = _mtime_sig([mp, lp])
+    cached = _schema_cache.get(sig) if sig is not None else None
+    if cached is None:
+        try:
+            manifest_schema = yaml.safe_load(mp.read_text("utf-8")) or {}
+        except Exception:
+            manifest_schema = {}
+        try:
+            doc = yaml.safe_load(lp.read_text("utf-8")) or {}
+            node_labels = list(doc.get("labels", []))
+        except Exception:
+            node_labels = []
+        cached = {
+            "manifest_schema": manifest_schema,
+            "node_labels": node_labels,
+            "modifier_ops": sorted(OP_REGISTRY),
+        }
+        if sig is not None:
+            _schema_cache.clear()
+            _schema_cache[sig] = cached
+    return cached
 
 
 def get_playbook(vertical: str) -> dict:
