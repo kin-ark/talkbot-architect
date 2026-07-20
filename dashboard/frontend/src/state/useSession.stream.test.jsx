@@ -131,6 +131,21 @@ describe('useSession streaming', () => {
     });
   });
 
+  it('does not leave an empty agent bubble above an error', async () => {
+    scriptStream([
+      { type: 'error', message: 'boom' },
+      { type: 'done', canceled: false, text: '' },
+    ]);
+    const { result } = renderHook(() => useSession());
+    await act(async () => { await result.current.send('hi'); });
+    await waitFor(() => {
+      expect(result.current.transcript.some((m) => m.role === 'error')).toBe(true);
+    });
+    const emptyAgents = result.current.transcript.filter(
+      (m) => m.role === 'agent' && !m.text && (!m.tool_trace || m.tool_trace.length === 0));
+    expect(emptyAgents).toHaveLength(0);
+  });
+
   it('stores stop_reason=limit on the agent entry', async () => {
     scriptStream([
       { type: 'token', delta: 'partial' },

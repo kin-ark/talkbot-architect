@@ -209,14 +209,18 @@ export function useSession() {
               else if (e.type === 'tool_result') patch((m) => ({ ...m, tool_trace: m.tool_trace.map((tt) => (tt._kind === 'tool' && tt.call_id === e.call_id ? { ...tt, status: 'done', summary: e.summary, result: e.result, endTs: e.ts } : tt)) }));
               else if (e.type === 'usage') setUsage({ input_tokens: e.input_tokens, output_tokens: e.output_tokens, turns: e.turns, model: e.model });
               else if (e.type === 'proposal') setProposal(e.proposal);
-              else if (e.type === 'error') setTranscript((t) => [...t, { role: 'error', text: e.message, kind: e.kind, recovery: e.recovery }]);
+              else if (e.type === 'error') setTranscript((t) => [
+                ...t.filter((m) => !(m._id === aid && m.role === 'agent' && !m.text && (!m.tool_trace || m.tool_trace.length === 0))),
+                { role: 'error', text: e.message, kind: e.kind, recovery: e.recovery }]);
               else if (e.type === 'done') { if (e.text) patch((m) => ({ ...m, text: e.text })); if (e.stop_reason) patch((m) => ({ ...m, stop_reason: e.stop_reason })); }
             },
           });
         } catch (e) {
           queue.current = [];
           if (e?.name !== 'AbortError' && e?.name !== 'CanceledError') {
-            setTranscript((t) => [...t, { role: 'error', text: errText(e) }]);
+            setTranscript((t) => [
+              ...t.filter((m) => !(m._id === aid && m.role === 'agent' && !m.text && (!m.tool_trace || m.tool_trace.length === 0))),
+              { role: 'error', text: errText(e) }]);
             toast.error(errText(e));
           }
         }
