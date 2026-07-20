@@ -1,27 +1,43 @@
 # WIZ.AI General Bot Authoring Playbook
 
-A domain-agnostic guide to authoring a mature, production-grade WIZ.AI dialogue bot. Follow the universal flow skeleton and the maturity bar to ensure your bot imports cleanly and deploys reliably.
+A domain-agnostic guide to authoring a mature, production-grade WIZ.AI dialogue bot. Follow the component architecture, the universal flow skeleton, and the maturity bar to ensure your bot imports cleanly and deploys reliably.
+
+## Component Architecture — split the bot into many small components
+
+A mature bot is **NOT one big component full of nodes.** Structure it as a set of small, single-purpose components wired together. (Derived from 33 real production bots: median **12 components/bot**, **~5 nodes per component**, and **0 single-component bots** — nobody ships one giant canvas.)
+
+1. **Never put the whole dialogue in one component.** Always split — real bots use ~12 top-level components (minimum 10), never 1.
+2. **Keep each component small — target ~5 nodes, hard cap ~10.** If a component grows past ~10 nodes, split it into smaller ones.
+3. **One responsibility per component,** named by its job (e.g. Greeting, Verify Identity, Inform, Collect/Confirm, Objection & Q&A, Closing, Wrong Number, Fallback).
+4. **Map the funnel to components, not to nodes on one canvas.** Each funnel stage is its own component.
+5. **Stitch components with `goto`** (goto_component) — keep them small and linked, not inlined (real bots average ~16 cross-component links).
+6. **Extract shared subflows into `nested` components** — a reusable closing, an identity check, a persuasion loop.
+7. **Use multi-round components for any real back-and-forth** (negotiation, clarification, multi-turn Q&A). Every real bot has ≥4; reach them via KBs.
+8. **Put FAQs / objections / interruptions in Knowledge Bases,** not giant branching talk trees — a KB fires whenever the caller raises its intent, at any point (real bots carry ~44 KBs each).
 
 ## Universal Flow Skeleton
 
-Every mature bot follows a linear progression:
+Every mature bot follows this progression — **each stage is its own small component**, linked by `goto`:
 
 ```
-Greeting + Identity Confirm (talk)
-  ↓ branches: Correct → Continue / Wrong → Error handling / Unclassified
-Information Collection (talk)
+[Greeting + Identity Confirm]  (component)
+  ↓ branches: Correct → next / Wrong → Wrong-Number component / Unclassified
+[Information Collection]  (component)
   ↓ branches: Proceed / Cannot Proceed / Unclassified
-Route/Resolve (talk / conditional / nested)
+[Route/Resolve — core interaction]  (component; talk / conditional / nested / multi-round)
   ↓ branches: Success / Failure / Unclassified
-Closing (exit or transfer)
+[Closing]  (component: exit or transfer — usually a Positive and a Negative closing)
 ```
 
-Each component must end in a **terminal node** (exit or transfer). All talk nodes branch on **Positive** / **Negative** / **Unclassified** (or locally renamed variants). Use `goto_kb` to handle off-script user intents at any stage.
+Plus these cross-cutting components every bot should have: **Wrong Person / Wrong Number**, **Unavailable / call-back-later**, **Unclassified fallback**, and a **human Transfer** escape.
+
+Each component must end in its own **terminal node** (exit or transfer). All talk nodes branch on **Positive** / **Negative** / **Unclassified** (or locally renamed variants). Use `goto_kb` to handle off-script user intents at any stage.
 
 ## The Maturity Bar
 
 **Must-haves** for a bot that imports and deploys cleanly:
 
+0. **Split into many small components** (see Component Architecture) — never one big component; target ~5 nodes each, cap ~10. Map each funnel stage to its own component and wire them with `goto`.
 1. **Every component ends in an Exit or Transfer.** Components without a terminal node fail import (`WIZ107`).
 2. **Every talk node has a connected "Unclassified" branch.** This catch-all handles parse failures, hesitations, and off-topic input (`WIZ108`). It must route somewhere (usually to an Exit or a KB).
 3. **Declare intents before KBs that trigger on them.** Call `add_intent` (with keywords and example user responses) BEFORE any KB that triggers on that intent.
@@ -77,6 +93,8 @@ Declare the category once at top level, then tag each terminal or branch node wi
 - **Variable assigned after conditional reads it = silent deploy failure.** The conditional can only branch on a value set by an earlier assign node or a system/collected variable.
 - **Intent not declared before KB trigger = intent mismatch.** Declare intents first, then author KBs.
 - **transfer (type 13) has zero corpus use.** Use exit + a spoken callback promise instead.
+- **One giant component is an anti-pattern.** No real production bot does this (0/33). A component with many nodes (>~10) or a bot with a single component signals under-decomposition — split by responsibility.
+- **Flat talk-tree for objections is an anti-pattern.** Handle recurring questions/objections with intent-triggered KBs (and multi-round KBs for follow-ups), not deep branch chains.
 
 ---
 
