@@ -175,7 +175,7 @@ export default function App() {
               onOpenSettings={() => setLeftPage('settings')} />
           )}
         </div>
-        {s.summary && (
+        {(s.summary || s.activeSessionId) && (
           <RightDock activeTab={dockTab} onTabChange={setDockTab} summary={s.summary} findings={s.findings}
             selectedNode={selectedNode ? resolveNode(selectedNode) : null} onSelectNode={selectNode} chat={chat}
             onPreview={onPreview} onAskFix={onAskFix}
