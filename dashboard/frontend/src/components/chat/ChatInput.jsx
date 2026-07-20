@@ -1,8 +1,11 @@
-import { useRef, useState, useLayoutEffect } from 'react';
+import { useRef, useState, useLayoutEffect, useEffect } from 'react';
 import { Paperclip, X } from 'lucide-react';
 import { attachFile, clearAttachment, clearImage } from '../../api';
+import { toast } from '../../toast/toastStore';
 
 const MAX_H = 144; // ~6 lines
+const MAX_IMAGES = 4;                       // matches the backend cap
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;    // 5 MB, matches the backend cap
 
 export default function ChatInput({ value, onChange, onSubmit, sending, onCancel,
   slashMatches, mentionMatches, onPickSlash, onPickMention, canSendImages = true }) {
@@ -12,6 +15,12 @@ export default function ChatInput({ value, onChange, onSubmit, sending, onCancel
   const [attachment, setAttachment] = useState(null);
   const [attaching, setAttaching] = useState(false);
   const [images, setImages] = useState([]);
+
+  // Revoke object URLs for any STILL-STAGED (unsent) images on unmount — sent
+  // images clear `images` (ownership transfers to the bubble) so nothing leaks.
+  const imagesRef = useRef([]);
+  useEffect(() => { imagesRef.current = images; }, [images]);
+  useEffect(() => () => imagesRef.current.forEach((im) => URL.revokeObjectURL(im.url)), []);
 
   const slashOpen = !dismissed && slashMatches.length > 0;
   const mentionOpen = !dismissed && mentionMatches.length > 0;
@@ -33,28 +42,36 @@ export default function ChatInput({ value, onChange, onSubmit, sending, onCancel
     setImages([]);   // clear chips; ownership of the object URLs transfers to the sent bubble — do NOT revoke here
   };
 
-  const uploadImage = async (file) => {
-    try {
-      const r = await attachFile(file);
-      if (r.kind === 'image') {
-        setImages((xs) => [...xs, { name: r.name, url: URL.createObjectURL(file) }]);
-      }
-    } catch (err) {
-      console.error('attach failed:', err);
+  // Returns false (and toasts) if adding this image would exceed the count/size
+  // caps. `staged` is the count already accepted this batch (state lags in a loop).
+  const imageAllowed = (file, staged) => {
+    if (staged >= MAX_IMAGES) {
+      toast.error(`You can attach at most ${MAX_IMAGES} images per message.`);
+      return false;
     }
+    if (file.size > MAX_IMAGE_BYTES) {
+      toast.error(`Image too large (max 5 MB): ${file.name}`);
+      return false;
+    }
+    return true;
   };
 
   const handleFileSelect = async (e) => {
     const files = e.target.files;
     if (!files) return;
     setAttaching(true);
+    let staged = images.length;
     try {
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        // Don't upload images on a non-vision model — they'd only 400 on send.
-        if (file.type.startsWith('image/') && !canSendImages) continue;
+        if (file.type.startsWith('image/')) {
+          // Don't upload images on a non-vision model — they'd only 400 on send.
+          if (!canSendImages) continue;
+          if (!imageAllowed(file, staged)) continue;
+        }
         const result = await attachFile(file);
         if (result.kind === 'image') {
+          staged += 1;
           setImages((xs) => [...xs, { name: result.name, url: URL.createObjectURL(file) }]);
         } else {
           setAttachment(result);
@@ -62,6 +79,7 @@ export default function ChatInput({ value, onChange, onSubmit, sending, onCancel
       }
     } catch (err) {
       console.error('attach failed:', err);
+      toast.error('Attachment failed. Please try again.');
     } finally {
       setAttaching(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -75,10 +93,21 @@ export default function ChatInput({ value, onChange, onSubmit, sending, onCancel
     if (!imgs.length) return;
     e.preventDefault();
     setAttaching(true);
+    let staged = images.length;
     try {
       for (const it of imgs) {
         const f = it.getAsFile();
-        if (f) await uploadImage(f);
+        if (!f || !imageAllowed(f, staged)) continue;
+        try {
+          const r = await attachFile(f);
+          if (r.kind === 'image') {
+            staged += 1;
+            setImages((xs) => [...xs, { name: r.name, url: URL.createObjectURL(f) }]);
+          }
+        } catch (err) {
+          console.error('attach failed:', err);
+          toast.error('Pasting the image failed. Please try again.');
+        }
       }
     } finally {
       setAttaching(false);

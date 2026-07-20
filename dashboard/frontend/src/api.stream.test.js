@@ -36,3 +36,22 @@ describe('streamChat', () => {
     expect(events[0]).toEqual({ type: 'token', delta: 'x' });
   });
 });
+
+describe('streamChat error detail', () => {
+  it('surfaces the server reason instead of a bare status', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false, status: 400, body: null,
+      json: () => Promise.resolve({ detail: "the current model can't read images" }),
+    });
+    await expect(streamChat('hi', { onEvent: () => {} }))
+      .rejects.toThrow("the current model can't read images");
+  });
+
+  it('falls back to the status when the body is not JSON', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false, status: 502, body: null,
+      json: () => Promise.reject(new Error('not json')),
+    });
+    await expect(streamChat('hi', { onEvent: () => {} })).rejects.toThrow('stream failed: 502');
+  });
+});

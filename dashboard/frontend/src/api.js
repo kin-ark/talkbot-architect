@@ -72,7 +72,16 @@ export async function streamChat(message, { onEvent, signal } = {}) {
     if (e?.name === 'AbortError') return;
     throw e;
   }
-  if (!resp.ok || !resp.body) throw new Error(`stream failed: ${resp.status}`);
+  if (!resp.ok || !resp.body) {
+    // Surface the server's real reason (e.g. the vision-model 400, a 502
+    // provider message) instead of a bare status code.
+    let detail = '';
+    try {
+      const body = await resp.json();
+      detail = body?.detail || body?.error?.message || '';
+    } catch { /* response wasn't JSON */ }
+    throw new Error(detail || `stream failed: ${resp.status}`);
+  }
   const reader = resp.body.getReader();
   const dec = new TextDecoder();
   let buf = '';
