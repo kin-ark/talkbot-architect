@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { getConfig, updateConfig, clearConfig, getModels } from '../api';
 import Button from './ui/Button';
 
-export default function SettingsPage() {
+export default function SettingsPage({ onSaved } = {}) {
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState(null);
@@ -58,6 +58,7 @@ export default function SettingsPage() {
       setStatus(cfg);
       setApiKey('');
       setNotice({ type: 'ok', text: 'Saved.' });
+      onSaved?.();   // let the app refresh config (canSendImages etc.)
     } catch {
       setNotice({ type: 'err', text: 'Save failed.' });
     }
@@ -75,6 +76,7 @@ export default function SettingsPage() {
       setCustomModel('');
       setApiKey('');
       setNotice({ type: 'ok', text: 'Reset to env defaults.' });
+      onSaved?.();   // refresh app config after reset
     } catch {
       setNotice({ type: 'err', text: 'Reset failed.' });
     }
