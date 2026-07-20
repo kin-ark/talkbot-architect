@@ -126,12 +126,6 @@ export default function MessageBubble({ role, text, toolTrace, reasoning, isLast
           </IconButton>
         </span>
       )}
-      {role === 'error' && (
-        <div className="mt-1">
-          <button type="button" onClick={onRetry}
-            className="text-xs text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded">Retry</button>
-        </div>
-      )}
       {role === 'agent' && stopReason === 'limit' && (
         <RecoveryBar tokens={['continue']} onContinue={onContinue || (() => onSend('continue'))} />
       )}
