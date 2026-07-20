@@ -191,7 +191,7 @@ export default function ChatInput({ value, onChange, onSubmit, sending, onCancel
         <input ref={fileInputRef} type="file" onChange={handleFileSelect} className="hidden" data-testid="file-input" accept="image/*,.xls,.xlsx,.json,.txt" multiple />
         <button type="button" onClick={() => fileInputRef.current?.click()} disabled={sending || attaching}
           className="shrink-0 h-[38px] w-[38px] flex items-center justify-center text-text-tertiary hover:text-text hover:bg-surface-muted rounded-lg transition-colors"
-          title="Attach file" data-testid="attach-button">
+          title="Attach file" aria-label="Attach file" data-testid="attach-button">
           <Paperclip size={20} />
         </button>
         {sending
@@ -214,7 +214,7 @@ export default function ChatInput({ value, onChange, onSubmit, sending, onCancel
           {images.map((im, i) => (
             <span key={i} className="relative inline-block">
               <img src={im.url} alt={im.name} className="h-12 w-12 object-cover rounded border border-border" />
-              <button type="button" onClick={() => { clearImage(i).catch(err => console.error('clear image failed:', err)); URL.revokeObjectURL(im.url); setImages((xs) => xs.filter((_, j) => j !== i)); }}
+              <button type="button" aria-label={`Remove image ${im.name}`} onClick={() => { clearImage(i).catch(err => console.error('clear image failed:', err)); URL.revokeObjectURL(im.url); setImages((xs) => xs.filter((_, j) => j !== i)); }}
                 className="absolute -top-1 -right-1 bg-surface rounded-full text-text-tertiary hover:text-text">
                 <X size={12} />
               </button>
@@ -235,7 +235,7 @@ export default function ChatInput({ value, onChange, onSubmit, sending, onCancel
               <button type="button" onClick={() => {
                 clearAttachment().catch(err => console.error('clear failed:', err));
                 setAttachment(null);
-              }} disabled={sending} className="p-0 text-text-tertiary hover:text-text">
+              }} disabled={sending} aria-label="Remove attachment" className="p-0 text-text-tertiary hover:text-text">
                 <X size={14} />
               </button>
             </span>

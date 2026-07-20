@@ -1,7 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 
 export default function PageOverlay({ title, onClose, children }) {
+  const dialogRef = useRef(null);
+  useFocusTrap(dialogRef);
   useEffect(() => {
     const onKey = (e) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', onKey);
@@ -11,7 +14,7 @@ export default function PageOverlay({ title, onClose, children }) {
   return (
     <div data-testid="page-overlay" className="fixed inset-0 z-50 flex items-center justify-center">
       <div data-testid="page-scrim" onClick={onClose} className="absolute inset-0 bg-black/50" />
-      <div role="dialog" aria-label={title}
+      <div ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label={title}
         className="relative bg-surface border border-border rounded-xl shadow-card w-[min(90vw,640px)] max-h-[85vh] flex flex-col">
         <div className="flex items-center justify-between px-4 py-3 border-b border-divider">
           <h2 className="text-sm font-semibold text-text">{title}</h2>

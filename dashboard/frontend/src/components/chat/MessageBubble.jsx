@@ -38,7 +38,7 @@ function WaitingHeader({ toolTrace, hasText, status }) {
   return (
     <div data-testid="thinking-header" className="text-xs text-text-tertiary mb-1">
       <div className="flex items-center gap-1.5">
-        <span className="inline-block animate-pulse">◐</span>
+        <span className="inline-block animate-pulse" aria-hidden="true">◐</span>
         <span>{label}…</span>
         <span className="font-mono">{fmtElapsed(sec)}</span>
       </div>
@@ -100,7 +100,7 @@ export default function MessageBubble({ role, text, toolTrace, reasoning, isLast
           ? text
           : <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]} components={mdComponents}>{text || ''}</ReactMarkdown>}
         {!plain && isLast && sending && text && (
-          <span data-testid="stream-caret" className="inline-block w-1.5 animate-pulse">▍</span>
+          <span data-testid="stream-caret" className="inline-block w-1.5 animate-pulse" aria-hidden="true">▍</span>
         )}
         {images?.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-2">
