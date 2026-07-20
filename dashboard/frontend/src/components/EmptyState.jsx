@@ -26,7 +26,7 @@ export default function EmptyState({ keySet, loading, uploadProgress, onUpload, 
             className="mt-4 w-full border border-border rounded-xl py-2 text-sm text-text-secondary hover:bg-surface-muted">
             Start from scratch — describe a new bot
           </button>
-          {loading && <p className="text-center mt-4 text-text-tertiary">Analyzing…</p>}
+          {loading && !uploadProgress && <p className="text-center mt-4 text-text-tertiary">Analyzing…</p>}
         </div>
         <SampleGallery onPick={onLoadSample} />
       </div>

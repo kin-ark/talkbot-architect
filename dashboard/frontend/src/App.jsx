@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession } from './state/useSession';
 import { useConfirm } from './confirm/ConfirmProvider';
 import TopBar from './components/TopBar';
@@ -37,20 +37,20 @@ export default function App() {
   const [models, setModels] = useState([]);
   const [config, setConfig] = useState(null);
   const [customId, setCustomId] = useState('');
-  useEffect(() => {
-    if (s.summary) return;                       // only probe on the empty state
-    let off = false;
-    Promise.all([getConfig(), getModels()])
+  // Load config+models on mount (NOT gated on empty-state) so a rehydrated
+  // session on reload still knows the model's vision capability -> image input
+  // works. Also called after a Settings save so canSendImages stays fresh.
+  const loadConfig = useCallback(() => {
+    return Promise.all([getConfig(), getModels()])
       .then(([c, m]) => {
-        if (off) return;
         setKeySet(!!c.key_set);
         setConfig(c);
         setModels(m.models || []);
         setCustomId(m.custom_id || '');
       })
       .catch(() => {});
-    return () => { off = true; };
-  }, [s.summary]);
+  }, []);
+  useEffect(() => { loadConfig(); }, [loadConfig]);
 
   const onExport = async () => {
     const errs = s.findings.filter((f) => f.severity === 'error').length;
@@ -103,7 +103,7 @@ export default function App() {
       {leftPage === 'stats' && (
         <StatisticsPage usage={s.usage} sessions={s.sessions} activeSessionId={s.activeSessionId} />
       )}
-      {leftPage === 'settings' && <SettingsPage />}
+      {leftPage === 'settings' && <SettingsPage onSaved={loadConfig} />}
     </PageOverlay>
   );
 
@@ -167,7 +167,7 @@ export default function App() {
                   onSelectKb={(id) => { setDockTab('kb'); setFocusKb((f) => ({ id, nonce: (f?.nonce || 0) + 1 })); }} />
               </div>
             </>
-          ) : s.loading ? (
+          ) : (s.loading && !s.uploadProgress) ? (
             <FlowSkeleton />
           ) : (
             <EmptyState keySet={keySet} loading={s.loading} uploadProgress={s.uploadProgress}
