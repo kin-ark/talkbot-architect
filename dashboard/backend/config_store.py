@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import os
 import threading
+from collections import OrderedDict
 from dataclasses import dataclass
 
 
@@ -21,13 +22,24 @@ class RuntimeConfig:
     custom_vision: bool = False
 
 
-_CONFIGS: dict[str, RuntimeConfig] = {}
+# LRU-capped so a long-running process doesn't accumulate one config per browser
+# cookie forever. A config is in-memory only (holds the api key), so evicting a
+# stale cookie just reverts it to env defaults on its next visit.
+_MAX_CONFIGS = int(os.getenv("MAX_CLIENT_CONFIGS", "500"))
+_CONFIGS: "OrderedDict[str, RuntimeConfig]" = OrderedDict()
 _lock = threading.Lock()
 
 
 def config_for(cid: str) -> RuntimeConfig:
     with _lock:
-        return _CONFIGS.setdefault(cid, RuntimeConfig())
+        cfg = _CONFIGS.get(cid)
+        if cfg is None:
+            cfg = _CONFIGS[cid] = RuntimeConfig()
+        else:
+            _CONFIGS.move_to_end(cid)          # mark most-recently-used
+        while len(_CONFIGS) > _MAX_CONFIGS:
+            _CONFIGS.popitem(last=False)        # evict least-recently-used
+        return cfg
 
 
 def effective_key_set(provider: str | None, cfg: RuntimeConfig) -> bool:
