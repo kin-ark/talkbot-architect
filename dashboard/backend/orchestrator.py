@@ -250,9 +250,19 @@ def run_turn_stream(client, session, user_message: str) -> Iterator[dict]:
                 # Avoid double-counting: extract blocker codes from errs to exclude from count
                 err_codes = {e.get("code") for e in errs}
                 unique_blockers = [b for b in maturity_blockers if b.get("code") not in err_codes]
-                if (errs or maturity_blockers) and fix_rounds < _MAX_FIX_BACKSTOPS:
+                tool_rejected = proposal is None and bool(last_tool_error)
+                if (errs or maturity_blockers or tool_rejected) and fix_rounds < _MAX_FIX_BACKSTOPS:
                     fix_rounds += 1
                     messages_to_add = []
+                    if tool_rejected:
+                        messages_to_add.append(
+                            "The last tool call was REJECTED and produced no proposal:\n"
+                            f"- {last_tool_error}\n"
+                            "Diagnose the error and correct the arguments, then call the tool again. "
+                            "Common fixes: declare a custom branch's config.branch_intents + its backing "
+                            "custom_intent + a connected Unclassified edge; remove a system-name label from "
+                            "branch_intents; define a goto/KB/variable/intent target before referencing it. "
+                            "Do not give up.")
                     if errs:
                         msg = (f"The current proposal still has {len(errs)} "
                                f"error{'s' if len(errs) != 1 else ''} and cannot be applied as-is:\n"
@@ -267,7 +277,7 @@ def run_turn_stream(client, session, user_message: str) -> Iterator[dict]:
                     note = "\n\n".join(messages_to_add)
                     messages.append(Message(role="user", content=note))   # messages-only, NOT session.transcript
                     yield {"type": "phase", "phase": "fixing",
-                           "round": fix_rounds, "errors": len(errs),
+                           "round": fix_rounds, "errors": len(errs) or (1 if tool_rejected else 0),
                            "blockers": len(unique_blockers)}
                     continue
                 if errs:

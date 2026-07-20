@@ -104,11 +104,54 @@ def test_proposal_blocked_error_after_backstops_exhausted(monkeypatch):
 def test_tool_arg_error_when_finish_with_tool_error_and_no_proposal(monkeypatch):
     monkeypatch.setattr(orchestrator.registry, "dispatch",
                         lambda name, args, data: {"result": {"error": "bad arg: target not found"}, "proposal": None})
-    tc = ToolCall(id="c", name="add_node", arguments={})
+    tc = lambda i: ToolCall(id=f"c{i}", name="add_node", arguments={})
+    script = []
+    for i in range(6):
+        script.append(LLMResponse(text=None, tool_calls=[tc(i)]))
+        script.append(LLMResponse(text="I could not do that.", tool_calls=[]))
+    client = FakeLLMClient(script=script)
+    evs = _events(client, _sess())
+    ta = [e for e in evs if e["type"] == "error" and e.get("kind") == "tool_arg"]
+    assert ta and ta[0]["recovery"] == ["edit", "retry"]
+
+
+def test_build_failure_self_heals_then_finishes(monkeypatch):
+    calls = {"n": 0}
+    def fake_dispatch(name, args, data):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            return {"result": {"ok": False, "error": "invalid branch 'X'"}, "proposal": None}
+        return {"result": {"ok": True}, "proposal": _proposal([])}
+    monkeypatch.setattr(orchestrator.registry, "dispatch", fake_dispatch)
+
+    def tc(i):
+        return ToolCall(id=f"c{i}", name="scaffold_bot", arguments={})
     client = FakeLLMClient(script=[
-        LLMResponse(text=None, tool_calls=[tc]),
-        LLMResponse(text="I could not do that.", tool_calls=[]),
+        LLMResponse(text=None, tool_calls=[tc(1)]),        # build rejected
+        LLMResponse(text="finishing", tool_calls=[]),       # tries to finish -> self-heal backstop
+        LLMResponse(text=None, tool_calls=[tc(2)]),        # retry -> clean proposal
+        LLMResponse(text="done", tool_calls=[]),            # finish
     ])
     evs = _events(client, _sess())
-    ta = [e for e in evs if e["type"] == "error" and e["kind"] == "tool_arg"]
-    assert ta and ta[0]["recovery"] == ["edit", "retry"]
+    assert [e for e in evs if e["type"] == "phase" and e["phase"] == "fixing"]
+    assert not [e for e in evs if e["type"] == "error" and e.get("kind") == "tool_arg"]
+    assert any(e["type"] == "proposal" for e in evs)
+    assert any(e["type"] == "done" for e in evs)
+
+
+def test_build_failure_gives_up_after_backstops(monkeypatch):
+    monkeypatch.setattr(orchestrator.registry, "dispatch",
+                        lambda name, args, data: {"result": {"ok": False, "error": "invalid branch 'X'"},
+                                                  "proposal": None})
+    def tc(i):
+        return ToolCall(id=f"c{i}", name="scaffold_bot", arguments={})
+    script = []
+    for i in range(6):
+        script.append(LLMResponse(text=None, tool_calls=[tc(i)]))
+        script.append(LLMResponse(text="finish", tool_calls=[]))
+    client = FakeLLMClient(script=script)
+    evs = _events(client, _sess())
+    fixing = [e for e in evs if e["type"] == "phase" and e["phase"] == "fixing"]
+    assert len(fixing) <= _MAX_FIX_BACKSTOPS
+    assert [e for e in evs if e["type"] == "error" and e.get("kind") == "tool_arg"]
+    assert any(e["type"] == "done" for e in evs)
