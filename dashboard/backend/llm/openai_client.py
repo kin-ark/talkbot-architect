@@ -83,8 +83,19 @@ class OpenAIClient(LLMClient):
                             slot["name"] = tc.function.name
                         if tc.function and tc.function.arguments:
                             slot["args"] += tc.function.arguments
-                calls = [ToolCall(id=s["id"], name=s["name"], arguments=json.loads(s["args"] or "{}"))
-                         for s in (acc[k] for k in sorted(acc)) if s["name"]]
+                calls = []
+                for s in (acc[k] for k in sorted(acc)):
+                    if not s["name"]:
+                        continue
+                    try:
+                        args = json.loads(s["args"] or "{}")
+                    except (ValueError, TypeError):
+                        # Truncated / malformed streamed tool arguments (e.g. the
+                        # response hit the output ceiling mid-JSON). Degrade to
+                        # empty args so the dispatch guard returns a clean,
+                        # recoverable error instead of crashing the whole turn.
+                        args = {}
+                    calls.append(ToolCall(id=s["id"], name=s["name"], arguments=args))
                 usage = {"input_tokens": getattr(usage_obj, "prompt_tokens", 0),
                          "output_tokens": getattr(usage_obj, "completion_tokens", 0)} if usage_obj else None
                 yield StreamChunk(response=LLMResponse(text=text or None, tool_calls=calls), usage=usage)

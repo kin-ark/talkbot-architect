@@ -12,13 +12,20 @@ _CALL_TIMEOUT = 120.0
 # A full-bot `build` manifest is large; the old 4096 cap truncated the tool
 # input mid-JSON -> the SDK yielded an empty arg -> "missing manifest_yaml".
 # Env-overridable for the rare exhaustive bot. Opus 4.8 accepts up to 64000.
-_MAX_OUTPUT_TOKENS = int(os.getenv("LLM_MAX_OUTPUT_TOKENS", "32000"))
+_MAX_OUTPUT_TOKENS = int(os.getenv("LLM_MAX_OUTPUT_TOKENS", "64000"))
 
 
 class EmptyStreamError(RuntimeError):
     """The endpoint opened a stream but never delivered a complete message
     (get_final_message asserts). Seen intermittently with relay/proxy endpoints.
     Treated as retryable so a transient empty stream doesn't kill the turn."""
+
+
+class TruncatedToolCallError(RuntimeError):
+    """The model hit the output-token ceiling mid tool-call (stop_reason
+    'max_tokens' with tool_use present), so the tool arguments are cut off /
+    incomplete -> a build with a missing/empty manifest_yaml. Retryable: the
+    model often produces a compact enough call on a retry."""
 
 
 class AnthropicClient(LLMClient):
@@ -40,7 +47,7 @@ class AnthropicClient(LLMClient):
     @staticmethod
     def _is_retryable(exc: Exception) -> bool:
         import anthropic
-        if isinstance(exc, EmptyStreamError):
+        if isinstance(exc, (EmptyStreamError, TruncatedToolCallError)):
             return True
         if isinstance(exc, anthropic.RateLimitError):
             return True
@@ -128,6 +135,13 @@ class AnthropicClient(LLMClient):
                         calls.append(ToolCall(id=block.id, name=block.name, arguments=block.input))
                     elif block.type in ("thinking", "redacted_thinking"):
                         tblocks.append(_thinking_block_to_dict(block))
+                # A tool call that ran into the output ceiling has cut-off
+                # arguments (incomplete JSON -> empty/partial input). Retry it
+                # rather than pass a broken tool call downstream.
+                if getattr(final, "stop_reason", None) == "max_tokens" and calls:
+                    raise TruncatedToolCallError(
+                        f"tool call truncated at max_tokens ({self._max_tokens()}) "
+                        f"for model {self._model!r}; arguments incomplete")
                 u = getattr(final, "usage", None)
                 usage = {"input_tokens": getattr(u, "input_tokens", 0),
                          "output_tokens": getattr(u, "output_tokens", 0)} if u else None
