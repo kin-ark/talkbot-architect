@@ -232,6 +232,21 @@ def list_intents(data: dict) -> list[dict]:
     return out
 
 
+def list_variables(data: dict) -> list[dict]:
+    """Derive variables from raw SpeechVariable. variableSource 1=system, 0=custom.
+    Never raises; skips malformed entries."""
+    out: list[dict] = []
+    for v in unwrap(data.get("SpeechVariable")) or []:
+        if not isinstance(v, dict):
+            continue
+        name = v.get("name")
+        if not name:
+            continue
+        source = "system" if int(v.get("variableSource", 0) or 0) == 1 else "custom"
+        out.append({"name": name, "source": source})
+    return out
+
+
 def _mtime_sig(paths) -> tuple | None:
     """A cache key from (path, mtime) for each file; None if any stat fails."""
     try:

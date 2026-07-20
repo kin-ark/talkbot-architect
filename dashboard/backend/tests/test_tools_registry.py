@@ -35,7 +35,7 @@ def test_specs_returns_list_of_tool_spec():
 
 def test_specs_have_all_tools():
     names = {t.name for t in registry.tool_specs()}
-    expected = {"validate", "summarize", "read_node", "get_facts",
+    expected = {"validate", "summarize", "read_node", "list_intents", "list_variables", "get_facts",
                 "apply_mods", "set_path", "delete_path", "build", "scaffold_bot", "get_schema",
                 "get_playbook",
                 "list_samples", "get_sample", "get_debt_corpus",
@@ -147,3 +147,22 @@ def test_dispatch_none_required_arg_treated_as_missing():
     out = registry.dispatch("read_node", {"uuid": None}, {})
     assert out["result"]["ok"] is False
     assert "uuid" in out["result"]["error"]
+
+
+# ---------------------------------------------------------------------------
+# list_intents / list_variables
+# ---------------------------------------------------------------------------
+
+def test_list_intents_and_variables_tools():
+    data = {
+        "SpeechIntent": [{"intentName": "Positive", "isInit": 0}],
+        "SpeechVariable": [{"name": "Phone", "variableSource": 1},
+                           {"name": "PromiseDate", "variableSource": 0}],
+    }
+    intents = registry.dispatch("list_intents", {}, data)
+    variables = registry.dispatch("list_variables", {}, data)
+    assert any(i["name"] == "Positive" for i in intents["result"])
+    assert intents["proposal"] is None
+    vnames = {v["name"]: v["source"] for v in variables["result"]}
+    assert vnames == {"Phone": "system", "PromiseDate": "custom"}
+    assert variables["proposal"] is None

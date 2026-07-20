@@ -11,6 +11,14 @@ _SPECS = [
              {"type": "object", "properties": {}}),
     ToolSpec("read_node", "Read one flow node's full detail by uuid.",
              {"type": "object", "properties": {"uuid": {"type": "string"}}, "required": ["uuid"]}),
+    ToolSpec("list_intents",
+             "List the dialogue's intents (name + whether user-created + whether it lacks NLU signal). "
+             "Call before add_intent / before authoring a KB trigger to avoid duplicates.",
+             {"type": "object", "properties": {}}),
+    ToolSpec("list_variables",
+             "List the dialogue's variables (name + source: system|custom). Call before add_variable "
+             "or before a conditional to see what already exists.",
+             {"type": "object", "properties": {}}),
     ToolSpec("get_facts", "Look up WIZ.AI product facts by keyword.",
              {"type": "object", "properties": {"query": {"type": "string"}}, "required": ["query"]}),
     ToolSpec("apply_mods",
@@ -427,6 +435,10 @@ def dispatch(name: str, args: dict, data: dict) -> dict:
         return {"result": agents.summarize(data), "proposal": None}
     if name == "read_node":
         return {"result": agents.read_node(data, args["uuid"]), "proposal": None}
+    if name == "list_intents":
+        return {"result": agents.list_intents(data), "proposal": None}
+    if name == "list_variables":
+        return {"result": agents.list_variables(data), "proposal": None}
     if name == "get_facts":
         return {"result": agents.get_facts(args["query"]), "proposal": None}
     if name == "apply_mods":
