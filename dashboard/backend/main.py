@@ -12,6 +12,7 @@ import threading  # noqa: E402
 import os  # noqa: E402
 import ipaddress  # noqa: E402
 import hmac  # noqa: E402
+from contextlib import contextmanager  # noqa: E402
 from urllib.parse import urlparse  # noqa: E402
 import tempfile  # noqa: E402
 import io  # noqa: E402
@@ -183,6 +184,20 @@ def _require_session(s: Session = Depends(current_session)) -> Session:
     return s
 
 
+@contextmanager
+def _exclusive(s: Session):
+    """Hold the session lock for a swap/reset (load/new/activate). Non-blocking:
+    if a chat turn already holds it, refuse with 409 rather than mutate the
+    session out from under the running turn (or block the event loop)."""
+    if not s._lock.acquire(blocking=False):
+        raise HTTPException(status_code=409,
+                            detail="a chat turn is in progress; try again in a moment")
+    try:
+        yield
+    finally:
+        s._lock.release()
+
+
 def _classify_attachment(name: str, path: str) -> tuple[str, str | None]:
     """Return (kind, excerpt). kind: intent-xlsx | kb-xlsx | read."""
     lower = name.lower()
@@ -254,8 +269,8 @@ def _active_payload(s: Session) -> dict:
     data = s.current()
     base.update({
         "bot_name": speechname.read_speech_name(data),
-        "summary": agents.summarize(data),
-        "findings": agents.validate(data),
+        "summary": s.summary(),
+        "findings": s.findings(),
         "component_warnings": agents.component_export_warnings(data) if s.is_component else [],
     })
     return base
@@ -267,7 +282,7 @@ def _parse_or_400(content: bytes) -> dict:
     except json.JSONDecodeError as e:
         raise HTTPException(status_code=400, detail=f"Invalid JSON: {e}")
     try:
-        agents.validate(data)  # also forces a parse; raises on bad structure
+        agents.parse_dict(data)  # parse-only structural check; raises on a bad export
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Invalid Talkbot export: {e}")
     return data
@@ -625,11 +640,12 @@ async def create_session(file: UploadFile = File(...),
         if comp:
             data = component_export_to_full(data)
         stem = Path(filename).stem or "Imported bot"
-        store.new(name=stem)
-        s = store.active()
-        s.load(data, speech_name=bundle.speech_name, wavs=bundle.wavs,
-               is_component=comp, component_base=base)
-        s.name = stem
+        with _exclusive(store.active()):
+            store.new(name=stem)
+            s = store.active()
+            s.load(data, speech_name=bundle.speech_name, wavs=bundle.wavs,
+                   is_component=comp, component_base=base)
+            s.name = stem
     else:
         data = _parse_or_400(raw)
         comp = is_component_export(data)
@@ -637,10 +653,11 @@ async def create_session(file: UploadFile = File(...),
         if comp:
             data = component_export_to_full(data)
         stem = Path(filename).stem or "Imported bot"
-        store.new(name=stem)
-        s = store.active()
-        s.load(data, is_component=comp, component_base=base)
-        s.name = stem
+        with _exclusive(store.active()):
+            store.new(name=stem)
+            s = store.active()
+            s.load(data, is_component=comp, component_base=base)
+            s.name = stem
 
     s._autosave()
     nm = speechname.read_speech_name(s.current())
@@ -670,22 +687,23 @@ def load_sample(sample_id: str, store: SessionStore = Depends(current_store)):
     if not built["ok"]:
         raise HTTPException(status_code=500, detail=f"sample build failed: {built.get('error')}")
     title = samples.title_of(sample_id)
-    store.new(name=title)
-    s = store.active()
-    s.load(built["proposed_data"])
-    s.name = title
-    s._autosave()
+    with _exclusive(store.active()):
+        store.new(name=title)
+        s = store.active()
+        s.load(built["proposed_data"])
+        s.name = title
+        s._autosave()
     data = s.current()
     return {"summary": agents.summarize(data), "findings": agents.validate(data)}
 
 
 @app.post("/session/blank")
 def create_blank_session(store: SessionStore = Depends(current_store)):
-    store.new(name="New session")
-    s = store.active()
-    s.load({"BizSpeechComponent": []})
-    data = s.current()
-    return {"summary": agents.summarize(data), "findings": agents.validate(data)}
+    with _exclusive(store.active()):
+        store.new(name="New session")
+        s = store.active()
+        s.load({"BizSpeechComponent": []})
+    return {"summary": s.summary(), "findings": s.findings()}
 
 
 @app.post("/session/clear")
@@ -821,22 +839,33 @@ def chat_stream(req: ChatRequest, s: Session = Depends(current_session),
         # Immediate byte: commits the 200 + response headers now so the proxy
         # never hits its time-to-first-byte cap, however long the turn takes.
         yield ": open\n\n"
-        while True:
-            try:
-                kind, payload = q.get(timeout=_HEARTBEAT_S)
-            except queue.Empty:
-                yield ": ping\n\n"      # keepalive during a silent stretch
-                continue
-            if kind == "ev":
-                yield f"data: {json.dumps(payload, ensure_ascii=False, default=str)}\n\n"
-            elif kind == "err":
-                yield f"data: {json.dumps({'type': 'error', 'message': payload})}\n\n"
-                yield f"data: {json.dumps({'type': 'done', 'canceled': False, 'text': ''})}\n\n"
-            else:  # "end"
-                break
-        worker.join(timeout=1)
-        log.info("", extra={"ev": "llm", "provider": provider, "model": model, "ok": state["ok"],
-                            "ms": round((time.perf_counter() - t0) * 1000)})
+        completed = False
+        try:
+            while True:
+                try:
+                    kind, payload = q.get(timeout=_HEARTBEAT_S)
+                except queue.Empty:
+                    yield ": ping\n\n"      # keepalive during a silent stretch
+                    continue
+                if kind == "ev":
+                    yield f"data: {json.dumps(payload, ensure_ascii=False, default=str)}\n\n"
+                elif kind == "err":
+                    yield f"data: {json.dumps({'type': 'error', 'message': payload})}\n\n"
+                    yield f"data: {json.dumps({'type': 'done', 'canceled': False, 'text': ''})}\n\n"
+                else:  # "end"
+                    break
+            completed = True
+        finally:
+            # If the loop is torn down before the turn finished (client
+            # disconnected -> Starlette closes the generator -> GeneratorExit),
+            # signal the worker to stop so it doesn't keep running/spending and
+            # holding the lock. It checks cancel_requested between steps.
+            if not completed:
+                s.cancel_requested = True
+            worker.join(timeout=2)
+            log.info("", extra={"ev": "llm", "provider": provider, "model": model,
+                                "ok": state["ok"], "canceled": not completed,
+                                "ms": round((time.perf_counter() - t0) * 1000)})
 
     return StreamingResponse(_gen(), media_type="text/event-stream")
 
@@ -985,15 +1014,17 @@ def list_sessions_route(store: SessionStore = Depends(current_store)):
 
 @app.post("/sessions")
 def create_session_slot(store: SessionStore = Depends(current_store)):
-    store.new()
-    store.active().load({"BizSpeechComponent": []})
+    with _exclusive(store.active()):
+        store.new()
+        store.active().load({"BizSpeechComponent": []})
     return _active_payload(store.active())
 
 
 @app.post("/sessions/{sid}/activate")
 def activate_session(sid: str, store: SessionStore = Depends(current_store)):
-    if not store.activate(sid):
-        raise HTTPException(status_code=404, detail="session not found")
+    with _exclusive(store.active()):
+        if not store.activate(sid):
+            raise HTTPException(status_code=404, detail="session not found")
     return _active_payload(store.active())
 
 

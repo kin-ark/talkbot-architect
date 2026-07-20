@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import copy
+import os
 import threading
 import time
 
@@ -33,6 +34,17 @@ class Session:
         # revisit existing versions); cleared on load/apply/reset.
         self._cache: dict[int, dict] = {}
 
+    def _drop_attachment(self) -> None:
+        """Delete the pending attachment's temp file (if any) and clear it, so a
+        switch/reset after attach-then-leave doesn't orphan the file on disk."""
+        att = self.attachment
+        if att and att.get("path"):
+            try:
+                os.unlink(att["path"])
+            except OSError:
+                pass
+        self.attachment = None
+
     def _autosave(self) -> None:
         try:
             import persistence
@@ -56,7 +68,7 @@ class Session:
         self._cache.clear()
         self.transcript = []
         self.pending = None
-        self.attachment = None
+        self._drop_attachment()
         self.images = []
         self.speech_name = speech_name
         self.wavs = wavs if wavs is not None else {}
@@ -73,6 +85,7 @@ class Session:
         self._cache.clear()
         self.transcript = []
         self.pending = None
+        self._drop_attachment()
         self.is_component = False
         self.component_base = None
         self.cancel_requested = False
