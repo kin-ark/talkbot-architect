@@ -214,7 +214,15 @@ export default function ChatInput({ value, onChange, onSubmit, sending, onCancel
           {images.map((im, i) => (
             <span key={i} className="relative inline-block">
               <img src={im.url} alt={im.name} className="h-12 w-12 object-cover rounded border border-border" />
-              <button type="button" aria-label={`Remove image ${im.name}`} onClick={() => { clearImage(i).catch(err => console.error('clear image failed:', err)); URL.revokeObjectURL(im.url); setImages((xs) => xs.filter((_, j) => j !== i)); }}
+              <button type="button" aria-label={`Remove image ${im.name}`} onClick={async () => {
+                try {
+                  await clearImage(i);
+                  URL.revokeObjectURL(im.url);
+                  setImages((xs) => xs.filter((_, j) => j !== i));
+                } catch {
+                  toast.error('Could not remove the image — try again.');
+                }
+              }}
                 className="absolute -top-1 -right-1 bg-surface rounded-full text-text-tertiary hover:text-text">
                 <X size={12} />
               </button>
@@ -232,9 +240,13 @@ export default function ChatInput({ value, onChange, onSubmit, sending, onCancel
           <div className="text-[11px] text-text-tertiary mt-1 px-1 flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5 bg-surface-muted px-2 py-1 rounded">
               {attachment.name}
-              <button type="button" onClick={() => {
-                clearAttachment().catch(err => console.error('clear failed:', err));
-                setAttachment(null);
+              <button type="button" onClick={async () => {
+                try {
+                  await clearAttachment();
+                  setAttachment(null);
+                } catch {
+                  toast.error('Could not remove the file — try again.');
+                }
               }} disabled={sending} aria-label="Remove attachment" className="p-0 text-text-tertiary hover:text-text">
                 <X size={14} />
               </button>

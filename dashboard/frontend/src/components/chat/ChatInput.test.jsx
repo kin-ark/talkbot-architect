@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import ChatInput from './ChatInput';
 import * as api from '../../api';
+import * as toastStore from '../../toast/toastStore';
 
 vi.mock('../../api', { attachFile: vi.fn(), clearAttachment: vi.fn(), clearImage: vi.fn() });
 
@@ -125,5 +126,21 @@ describe('ChatInput', () => {
       expect(api.clearAttachment).toHaveBeenCalled();
     });
     expect(screen.queryByText('test.xls')).toBeNull();
+  });
+
+  it('keeps the image chip and toasts when clear fails', async () => {
+    api.attachFile.mockResolvedValue({ name: 'pic.png', kind: 'image' });
+    api.clearImage.mockRejectedValue(new Error('500'));
+    const toastErr = vi.spyOn(toastStore.toast, 'error').mockImplementation(() => {});
+    render(<ChatInput {...base} />);
+    const fileInput = screen.getByTestId('file-input');
+    const file = new File(['content'], 'pic.png', { type: 'image/png' });
+    fireEvent.change(fileInput, { target: { files: [file] } });
+    await waitFor(() => {
+      expect(screen.getByTestId('image-chip')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('button', { name: /remove|x/i }));
+    await waitFor(() => expect(toastErr).toHaveBeenCalled());
+    expect(screen.getByTestId('image-chip')).toBeInTheDocument();  // chip NOT removed
   });
 });
