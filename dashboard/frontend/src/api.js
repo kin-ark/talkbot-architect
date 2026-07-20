@@ -4,10 +4,12 @@ const BASE = import.meta.env.VITE_API_URL ?? (import.meta.env.DEV ? 'http://loca
 axios.defaults.withCredentials = true;
 export const apiBase = () => BASE;
 
-export async function uploadSession(file) {
+export async function uploadSession(file, onProgress) {
   const fd = new FormData();
   fd.append('file', file);
-  const { data } = await axios.post(`${BASE}/session`, fd);
+  const { data } = await axios.post(`${BASE}/session`, fd, {
+    onUploadProgress: (e) => onProgress?.(e.total ? Math.round((e.loaded / e.total) * 100) : null),
+  });
   return data;
 }
 export async function cancelChat() { return (await axios.post(`${BASE}/chat/cancel`)).data; }
