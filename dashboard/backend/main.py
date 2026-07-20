@@ -214,6 +214,13 @@ def _exclusive(s: Session):
         s._lock.release()
 
 
+def _edit_result(s: Session, **extra) -> dict:
+    """Standard response body after a mutating endpoint: the caller's extra keys
+    plus the current (cached) summary/findings and undo/redo availability."""
+    return {**extra, "summary": s.summary(), "findings": s.findings(),
+            "can_undo": s.can_undo(), "can_redo": s.can_redo()}
+
+
 def _classify_attachment(name: str, path: str) -> tuple[str, str | None]:
     """Return (kind, excerpt). kind: intent-xlsx | kb-xlsx | read."""
     lower = name.lower()
@@ -774,14 +781,7 @@ def edit_node_text(uuid: str, body: NodeTextRequest,
         if not r["ok"]:
             raise HTTPException(status_code=400, detail=r["error"])
         s.apply(r["proposed_data"])   # new undoable version + autosave + clears pending
-        return {
-            "ok": True,
-            "summary": s.summary(),
-            "findings": s.findings(),
-            "can_undo": s.can_undo(),
-            "can_redo": s.can_redo(),
-            "node": agents.read_node(s.current(), uuid),
-        }
+        return _edit_result(s, ok=True, node=agents.read_node(s.current(), uuid))
 
 
 @app.post("/chat")
@@ -951,14 +951,7 @@ def apply_pending(s: Session = Depends(_require_session),
         nm = speechname.read_speech_name(s.current())
         if nm and s.id:
             store.rename(s.id, nm)
-        return {
-            "applied": True,
-            "bot_name": nm,
-            "summary": s.summary(),
-            "findings": s.findings(),
-            "can_undo": s.can_undo(),
-            "can_redo": s.can_redo(),
-        }
+        return _edit_result(s, applied=True, bot_name=nm)
 
 
 @app.post("/undo")
@@ -969,14 +962,7 @@ def undo(s: Session = Depends(_require_session),
         nm = speechname.read_speech_name(s.current())
         if nm and s.id:
             store.rename(s.id, nm)
-        return {
-            "ok": ok,
-            "bot_name": nm,
-            "summary": s.summary(),
-            "findings": s.findings(),
-            "can_undo": s.can_undo(),
-            "can_redo": s.can_redo(),
-        }
+        return _edit_result(s, ok=ok, bot_name=nm)
 
 
 @app.post("/redo")
@@ -987,14 +973,7 @@ def redo(s: Session = Depends(_require_session),
         nm = speechname.read_speech_name(s.current())
         if nm and s.id:
             store.rename(s.id, nm)
-        return {
-            "ok": ok,
-            "bot_name": nm,
-            "summary": s.summary(),
-            "findings": s.findings(),
-            "can_undo": s.can_undo(),
-            "can_redo": s.can_redo(),
-        }
+        return _edit_result(s, ok=ok, bot_name=nm)
 
 
 @app.put("/speech-name")
@@ -1010,14 +989,7 @@ def set_speech_name_route(body: BotNameRequest,
         s.speech_name = speechname.slugify_filename(name)
         if s.id:
             store.rename(s.id, name)              # mirror the session label (persists snapshot)
-        return {
-            "ok": True,
-            "bot_name": name,
-            "summary": s.summary(),
-            "findings": s.findings(),
-            "can_undo": s.can_undo(),
-            "can_redo": s.can_redo(),
-        }
+        return _edit_result(s, ok=True, bot_name=name)
 
 
 # ---------------------------------------------------------------------------
