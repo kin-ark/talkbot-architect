@@ -228,23 +228,33 @@ def _component_index_of(data: dict, uuid: str) -> Optional[int]:
 
 
 def _active_payload(s: Session) -> dict:
-    """Return the rehydrate payload for the current active session."""
-    if not s._stack:
-        return {"summary": None, "id": s.id, "bot_name": None, "is_component": s.is_component, "component_warnings": []}
-    data = s.current()
-    return {
+    """Return the rehydrate payload for the current active session.
+    Conversational state (transcript/proposal/undo-redo/usage) is always
+    returned, even when the doc stack is empty, so returning to a chatted-but-
+    unbuilt session does not lose its chat."""
+    base = {
         "id": s.id,
-        "bot_name": speechname.read_speech_name(data),
-        "summary": agents.summarize(data),
-        "findings": agents.validate(data),
+        "bot_name": None,
+        "summary": None,
+        "findings": [],
         "transcript": _reconstruct_transcript(s.transcript),
         "proposal": s.pending,
         "can_undo": s.can_undo(),
         "can_redo": s.can_redo(),
         "usage": s.usage,
         "is_component": s.is_component,
-        "component_warnings": agents.component_export_warnings(data) if s.is_component else [],
+        "component_warnings": [],
     }
+    if not s._stack:
+        return base
+    data = s.current()
+    base.update({
+        "bot_name": speechname.read_speech_name(data),
+        "summary": agents.summarize(data),
+        "findings": agents.validate(data),
+        "component_warnings": agents.component_export_warnings(data) if s.is_component else [],
+    })
+    return base
 
 
 def _parse_or_400(content: bytes) -> dict:

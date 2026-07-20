@@ -30,3 +30,24 @@ def test_activate_missing_404(tmp_path, monkeypatch):
     _isolate(tmp_path, monkeypatch)
     with TestClient(main.app) as client:
         assert client.post("/sessions/missing/activate").status_code == 404
+
+
+def test_activate_docless_session_returns_transcript():
+    from llm.base import Message
+    with TestClient(main.app) as client:
+        client.get("/health")
+        tbid = client.cookies["tbid"]
+        store = main.REGISTRY.store(tbid)
+        # New empty session (no doc stack), give it a chat transcript.
+        sid = store.new().id
+        sess = store.active()
+        sess.transcript = [Message(role="user", content="hi"),
+                           Message(role="assistant", content="hello")]
+        persistence.save_session(sess)  # activate reloads from disk; persist the mutation first
+        r = client.post(f"/sessions/{sid}/activate")
+        assert r.status_code == 200
+        body = r.json()
+        assert body["summary"] is None
+        assert len(body["transcript"]) == 2
+        for k in ("proposal", "can_undo", "can_redo", "usage"):
+            assert k in body
