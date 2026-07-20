@@ -166,3 +166,9 @@ def test_list_intents_and_variables_tools():
     vnames = {v["name"]: v["source"] for v in variables["result"]}
     assert vnames == {"Phone": "system", "PromiseDate": "custom"}
     assert variables["proposal"] is None
+
+
+def test_connect_components_branch_is_not_enum_restricted():
+    spec = next(s for s in registry.tool_specs() if s.name == "connect_components")
+    branch = spec.parameters["properties"]["branch"]
+    assert "enum" not in branch   # custom branches (branch_intents) allowed

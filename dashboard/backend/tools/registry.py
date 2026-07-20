@@ -248,8 +248,9 @@ _SPECS = [
                  "id": {"type": "string"},
                  "target": {"type": "string"},
                  "from": {"type": "string"},
-                 "branch": {"type": "string",
-                            "enum": ["Positive", "Negative", "Reject", "Unclassified", "No answer"]},
+                 "branch": {"type": "string", "minLength": 1,
+                            "description": "A system branch (Positive/Negative/Reject/Unclassified/"
+                                           "'No answer') OR a custom branch_intents label on the source node."},
                  "prompt": {"type": "string"}},
               "required": ["component", "id", "target", "from", "branch"]}),
     ToolSpec("add_intent",
