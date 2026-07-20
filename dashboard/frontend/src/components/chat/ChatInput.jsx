@@ -14,6 +14,7 @@ export default function ChatInput({ value, onChange, onSubmit, sending, onCancel
   const [dismissed, setDismissed] = useState(false);
   const [attachment, setAttachment] = useState(null);
   const [attaching, setAttaching] = useState(false);
+  const [progress, setProgress] = useState(null);   // 0-100 while an attach uploads
   const [images, setImages] = useState([]);
 
   // Revoke object URLs for any STILL-STAGED (unsent) images on unmount — sent
@@ -60,6 +61,7 @@ export default function ChatInput({ value, onChange, onSubmit, sending, onCancel
     const files = e.target.files;
     if (!files) return;
     setAttaching(true);
+    setProgress(0);
     let staged = images.length;
     try {
       for (let i = 0; i < files.length; i++) {
@@ -69,7 +71,8 @@ export default function ChatInput({ value, onChange, onSubmit, sending, onCancel
           if (!canSendImages) continue;
           if (!imageAllowed(file, staged)) continue;
         }
-        const result = await attachFile(file);
+        setProgress(0);
+        const result = await attachFile(file, setProgress);
         if (result.kind === 'image') {
           staged += 1;
           setImages((xs) => [...xs, { name: result.name, url: URL.createObjectURL(file) }]);
@@ -82,6 +85,7 @@ export default function ChatInput({ value, onChange, onSubmit, sending, onCancel
       toast.error('Attachment failed. Please try again.');
     } finally {
       setAttaching(false);
+      setProgress(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
@@ -93,13 +97,15 @@ export default function ChatInput({ value, onChange, onSubmit, sending, onCancel
     if (!imgs.length) return;
     e.preventDefault();
     setAttaching(true);
+    setProgress(0);
     let staged = images.length;
     try {
       for (const it of imgs) {
         const f = it.getAsFile();
         if (!f || !imageAllowed(f, staged)) continue;
         try {
-          const r = await attachFile(f);
+          setProgress(0);
+          const r = await attachFile(f, setProgress);
           if (r.kind === 'image') {
             staged += 1;
             setImages((xs) => [...xs, { name: r.name, url: URL.createObjectURL(f) }]);
@@ -111,6 +117,7 @@ export default function ChatInput({ value, onChange, onSubmit, sending, onCancel
       }
     } finally {
       setAttaching(false);
+      setProgress(null);
     }
   };
 
@@ -191,6 +198,17 @@ export default function ChatInput({ value, onChange, onSubmit, sending, onCancel
           ? <button type="button" onClick={onCancel} className="shrink-0 px-4 h-[38px] bg-error text-primary-fg rounded-xl hover:opacity-90">Stop</button>
           : <button type="submit" className="shrink-0 px-4 h-[38px] bg-primary text-primary-fg rounded-xl hover:bg-primary-hover">Send</button>}
       </div>
+      {attaching && (
+        <div className="mt-1.5 px-1" data-testid="attach-progress">
+          <div className="h-1 w-full rounded-full bg-surface-muted overflow-hidden">
+            <div className={`h-full bg-primary transition-all duration-150 ${progress == null ? 'animate-pulse' : ''}`}
+              style={{ width: progress == null ? '100%' : `${progress}%` }} />
+          </div>
+          <div className="text-[11px] text-text-tertiary mt-0.5">
+            {progress == null ? 'Uploading attachment…' : `Uploading attachment… ${progress}%`}
+          </div>
+        </div>
+      )}
       {images.length > 0 && (
         <div className="flex flex-wrap gap-2 mt-1 px-1" data-testid="image-chip">
           {images.map((im, i) => (

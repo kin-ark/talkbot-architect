@@ -85,7 +85,7 @@ describe('ChatInput', () => {
     const file = new File(['content'], 'test.xls', { type: 'application/vnd.ms-excel' });
     fireEvent.change(fileInput, { target: { files: [file] } });
     await waitFor(() => {
-      expect(api.attachFile).toHaveBeenCalledWith(file);
+      expect(api.attachFile).toHaveBeenCalledWith(file, expect.any(Function));
     });
     await waitFor(() => {
       expect(screen.getByText('test.xls')).toBeInTheDocument();

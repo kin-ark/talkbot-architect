@@ -40,12 +40,17 @@ export async function activateSession(id) { return (await axios.post(`${BASE}/se
 export async function renameSession(id, name) { return (await axios.patch(`${BASE}/sessions/${id}`, { name })).data; }
 export async function deleteSession(id) { return (await axios.delete(`${BASE}/sessions/${id}`)).data; }
 
-export async function attachFile(file) {
+export async function attachFile(file, onProgress) {
   const fd = new FormData();
   fd.append('file', file);
-  const r = await fetch(`${BASE}/chat/attach`, { method: 'POST', body: fd, credentials: 'include' });
-  if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail || 'attach failed');
-  return r.json();
+  try {
+    const { data } = await axios.post(`${BASE}/chat/attach`, fd, {
+      onUploadProgress: (e) => onProgress?.(e.total ? Math.round((e.loaded / e.total) * 100) : null),
+    });
+    return data;
+  } catch (err) {
+    throw new Error(err?.response?.data?.detail || 'attach failed', { cause: err });
+  }
 }
 
 export async function clearAttachment() {
