@@ -17,3 +17,11 @@ def test_system_prompt_explains_talk_branch_model():
     assert "system branch" in s           # system branches are automatic
     assert "no answer" in s               # the five system branch names listed
     assert "servicei" in s or "custom" in s   # non-system routing example/wording
+
+
+def test_system_prompt_splits_must_should_and_has_example():
+    s = orchestrator._SYSTEM
+    low = s.lower()
+    assert "must" in low and "should" in low          # rule tiers present
+    assert "declare before use" in low                 # generalized ordering rule
+    assert "greet" in low and "scaffold_bot" in low    # few-shot example present
