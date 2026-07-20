@@ -32,6 +32,33 @@ def test_activate_missing_404(tmp_path, monkeypatch):
         assert client.post("/sessions/missing/activate").status_code == 404
 
 
+def test_clear_session_409_when_locked():
+    with TestClient(main.app) as client:
+        client.get("/health")
+        tbid = client.cookies["tbid"]
+        s = main.REGISTRY.store(tbid).active()
+        s.load({"BizSpeechComponent": "[]"})
+        assert s._lock.acquire(blocking=False)   # simulate a turn holding the lock
+        try:
+            assert client.post("/session/clear").status_code == 409
+        finally:
+            s._lock.release()
+
+
+def test_delete_session_409_when_locked():
+    with TestClient(main.app) as client:
+        client.get("/health")
+        tbid = client.cookies["tbid"]
+        store = main.REGISTRY.store(tbid)
+        s = store.active()
+        s.load({"BizSpeechComponent": "[]"})
+        assert s._lock.acquire(blocking=False)
+        try:
+            assert client.delete(f"/sessions/{s.id}").status_code == 409
+        finally:
+            s._lock.release()
+
+
 def test_activate_docless_session_returns_transcript():
     from llm.base import Message
     with TestClient(main.app) as client:

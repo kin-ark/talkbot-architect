@@ -724,7 +724,8 @@ def create_blank_session(store: SessionStore = Depends(current_store)):
 @app.post("/session/clear")
 def clear_session(s: Session = Depends(current_session)):
     """Drop the current session so the dashboard returns to the upload/landing screen."""
-    s.reset()
+    with _exclusive(s):
+        s.reset()
     return {"cleared": True}
 
 
@@ -1046,15 +1047,17 @@ def activate_session(sid: str, store: SessionStore = Depends(current_store)):
 @app.patch("/sessions/{sid}")
 def rename_session(sid: str, body: RenameRequest,
                    store: SessionStore = Depends(current_store)):
-    if not store.rename(sid, body.name):
-        raise HTTPException(status_code=404, detail="session not found")
+    with _exclusive(store.active()):
+        if not store.rename(sid, body.name):
+            raise HTTPException(status_code=404, detail="session not found")
     return {"ok": True}
 
 
 @app.delete("/sessions/{sid}")
 def delete_session_route(sid: str, store: SessionStore = Depends(current_store)):
-    store.delete(sid)
-    return {"ok": True, "active": store.active().id}
+    with _exclusive(store.active()):
+        store.delete(sid)
+        return {"ok": True, "active": store.active().id}
 
 
 # ---------------------------------------------------------------------------
