@@ -83,7 +83,9 @@ export default function FlowCanvas({ summary, onSelectNode, focusComponentId, hi
   const [search, setSearch] = useState('');
 
   // Reset to all-collapsed whenever a new summary loads.
-  const summaryKey = summary ? JSON.stringify(summary.components?.map((c) => c.uuid)) : '';
+  const summaryKey = useMemo(
+    () => (summary ? JSON.stringify(summary.components?.map((c) => c.uuid)) : ''),
+    [summary]);
   // eslint-disable-next-line react-hooks/set-state-in-effect -- legitimate summary-change reset; collapsed state is derived from which summary is loaded
   useEffect(() => { setExpanded(new Set()); }, [summaryKey]);
 
@@ -134,10 +136,20 @@ export default function FlowCanvas({ summary, onSelectNode, focusComponentId, hi
     setExpanded((prev) => { const next = new Set(prev); searchOwners.forEach((id) => next.add(id)); return next; });
   }, [searchOwners]);
 
-  const { nodes, edges, compIds } = useMemo(() => {
-    if (!summary) return { nodes: [], edges: [], compIds: [] };
+  // Expensive geometry (buildGraph + two dagre passes) depends ONLY on the
+  // graph shape (summary) and which components are expanded. Keep it in its own
+  // memo so styling-only changes (search, simulator, preview highlight) don't
+  // trigger a full relayout.
+  const layout = useMemo(() => {
+    if (!summary) return { positioned: [], rawEdges: [], compIds: [] };
     const { nodes: rawNodes, edges: rawEdges } = buildGraph(summary);
     const positioned = layoutComponents(rawNodes, rawEdges, expanded);
+    return { positioned, rawEdges, compIds: (summary.components || []).map((c) => c.uuid) };
+  }, [summary, expanded]);
+
+  const { nodes, edges, compIds } = useMemo(() => {
+    const { positioned, rawEdges } = layout;
+    if (!summary) return { nodes: [], edges: [], compIds: [] };
 
     // Style + wire nodes; drop hidden (collapsed) children from render.
     const visible = positioned
@@ -186,8 +198,8 @@ export default function FlowCanvas({ summary, onSelectNode, focusComponentId, hi
       rerouted.push({ ...e, source, target, interactionWidth: 0,
         style: { ...e.style, pointerEvents: 'none' } });
     }
-    return { nodes: visible, edges: rerouted, compIds: (summary?.components || []).map((c) => c.uuid) };
-  }, [summary, expanded, toggle, highlight, searchMatchIds, simCurrentNode]);
+    return { nodes: visible, edges: rerouted, compIds: layout.compIds };
+  }, [layout, summary, expanded, toggle, highlight, searchMatchIds, simCurrentNode]);
 
   const showMap = () => setExpanded(new Set());
   const showDetail = () => setExpanded(new Set(compIds));
