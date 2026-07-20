@@ -131,7 +131,8 @@ async def _provider_error(request: Request, exc: LLMProviderError):
 @app.exception_handler(Exception)
 async def _unhandled(request: Request, exc: Exception):
     log.error("", extra={"ev": "exc", "path": request.url.path, "err": f"{type(exc).__name__}: {exc}"}, exc_info=exc)
-    return JSONResponse(status_code=500, content=_error_body(exc))
+    return JSONResponse(status_code=500,
+                        content={"error": {"type": "InternalError", "message": "Internal server error"}})
 
 
 # ---------------------------------------------------------------------------

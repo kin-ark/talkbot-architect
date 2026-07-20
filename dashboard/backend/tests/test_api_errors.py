@@ -31,3 +31,16 @@ def test_httpexception_passes_through():
     # empty stack → 503 (no session loaded)
     r = client.post("/chat", json={"message": "hi"})
     assert r.status_code == 503
+
+
+def test_unhandled_500_does_not_leak_exception_text():
+    import asyncio, json as _json
+
+    class _Req:
+        class url:
+            path = "/x"
+
+    resp = asyncio.run(main._unhandled(_Req(), ValueError("secret /etc/passwd detail")))
+    assert resp.status_code == 500
+    blob = _json.dumps(_json.loads(bytes(resp.body)))
+    assert "secret" not in blob and "/etc/passwd" not in blob
