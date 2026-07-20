@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 import time
 from collections.abc import Iterator
 
@@ -99,6 +100,10 @@ _SYSTEM = (
 
 _MAX_TOOL_ITERS = 8
 _MAX_FIX_BACKSTOPS = 2
+# Wall-clock ceiling for one turn. 8 iters x a 120s per-call timeout could run
+# ~16 min holding the session lock; cap it so a stuck turn can't block the
+# session indefinitely. Env-overridable.
+_TURN_DEADLINE_S = int(os.getenv("TURN_DEADLINE_S", "300"))
 
 
 def _summarize_tool_result(name: str, result) -> str:
@@ -150,10 +155,23 @@ def run_turn_stream(client, session, user_message: str) -> Iterator[dict]:
     try:
         yield {"type": "phase", "phase": "planning"}
         tools_phase_announced = False
+        t_start = time.monotonic()
         for _ in range(_MAX_TOOL_ITERS):
             if session.cancel_requested:
                 _rollback()
                 yield {"type": "done", "canceled": True, "text": "", "stop_reason": "canceled"}
+                return
+            if time.monotonic() - t_start > _TURN_DEADLINE_S:
+                # Stuck/too-long turn: stop cleanly, keep any proposal already made.
+                session.cancel_requested = False
+                session.usage["input_tokens"] += turn_usage["input_tokens"]
+                session.usage["output_tokens"] += turn_usage["output_tokens"]
+                session.usage["turns"] += 1
+                session.usage["model"] = getattr(client, "model", session.usage.get("model"))
+                yield {"type": "usage", **session.usage}
+                yield {"type": "done", "canceled": False,
+                       "text": text_acc or "(stopped: turn exceeded the time limit)",
+                       "stop_reason": "timeout"}
                 return
 
             resp = None
