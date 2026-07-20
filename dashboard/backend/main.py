@@ -10,13 +10,16 @@ import time  # noqa: E402
 import queue  # noqa: E402
 import threading  # noqa: E402
 import os  # noqa: E402
+import ipaddress  # noqa: E402
+import hmac  # noqa: E402
+from urllib.parse import urlparse  # noqa: E402
 import tempfile  # noqa: E402
 import io  # noqa: E402
 import zipfile  # noqa: E402
 from pathlib import Path  # noqa: E402
 from typing import Optional  # noqa: E402
 
-from fastapi import Depends, FastAPI, File, HTTPException, Response, UploadFile  # noqa: E402
+from fastapi import Depends, FastAPI, File, Header, HTTPException, Response, UploadFile  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 from fastapi.requests import Request  # noqa: E402
 from fastapi.responses import JSONResponse, StreamingResponse  # noqa: E402
@@ -334,8 +337,19 @@ async def health():
     return {"status": "ok", "live_sessions": len(REGISTRY._stores), "uptime_s": int(time.time() - _STARTED)}
 
 
+def _require_admin(x_admin_token: str | None = Header(default=None)):
+    """Gate the admin endpoints (they touch ALL tenants' data) behind a
+    dedicated ADMIN_TOKEN. When ADMIN_TOKEN is unset the endpoints are disabled
+    entirely (404) so they can't leak cross-tenant data on an open LAN deploy."""
+    token = os.environ.get("ADMIN_TOKEN")
+    if not token:
+        raise HTTPException(status_code=404, detail="not found")
+    if not x_admin_token or not hmac.compare_digest(x_admin_token, token):
+        raise HTTPException(status_code=403, detail="admin token required")
+
+
 @app.get("/admin/backup")
-async def admin_backup():
+async def admin_backup(_: None = Depends(_require_admin)):
     data, filename = backup.open_backup_stream()
     log.info("", extra={"ev": "backup", "kind": "download", "bytes": len(data)})
     return Response(content=data, media_type="application/gzip",
@@ -343,9 +357,7 @@ async def admin_backup():
 
 
 @app.post("/admin/restore")
-async def admin_restore(file: UploadFile = File(...)):
-    if not os.environ.get("DASHBOARD_PASSWORD"):
-        raise HTTPException(status_code=403, detail="restore requires DASHBOARD_PASSWORD to be set")
+async def admin_restore(file: UploadFile = File(...), _: None = Depends(_require_admin)):
     raw = await file.read()
     try:
         result = backup.restore_from(io.BytesIO(raw))
@@ -362,6 +374,32 @@ async def get_config(cid: str = Depends(client_id)):
     return _config_response(config_store.config_for(cid))
 
 
+# Cloud-metadata endpoints an SSRF would target. Private/VPN IPs are NOT
+# blocked on purpose — the internal LLM gateway is a private address.
+_BLOCKED_URL_HOSTS = {"169.254.169.254", "metadata.google.internal", "fd00:ec2::254"}
+
+
+def _validate_base_url(url: str) -> None:
+    """Reject a custom base_url that isn't http(s) or points at a cloud-metadata
+    endpoint (SSRF guard). Raises HTTPException(400) on a bad value."""
+    if not url:
+        return
+    p = urlparse(url)
+    if p.scheme not in ("http", "https"):
+        raise HTTPException(status_code=400, detail="base_url must be http:// or https://")
+    host = (p.hostname or "").lower()
+    if not host:
+        raise HTTPException(status_code=400, detail="base_url must include a host")
+    if host in _BLOCKED_URL_HOSTS:
+        raise HTTPException(status_code=400, detail="base_url host is not allowed")
+    try:
+        # 169.254.0.0/16 + fe80::/10 (link-local) covers the IMDS metadata range.
+        if ipaddress.ip_address(host).is_link_local:
+            raise HTTPException(status_code=400, detail="base_url host is not allowed")
+    except ValueError:
+        pass  # a hostname, not a literal IP — fine
+
+
 @app.put("/config")
 async def put_config(update: ConfigUpdate, cid: str = Depends(client_id)):
     """Override any subset of provider/model/base_url/api_key in memory.
@@ -375,6 +413,7 @@ async def put_config(update: ConfigUpdate, cid: str = Depends(client_id)):
     if update.model is not None:
         cfg.model = update.model
     if update.base_url is not None:
+        _validate_base_url(update.base_url)
         cfg.base_url = update.base_url
     # Empty string means "leave unchanged"; only update when truthy
     if update.api_key:
@@ -670,26 +709,27 @@ def edit_node_text(uuid: str, body: NodeTextRequest,
     prompt = (body.prompt or "").strip()
     if not label and not prompt:
         raise HTTPException(status_code=400, detail="label or prompt required")
-    idx = _component_index_of(s.current(), uuid)
-    if idx is None:
-        raise HTTPException(status_code=404, detail="node not found")
-    op = {"op": "rename-node", "component": idx, "node": {"uuid": uuid}}
-    if label:
-        op["label"] = label
-    if prompt:
-        op["prompt"] = prompt
-    r = agents.propose_mods(s.current(), yaml.safe_dump([op]))
-    if not r["ok"]:
-        raise HTTPException(status_code=400, detail=r["error"])
-    s.apply(r["proposed_data"])   # new undoable version + autosave + clears pending
-    return {
-        "ok": True,
-        "summary": agents.summarize(s.current()),
-        "findings": agents.validate(s.current()),
-        "can_undo": s.can_undo(),
-        "can_redo": s.can_redo(),
-        "node": agents.read_node(s.current(), uuid),
-    }
+    with s._lock:
+        idx = _component_index_of(s.current(), uuid)
+        if idx is None:
+            raise HTTPException(status_code=404, detail="node not found")
+        op = {"op": "rename-node", "component": idx, "node": {"uuid": uuid}}
+        if label:
+            op["label"] = label
+        if prompt:
+            op["prompt"] = prompt
+        r = agents.propose_mods(s.current(), yaml.safe_dump([op]))
+        if not r["ok"]:
+            raise HTTPException(status_code=400, detail=r["error"])
+        s.apply(r["proposed_data"])   # new undoable version + autosave + clears pending
+        return {
+            "ok": True,
+            "summary": agents.summarize(s.current()),
+            "findings": agents.validate(s.current()),
+            "can_undo": s.can_undo(),
+            "can_redo": s.can_redo(),
+            "node": agents.read_node(s.current(), uuid),
+        }
 
 
 @app.post("/chat")
@@ -835,57 +875,63 @@ async def chat_clear_attach(kind: str | None = None, index: int | None = None,
     return {"cleared": True}
 
 
+# NOTE: these mutators are sync `def` (not async) on purpose. They take the
+# per-session threading lock (held by an in-flight chat turn); blocking on it
+# must happen in the threadpool, never on the event loop. They do no awaits.
 @app.post("/apply")
-async def apply_pending(s: Session = Depends(_require_session),
-                        store: SessionStore = Depends(current_store)):
-    if s.pending is None:
-        raise HTTPException(status_code=409, detail="no pending proposal")
-    s.apply(s.pending["proposed_data"])
-    nm = speechname.read_speech_name(s.current())
-    if nm and s.id:
-        store.rename(s.id, nm)
-    return {
-        "applied": True,
-        "bot_name": nm,
-        "summary": agents.summarize(s.current()),
-        "findings": agents.validate(s.current()),
-        "can_undo": s.can_undo(),
-        "can_redo": s.can_redo(),
-    }
+def apply_pending(s: Session = Depends(_require_session),
+                  store: SessionStore = Depends(current_store)):
+    with s._lock:
+        if s.pending is None:
+            raise HTTPException(status_code=409, detail="no pending proposal")
+        s.apply(s.pending["proposed_data"])
+        nm = speechname.read_speech_name(s.current())
+        if nm and s.id:
+            store.rename(s.id, nm)
+        return {
+            "applied": True,
+            "bot_name": nm,
+            "summary": agents.summarize(s.current()),
+            "findings": agents.validate(s.current()),
+            "can_undo": s.can_undo(),
+            "can_redo": s.can_redo(),
+        }
 
 
 @app.post("/undo")
-async def undo(s: Session = Depends(_require_session),
-               store: SessionStore = Depends(current_store)):
-    ok = s.undo()
-    nm = speechname.read_speech_name(s.current())
-    if nm and s.id:
-        store.rename(s.id, nm)
-    return {
-        "ok": ok,
-        "bot_name": nm,
-        "summary": agents.summarize(s.current()),
-        "findings": agents.validate(s.current()),
-        "can_undo": s.can_undo(),
-        "can_redo": s.can_redo(),
-    }
+def undo(s: Session = Depends(_require_session),
+         store: SessionStore = Depends(current_store)):
+    with s._lock:
+        ok = s.undo()
+        nm = speechname.read_speech_name(s.current())
+        if nm and s.id:
+            store.rename(s.id, nm)
+        return {
+            "ok": ok,
+            "bot_name": nm,
+            "summary": agents.summarize(s.current()),
+            "findings": agents.validate(s.current()),
+            "can_undo": s.can_undo(),
+            "can_redo": s.can_redo(),
+        }
 
 
 @app.post("/redo")
-async def redo(s: Session = Depends(_require_session),
-               store: SessionStore = Depends(current_store)):
-    ok = s.redo()
-    nm = speechname.read_speech_name(s.current())
-    if nm and s.id:
-        store.rename(s.id, nm)
-    return {
-        "ok": ok,
-        "bot_name": nm,
-        "summary": agents.summarize(s.current()),
-        "findings": agents.validate(s.current()),
-        "can_undo": s.can_undo(),
-        "can_redo": s.can_redo(),
-    }
+def redo(s: Session = Depends(_require_session),
+         store: SessionStore = Depends(current_store)):
+    with s._lock:
+        ok = s.redo()
+        nm = speechname.read_speech_name(s.current())
+        if nm and s.id:
+            store.rename(s.id, nm)
+        return {
+            "ok": ok,
+            "bot_name": nm,
+            "summary": agents.summarize(s.current()),
+            "findings": agents.validate(s.current()),
+            "can_undo": s.can_undo(),
+            "can_redo": s.can_redo(),
+        }
 
 
 @app.put("/speech-name")
@@ -895,19 +941,20 @@ def set_speech_name_route(body: BotNameRequest,
     name = body.name.strip()
     if not name:
         raise HTTPException(status_code=400, detail="name must not be empty")
-    new = speechname.set_speech_name(s.current(), name)
-    s.apply(new)                                  # new undoable version + autosave
-    s.speech_name = speechname.slugify_filename(name)
-    if s.id:
-        store.rename(s.id, name)                  # mirror the session label (persists snapshot)
-    return {
-        "ok": True,
-        "bot_name": name,
-        "summary": agents.summarize(s.current()),
-        "findings": agents.validate(s.current()),
-        "can_undo": s.can_undo(),
-        "can_redo": s.can_redo(),
-    }
+    with s._lock:
+        new = speechname.set_speech_name(s.current(), name)
+        s.apply(new)                              # new undoable version + autosave
+        s.speech_name = speechname.slugify_filename(name)
+        if s.id:
+            store.rename(s.id, name)              # mirror the session label (persists snapshot)
+        return {
+            "ok": True,
+            "bot_name": name,
+            "summary": agents.summarize(s.current()),
+            "findings": agents.validate(s.current()),
+            "can_undo": s.can_undo(),
+            "can_redo": s.can_redo(),
+        }
 
 
 # ---------------------------------------------------------------------------
