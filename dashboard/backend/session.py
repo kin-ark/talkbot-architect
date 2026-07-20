@@ -28,6 +28,10 @@ class Session:
         self.attachment: dict | None = None
         self.images: list = []
         self._lock = threading.Lock()
+        # Memo of the (expensive) summarize/validate results, keyed by the
+        # identity of the current version dict. Reused across undo/redo (they
+        # revisit existing versions); cleared on load/apply/reset.
+        self._cache: dict[int, dict] = {}
 
     def _autosave(self) -> None:
         try:
@@ -49,6 +53,7 @@ class Session:
         self.updated = time.time()
         self._stack = [copy.deepcopy(data)]
         self._idx = 0
+        self._cache.clear()
         self.transcript = []
         self.pending = None
         self.attachment = None
@@ -65,6 +70,7 @@ class Session:
         self.usage = {"input_tokens": 0, "output_tokens": 0, "turns": 0, "model": None}
         self._stack = []
         self._idx = -1
+        self._cache.clear()
         self.transcript = []
         self.pending = None
         self.is_component = False
@@ -75,12 +81,29 @@ class Session:
     def current(self) -> dict:
         return self._stack[self._idx]
 
+    def _cached(self, kind: str):
+        """Return summarize/validate for the current version, memoized by version
+        identity. `kind` is 'summary' or 'findings'."""
+        import agents
+        cur = self.current()
+        entry = self._cache.setdefault(id(cur), {})
+        if kind not in entry:
+            entry[kind] = agents.summarize(cur) if kind == "summary" else agents.validate(cur)
+        return entry[kind]
+
+    def summary(self):
+        return self._cached("summary")
+
+    def findings(self):
+        return self._cached("findings")
+
     def apply(self, proposed: dict) -> None:
         # Truncate any redo tail, push new version.
         self._stack = self._stack[: self._idx + 1]
         self._stack.append(copy.deepcopy(proposed))
         self._idx = len(self._stack) - 1
         self.pending = None
+        self._cache.clear()
         self._autosave()
 
     def can_undo(self) -> bool:

@@ -24,7 +24,7 @@ from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 from fastapi.requests import Request  # noqa: E402
 from fastapi.responses import JSONResponse, StreamingResponse  # noqa: E402
 from fastapi.staticfiles import StaticFiles  # noqa: E402
-from pydantic import BaseModel  # noqa: E402
+from pydantic import BaseModel, Field  # noqa: E402
 
 import agents  # noqa: E402
 import backup  # noqa: E402
@@ -61,6 +61,10 @@ _THINKING_BUDGET = 2048
 # are ignored by the frontend parser, which only acts on "data: " lines.
 _HEARTBEAT_S = 15
 _ATTACH_MAX_BYTES = 5 * 1024 * 1024
+# Cap the /session upload and the /chat message so a huge body can't OOM the
+# process. Env-overridable.
+_MAX_UPLOAD_BYTES = int(os.getenv("MAX_UPLOAD_BYTES", str(25 * 1024 * 1024)))
+_MAX_MESSAGE_CHARS = int(os.getenv("MAX_MESSAGE_CHARS", "100000"))
 _STARTED = time.time()
 
 _IMAGE_MAGIC = {
@@ -131,7 +135,7 @@ def current_session(store: SessionStore = Depends(current_store)) -> Session:
 # ---------------------------------------------------------------------------
 
 class ChatRequest(BaseModel):
-    message: str
+    message: str = Field(max_length=_MAX_MESSAGE_CHARS)
 
 
 class ConfigUpdate(BaseModel):
@@ -597,6 +601,9 @@ def get_session(s: Session = Depends(current_session)):
 async def create_session(file: UploadFile = File(...),
                          store: SessionStore = Depends(current_store)):
     raw = await file.read()
+    if len(raw) > _MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413,
+                            detail=f"upload too large (max {_MAX_UPLOAD_BYTES // (1024 * 1024)} MB)")
     filename = file.filename or ""
 
     # Detect ZIP by filename or magic bytes (PK = 0x50 0x4B).
@@ -690,12 +697,12 @@ def clear_session(s: Session = Depends(current_session)):
 
 @app.get("/summary")
 async def get_summary(s: Session = Depends(_require_session)):
-    return agents.summarize(s.current())
+    return s.summary()
 
 
 @app.get("/findings")
 async def get_findings(s: Session = Depends(_require_session)):
-    return agents.validate(s.current())
+    return s.findings()
 
 
 @app.get("/intents")
@@ -734,8 +741,8 @@ def edit_node_text(uuid: str, body: NodeTextRequest,
         s.apply(r["proposed_data"])   # new undoable version + autosave + clears pending
         return {
             "ok": True,
-            "summary": agents.summarize(s.current()),
-            "findings": agents.validate(s.current()),
+            "summary": s.summary(),
+            "findings": s.findings(),
             "can_undo": s.can_undo(),
             "can_redo": s.can_redo(),
             "node": agents.read_node(s.current(), uuid),
@@ -901,8 +908,8 @@ def apply_pending(s: Session = Depends(_require_session),
         return {
             "applied": True,
             "bot_name": nm,
-            "summary": agents.summarize(s.current()),
-            "findings": agents.validate(s.current()),
+            "summary": s.summary(),
+            "findings": s.findings(),
             "can_undo": s.can_undo(),
             "can_redo": s.can_redo(),
         }
@@ -919,8 +926,8 @@ def undo(s: Session = Depends(_require_session),
         return {
             "ok": ok,
             "bot_name": nm,
-            "summary": agents.summarize(s.current()),
-            "findings": agents.validate(s.current()),
+            "summary": s.summary(),
+            "findings": s.findings(),
             "can_undo": s.can_undo(),
             "can_redo": s.can_redo(),
         }
@@ -937,8 +944,8 @@ def redo(s: Session = Depends(_require_session),
         return {
             "ok": ok,
             "bot_name": nm,
-            "summary": agents.summarize(s.current()),
-            "findings": agents.validate(s.current()),
+            "summary": s.summary(),
+            "findings": s.findings(),
             "can_undo": s.can_undo(),
             "can_redo": s.can_redo(),
         }
@@ -960,8 +967,8 @@ def set_speech_name_route(body: BotNameRequest,
         return {
             "ok": True,
             "bot_name": name,
-            "summary": agents.summarize(s.current()),
-            "findings": agents.validate(s.current()),
+            "summary": s.summary(),
+            "findings": s.findings(),
             "can_undo": s.can_undo(),
             "can_redo": s.can_redo(),
         }
