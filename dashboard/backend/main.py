@@ -13,6 +13,7 @@ import os  # noqa: E402
 import ipaddress  # noqa: E402
 import hmac  # noqa: E402
 import re  # noqa: E402
+from collections import OrderedDict  # noqa: E402
 from contextlib import contextmanager, asynccontextmanager  # noqa: E402
 from urllib.parse import urlparse  # noqa: E402
 import tempfile  # noqa: E402
@@ -80,6 +81,10 @@ def _start_attach_reaper() -> None:
 _start_attach_reaper()
 
 _THINKING_BUDGET = 2048
+
+_client_cache: "OrderedDict[tuple, LLMClient]" = OrderedDict()
+_client_cache_lock = threading.Lock()
+_CLIENT_CACHE_MAX = 8
 # SSE keepalive interval. A turn can be silent for a long stretch (slow gateway
 # first token, or a long-running tool like build->checker). Reverse proxies in
 # front of the dashboard (e.g. Cloudflare Tunnel) drop a connection that sends
@@ -388,7 +393,9 @@ def _model_is_vision(cfg) -> bool:
 
 
 def get_client(cid: str = Depends(client_id)) -> LLMClient:
-    """Build an LLMClient from per-client config overrides + catalog."""
+    """Build (or reuse) an LLMClient from per-client config overrides + catalog.
+    Successful clients are cached by config fingerprint so identical-config turns
+    skip client/connection-pool construction."""
     cfg = config_store.config_for(cid)
     try:
         provider, model, base_url = _resolve_model(cfg)
@@ -397,11 +404,23 @@ def get_client(cid: str = Depends(client_id)) -> LLMClient:
     api_key = cfg.api_key
     resolved = (provider or "anthropic").lower()
     thinking_budget = _THINKING_BUDGET if (cfg.show_reasoning and resolved == "anthropic") else None
+    key = (provider, model, base_url, thinking_budget, api_key)
+    with _client_cache_lock:
+        cached = _client_cache.get(key)
+        if cached is not None:
+            _client_cache.move_to_end(key)
+            return cached
     try:
-        return make_client(provider=provider, api_key=api_key, model=model,
-                           base_url=base_url, thinking_budget=thinking_budget)
+        client = make_client(provider=provider, api_key=api_key, model=model,
+                             base_url=base_url, thinking_budget=thinking_budget)
     except LLMConfigError as e:
         raise HTTPException(status_code=503, detail=str(e))
+    with _client_cache_lock:
+        _client_cache[key] = client
+        _client_cache.move_to_end(key)
+        while len(_client_cache) > _CLIENT_CACHE_MAX:
+            _client_cache.popitem(last=False)
+    return client
 
 
 def _config_response(cfg) -> dict:
