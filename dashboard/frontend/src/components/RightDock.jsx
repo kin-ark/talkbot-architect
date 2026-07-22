@@ -66,9 +66,11 @@ export default function RightDock({ activeTab, onTabChange, summary, findings, s
   };
 
   return (
-    <div style={{ width }} className="shrink-0 h-full border-l border-border bg-surface flex flex-col relative" data-testid="right-dock">
+    <div style={{ width }}
+      className="shrink-0 h-full border-l border-border bg-surface flex flex-col relative max-md:!w-full max-md:border-l-0"
+      data-testid="right-dock">
       <div onPointerDown={startResize} data-testid="dock-resize" title="Drag to resize"
-        className="absolute left-0 top-0 h-full w-1.5 -translate-x-1/2 cursor-col-resize hover:bg-primary/40 z-20" />
+        className="absolute left-0 top-0 h-full w-1.5 -translate-x-1/2 cursor-col-resize hover:bg-primary/40 z-20 max-md:hidden" />
       <Tabs tabs={tabs} active={activeTab} onChange={(id) => { setDrill(null); setSelectedKb(null); onTabChange(id); }} />
       <div className="flex-1 overflow-hidden">
         {activeTab === 'chat' && (

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { Menu } from 'lucide-react';
 import { useSession } from './state/useSession';
 import { useConfirm } from './confirm/ConfirmProvider';
 import TopBar from './components/TopBar';
@@ -33,6 +34,8 @@ export default function App() {
     return next;
   });
   const [leftPage, setLeftPage] = useState(null);
+  const [mobileView, setMobileView] = useState('chat');   // <md: 'chat' | 'graph'
+  const [railOpen, setRailOpen] = useState(false);         // <md: sessions drawer
   const { theme, toggle: toggleTheme } = useTheme();
   const [keySet, setKeySet] = useState(true);   // assume set until known (no false flash)
   const [models, setModels] = useState([]);
@@ -167,13 +170,48 @@ export default function App() {
       <TopBar hasDoc={!!s.summary} canUndo={s.canUndo} canRedo={s.canRedo}
         onUndo={s.undo} onRedo={s.redo} onExport={onExport}
         botName={s.botName} onRenameBot={s.renameBot} isComponent={s.isComponent} onExportComponent={onExportComponent} componentWarnings={s.componentWarnings} />
+      {/* Mobile-only control bar: sessions drawer + Chat/Graph toggle. */}
+      {(s.summary || s.activeSessionId) && (
+        <div className="md:hidden flex items-center gap-2 px-3 py-1.5 border-b border-border bg-surface">
+          <button type="button" onClick={() => setRailOpen(true)} aria-label="Open sessions"
+            className="p-1.5 rounded-md text-text-secondary hover:bg-surface-muted">
+            <Menu size={18} />
+          </button>
+          <div className="ml-auto inline-flex rounded-md border border-border overflow-hidden text-xs" role="tablist">
+            {['chat', 'graph'].map((v) => (
+              <button key={v} type="button" role="tab" aria-selected={mobileView === v}
+                onClick={() => setMobileView(v)}
+                className={`px-3 py-1 capitalize ${mobileView === v ? 'bg-primary text-primary-fg' : 'text-text-secondary'}`}>
+                {v}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       <div className="flex-1 flex overflow-hidden">
-        <SessionRail sessions={s.sessions} activeSessionId={s.activeSessionId}
-          usage={s.usage} collapsed={railCollapsed} onToggleCollapse={toggleRail}
-          onNew={onStartNew} onSwitch={s.switchSession}
-          onRename={s.renameSession} onDelete={s.deleteSession}
-          onOpenPage={setLeftPage} theme={theme} onToggleTheme={toggleTheme} />
-        <div className="flex-1 min-w-0 flex flex-col">
+        {/* Desktop sessions rail (drawer on mobile, below). */}
+        <div className="hidden md:flex">
+          <SessionRail sessions={s.sessions} activeSessionId={s.activeSessionId}
+            usage={s.usage} collapsed={railCollapsed} onToggleCollapse={toggleRail}
+            onNew={onStartNew} onSwitch={s.switchSession}
+            onRename={s.renameSession} onDelete={s.deleteSession}
+            onOpenPage={setLeftPage} theme={theme} onToggleTheme={toggleTheme} />
+        </div>
+        {railOpen && (
+          <div className="md:hidden fixed inset-0 z-40" data-testid="rail-drawer">
+            <div className="absolute inset-0 bg-black/50" onClick={() => setRailOpen(false)} />
+            <div className="absolute inset-y-0 left-0 shadow-card">
+              <SessionRail sessions={s.sessions} activeSessionId={s.activeSessionId}
+                usage={s.usage} collapsed={false} onToggleCollapse={() => setRailOpen(false)}
+                onNew={() => { onStartNew(); setRailOpen(false); }}
+                onSwitch={(id) => { s.switchSession(id); setRailOpen(false); }}
+                onRename={s.renameSession} onDelete={s.deleteSession}
+                onOpenPage={(p) => { setLeftPage(p); setRailOpen(false); }}
+                theme={theme} onToggleTheme={toggleTheme} />
+            </div>
+          </div>
+        )}
+        <div className={`flex-1 min-w-0 flex-col ${((!s.summary && !s.activeSessionId) || mobileView === 'graph') ? 'flex' : 'hidden'} md:flex`}>
           {s.summary ? (
             <>
               {preview && (
@@ -200,13 +238,15 @@ export default function App() {
           )}
         </div>
         {(s.summary || s.activeSessionId) && (
-          <RightDock activeTab={dockTab} onTabChange={setDockTab} summary={s.summary} findings={s.findings}
-            selectedNode={selectedNode ? resolveNode(selectedNode) : null} onSelectNode={selectNode} chat={chat}
-            onPreview={onPreview} onAskFix={onAskFix}
-            onSelectComponent={setFocusComponentId} focusComponentId={focusComponentId}
-            onEditNode={(uuid, fields) => s.editNodeText(uuid, fields)}
-            intents={s.intents} focusKb={focusKb} onExportComponent={s.isComponent ? undefined : onExportComponent}
-            canSendImages={canSendImages} onSimNode={setSimNode} />
+          <div className={`min-w-0 ${mobileView === 'chat' ? 'flex max-md:flex-1' : 'hidden'} md:flex`}>
+            <RightDock activeTab={dockTab} onTabChange={setDockTab} summary={s.summary} findings={s.findings}
+              selectedNode={selectedNode ? resolveNode(selectedNode) : null} onSelectNode={selectNode} chat={chat}
+              onPreview={onPreview} onAskFix={onAskFix}
+              onSelectComponent={setFocusComponentId} focusComponentId={focusComponentId}
+              onEditNode={(uuid, fields) => s.editNodeText(uuid, fields)}
+              intents={s.intents} focusKb={focusKb} onExportComponent={s.isComponent ? undefined : onExportComponent}
+              canSendImages={canSendImages} onSimNode={setSimNode} />
+          </div>
         )}
       </div>
       {pageOverlay}

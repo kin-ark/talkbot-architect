@@ -56,6 +56,14 @@ describe('App UX', () => {
     expect(redo).toHaveBeenCalled();
   });
 
+  it('hamburger opens the mobile sessions drawer', () => {
+    mockSession({});
+    renderApp();
+    expect(screen.queryByTestId('rail-drawer')).toBeNull();
+    fireEvent.click(screen.getByLabelText('Open sessions'));
+    expect(screen.getByTestId('rail-drawer')).toBeInTheDocument();
+  });
+
   it('ignores the shortcut while typing in an input', () => {
     const undo = vi.fn();
     mockSession({ canUndo: true, undo });
