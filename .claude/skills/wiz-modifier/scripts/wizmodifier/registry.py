@@ -48,6 +48,7 @@ OP_REGISTRY: dict[str, Callable] = {
     "rename-node": mutate.rename_node,
     "move-node": mutate.move_node,
     "complete-component": mutate.complete_component,
+    "set-node-config": mutate.set_node_config,
     "set-node-tags": tags.set_node_tags,
     "set-path": generic.set_path,
     "delete-path": generic.delete_path,

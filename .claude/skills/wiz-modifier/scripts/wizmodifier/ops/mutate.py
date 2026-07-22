@@ -374,3 +374,59 @@ def rename_node(bundle: InputBundle, params: dict, minter) -> None:  # noqa: ARG
 
     fe.flush()
     set_components(bundle, comps)
+
+
+def set_node_config(bundle: InputBundle, params: dict, minter) -> None:  # noqa: ARG001
+    """Retarget / reconfigure an existing node in place (uuid + ports preserved).
+
+    Dispatch by node type:
+      4  goto        -> params['to_component'] (name)  -> set_goto_target
+      8  goto_kb     -> params['kb'] (name)            -> set_goto_kb_target
+      9  goto_mr     -> params['to_component'] (name)  -> set_goto_mr_target
+      10 assign      -> params['variable'] and/or ['value']
+      7  conditional -> params['variable'] and/or ['branches'] (updates by name)
+    """
+    from wizmodifier import codec
+    from wizmodifier.ops.structure import _var_source_map
+
+    comps = get_components(bundle)
+    comp = require_component(comps, params["component"])
+    fe = FlowEditor(comp)
+    uuid = fe.resolve(params["node"])
+    t = fe.node_type(uuid)
+
+    if t == 4:
+        name = params["to_component"]
+        tgt = next((c for c in comps if c.get("name") == name and c.get("componentUuid")), None)
+        if tgt is None:
+            raise ValueError(f"set-node-config: to_component {name!r} not found")
+        fe.set_goto_target(uuid, tgt["componentUuid"], name)
+    elif t == 8:
+        name = params["kb"]
+        kbs = codec.decode(bundle.data.get("BizKnowledgeInfo", "[]"))
+        kb = next((k for k in kbs if k.get("kdTitle") == name), None)
+        if kb is None:
+            raise ValueError(f"set-node-config: KB {name!r} not found in BizKnowledgeInfo")
+        fe.set_goto_kb_target(uuid, kb.get("knowledgeId"))
+    elif t == 9:
+        name = params["to_component"]
+        tgt = next((c for c in comps if c.get("name") == name and c.get("componentUuid")), None)
+        if tgt is None:
+            raise ValueError(f"set-node-config: to_component {name!r} not found")
+        if str(tgt.get("category", 1)) != "2":
+            bundle.warnings.append(
+                f"set-node-config: goto_mr target {name!r} is not a multi-round (category:2) component")
+        fe.set_goto_mr_target(uuid, tgt["componentUuid"], name)
+    elif t == 10:
+        var = params.get("variable")
+        src = _var_source_map(bundle).get(var, 0) if var is not None else 0
+        fe.set_assign(uuid, variable=var, value=params.get("value"), src=src)
+    elif t == 7:
+        var = params.get("variable")
+        src = _var_source_map(bundle).get(var, 0) if var is not None else 0
+        fe.set_conditional(uuid, variable=var, branch_updates=params.get("branches"), src=src)
+    else:
+        raise ValueError(f"set-node-config does not support node type {t}")
+
+    fe.flush()
+    set_components(bundle, comps)
