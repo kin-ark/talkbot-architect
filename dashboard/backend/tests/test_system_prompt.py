@@ -25,3 +25,9 @@ def test_system_prompt_splits_must_should_and_has_example():
     assert "must" in low and "should" in low          # rule tiers present
     assert "declare before use" in low                 # generalized ordering rule
     assert "greet" in low and "scaffold_bot" in low    # few-shot example present
+
+
+def test_system_prompt_nudges_batch_apply_mods():
+    s = orchestrator._SYSTEM.lower()
+    assert "apply_mods" in s
+    assert "list" in s and ("batch" in s or "one apply_mods" in s or "single apply_mods" in s)
