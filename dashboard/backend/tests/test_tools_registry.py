@@ -44,7 +44,7 @@ def test_specs_have_all_tools():
                 "rename_kb", "set_kb_intents", "add_kb_answer", "edit_kb_answer",
                 "remove_kb_answer", "set_kb_multiround", "delete_kb",
                 "rewire_edge", "delete_edge", "delete_node", "rename_node", "move_node",
-                "complete_component",
+                "complete_component", "delete_component", "edit_node_config",
                 "set_hotwords", "set_intent_training", "set_node_tags",
                 "import_intents_xlsx", "import_kb_xlsx"}
     assert names == expected

@@ -412,6 +412,38 @@ _SPECS = [
                  "exit_target": {"type": "object", "properties": {
                      "uuid": {"type": "string"}, "label": {"type": "string"}}}},
               "required": ["component"]}),
+    ToolSpec("delete_component",
+             "Remove a whole component and cascade-clean its rows (sentence cuts, hotwords). "
+             "Blocks (no mutation) if it is still referenced by a goto/goto_mr/nested node or a "
+             "KB multi-round delegate, or if it has child components — rewire/delete those first. "
+             "Proposes a dry-run.",
+             {"type": "object", "properties": {"component": {"type": "integer"}},
+              "required": ["component"]}),
+    ToolSpec("edit_node_config",
+             "Retarget or reconfigure an EXISTING node in place (uuid + ports preserved). "
+             "Dispatches by the node's current type: goto -> to_component (another component name); "
+             "goto_kb -> kb (a Knowledge Base name); goto_mr -> to_component (another multi-round "
+             "component name); assign -> variable and/or value; conditional -> variable and/or "
+             "branches (each {name, op, value|value_var} — updates the existing branch row matching "
+             "name; the branch's out-port is NOT changed). Proposes a dry-run.",
+             {"type": "object", "properties": {
+                 "component": {"type": "integer"},
+                 "node": {"type": "object", "properties": {
+                     "uuid": {"type": "string"}, "label": {"type": "string"}}},
+                 "to_component": {"type": "string"},
+                 "kb": {"type": "string"},
+                 "variable": {"type": "string"},
+                 "value": {"type": "string"},
+                 "branches": {"type": "array", "items": {
+                     "type": "object", "properties": {
+                         "name": {"type": "string"},
+                         "op": {"type": "string",
+                                "enum": [">", ">=", "<", "<=", "=", "!=",
+                                         "In", "NotIn", "IsNull", "NotNull", "Contains"]},
+                         "value": {"type": "string"},
+                         "value_var": {"type": "string"}},
+                     "required": ["name"]}}},
+              "required": ["component", "node"]}),
 ]
 
 
@@ -695,6 +727,18 @@ def _h_complete_component(a, d):
     return _mods(d, op)
 
 
+def _h_delete_component(a, d):
+    return _mods(d, {"op": "delete-component", "component": a["component"]})
+
+
+def _h_edit_node_config(a, d):
+    op = {"op": "set-node-config", "component": a["component"], "node": a["node"]}
+    for k in ("to_component", "kb", "variable", "value", "branches"):
+        if a.get(k) is not None:
+            op[k] = a[k]
+    return _mods(d, op)
+
+
 _HANDLERS = {
     "validate": _h_validate, "summarize": _h_summarize, "read_node": _h_read_node,
     "list_intents": _h_list_intents, "list_variables": _h_list_variables,
@@ -714,6 +758,7 @@ _HANDLERS = {
     "rewire_edge": _h_rewire_edge, "delete_edge": _h_delete_edge, "delete_node": _h_delete_node,
     "move_node": _h_move_node, "rename_node": _h_rename_node,
     "complete_component": _h_complete_component,
+    "delete_component": _h_delete_component, "edit_node_config": _h_edit_node_config,
 }
 
 

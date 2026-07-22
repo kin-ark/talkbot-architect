@@ -407,3 +407,115 @@ def test_complete_component_op_dict():
     # DATA has one empty component at index 0; complete_component should succeed.
     assert out["result"]["ok"] is True, out["result"].get("error")
     assert out["proposal"] is not None
+
+
+# ---------------------------------------------------------------------------
+# delete_component + edit_node_config proposal tools
+# ---------------------------------------------------------------------------
+
+
+def test_delete_component_tool_registered():
+    names = {s.name for s in registry.tool_specs()}
+    assert "delete_component" in names
+
+
+def test_edit_node_config_tool_registered():
+    names = {s.name for s in registry.tool_specs()}
+    assert "edit_node_config" in names
+
+
+def test_delete_component_tool_schema():
+    specs = {s.name: s for s in registry.tool_specs()}
+    dc = specs["delete_component"].parameters
+    assert dc["properties"]["component"]["type"] == "integer"
+    assert set(dc["required"]) >= {"component"}
+
+
+def test_edit_node_config_tool_schema():
+    specs = {s.name: s for s in registry.tool_specs()}
+    enc = specs["edit_node_config"].parameters
+    props = enc["properties"]
+    assert props["component"]["type"] == "integer"
+    assert props["node"] == _NODE_REF_SCHEMA
+    assert "to_component" in props and "kb" in props
+    assert "variable" in props and "value" in props and "branches" in props
+    assert set(enc["required"]) >= {"component", "node"}
+
+
+def test_delete_component_tool_proposes(two_component_doc):
+    """dispatch delete_component builds a delete-component op and returns a proposal.
+
+    Deleting component index 1 ("2. Next") — unreferenced by anything in the
+    2-component scaffold — must cascade cleanly.
+    """
+    out = registry.dispatch("delete_component", {"component": 1}, two_component_doc)
+    assert out["result"]["ok"] is True, out["result"].get("error")
+    assert out["proposal"] is not None
+    proposed = out["proposal"]["proposed_data"]
+    bsc = _decode(proposed, "BizSpeechComponent")
+    assert len(bsc) == 1
+    assert bsc[0]["name"] == "1. Greeting"
+
+
+def test_delete_component_tool_blocks_when_referenced(two_component_doc):
+    """delete_component on a component still referenced by a goto must NOT propose
+    a mutation — it returns ok:False with an explanatory error."""
+    bsc = _decode(two_component_doc, "BizSpeechComponent")
+    comp1_name = bsc[1]["name"]  # "2. Next"
+    comp0_details = json.loads(bsc[0]["details"]) if isinstance(bsc[0]["details"], str) else {}
+    entry_uuid = next(uid for uid, obj in comp0_details.items()
+                      if (obj.get("data") or {}).get("is_default"))
+
+    wired = registry.dispatch("add_node", {
+        "component": 0,
+        "id": "jump",
+        "prompt": "(goto)",
+        "type": "goto",
+        "config": {"target": comp1_name},
+        "edges": [{"from": entry_uuid, "branch": "Unclassified", "to": "jump"}],
+    }, two_component_doc)
+    assert wired["result"]["ok"] is True, wired["result"].get("error")
+    doc_with_goto = wired["proposal"]["proposed_data"]
+
+    out = registry.dispatch("delete_component", {"component": 1}, doc_with_goto)
+    assert out["result"]["ok"] is False
+    assert out["proposal"] is None
+    assert "referenced" in out["result"]["error"]
+
+
+def test_edit_node_config_tool_proposes(two_component_doc):
+    """dispatch edit_node_config retargets an existing goto node's to_component."""
+    bsc = _decode(two_component_doc, "BizSpeechComponent")
+    comp0_uuid = bsc[0]["componentUuid"]
+    comp0_name = bsc[0]["name"]  # "1. Greeting"
+    comp1_name = bsc[1]["name"]  # "2. Next"
+    comp0_details = json.loads(bsc[0]["details"]) if isinstance(bsc[0]["details"], str) else {}
+    entry_uuid = next(uid for uid, obj in comp0_details.items()
+                      if (obj.get("data") or {}).get("is_default"))
+
+    wired = registry.dispatch("add_node", {
+        "component": 0,
+        "id": "jump",
+        "prompt": "(goto)",
+        "type": "goto",
+        "config": {"target": comp1_name},
+        "edges": [{"from": entry_uuid, "branch": "Unclassified", "to": "jump"}],
+    }, two_component_doc)
+    assert wired["result"]["ok"] is True, wired["result"].get("error")
+    doc_with_goto = wired["proposal"]["proposed_data"]
+
+    bsc2 = _decode(doc_with_goto, "BizSpeechComponent")
+    details2 = json.loads(bsc2[0]["details"])
+    goto_uuid, _ = next((uid, obj) for uid, obj in details2.items() if obj.get("type") == 4)
+
+    out = registry.dispatch("edit_node_config", {
+        "component": 0,
+        "node": {"uuid": goto_uuid},
+        "to_component": comp0_name,
+    }, doc_with_goto)
+    assert out["result"]["ok"] is True, out["result"].get("error")
+    assert out["proposal"] is not None
+    proposed = out["proposal"]["proposed_data"]
+    bsc3 = _decode(proposed, "BizSpeechComponent")
+    details3 = json.loads(bsc3[0]["details"])
+    assert details3[goto_uuid]["data"]["appoint_node_id"] == comp0_uuid
