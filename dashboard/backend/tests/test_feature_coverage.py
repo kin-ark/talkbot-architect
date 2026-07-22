@@ -33,3 +33,23 @@ def test_bare_bot_reports_missing():
 def test_never_raises_on_junk():
     cov = agents.feature_coverage({"BizSpeechComponent": "not-json"})
     assert set(cov) == {"used", "missing"}
+
+
+# A minimal in-memory export with one empty component (index 0), mirroring
+# tests/test_tools_edit.py's DATA fixture for registry.dispatch calls.
+_ONE_COMPONENT_DOC = {
+    "BizSpeechComponent": [{"componentUuid": "00000000-0000-0000-0000-000000000001",
+                            "name": "Main", "speechId": 1,
+                            "details": "null", "routes": "{}", "inboundPorts": "[]"}],
+    "SpeechIntent": [{"intentName": n, "intentId": i} for i, n in
+                     enumerate(["Positive", "Negative", "Reject", "Unclassified", "No answer"], 1)],
+    "BizKnowledgeInfo": [],
+}
+
+
+def test_add_component_proposal_carries_feature_coverage():
+    from tools import registry
+    out = registry.dispatch("add_component", {"name": "Closing"}, _ONE_COMPONENT_DOC)
+    assert out["proposal"] is not None
+    assert "feature_coverage" in out["proposal"]     # advisory attached
+    assert "maturity" not in out["proposal"]         # NOT auto-matured

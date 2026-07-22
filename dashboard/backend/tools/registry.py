@@ -454,9 +454,9 @@ def tool_specs() -> list[ToolSpec]:
 # --- tool handlers: name -> fn(args, data) -> {"result", "proposal"} ---------
 # Registered in _HANDLERS below; dispatch() validates required args then routes.
 
-def _mods(data, op):
+def _mods(data, op, *, coverage: bool = False):
     """Common path: dry-run a single modifier op as a proposal."""
-    return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])))
+    return _as_proposal(agents.propose_mods(data, yaml.safe_dump([op])), coverage=coverage)
 
 
 def _h_validate(a, d):
@@ -562,7 +562,7 @@ def _h_add_component(a, d):
         op["nodes"] = a["nodes"]
     if a.get("edges"):
         op["edges"] = a["edges"]
-    return _mods(d, op)
+    return _mods(d, op, coverage=True)
 
 
 def _node_config_error(node: dict) -> str | None:
@@ -599,7 +599,7 @@ def _h_add_node(a, d):
     op = {"op": "append-node", "component": a["component"], "node": node}
     if a.get("edges"):
         op["edges"] = a["edges"]
-    return _mods(d, op)
+    return _mods(d, op, coverage=True)
 
 
 def _h_add_intent(a, d):
@@ -806,7 +806,7 @@ def dispatch(name: str, args: dict, data: dict) -> dict:
     return handler(args, data)
 
 
-def _as_proposal(p: dict, *, mature: bool = False) -> dict:
+def _as_proposal(p: dict, *, mature: bool = False, coverage: bool = False) -> dict:
     if not p.get("ok"):
         return {"result": {"ok": False, "error": p.get("error"),
                            "known_ops": p.get("known_ops")}, "proposal": None}
@@ -825,8 +825,9 @@ def _as_proposal(p: dict, *, mature: bool = False) -> dict:
     # Validate the data (matured if mature=True, original if False)
     findings = agents.validate(proposed_data)
     proposal["findings"] = findings
-    # Attach feature_coverage only on mature builds/scaffolds
-    if mature:
+    # Attach feature_coverage on mature builds/scaffolds AND opted-in incremental
+    # edits (coverage=True); ensure_mature stays gated on mature only.
+    if mature or coverage:
         proposal["feature_coverage"] = agents.feature_coverage(proposed_data)
     result = {"ok": True, "diff": p["diff"], "checker_delta": p["checker_delta"],
               "change_summary": p.get("change_summary")}
