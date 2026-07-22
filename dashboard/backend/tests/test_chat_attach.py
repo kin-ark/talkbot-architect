@@ -118,6 +118,23 @@ def test_delete_chat_attach_idempotent():
     assert r.json()["cleared"] is True
 
 
+def test_preview_xlsx_summarizes_rows(tmp_path):
+    import main
+    from wizmodifier.xlsx import write_sheet
+    p = tmp_path / "intents.xlsx"
+    write_sheet(str(p), ["Intent", "Keywords"], [["Greeting", "hi,hello"], ["Bye", "bye"]])
+    prev = main._preview_xlsx(str(p))
+    assert prev and "3" in prev            # row count mentioned
+    assert "Greeting" in prev              # a sample value surfaced
+
+
+def test_preview_xlsx_bad_file_returns_none(tmp_path):
+    import main
+    p = tmp_path / "bad.xlsx"
+    p.write_text("not a workbook")
+    assert main._preview_xlsx(str(p)) is None    # best-effort, never raises
+
+
 def test_orchestrator_nulls_path_for_attach_tools_when_unarmed():
     # Test FIX 3: the orchestrator always overwrites the path for attach tools
     # (either from the attachment, or None if unarmed).

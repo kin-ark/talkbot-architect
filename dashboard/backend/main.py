@@ -273,6 +273,22 @@ def _classify_attachment(name: str, path: str) -> tuple[str, str | None]:
     return "read", text[:8000]
 
 
+def _preview_xlsx(path: str, max_rows: int = 8) -> str | None:
+    """Best-effort short summary of an attached xlsx (row count + header + first
+    first-column values). Returns None on any parse problem — never raises."""
+    try:
+        from wizmodifier.xlsx import read_rows
+        rows = read_rows(path)
+    except Exception:
+        return None
+    if not rows:
+        return None
+    header = rows[0]
+    sample = [str(r[0]) for r in rows[1:max_rows] if r and r[0] not in (None, "")]
+    return (f"{len(rows)} rows; columns: {', '.join(str(h) for h in header)}; "
+            f"first entries: {', '.join(sample)}")
+
+
 def _reconstruct_transcript(messages) -> list[dict]:
     """Backend LLM Messages -> frontend chat bubbles (plain text; tool turns dropped)."""
     out: list[dict] = []
@@ -848,7 +864,9 @@ async def chat_attach(file: UploadFile = File(...), s: Session = Depends(_requir
         tmp.write(raw)
         tmp_path = tmp.name
     kind, excerpt = _classify_attachment(name, tmp_path)
-    s.attachment = {"name": name, "path": tmp_path, "kind": kind, "excerpt": excerpt}
+    preview = _preview_xlsx(tmp_path) if kind in ("intent-xlsx", "kb-xlsx") else None
+    s.attachment = {"name": name, "path": tmp_path, "kind": kind,
+                    "excerpt": excerpt, "preview": preview}
     return {"name": name, "kind": kind}
 
 

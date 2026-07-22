@@ -17,13 +17,19 @@ def _attachment_note(att: dict) -> str:
     kind = att["kind"]
     name = att["name"]
     if kind == "intent-xlsx":
-        return (f"The user attached an intent Excel named {name!r}. To import its intents "
+        note = (f"The user attached an intent Excel named {name!r}. To import its intents "
                 f"into the current bot, call the import_intents_xlsx tool (it uses the "
                 f"attached file automatically). It is a proposal the user then applies.")
+        if att.get("preview"):
+            note += f"\nDetected: {att['preview']}"
+        return note
     if kind == "kb-xlsx":
-        return (f"The user attached a KB Excel named {name!r}. To import its knowledge bases, "
+        note = (f"The user attached a KB Excel named {name!r}. To import its knowledge bases, "
                 f"call the import_kb_xlsx tool (it uses the attached file automatically). "
                 f"Proposal only.")
+        if att.get("preview"):
+            note += f"\nDetected: {att['preview']}"
+        return note
     return (f"The user attached a file named {name!r}. Its contents:\n```\n"
             f"{att.get('excerpt') or ''}\n```\nUse this to answer the user.")
 
