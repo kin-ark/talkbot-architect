@@ -129,6 +129,26 @@ _MAX_FIX_BACKSTOPS = 2
 # session indefinitely. Env-overridable.
 _TURN_DEADLINE_S = int(os.getenv("TURN_DEADLINE_S", "300"))
 
+_KEEP_RECENT_TURNS = 2
+_TOOL_STUB_MAX_CHARS = 2000
+
+
+def _compact_for_send(transcript: list[Message]) -> list[Message]:
+    """Send-copy of the transcript with STALE, LARGE tool-result bodies stubbed.
+    Keeps every user/assistant message + all recent messages verbatim; never
+    mutates the input, so the persisted transcript stays full."""
+    user_idxs = [i for i, m in enumerate(transcript) if m.role == "user"]
+    cutoff = user_idxs[-_KEEP_RECENT_TURNS] if len(user_idxs) >= _KEEP_RECENT_TURNS else 0
+    out: list[Message] = []
+    for i, m in enumerate(transcript):
+        if (i < cutoff and m.role == "tool" and m.content
+                and len(m.content) > _TOOL_STUB_MAX_CHARS):
+            out.append(Message(role="tool", tool_call_id=m.tool_call_id,
+                               content=f'{{"_compacted": true, "omitted_chars": {len(m.content)}}}'))
+        else:
+            out.append(m)
+    return out
+
 
 def _summarize_tool_result(name: str, result) -> str:
     if isinstance(result, dict):
@@ -151,7 +171,7 @@ def run_turn_stream(client, session, user_message: str) -> Iterator[dict]:
     # must NOT be persisted to disk, replayed on reload, or re-sent on later
     # turns (spec: per-session in-memory, cleared after the turn).
     session.transcript.append(Message(role="user", content=user_message))
-    messages = [Message(role="system", content=_SYSTEM), *session.transcript]
+    messages = [Message(role="system", content=_SYSTEM), *_compact_for_send(session.transcript)]
     if session.images:
         # Attach images to THIS send's user message only (a copy, not the
         # persisted transcript object) so the model sees them this turn.
