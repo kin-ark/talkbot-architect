@@ -5,8 +5,10 @@ import difflib
 import json
 
 import agents
+from memo import bounded_memo
 
 
+@bounded_memo()
 def normalize_for_diff(data: dict) -> str:
     """Pretty-print, expanding nested JSON-encoded string values for readability."""
     def expand(v):

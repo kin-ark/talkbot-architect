@@ -15,6 +15,7 @@ import tempfile
 from pathlib import Path
 
 from paths import add_skill_paths, skills_dir
+from memo import bounded_memo
 
 add_skill_paths()
 
@@ -82,6 +83,7 @@ def _unpack(data: dict) -> dict:
 # Public functions
 # ---------------------------------------------------------------------------
 
+@bounded_memo()
 def validate(data: dict) -> list[dict]:
     """Run all checker rules against *data* and return findings as plain dicts.
 
@@ -156,6 +158,7 @@ def list_tags(data: dict) -> list[dict]:
     return cats
 
 
+@bounded_memo()
 def summarize(data: dict) -> dict:
     """Build a FlowModel from *data* and return it as a JSON-compatible dict.
 
