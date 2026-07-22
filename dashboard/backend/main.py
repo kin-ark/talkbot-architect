@@ -31,6 +31,7 @@ import backup  # noqa: E402
 import config_store  # noqa: E402
 import exporters  # noqa: E402
 import models_catalog  # noqa: E402
+import persistence  # noqa: E402
 import samples  # noqa: E402
 import speechname  # noqa: E402
 from auth import PasswordGateMiddleware  # noqa: E402
@@ -412,10 +413,13 @@ async def admin_backup(_: None = Depends(_require_admin)):
 async def admin_restore(file: UploadFile = File(...), _: None = Depends(_require_admin)):
     raw = await file.read()
     try:
-        result = backup.restore_from(io.BytesIO(raw))
+        # Hold the save gate across wipe+extract+reset so a concurrent turn's
+        # autosave can't interleave with the restore.
+        with persistence.restore_guard():
+            result = backup.restore_from(io.BytesIO(raw))
+            REGISTRY.reset()
     except ValueError as e:
         raise HTTPException(status_code=400, detail=f"invalid backup: {e}")
-    REGISTRY.reset()
     log.info("", extra={"ev": "restore", "safety": result["safety_backup"]})
     return result
 

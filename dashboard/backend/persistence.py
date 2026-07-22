@@ -5,14 +5,31 @@ import base64
 import json
 import os
 import re
+import threading
 import time
 import uuid
+from contextlib import contextmanager
 from pathlib import Path
 
 from llm.base import Message
 
 _BASE = Path(__file__).parent
 SESSIONS_DIR: Path = _BASE / ".sessions"
+# Held during a restore (which wipes + re-extracts .sessions). save_session
+# skips while it's held so a concurrent turn's autosave can't interleave with
+# the wipe and re-create a file the restore just removed.
+_save_gate = threading.Lock()
+
+
+@contextmanager
+def restore_guard():
+    """Block session saves for the duration of a restore (wipe + extract)."""
+    _save_gate.acquire()
+    try:
+        yield
+    finally:
+        _list_meta_cache.clear()   # files changed underneath us
+        _save_gate.release()
 ACTIVE_PATH: Path = SESSIONS_DIR / "active"  # backward-compat; unused by new code
 LEGACY_PATH: Path = _BASE / ".session" / "state.json"
 
@@ -61,11 +78,18 @@ def _restore(session, state: dict) -> None:
 def save_session(session) -> None:
     if not session.id:
         return
-    SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
-    path = SESSIONS_DIR / f"{session.id}.json"
-    tmp = path.with_suffix(".json.tmp")
-    tmp.write_text(json.dumps(_snapshot(session), ensure_ascii=False), encoding="utf-8")
-    os.replace(tmp, path)
+    # Skip if a restore holds the gate — a save landing mid-wipe would corrupt
+    # the restore (this is a stale in-flight turn's autosave; safe to drop).
+    if not _save_gate.acquire(blocking=False):
+        return
+    try:
+        SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
+        path = SESSIONS_DIR / f"{session.id}.json"
+        tmp = path.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(_snapshot(session), ensure_ascii=False), encoding="utf-8")
+        os.replace(tmp, path)
+    finally:
+        _save_gate.release()
 
 
 # Per-file metadata cache for list_sessions, keyed by path. Each session file
