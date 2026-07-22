@@ -20,8 +20,17 @@ from __future__ import annotations
 
 import copy as _copy
 import json
+import sys as _sys
 import uuid as _uuid_mod
+from pathlib import Path as _Path
 from typing import Any
+
+# Cross-skill import: wiz-builder is a sibling package (same pattern as add_exit_node below).
+_builder_scripts = str(_Path(__file__).resolve().parents[4] / "wiz-builder" / "scripts")
+if _builder_scripts not in _sys.path:
+    _sys.path.insert(0, _builder_scripts)
+
+from wizbuilder.noderender import _WIZ_OPERATOR  # noqa: E402
 
 
 class FlowEditError(ValueError):
@@ -521,6 +530,81 @@ class FlowEditor:
             if row.get("id") == uuid:
                 row["appoint_node_id"] = comp_uuid
                 row["specificComponentName"] = comp_name
+
+    def set_goto_kb_target(self, uuid: str, knowledge_id) -> None:
+        """Retarget a goto_kb node (type 8). appoint_knowledge_id is a STRING."""
+        node_obj = self.details.get(uuid)
+        if node_obj is None:
+            raise FlowEditError(f"no node with uuid {uuid!r}")
+        kid = str(knowledge_id)
+        node_obj.setdefault("data", {})["appoint_knowledge_id"] = kid
+        for row in self.tfd:
+            if row.get("id") == uuid:
+                row["appoint_knowledge_id"] = kid
+
+    def set_goto_mr_target(self, uuid: str, comp_uuid: str, comp_name: str) -> None:
+        """Retarget a goto_mr node (type 9). No tfd row for goto_mr."""
+        node_obj = self.details.get(uuid)
+        if node_obj is None:
+            raise FlowEditError(f"no node with uuid {uuid!r}")
+        data = node_obj.setdefault("data", {})
+        data["multiple_appoint_id"] = comp_uuid
+        data["specificComponentName"] = comp_name
+
+    def set_assign(self, uuid: str, variable: str | None = None,
+                   value: str | None = None, src: int = 0) -> None:
+        """Update a type-10 assign node's variable and/or assigned value in place."""
+        node_obj = self.details.get(uuid)
+        if node_obj is None:
+            raise FlowEditError(f"no node with uuid {uuid!r}")
+        data = node_obj.setdefault("data", {})
+        va = (data.get("value_assignment") or [{}])[0]
+        if variable is not None:
+            va.setdefault("variable", {})["name"] = variable
+            va["variable"]["speMark"] = f"~@##{variable}##@~"
+            data["node_variables"] = [{"name": variable, "variableSource": src}]
+        if value is not None:
+            params = va.setdefault("assign", {}).setdefault("params", [{}])
+            params[0]["value"] = value
+        data["value_assignment"] = [va]
+
+    def set_conditional(self, uuid: str, variable: str | None = None,
+                        branch_updates: list[dict] | None = None, src: int = 0) -> None:
+        """Update a type-7 conditional node's variable and/or existing-branch rule
+        conditions in place. Never adds/removes branches (ports); an unknown branch
+        name raises. Reuses _WIZ_OPERATOR so tokens match a fresh build."""
+        node_obj = self.details.get(uuid)
+        if node_obj is None:
+            raise FlowEditError(f"no node with uuid {uuid!r}")
+        data = node_obj.setdefault("data", {})
+        rules = data.get("branch") or []
+        if variable is not None:
+            for rule in rules:
+                for cond in rule.get("branch_judgement_condition", []):
+                    cond["left_value"] = variable
+                    cond["variable_source"] = src
+            data["node_variables"] = [{"name": variable, "variableSource": src} for _ in rules]
+        for upd in (branch_updates or []):
+            name = upd["name"]
+            rule = next((r for r in rules if r.get("name") == name), None)
+            if rule is None:
+                raise FlowEditError(
+                    f"conditional branch {name!r} does not exist on this node "
+                    "(set-node-config edits existing branches only; it cannot add ports)")
+            cond = (rule.get("branch_judgement_condition") or [{}])[0]
+            if "op" in upd:
+                op = upd["op"]
+                cond["operator"] = _WIZ_OPERATOR.get(op, op)
+                if op in ("IsNull", "NotNull"):
+                    cond.pop("right_value", None)
+                    cond.pop("type", None)
+            if "value_var" in upd:
+                cond["right_value"] = upd["value_var"]
+                cond["type"] = "variable"
+            elif "value" in upd:
+                cond["right_value"] = upd["value"]
+                cond["type"] = "const"
+            rule["branch_judgement_condition"] = [cond]
 
     def add_exit_node(self, minter=None) -> tuple[str, dict]:
         """Mint and insert a new type-2 Exit node into this component.
