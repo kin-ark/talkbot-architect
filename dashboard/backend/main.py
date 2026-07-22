@@ -12,6 +12,7 @@ import threading  # noqa: E402
 import os  # noqa: E402
 import ipaddress  # noqa: E402
 import hmac  # noqa: E402
+import re  # noqa: E402
 from contextlib import contextmanager, asynccontextmanager  # noqa: E402
 from urllib.parse import urlparse  # noqa: E402
 import tempfile  # noqa: E402
@@ -920,6 +921,10 @@ def set_speech_name_route(body: BotNameRequest,
 # Multi-session management routes
 # ---------------------------------------------------------------------------
 
+def _valid_sid(sid: str) -> bool:
+    return bool(re.fullmatch(r"[0-9a-f]{32}", sid or ""))
+
+
 @app.get("/sessions")
 def list_sessions_route(store: SessionStore = Depends(current_store)):
     return {"sessions": store.list(), "active_id": store.active().id}
@@ -935,6 +940,8 @@ def create_session_slot(store: SessionStore = Depends(current_store)):
 
 @app.post("/sessions/{sid}/activate")
 def activate_session(sid: str, store: SessionStore = Depends(current_store)):
+    if not _valid_sid(sid):
+        raise HTTPException(status_code=404, detail="session not found")
     with _exclusive(store.active()):
         if not store.activate(sid):
             raise HTTPException(status_code=404, detail="session not found")
@@ -944,6 +951,8 @@ def activate_session(sid: str, store: SessionStore = Depends(current_store)):
 @app.patch("/sessions/{sid}")
 def rename_session(sid: str, body: RenameRequest,
                    store: SessionStore = Depends(current_store)):
+    if not _valid_sid(sid):
+        raise HTTPException(status_code=404, detail="session not found")
     with _exclusive(store.active()):
         if not store.rename(sid, body.name):
             raise HTTPException(status_code=404, detail="session not found")
@@ -953,6 +962,12 @@ def rename_session(sid: str, body: RenameRequest,
 @app.delete("/sessions/{sid}")
 def delete_session_route(sid: str, store: SessionStore = Depends(current_store)):
     with _exclusive(store.active()):
+        # sid validity is checked AFTER lock acquisition (not before) so a
+        # locked-store 409 still takes precedence over a malformed-sid 404 —
+        # see test_delete_session_409_when_locked, which exercises this route
+        # while the active session's id happens to be unset.
+        if not _valid_sid(sid):
+            raise HTTPException(status_code=404, detail="session not found")
         store.delete(sid)
         return {"ok": True, "active": store.active().id}
 

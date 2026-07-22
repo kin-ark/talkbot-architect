@@ -32,6 +32,13 @@ def test_activate_missing_404(tmp_path, monkeypatch):
         assert client.post("/sessions/missing/activate").status_code == 404
 
 
+def test_activate_rejects_malformed_sid():
+    with TestClient(main.app) as client:
+        client.get("/health")
+        r = client.post("/sessions/not-a-valid-id/activate")
+        assert r.status_code == 404
+
+
 def test_clear_session_409_when_locked():
     with TestClient(main.app) as client:
         client.get("/health")
