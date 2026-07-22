@@ -509,9 +509,13 @@ async def put_config(update: ConfigUpdate, cid: str = Depends(client_id)):
 
 
 @app.post("/config/clear")
-async def clear_config(cid: str = Depends(client_id)):
-    """Reset all CONFIG overrides — effective config reverts to env vars."""
+async def clear_config(keys_only: bool = False, cid: str = Depends(client_id)):
+    """Reset CONFIG overrides. keys_only=true clears just the API key, keeping
+    the model/provider/base_url choice."""
     cfg = config_store.config_for(cid)
+    if keys_only:
+        cfg.api_key = None
+        return _config_response(cfg)
     cfg.provider = cfg.model = cfg.base_url = cfg.api_key = None
     cfg.model_id = None
     cfg.show_reasoning = True

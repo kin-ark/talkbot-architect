@@ -124,6 +124,18 @@ def test_get_config_after_put_shows_override(monkeypatch):
 # /config/clear (nice-to-have)
 # ---------------------------------------------------------------------------
 
+def test_clear_config_keys_only_keeps_model():
+    """POST /config/clear?keys_only=true clears just the api key, keeping the
+    model/provider/base_url choice intact."""
+    http.put("/config", json={"model_id": "claude-sonnet-5", "api_key": "sk-secret"})
+    r = http.post("/config/clear?keys_only=true")
+    assert r.status_code == 200
+    body = r.json()
+    assert body.get("model_id") == "claude-sonnet-5"   # model kept
+    assert body.get("key_set") is False                  # api key cleared
+    assert "sk-secret" not in r.text
+
+
 def test_config_clear_resets_to_env(monkeypatch):
     """POST /config/clear should reset config and return source='env'."""
     monkeypatch.delenv("LLM_PROVIDER", raising=False)
