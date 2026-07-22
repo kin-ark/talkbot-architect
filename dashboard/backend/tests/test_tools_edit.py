@@ -79,6 +79,17 @@ def test_add_node_plain_talk_still_proposes():
     assert out["proposal"] is not None
 
 
+def test_add_node_fast_fail_skips_engine(monkeypatch):
+    called = {"n": 0}
+    real = agents.propose_mods
+    monkeypatch.setattr(agents, "propose_mods", lambda *a, **k: (called.__setitem__("n", called["n"] + 1), real(*a, **k))[1])
+    out = registry.dispatch("add_node",
+        {"component": 0, "id": "g1", "prompt": "", "type": "goto", "config": {}},
+        DATA)
+    assert out["proposal"] is None
+    assert called["n"] == 0     # engine round-trip skipped on fast-fail
+
+
 def _decode(data, key):
     """Decode a packed JSON string or return list/dict as-is."""
     v = data.get(key, "[]")
