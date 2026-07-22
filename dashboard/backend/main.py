@@ -54,6 +54,30 @@ try:
 except Exception as e:  # pragma: no cover
     log.error("", extra={"ev": "backup_error", "err": f"scheduler start: {e}"}, exc_info=e)
 
+
+def _reap_attach_temps(ttl_seconds: int = 6 * 3600) -> None:
+    """Remove leaked attachment temp files older than ttl_seconds. Matches only
+    our own 'wizattach-' prefix so unrelated temp files are never touched."""
+    import glob
+    cutoff = time.time() - ttl_seconds
+    for p in glob.glob(os.path.join(tempfile.gettempdir(), "wizattach-*")):
+        try:
+            if os.path.getmtime(p) < cutoff:
+                os.unlink(p)
+        except OSError:
+            pass
+
+
+def _start_attach_reaper() -> None:
+    def _loop():
+        while True:
+            time.sleep(3600)
+            _reap_attach_temps()
+    threading.Thread(target=_loop, daemon=True, name="attach-reaper").start()
+
+
+_start_attach_reaper()
+
 _THINKING_BUDGET = 2048
 # SSE keepalive interval. A turn can be silent for a long stretch (slow gateway
 # first token, or a long-running tool like build->checker). Reverse proxies in
@@ -815,7 +839,7 @@ async def chat_attach(file: UploadFile = File(...), s: Session = Depends(_requir
     if prior and prior.get("path"):
         Path(prior["path"]).unlink(missing_ok=True)
     suffix = Path(name).suffix or ".bin"
-    with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
+    with tempfile.NamedTemporaryFile(prefix="wizattach-", suffix=suffix, delete=False) as tmp:
         tmp.write(raw)
         tmp_path = tmp.name
     kind, excerpt = _classify_attachment(name, tmp_path)
