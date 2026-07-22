@@ -26,32 +26,29 @@ const renderApp = () => render(<ConfirmProvider><App /></ConfirmProvider>);
 describe('App export gate', () => {
   it('exports directly when there are no errors', async () => {
     mockSession([{ severity: 'warning' }]);
-    const open = vi.spyOn(window, 'open').mockImplementation(() => {});
+    api.downloadFile.mockResolvedValue();
     renderApp();
     fireEvent.click(screen.getByText('Export'));
-    await waitFor(() => expect(open).toHaveBeenCalled());
+    await waitFor(() => expect(api.downloadFile).toHaveBeenCalled());
     expect(screen.queryByTestId('confirm-dialog')).toBeNull();
-    open.mockRestore();
   });
 
   it('shows the confirm dialog on errors and aborts on cancel', async () => {
     mockSession([{ severity: 'error' }, { severity: 'error' }]);
-    const open = vi.spyOn(window, 'open').mockImplementation(() => {});
+    api.downloadFile.mockResolvedValue();
     renderApp();
     fireEvent.click(screen.getByText('Export'));
     fireEvent.click(await screen.findByTestId('confirm-cancel'));
     await waitFor(() => expect(screen.queryByTestId('confirm-dialog')).toBeNull());
-    expect(open).not.toHaveBeenCalled();
-    open.mockRestore();
+    expect(api.downloadFile).not.toHaveBeenCalled();
   });
 
   it('proceeds on confirm', async () => {
     mockSession([{ severity: 'error' }]);
-    const open = vi.spyOn(window, 'open').mockImplementation(() => {});
+    api.downloadFile.mockResolvedValue();
     renderApp();
     fireEvent.click(screen.getByText('Export'));
     fireEvent.click(await screen.findByTestId('confirm-ok'));
-    await waitFor(() => expect(open).toHaveBeenCalled());
-    open.mockRestore();
+    await waitFor(() => expect(api.downloadFile).toHaveBeenCalled());
   });
 });

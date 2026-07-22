@@ -19,6 +19,7 @@ export function useSession() {
   const [intents, setIntents] = useState([]);
   const [isComponent, setIsComponent] = useState(false);
   const [componentWarnings, setComponentWarnings] = useState([]);
+  const [backendDown, setBackendDown] = useState(false);
 
   const queue = useRef([]);
   const draining = useRef(false);
@@ -59,6 +60,7 @@ export function useSession() {
     let cancelled = false;
     Promise.resolve(api.getSession()).then((r) => {
       if (cancelled) return;
+      setBackendDown(false);
       if (!touched.current && r?.summary) {
         setSummary(r.summary);
         setFindings(r.findings || []);
@@ -74,7 +76,7 @@ export function useSession() {
         refreshIntents();
       }
       if (!cancelled) refreshSessions();
-    }).catch(() => { if (!cancelled) refreshSessions(); });
+    }).catch(() => { if (!cancelled) { setBackendDown(true); refreshSessions(); } });
     return () => { cancelled = true; };
   }, [refreshSessions, refreshIntents]);
 
@@ -217,7 +219,15 @@ export function useSession() {
           });
         } catch (e) {
           queue.current = [];
-          if (e?.name !== 'AbortError' && e?.name !== 'CanceledError') {
+          if (e?.name === 'AbortError' || e?.name === 'CanceledError') {
+            // User cancelled: drop the empty placeholder bubble, or mark a
+            // partial one as stopped so there's no silent blank bubble.
+            setTranscript((t) => t.flatMap((m) => {
+              if (m._id !== aid || m.role !== 'agent') return [m];
+              const empty = !m.text && (!m.tool_trace || m.tool_trace.length === 0);
+              return empty ? [] : [{ ...m, stop_reason: 'canceled' }];
+            }));
+          } else {
             setTranscript((t) => [
               ...t.filter((m) => !(m._id === aid && m.role === 'agent' && !m.text && (!m.tool_trace || m.tool_trace.length === 0))),
               { role: 'error', text: errText(e) }]);
@@ -338,7 +348,7 @@ export function useSession() {
   }, []);
 
   return { summary, findings, transcript, proposal, canUndo, canRedo, loading, uploadProgress, sending,
-           sessions, activeSessionId, usage, botName, intents, isComponent, componentWarnings,
+           sessions, activeSessionId, usage, botName, intents, isComponent, componentWarnings, backendDown,
            upload, startBlank, loadSample, send, retry, apply, reject, undo, redo, cancel, reset, startNew,
            refreshSessions, refreshIntents, newSession, switchSession, renameSession, deleteSession, renameBot, editNodeText };
 }

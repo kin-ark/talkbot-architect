@@ -19,6 +19,21 @@ export async function redo() { return (await axios.post(`${BASE}/redo`)).data; }
 export async function getSummary() { return (await axios.get(`${BASE}/summary`)).data; }
 export async function getFindings() { return (await axios.get(`${BASE}/findings`)).data; }
 export function exportUrl() { return `${BASE}/export`; }
+export async function downloadFile(url) {
+  // Fetch then trigger a download so a server error surfaces (window.open would
+  // just open a blank/broken tab).
+  const resp = await fetch(url, { credentials: 'include' });
+  if (!resp.ok) throw new Error(`download failed: ${resp.status}`);
+  const blob = await resp.blob();
+  const cd = resp.headers.get('content-disposition') || '';
+  const m = cd.match(/filename\*?=(?:UTF-8'')?"?([^"';]+)"?/i);
+  const name = m ? decodeURIComponent(m[1]) : 'export';
+  const objUrl = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = objUrl; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(objUrl);
+}
 export function componentExportUrl(uuid) {
   return uuid ? `${BASE}/export/component?uuid=${encodeURIComponent(uuid)}` : `${BASE}/export/component`;
 }

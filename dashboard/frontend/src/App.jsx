@@ -12,7 +12,8 @@ import StatisticsPage from './components/StatisticsPage';
 import DocsPage from './components/DocsPage';
 import SettingsPage from './components/SettingsPage';
 import { useTheme } from './theme/useTheme';
-import { exportUrl, componentExportUrl, getConfig, getModels } from './api';
+import { exportUrl, componentExportUrl, getConfig, getModels, downloadFile } from './api';
+import { toast } from './toast/toastStore';
 
 export default function App() {
   const s = useSession();
@@ -52,6 +53,21 @@ export default function App() {
   }, []);
   useEffect(() => { loadConfig(); }, [loadConfig]);
 
+  // Global Undo/Redo shortcuts (skip when typing in an input/textarea).
+  useEffect(() => {
+    const onKey = (e) => {
+      if (!s.summary) return;
+      const t = e.target;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+      if (!(e.ctrlKey || e.metaKey)) return;
+      const k = e.key.toLowerCase();
+      if (k === 'z' && !e.shiftKey) { e.preventDefault(); if (s.canUndo) s.undo(); }
+      else if ((k === 'z' && e.shiftKey) || k === 'y') { e.preventDefault(); if (s.canRedo) s.redo(); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [s.summary, s.canUndo, s.canRedo, s.undo, s.redo]);
+
   const onExport = async () => {
     const errs = s.findings.filter((f) => f.severity === 'error').length;
     if (errs > 0) {
@@ -62,11 +78,13 @@ export default function App() {
       });
       if (!ok) return;
     }
-    window.open(exportUrl(), '_blank');
+    try { await downloadFile(exportUrl()); }
+    catch { toast.error('Export failed. Please try again.'); }
   };
 
-  const onExportComponent = (uuid) => {
-    window.open(componentExportUrl(uuid), '_blank');
+  const onExportComponent = async (uuid) => {
+    try { await downloadFile(componentExportUrl(uuid)); }
+    catch { toast.error('Component export failed. Please try again.'); }
   };
 
   const onStartNew = () => {
@@ -140,6 +158,12 @@ export default function App() {
 
   return (
     <div className="h-screen flex flex-col bg-canvas">
+      {s.backendDown && (
+        <div data-testid="backend-down" role="alert"
+          className="px-4 py-1.5 text-xs text-center bg-error-bg text-error border-b border-error">
+          Can't reach the server — changes won't save. Check the connection and reload.
+        </div>
+      )}
       <TopBar hasDoc={!!s.summary} canUndo={s.canUndo} canRedo={s.canRedo}
         onUndo={s.undo} onRedo={s.redo} onExport={onExport}
         botName={s.botName} onRenameBot={s.renameBot} isComponent={s.isComponent} onExportComponent={onExportComponent} componentWarnings={s.componentWarnings} />
