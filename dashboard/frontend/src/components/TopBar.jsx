@@ -16,7 +16,7 @@ export default function TopBar({ hasDoc, canUndo, canRedo, onUndo, onRedo, onExp
 
   return (
     <div className="h-12 border-b border-border bg-surface flex items-center justify-between px-4">
-      <div className="flex items-center gap-2 min-w-0">
+      <div className="flex items-center gap-2 min-w-0 flex-1">
         <img src="/favicon.svg" alt="" className="w-5 h-5 shrink-0" />
         {!hasDoc ? (
           <span data-testid="bot-name" className="text-sm font-semibold text-text-tertiary truncate">Talkbot Architect</span>
@@ -47,19 +47,22 @@ export default function TopBar({ hasDoc, canUndo, canRedo, onUndo, onRedo, onExp
           </span>
         )}
       </div>
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 shrink-0">
+        {/* Undo/Redo hidden on phones — the chat pane + Ctrl/Cmd+Z cover it. */}
         <button type="button" aria-label="Undo" title="Undo" onClick={onUndo} disabled={!hasDoc || !canUndo}
-          className="p-2 rounded-md text-text-secondary hover:bg-surface-muted hover:text-text disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-text-secondary">
+          className="hidden sm:inline-flex p-2 rounded-md text-text-secondary hover:bg-surface-muted hover:text-text disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-text-secondary">
           <Undo2 size={16} />
         </button>
         <button type="button" aria-label="Redo" title="Redo" onClick={onRedo} disabled={!hasDoc || !canRedo}
-          className="p-2 rounded-md text-text-secondary hover:bg-surface-muted hover:text-text disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-text-secondary">
+          className="hidden sm:inline-flex p-2 rounded-md text-text-secondary hover:bg-surface-muted hover:text-text disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-text-secondary">
           <Redo2 size={16} />
         </button>
-        <Button variant="secondary" onClick={onExport} disabled={!hasDoc} className="ml-1">Export</Button>
+        <Button variant="secondary" onClick={onExport} disabled={!hasDoc} className="ml-1 whitespace-nowrap">Export</Button>
         {hasDoc && !isComponent && (
-          <Button variant="secondary" onClick={() => onExportComponent()} data-testid="export-component" className="ml-1">
-            Export as component
+          <Button variant="secondary" onClick={() => onExportComponent()} data-testid="export-component"
+            className="ml-1 whitespace-nowrap">
+            <span className="hidden sm:inline">Export as component</span>
+            <span className="sm:hidden">Component</span>
           </Button>
         )}
       </div>

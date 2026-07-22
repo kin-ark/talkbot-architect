@@ -11,13 +11,14 @@ export default function Tabs({ tabs, active, onChange }) {
   };
 
   return (
-    <div role="tablist" onKeyDown={onKeyDown} className="flex gap-1 p-1.5 border-b border-divider">
+    <div role="tablist" onKeyDown={onKeyDown}
+      className="flex gap-1 p-1.5 border-b border-divider overflow-x-auto whitespace-nowrap">
       {tabs.map((t) => {
         const selected = active === t.id;
         return (
           <button key={t.id} role="tab" aria-selected={selected} tabIndex={selected ? 0 : -1}
             onClick={() => onChange(t.id)}
-            className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm ${
+            className={`shrink-0 flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm ${
               selected ? 'bg-surface-muted text-primary font-semibold' : 'text-text-secondary hover:bg-surface-muted'}`}>
             {t.label}
             {t.badge != null && (
