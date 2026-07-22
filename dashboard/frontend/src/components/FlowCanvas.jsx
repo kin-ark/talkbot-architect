@@ -17,12 +17,8 @@ const LEGEND_EDGES = [
   ['next', 'var(--c-edge-next)'], ['exit', 'var(--c-edge-exit)'],
   ['default', 'var(--c-edge-default)'], ['cross-component', 'var(--c-edge-xcomp)'],
 ];
-const LEGEND_NODES = [
-  ['talk', 'var(--c-node-talk)'], ['conditional', 'var(--c-node-conditional)'],
-  ['assign', 'var(--c-node-assign)'], ['exit', 'var(--c-node-exit)'],
-  ['llm', 'var(--c-node-llm)'], ['nested', 'var(--c-node-nested)'],
-  ['exit_port', 'var(--c-node-exit-port)'], ['unknown', 'var(--c-node-unknown)'],
-];
+const NODE_LABELS = { variable_assignment: 'assign', nested_component: 'nested' };
+const LEGEND_NODES = Object.entries(TYPE_COLOR).map(([t, c]) => [NODE_LABELS[t] || t, c]);
 
 function ComponentNode({ data }) {
   return (

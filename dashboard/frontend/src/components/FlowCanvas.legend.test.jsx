@@ -20,4 +20,12 @@ describe('FlowCanvas legend', () => {
     expect(legend.textContent).toMatch(/talk/i);            // a node type
     expect(legend.textContent).toMatch(/conditional/i);
   });
+
+  it('legend lists a swatch for every node type incl. assign and nested', () => {
+    render(<FlowCanvas summary={SUMMARY} onSelectNode={() => {}} />);
+    fireEvent.click(screen.getByTestId('legend-toggle'));
+    expect(screen.getByText('assign')).toBeInTheDocument();
+    expect(screen.getByText('nested')).toBeInTheDocument();
+    expect(screen.getByText('exit_port')).toBeInTheDocument();
+  });
 });
