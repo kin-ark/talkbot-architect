@@ -565,12 +565,37 @@ def _h_add_component(a, d):
     return _mods(d, op)
 
 
+def _node_config_error(node: dict) -> str | None:
+    """Cheap pre-check mirroring the engine's _validate_special_node for the
+    common single-node cases, so a missing type-conditional config fails fast
+    instead of after a full propose round-trip. goto_kb/talk_continue targets
+    are optional (omitted here); the engine stays the source of truth."""
+    t = node.get("type") or "talk"
+    cfg = node.get("config") or {}
+    need = {
+        "goto": ("target",), "goto_mr": ("target",), "nested": ("target",),
+        "exit_port": ("name",),
+        "conditional": ("variable", "branches"),
+        "assign": ("variable", "value"),
+    }.get(t)
+    if not need:
+        return None
+    missing = [k for k in need if not cfg.get(k)]
+    if missing:
+        return (f"node type {t!r} requires config.{', config.'.join(missing)}; "
+                "add it and resend.")
+    return None
+
+
 def _h_add_node(a, d):
     node = {"id": a["id"], "prompt": a["prompt"]}
     if a.get("type"):
         node["type"] = a["type"]
     if a.get("config"):
         node["config"] = a["config"]
+    err = _node_config_error(node)
+    if err:
+        return {"result": {"ok": False, "error": err}, "proposal": None}
     op = {"op": "append-node", "component": a["component"], "node": node}
     if a.get("edges"):
         op["edges"] = a["edges"]

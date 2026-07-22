@@ -55,6 +55,30 @@ def test_add_component_returns_proposal():
     assert out["proposal"] is not None
 
 
+def test_add_node_goto_without_target_fast_fails():
+    out = registry.dispatch("add_node",
+        {"component": 0, "id": "g1", "prompt": "", "type": "goto", "config": {}},
+        DATA)
+    assert out["proposal"] is None
+    assert "target" in out["result"]["error"]
+
+
+def test_add_node_conditional_without_variable_fast_fails():
+    out = registry.dispatch("add_node",
+        {"component": 0, "id": "c1", "prompt": "", "type": "conditional",
+         "config": {"branches": []}},
+        DATA)
+    assert out["proposal"] is None
+    assert "variable" in out["result"]["error"]
+
+
+def test_add_node_plain_talk_still_proposes():
+    out = registry.dispatch("add_node",
+        {"component": 0, "id": "t1", "prompt": "Hello"},
+        DATA)
+    assert out["proposal"] is not None
+
+
 def _decode(data, key):
     """Decode a packed JSON string or return list/dict as-is."""
     v = data.get(key, "[]")
