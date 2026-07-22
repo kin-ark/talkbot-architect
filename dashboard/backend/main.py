@@ -16,7 +16,6 @@ from contextlib import contextmanager, asynccontextmanager  # noqa: E402
 from urllib.parse import urlparse  # noqa: E402
 import tempfile  # noqa: E402
 import io  # noqa: E402
-import zipfile  # noqa: E402
 from pathlib import Path  # noqa: E402
 from typing import Optional  # noqa: E402
 
@@ -30,6 +29,7 @@ from pydantic import BaseModel, Field  # noqa: E402
 import agents  # noqa: E402
 import backup  # noqa: E402
 import config_store  # noqa: E402
+import exporters  # noqa: E402
 import models_catalog  # noqa: E402
 import samples  # noqa: E402
 import speechname  # noqa: E402
@@ -42,7 +42,7 @@ from orchestrator import run_turn, run_turn_stream  # noqa: E402
 from registry import REGISTRY  # noqa: E402
 from session import Session  # noqa: E402
 from session_store import SessionStore  # noqa: E402
-from wizmodifier.io import InputBundle, write_output  # noqa: E402
+from wizmodifier.io import InputBundle  # noqa: E402
 from wizcheck.component_adapter import is_component_export, component_export_to_full  # noqa: E402
 
 from logging_setup import configure_logging, log, RequestLogMiddleware  # noqa: E402
@@ -503,47 +503,14 @@ async def list_models():
     }
 
 
+def _download(content, media_type: str, filename: str) -> Response:
+    return Response(content=content, media_type=media_type,
+                    headers={"Content-Disposition": f'attachment; filename="{filename}"'})
+
+
 @app.get("/export")
 async def export_current(s: Session = Depends(_require_session)):
-    if s.is_component:
-        from wizcheck.component_adapter import full_to_component_export
-        nm = speechname.read_speech_name(s.current())
-        dto = full_to_component_export(s.current(), base=s.component_base, name=nm)
-        body = json.dumps(dto, ensure_ascii=False, indent=2).encode("utf-8")
-        stem = speechname.slugify_filename(nm).removesuffix(".json") if nm else "component"
-        return Response(content=body, media_type="application/json",
-                        headers={"Content-Disposition": f'attachment; filename="{stem}.component.json"'})
-
-    data = s.current()
-    nm = speechname.read_speech_name(data)
-    base = speechname.slugify_filename(nm).removesuffix(".json") if nm else "speech_export"
-    # Internal entry MUST be a speech*.json (WIZ + InputBundle.load require it);
-    # the slugged <base> is only the download filename, never the zip entry.
-    sn = s.speech_name if (s.speech_name.startswith("speech")
-                           and s.speech_name.endswith(".json")) else "speech_export.json"
-
-    if s.wavs:  # has audio → import-ready ZIP via the engine writer
-        bundle = InputBundle(data=data, speech_name=sn, wavs=s.wavs)
-        with tempfile.NamedTemporaryFile(suffix=".zip", delete=False) as tmp:
-            tmp_path = Path(tmp.name)
-        try:
-            write_output(bundle, tmp_path, fmt="zip")
-            payload = tmp_path.read_bytes()
-        finally:
-            tmp_path.unlink(missing_ok=True)
-        return Response(
-            content=payload,
-            media_type="application/zip",
-            headers={"Content-Disposition": f'attachment; filename="{base}.zip"'},
-        )
-
-    # no audio → JSON (current behavior)
-    payload = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
-    return Response(
-        content=payload,
-        media_type="application/json",
-        headers={"Content-Disposition": f'attachment; filename="{base}.json"'},
-    )
+    return _download(*exporters.export_full(s))
 
 
 @app.get("/export/component")
@@ -551,83 +518,12 @@ async def export_component(uuid: str | None = None, s: Session = Depends(_requir
     if s.is_component:
         raise HTTPException(status_code=400, detail="this session is already a component; use /export")
     data = s.current()
-
-    # Single component export (uuid provided)
     if uuid is not None:
         try:
-            dto = agents.export_component_dto(data, uuid)
+            return _download(*exporters.export_single_component(data, uuid))
         except KeyError:
             raise HTTPException(status_code=404, detail="unknown component")
-        raw = data.get("BizSpeechComponent")
-        comps = json.loads(raw) if isinstance(raw, str) else (raw or [])
-        nm = next((c.get("name") for c in comps if isinstance(c, dict)
-                   and c.get("componentUuid") == uuid), None) or "component"
-        stem = speechname.slugify_filename(nm).removesuffix(".json") or "component"
-        body = json.dumps(dto, ensure_ascii=False, indent=2).encode("utf-8")
-        return Response(content=body, media_type="application/json",
-                        headers={"Content-Disposition": f'attachment; filename="{stem}.component.json"'})
-
-    # Whole-dialog export: return a ZIP bundle with components + intent/KB Excel
-    from wizcheck.component_adapter import full_to_component_export
-    from wizmodifier.ops.intents_xlsx import intent_export_rows
-    from wizmodifier.ops.kb_xlsx import kb_export_rows
-    from wizmodifier.xlsx import write_sheet
-
-    nm = speechname.read_speech_name(data) or "component"
-    stem = speechname.slugify_filename(nm).removesuffix(".json") or "component"
-
-    # Build the ZIP in memory
-    buf = io.BytesIO()
-    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
-        # Main-flow components (category=1)
-        raw_comps = data.get("BizSpeechComponent")
-        comps = json.loads(raw_comps) if isinstance(raw_comps, str) else (raw_comps or [])
-        main_comps = [c for c in comps if isinstance(c, dict) and c.get("category") in (1, None)]
-        if main_comps:
-            # Export only main-flow components
-            main_data = data.copy()
-            main_data["BizSpeechComponent"] = main_comps
-            main_dto = full_to_component_export(main_data, name=nm, category=1)
-            main_json = json.dumps(main_dto, ensure_ascii=False, indent=2).encode("utf-8")
-            zf.writestr(f"{stem}.component.json", main_json)
-
-        # Multi-round components (category=2), if present
-        mr_comps = [c for c in comps if isinstance(c, dict) and c.get("category") == 2]
-        if mr_comps:
-            mr_data = data.copy()
-            mr_data["BizSpeechComponent"] = mr_comps
-            mr_dto = full_to_component_export(mr_data, name=nm, category=2)
-            mr_json = json.dumps(mr_dto, ensure_ascii=False, indent=2).encode("utf-8")
-            zf.writestr(f"{stem} (multi-round).component.json", mr_json)
-
-        # Intent Excel
-        _si = data.get("SpeechIntent", "[]")
-        si = json.loads(_si) if isinstance(_si, str) else (_si or [])
-        intent_rows = intent_export_rows(si)
-        with tempfile.NamedTemporaryFile(suffix=".xls", delete=False) as tmp:
-            tmp_intent = Path(tmp.name)
-        try:
-            write_sheet(tmp_intent, ["Intent", "Type", "Content", "Language"], intent_rows,
-                       note="Note:\n1,Intent column is the intent name;\n2,Type is Keyword or User response;\n3,Content per type")
-            zf.write(tmp_intent, f"{stem} intents.xls")
-        finally:
-            tmp_intent.unlink(missing_ok=True)
-
-        # KB Excel
-        _bk = data.get("BizKnowledgeInfo", "[]")
-        bk = json.loads(_bk) if isinstance(_bk, str) else (_bk or [])
-        kb_rows = kb_export_rows(bk, si)
-        with tempfile.NamedTemporaryFile(suffix=".xls", delete=False) as tmp:
-            tmp_kb = Path(tmp.name)
-        try:
-            write_sheet(tmp_kb, ["Title", "Intent", "Dialogue Content"], kb_rows,
-                       note="Note:\nTitle = KB name; Intent = trigger intent; Dialogue Content = answer")
-            zf.write(tmp_kb, f"{stem} KB.xls")
-        finally:
-            tmp_kb.unlink(missing_ok=True)
-
-    return Response(content=buf.getvalue(), media_type="application/zip",
-                    headers={"Content-Disposition": f'attachment; filename="{stem}.components.zip"'})
+    return _download(*exporters.export_components_zip(data))
 
 
 @app.get("/session")
