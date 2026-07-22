@@ -220,8 +220,8 @@ export default function FlowCanvas({ summary, onSelectNode, focusComponentId, hi
 
   return (
     <div className="w-full h-full flex flex-col" data-testid="flow-canvas">
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-divider bg-surface">
-        <div className="inline-flex rounded-md border border-border overflow-hidden text-sm">
+      <div className="flex flex-wrap items-center gap-2 px-3 py-2 border-b border-divider bg-surface">
+        <div className="inline-flex shrink-0 rounded-md border border-border overflow-hidden text-sm">
           <button type="button" onClick={showMap}
             className={`px-3 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${mode === 'map' ? 'bg-primary text-primary-fg' : 'text-text-secondary hover:bg-surface-muted'}`}>Map</button>
           <button type="button" onClick={showDetail}
@@ -233,7 +233,7 @@ export default function FlowCanvas({ summary, onSelectNode, focusComponentId, hi
           className={`px-3 py-1 text-sm rounded-md border border-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${legendOpen ? 'bg-primary text-primary-fg' : 'text-text-secondary hover:bg-surface-muted'}`}>Legend</button>
         <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search nodes…"
           data-testid="node-search"
-          className="ml-2 w-40 border border-border rounded-md px-2 py-1 text-xs bg-surface text-text focus:outline-none focus:ring-2 focus:ring-primary" />
+          className="ml-2 min-w-[8rem] flex-1 sm:flex-none sm:w-40 border border-border rounded-md px-2 py-1 text-xs bg-surface text-text focus:outline-none focus:ring-2 focus:ring-primary" />
         {search.trim() && (
           <span data-testid="search-count" className="text-xs text-text-tertiary">{searchMatchIds.size} match{searchMatchIds.size === 1 ? '' : 'es'}</span>
         )}
