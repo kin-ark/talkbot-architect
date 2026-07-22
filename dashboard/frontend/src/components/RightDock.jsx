@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { memo, useState, useEffect } from 'react';
 import Tabs from './ui/Tabs';
 import ChatPane from './ChatPane';
 import FindingList from './FindingList';
@@ -11,7 +11,7 @@ import FlowCanvas from './FlowCanvas';
 import ComponentsRail from './ComponentsRail';
 import SimulatorPanel from './SimulatorPanel';
 
-export default function RightDock({ activeTab, onTabChange, summary, findings, selectedNode, onSelectNode, chat, onPreview, onAskFix, onSelectComponent, focusComponentId, onEditNode, intents, focusKb, onExportComponent, canSendImages = true, onSimNode }) {
+function RightDock({ activeTab, onTabChange, summary, findings, selectedNode, onSelectNode, chat, onPreview, onAskFix, onSelectComponent, focusComponentId, onEditNode, intents, focusKb, onExportComponent, canSendImages = true, onSimNode }) {
   const [drill, setDrill] = useState(null);
   const [selectedKb, setSelectedKb] = useState(null);
   // Reset KB selection when a new export/summary loads (e.g. after apply/undo).
@@ -120,3 +120,5 @@ export default function RightDock({ activeTab, onTabChange, summary, findings, s
     </div>
   );
 }
+
+export default memo(RightDock);

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Menu } from 'lucide-react';
 import { useSession } from './state/useSession';
 import { useConfirm } from './confirm/ConfirmProvider';
@@ -95,28 +95,36 @@ export default function App() {
     s.startNew();          // empty-state center; keeps backend + session list
   };
 
-  const ownerComponentOf = (uuid) => {
+  const ownerComponentOf = useCallback((uuid) => {
     for (const c of s.summary?.components || []) {
       if (c.nodes && c.nodes[uuid]) return c.uuid;
     }
     return null;
-  };
+  }, [s.summary]);
 
-  const resolveNode = (node) => {
+  const resolveNode = useCallback((node) => {
     if (!node?.uuid) return node;
     for (const c of s.summary?.components || []) {
       if (c.nodes?.[node.uuid]) return c.nodes[node.uuid];
     }
     return node;
-  };
+  }, [s.summary]);
 
-  const selectNode = (node) => {
+  const selectNode = useCallback((node) => {
     const resolved = resolveNode(node);
     setSelectedNode(resolved);
     setDockTab('properties');
     const owner = resolved?.uuid ? ownerComponentOf(resolved.uuid) : null;
     if (owner) setFocusComponentId(owner);
-  };
+  }, [resolveNode, ownerComponentOf]);
+
+  // Stable handlers passed to the memoized FlowCanvas / RightDock so unrelated
+  // App re-renders (e.g. per-token chat streaming) don't re-render them.
+  const onSelectKb = useCallback((id) => {
+    setDockTab('kb');
+    setFocusKb((f) => ({ id, nonce: (f?.nonce || 0) + 1 }));
+  }, []);
+  const onEditNode = useCallback((uuid, fields) => s.editNodeText(uuid, fields), [s.editNodeText]);
 
   const PAGE_TITLES = { stats: 'Statistics', settings: 'Settings' };
   const pageOverlay = leftPage && leftPage !== 'docs' && (
@@ -139,21 +147,22 @@ export default function App() {
     return model?.vision === true;
   })();
 
-  const onAskFix = (f) => {
+  const onAskFix = useCallback((f) => {
     setDockTab('chat');
     s.send(`Fix finding ${f.code}${f.id ? ' on node ' + f.id : ''}: ${f.message}`);
-  };
-  const onPreview = (proposal) => setPreview(
-    proposal?.proposed_summary ? { summary: proposal.proposed_summary, changeSet: proposal.change_set } : null);
-  const exitPreview = () => setPreview(null);
-  const applyAndExit = () => { exitPreview(); return s.apply(); };
-  const rejectAndExit = () => { exitPreview(); s.reject(); };
+  }, [s.send]);
+  const onPreview = useCallback((proposal) => setPreview(
+    proposal?.proposed_summary ? { summary: proposal.proposed_summary, changeSet: proposal.change_set } : null), []);
+  const exitPreview = useCallback(() => setPreview(null), []);
+  const applyAndExit = useCallback(() => { exitPreview(); return s.apply(); }, [exitPreview, s.apply]);
+  const rejectAndExit = useCallback(() => { exitPreview(); s.reject(); }, [exitPreview, s.reject]);
 
-  const chat = {
+  const chat = useMemo(() => ({
     transcript: s.transcript, proposal: s.proposal, sending: s.sending,
     onSend: s.send, onRetry: s.retry, onApply: applyAndExit, onReject: rejectAndExit, onCancel: s.cancel,
     canUndo: s.canUndo, canRedo: s.canRedo, onUndo: s.undo, onRedo: s.redo,
-  };
+  }), [s.transcript, s.proposal, s.sending, s.send, s.retry, applyAndExit, rejectAndExit,
+       s.cancel, s.canUndo, s.canRedo, s.undo, s.redo]);
 
   if (leftPage === 'docs') {
     return <DocsPage onClose={() => setLeftPage(null)} />;
@@ -226,7 +235,7 @@ export default function App() {
                   onSelectNode={selectNode} focusComponentId={focusComponentId}
                   highlight={preview ? preview.changeSet : null}
                   simCurrentNode={simNode}
-                  onSelectKb={(id) => { setDockTab('kb'); setFocusKb((f) => ({ id, nonce: (f?.nonce || 0) + 1 })); }} />
+                  onSelectKb={onSelectKb} />
               </div>
             </>
           ) : (s.loading && !s.uploadProgress) ? (
@@ -243,7 +252,7 @@ export default function App() {
               selectedNode={selectedNode ? resolveNode(selectedNode) : null} onSelectNode={selectNode} chat={chat}
               onPreview={onPreview} onAskFix={onAskFix}
               onSelectComponent={setFocusComponentId} focusComponentId={focusComponentId}
-              onEditNode={(uuid, fields) => s.editNodeText(uuid, fields)}
+              onEditNode={onEditNode}
               intents={s.intents} focusKb={focusKb} onExportComponent={s.isComponent ? undefined : onExportComponent}
               canSendImages={canSendImages} onSimNode={setSimNode} />
           </div>

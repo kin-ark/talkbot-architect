@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback, useEffect } from 'react';
+import { memo, useMemo, useState, useCallback, useEffect } from 'react';
 import { ReactFlow, Background, Controls, Handle, Position } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { buildGraph } from '../flow/buildGraph';
@@ -77,7 +77,7 @@ function FlowNode({ data }) {
 
 const nodeTypes = { componentNode: ComponentNode, flow: FlowNode };
 
-export default function FlowCanvas({ summary, onSelectNode, focusComponentId, highlight, onSelectKb, simCurrentNode }) {
+function FlowCanvas({ summary, onSelectNode, focusComponentId, highlight, onSelectKb, simCurrentNode }) {
   const [expanded, setExpanded] = useState(() => new Set());
   const [rf, setRf] = useState(null);
   const [hoverId, setHoverId] = useState(null);
@@ -292,3 +292,5 @@ export default function FlowCanvas({ summary, onSelectNode, focusComponentId, hi
     </div>
   );
 }
+
+export default memo(FlowCanvas);
