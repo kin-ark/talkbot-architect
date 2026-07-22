@@ -28,6 +28,7 @@ OP_REGISTRY: dict[str, Callable] = {
     "populate-details": structure.populate_details,
     "add-component": structure.add_component,
     "append-node": structure.append_node,
+    "delete-component": structure.delete_component,
     "add-variable": content.add_variable,
     "add-intent": content.add_intent,
     "add-kb": content.add_kb,

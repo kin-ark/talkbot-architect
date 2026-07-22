@@ -967,3 +967,70 @@ def add_component(bundle: InputBundle, params: dict, minter) -> None:
         new_comp["details"] = "null"
         comps.append(new_comp)
         set_components(bundle, comps)
+
+
+def delete_component(bundle: InputBundle, params: dict, minter) -> dict:  # noqa: ARG001
+    """Remove a whole component + cascade its rows. Blocks (ValueError, no mutation)
+    if the component is still referenced by a goto/goto_mr/nested node or a KB
+    multi-round delegate, or if it has child components."""
+    from wizmodifier.floweditor import FlowEditor
+
+    comps = get_components(bundle)
+    comp = require_component(comps, params["component"])
+    target_uuid = comp.get("componentUuid")
+    target_name = comp.get("name")
+
+    # Block: child components
+    children = [c.get("name") for c in comps
+                if c is not comp and c.get("parentUuid") == target_uuid]
+    if children:
+        raise ValueError(
+            f"delete-component: {target_name!r} has child components {children}; delete them first")
+
+    # Block: cross-component references
+    refs: list[str] = []
+    for c in comps:
+        if c is comp:
+            continue
+        fe = FlowEditor(c)
+        for nid, node in fe.details.items():
+            data = node.get("data", {})
+            t = node.get("type")
+            if ((t == 4 and data.get("appoint_node_id") == target_uuid)
+                    or (t == 9 and data.get("multiple_appoint_id") == target_uuid)
+                    or (t == 11 and data.get("subComponentUuid") == target_uuid)):
+                refs.append(f"{c.get('name')}:{data.get('name') or nid} (type {t})")
+    kbs = codec.decode(bundle.data.get("BizKnowledgeInfo", "[]"))
+    for kb in kbs:
+        for item in codec.decode(kb.get("kdInfo", "[]")) or []:
+            if isinstance(item, dict) and item.get("answerType") == 2 \
+                    and item.get("multipleAppointId") == target_uuid:
+                refs.append(f"KB {kb.get('kdTitle')!r} (multi-round delegate)")
+    if refs:
+        raise ValueError(
+            f"delete-component: {target_name!r} is still referenced by: {'; '.join(refs)}. "
+            "Rewire those nodes first.")
+
+    # Cascade delete
+    node_uuids = set(FlowEditor(comp).details.keys())
+    comps[:] = [c for c in comps if c is not comp]
+
+    scs = codec.decode(bundle.data.get("SentenceCutSpeech", "[]"))
+    sck = codec.decode(bundle.data.get("SentenceCutKnowledge", "[]"))
+    n0, m0 = len(scs), len(sck)
+    scs[:] = [r for r in scs if r.get("componentUuid") != target_uuid]
+    sck[:] = [r for r in sck if r.get("componentUuid") != target_uuid]
+    bundle.data["SentenceCutSpeech"] = codec.encode(scs)
+    bundle.data["SentenceCutKnowledge"] = codec.encode(sck)
+
+    removed_hw = 0
+    if bundle.data.get("BizNodeHotWords") is not None:
+        hw = codec.decode(bundle.data.get("BizNodeHotWords", "[]"))
+        h0 = len(hw)
+        hw[:] = [r for r in hw if r.get("nodeId") not in node_uuids]
+        removed_hw = h0 - len(hw)
+        bundle.data["BizNodeHotWords"] = codec.encode(hw)
+
+    set_components(bundle, comps)
+    return {"deleted": target_name, "removed_scs": n0 - len(scs),
+            "removed_sck": m0 - len(sck), "removed_hotwords": removed_hw}
