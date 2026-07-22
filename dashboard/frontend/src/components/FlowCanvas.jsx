@@ -28,7 +28,9 @@ function ComponentNode({ data }) {
   return (
     <div
       role="button"
+      tabIndex={0}
       onClick={data.onToggle}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); data.onToggle?.(); } }}
       data-testid={`comp-${data.label}`}
       style={{ width: '100%', height: '100%', border: '2px dashed var(--c-border)',
                borderRadius: 12, background: 'var(--c-surface)', cursor: 'pointer' }}

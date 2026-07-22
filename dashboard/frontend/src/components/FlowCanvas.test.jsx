@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -20,6 +20,15 @@ describe('FlowCanvas', () => {
   it('renders the canvas container', () => {
     render(<FlowCanvas summary={summary} onSelectNode={() => {}} />);
     expect(screen.getByTestId('flow-canvas')).toBeInTheDocument();
+  });
+
+  it('collapsed component node toggles via keyboard', () => {
+    render(<FlowCanvas summary={summary} onSelectNode={() => {}} />);
+    const box = screen.getByTestId(/^comp-/);
+    expect(box).toHaveAttribute('tabindex', '0');
+    expect(screen.queryByText('Greet')).not.toBeInTheDocument();
+    fireEvent.keyDown(box, { key: 'Enter' });
+    expect(screen.getByText('Greet')).toBeInTheDocument();
   });
 });
 

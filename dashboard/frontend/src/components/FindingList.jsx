@@ -7,7 +7,13 @@ function Group({ title, items, color, onSelect, onAskFix }) {
       <ul className="space-y-1">
         {items.map((f, i) => (
           <li key={i} className="text-xs p-2 rounded border border-border hover:bg-surface-muted text-text">
-            <div onClick={() => f.id && onSelect?.({ uuid: f.id })} className={f.id ? 'cursor-pointer' : ''}>
+            <div
+              {...(f.id ? {
+                role: 'button', tabIndex: 0,
+                onClick: () => onSelect?.({ uuid: f.id }),
+                onKeyDown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect?.({ uuid: f.id }); } },
+              } : {})}
+              className={f.id ? 'cursor-pointer' : ''}>
               <span className="font-mono font-semibold">{f.code}</span> — {f.message}
               {f.entity && <span className="text-text-tertiary"> [{f.entity}{f.id ? ` ${f.id}` : ''}]</span>}
             </div>

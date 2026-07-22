@@ -29,6 +29,23 @@ describe('UploadZone drag-drop', () => {
   });
 });
 
+describe('UploadZone keyboard activation', () => {
+  it('opens the file picker on Enter when idle', () => {
+    const onUpload = vi.fn();
+    render(<UploadZone onUpload={onUpload} onReject={() => {}} />);
+    const zone = screen.getByTestId('upload-zone');
+    expect(zone).toHaveAttribute('role', 'button');
+    const input = zone.querySelector('input[type="file"]');
+    const clickSpy = vi.spyOn(input, 'click');
+    fireEvent.keyDown(zone, { key: 'Enter' });
+    expect(clickSpy).toHaveBeenCalled();
+  });
+  it('is not keyboard-activatable while busy', () => {
+    render(<UploadZone onUpload={() => {}} onReject={() => {}} progress={{ phase: 'processing' }} />);
+    expect(screen.getByTestId('upload-zone')).toHaveAttribute('tabindex', '-1');
+  });
+});
+
 describe('UploadZone progress', () => {
   it('transferring shows the pct label + bar and disables the input', () => {
     render(<UploadZone onUpload={() => {}} onReject={() => {}} progress={{ phase: 'transferring', pct: 37 }} />);

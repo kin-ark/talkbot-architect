@@ -33,7 +33,11 @@ export default function UploadZone({ onUpload, progress = null, onReject = () =>
   return (
     <div
       data-testid="upload-zone"
+      role="button"
+      aria-label="Upload a WIZ export"
+      tabIndex={busy ? -1 : 0}
       onClick={() => !busy && fileInputRef.current.click()}
+      onKeyDown={(e) => { if (!busy && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); fileInputRef.current.click(); } }}
       onDrop={onDrop} onDragOver={onDragOver} onDragLeave={onDragLeave}
       className={`border-2 border-dashed rounded-lg p-12 text-center transition-colors relative
         ${busy ? 'cursor-default border-border' : 'cursor-pointer hover:border-primary'}

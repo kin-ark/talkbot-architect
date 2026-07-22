@@ -31,4 +31,14 @@ describe('FindingList', () => {
     fireEvent.click(screen.getAllByRole('button', { name: /fix/i })[0]);
     expect(onAskFix).toHaveBeenCalledWith(expect.objectContaining({ code: 'WIZ102' }));
   });
+
+  it('activates a finding row via keyboard', () => {
+    const onSelect = vi.fn();
+    render(<FindingList findings={[{ code: 'WIZ101', message: 'x', severity: 'error', id: 'n1' }]}
+      onSelect={onSelect} onAskFix={() => {}} />);
+    const row = screen.getByText(/WIZ101/).closest('[role="button"]');
+    expect(row).toHaveAttribute('tabindex', '0');
+    fireEvent.keyDown(row, { key: 'Enter' });
+    expect(onSelect).toHaveBeenCalledWith({ uuid: 'n1' });
+  });
 });
